@@ -80,16 +80,6 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
     if (exefs == nullptr)
         return exefs;
 
-    if (Settings::values.dump_exefs) {
-        LOG_INFO(Loader, "Dumping ExeFS for title_id={:016X}", title_id);
-        const auto dump_dir =
-            Core::System::GetInstance().GetFileSystemController().GetModificationDumpRoot(title_id);
-        if (dump_dir != nullptr) {
-            const auto exefs_dir = GetOrCreateDirectoryRelative(dump_dir, "/exefs");
-            VfsRawCopyD(exefs, exefs_dir);
-        }
-    }
-
     const auto& installed = Core::System::GetInstance().GetContentProvider();
 
     const auto& disabled = Settings::values.disabled_addons[title_id];
@@ -105,6 +95,16 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
         LOG_INFO(Loader, "    ExeFS: Update ({}) applied successfully",
                  FormatTitleVersion(installed.GetEntryVersion(update_tid).value_or(0)));
         exefs = update->GetExeFS();
+    }
+    
+     if (Settings::values.dump_exefs) {
+        LOG_INFO(Loader, "Dumping ExeFS for title_id={:016X}", title_id);
+        const auto dump_dir =
+            Core::System::GetInstance().GetFileSystemController().GetModificationDumpRoot(title_id);
+        if (dump_dir != nullptr) {
+            const auto exefs_dir = GetOrCreateDirectoryRelative(dump_dir, "/exefs");
+            VfsRawCopyD(exefs, exefs_dir);
+        }
     }
 
     // LayeredExeFS
