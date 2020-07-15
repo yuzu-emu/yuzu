@@ -96,8 +96,8 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
                  FormatTitleVersion(installed.GetEntryVersion(update_tid).value_or(0)));
         exefs = update->GetExeFS();
     }
-    
-     if (Settings::values.dump_exefs) {
+
+    if (Settings::values.dump_exefs) {
         LOG_INFO(Loader, "Dumping ExeFS for title_id={:016X}", title_id);
         const auto dump_dir =
             Core::System::GetInstance().GetFileSystemController().GetModificationDumpRoot(title_id);
