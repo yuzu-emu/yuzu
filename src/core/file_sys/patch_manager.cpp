@@ -80,8 +80,9 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
     if (exefs == nullptr)
         return exefs;
 
-    const auto& installed = Core::System::GetInstance().GetContentProvider();
-
+    auto& system = Core::System::GetInstance();
+    auto& fs_controller = system.GetFileSystemController();
+    const auto& installed = system.GetContentProvider();
     const auto& disabled = Settings::values.disabled_addons[title_id];
     const auto update_disabled =
         std::find(disabled.cbegin(), disabled.cend(), "Update") != disabled.cend();
@@ -99,8 +100,7 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
 
     if (Settings::values.dump_exefs) {
         LOG_INFO(Loader, "Dumping ExeFS for title_id={:016X}", title_id);
-        const auto dump_dir =
-            Core::System::GetInstance().GetFileSystemController().GetModificationDumpRoot(title_id);
+        const auto dump_dir = fs_controller.GetModificationDumpRoot(title_id);
         if (dump_dir != nullptr) {
             const auto exefs_dir = GetOrCreateDirectoryRelative(dump_dir, "/exefs");
             VfsRawCopyD(exefs, exefs_dir);
@@ -108,8 +108,7 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
     }
 
     // LayeredExeFS
-    const auto load_dir =
-        Core::System::GetInstance().GetFileSystemController().GetModificationLoadRoot(title_id);
+    const auto load_dir = fs_controller.GetModificationLoadRoot(title_id);
     if (load_dir != nullptr && load_dir->GetSize() > 0) {
         auto patch_dirs = load_dir->GetSubdirectories();
         std::sort(
