@@ -10,8 +10,8 @@ namespace Service::Account {
 
 class ACC_AA final : public Module::Interface {
 public:
-    explicit ACC_AA(std::shared_ptr<Module> module, std::shared_ptr<ProfileManager> profile_manager,
-                    Core::System& system);
+    explicit ACC_AA(std::shared_ptr<Module> interface_module,
+                    std::shared_ptr<ProfileManager> profile_manager, Core::System& system);
     ~ACC_AA() override;
 };
 

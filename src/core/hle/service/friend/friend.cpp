@@ -281,18 +281,24 @@ void Module::Interface::CreateNotificationService(Kernel::HLERequestContext& ctx
     rb.PushIpcInterface<INotificationService>(uuid, system);
 }
 
-Module::Interface::Interface(std::shared_ptr<Module> module, Core::System& system, const char* name)
-    : ServiceFramework(name), module(std::move(module)), system(system) {}
+Module::Interface::Interface(std::shared_ptr<Module> interface_module, Core::System& system,
+                             const char* name)
+    : ServiceFramework(name), interface_module(std::move(interface_module)), system(system) {}
 
 Module::Interface::~Interface() = default;
 
 void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
-    auto module = std::make_shared<Module>();
-    std::make_shared<Friend>(module, system, "friend:a")->InstallAsService(service_manager);
-    std::make_shared<Friend>(module, system, "friend:m")->InstallAsService(service_manager);
-    std::make_shared<Friend>(module, system, "friend:s")->InstallAsService(service_manager);
-    std::make_shared<Friend>(module, system, "friend:u")->InstallAsService(service_manager);
-    std::make_shared<Friend>(module, system, "friend:v")->InstallAsService(service_manager);
+    auto interface_module = std::make_shared<Module>();
+    std::make_shared<Friend>(interface_module, system, "friend:a")
+        ->InstallAsService(service_manager);
+    std::make_shared<Friend>(interface_module, system, "friend:m")
+        ->InstallAsService(service_manager);
+    std::make_shared<Friend>(interface_module, system, "friend:s")
+        ->InstallAsService(service_manager);
+    std::make_shared<Friend>(interface_module, system, "friend:u")
+        ->InstallAsService(service_manager);
+    std::make_shared<Friend>(interface_module, system, "friend:v")
+        ->InstallAsService(service_manager);
 }
 
 } // namespace Service::Friend

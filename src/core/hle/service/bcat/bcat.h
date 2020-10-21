@@ -14,7 +14,7 @@ namespace Service::BCAT {
 
 class BCAT final : public Module::Interface {
 public:
-    explicit BCAT(Core::System& system, std::shared_ptr<Module> module,
+    explicit BCAT(Core::System& system, std::shared_ptr<Module> interface_module,
                   FileSystem::FileSystemController& fsc, const char* name);
     ~BCAT() override;
 };

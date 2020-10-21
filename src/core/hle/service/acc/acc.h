@@ -15,7 +15,7 @@ class Module final {
 public:
     class Interface : public ServiceFramework<Interface> {
     public:
-        explicit Interface(std::shared_ptr<Module> module,
+        explicit Interface(std::shared_ptr<Module> interface_module,
                            std::shared_ptr<ProfileManager> profile_manager, Core::System& system,
                            const char* name);
         ~Interface() override;
@@ -58,7 +58,7 @@ public:
         ApplicationInfo application_info{};
 
     protected:
-        std::shared_ptr<Module> module;
+        std::shared_ptr<Module> interface_module;
         std::shared_ptr<ProfileManager> profile_manager;
         Core::System& system;
     };

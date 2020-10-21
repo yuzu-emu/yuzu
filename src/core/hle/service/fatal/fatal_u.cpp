@@ -6,8 +6,8 @@
 
 namespace Service::Fatal {
 
-Fatal_U::Fatal_U(std::shared_ptr<Module> module, Core::System& system)
-    : Module::Interface(std::move(module), system, "fatal:u") {
+Fatal_U::Fatal_U(std::shared_ptr<Module> interface_module, Core::System& system)
+    : Module::Interface(std::move(interface_module), system, "fatal:u") {
     static const FunctionInfo functions[] = {
         {0, &Fatal_U::ThrowFatal, "ThrowFatal"},
         {1, &Fatal_U::ThrowFatalWithPolicy, "ThrowFatalWithPolicy"},

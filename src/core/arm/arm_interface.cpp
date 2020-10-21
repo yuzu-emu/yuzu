@@ -162,17 +162,17 @@ std::vector<ARM_Interface::BacktraceEntry> ARM_Interface::GetBacktraceFromContex
     }
 
     std::map<std::string, Symbols> symbols;
-    for (const auto& module : modules) {
-        symbols.insert_or_assign(module.second, GetSymbols(module.first, memory));
+    for (const auto& mod : modules) {
+        symbols.insert_or_assign(mod.second, GetSymbols(mod.first, memory));
     }
 
     for (auto& entry : out) {
         VAddr base = 0;
         for (auto iter = modules.rbegin(); iter != modules.rend(); ++iter) {
-            const auto& module{*iter};
-            if (entry.original_address >= module.first) {
-                entry.module = module.second;
-                base = module.first;
+            const auto& mod{*iter};
+            if (entry.original_address >= mod.first) {
+                entry.mod = mod.second;
+                base = mod.first;
                 break;
             }
         }
@@ -180,10 +180,10 @@ std::vector<ARM_Interface::BacktraceEntry> ARM_Interface::GetBacktraceFromContex
         entry.offset = entry.original_address - base;
         entry.address = SEGMENT_BASE + entry.offset;
 
-        if (entry.module.empty())
-            entry.module = "unknown";
+        if (entry.mod.empty())
+            entry.mod = "unknown";
 
-        const auto symbol_set = symbols.find(entry.module);
+        const auto symbol_set = symbols.find(entry.mod);
         if (symbol_set != symbols.end()) {
             const auto symbol = GetSymbolName(symbol_set->second, entry.offset);
             if (symbol.has_value()) {
@@ -218,17 +218,17 @@ std::vector<ARM_Interface::BacktraceEntry> ARM_Interface::GetBacktrace() const {
     }
 
     std::map<std::string, Symbols> symbols;
-    for (const auto& module : modules) {
-        symbols.insert_or_assign(module.second, GetSymbols(module.first, memory));
+    for (const auto& mod : modules) {
+        symbols.insert_or_assign(mod.second, GetSymbols(mod.first, memory));
     }
 
     for (auto& entry : out) {
         VAddr base = 0;
         for (auto iter = modules.rbegin(); iter != modules.rend(); ++iter) {
-            const auto& module{*iter};
-            if (entry.original_address >= module.first) {
-                entry.module = module.second;
-                base = module.first;
+            const auto& mod{*iter};
+            if (entry.original_address >= mod.first) {
+                entry.mod = mod.second;
+                base = mod.first;
                 break;
             }
         }
@@ -236,10 +236,10 @@ std::vector<ARM_Interface::BacktraceEntry> ARM_Interface::GetBacktrace() const {
         entry.offset = entry.original_address - base;
         entry.address = SEGMENT_BASE + entry.offset;
 
-        if (entry.module.empty())
-            entry.module = "unknown";
+        if (entry.mod.empty())
+            entry.mod = "unknown";
 
-        const auto symbol_set = symbols.find(entry.module);
+        const auto symbol_set = symbols.find(entry.mod);
         if (symbol_set != symbols.end()) {
             const auto symbol = GetSymbolName(symbol_set->second, entry.offset);
             if (symbol.has_value()) {
@@ -262,7 +262,7 @@ void ARM_Interface::LogBacktrace() const {
 
     const auto backtrace = GetBacktrace();
     for (const auto& entry : backtrace) {
-        LOG_ERROR(Core_ARM, "{:20}{:016X}    {:016X}    {:016X}    {}", entry.module, entry.address,
+        LOG_ERROR(Core_ARM, "{:20}{:016X}    {:016X}    {:016X}    {}", entry.mod, entry.address,
                   entry.original_address, entry.offset, entry.name);
     }
 }

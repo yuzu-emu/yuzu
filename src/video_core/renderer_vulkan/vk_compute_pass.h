@@ -38,7 +38,7 @@ protected:
 private:
     vk::DescriptorSetLayout descriptor_set_layout;
     std::optional<DescriptorAllocator> descriptor_allocator;
-    vk::ShaderModule module;
+    vk::ShaderModule shader_module;
 };
 
 class QuadArrayPass final : public VKComputePass {

@@ -69,7 +69,7 @@ json GetReportCommonData(u64 title_id, ResultCode result, const std::string& tim
     auto out = json{
         {"title_id", fmt::format("{:016X}", title_id)},
         {"result_raw", fmt::format("{:08X}", result.raw)},
-        {"result_module", fmt::format("{:08X}", static_cast<u32>(result.module.Value()))},
+        {"result_module", fmt::format("{:08X}", static_cast<u32>(result.error_module.Value()))},
         {"result_description", fmt::format("{:08X}", result.description.Value())},
         {"timestamp", timestamp},
     };
@@ -127,7 +127,7 @@ json GetBacktraceData(Core::System& system) {
     const auto& backtrace{system.CurrentArmInterface().GetBacktrace()};
     for (const auto& entry : backtrace) {
         out.push_back({
-            {"module", entry.module},
+            {"module", entry.mod},
             {"address", fmt::format("{:016X}", entry.address)},
             {"original_address", fmt::format("{:016X}", entry.original_address)},
             {"offset", fmt::format("{:016X}", entry.offset)},

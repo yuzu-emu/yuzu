@@ -135,13 +135,13 @@ AppLoader_DeconstructedRomDirectory::LoadResult AppLoader_DeconstructedRomDirect
 
     // Use the NSO module loader to figure out the code layout
     std::size_t code_size{};
-    for (const auto& module : static_modules) {
-        const FileSys::VirtualFile module_file{dir->GetFile(module)};
+    for (const auto& mod : static_modules) {
+        const FileSys::VirtualFile module_file{dir->GetFile(mod)};
         if (!module_file) {
             continue;
         }
 
-        const bool should_pass_arguments = std::strcmp(module, "rtld") == 0;
+        const bool should_pass_arguments = std::strcmp(mod, "rtld") == 0;
         const auto tentative_next_load_addr = AppLoader_NSO::LoadModule(
             process, system, *module_file, code_size, should_pass_arguments, false);
         if (!tentative_next_load_addr) {
@@ -161,14 +161,14 @@ AppLoader_DeconstructedRomDirectory::LoadResult AppLoader_DeconstructedRomDirect
     const VAddr base_address{process.PageTable().GetCodeRegionStart()};
     VAddr next_load_addr{base_address};
     const FileSys::PatchManager pm{metadata.GetTitleID()};
-    for (const auto& module : static_modules) {
-        const FileSys::VirtualFile module_file{dir->GetFile(module)};
+    for (const auto& mod : static_modules) {
+        const FileSys::VirtualFile module_file{dir->GetFile(mod)};
         if (!module_file) {
             continue;
         }
 
         const VAddr load_addr{next_load_addr};
-        const bool should_pass_arguments = std::strcmp(module, "rtld") == 0;
+        const bool should_pass_arguments = std::strcmp(mod, "rtld") == 0;
         const auto tentative_next_load_addr = AppLoader_NSO::LoadModule(
             process, system, *module_file, load_addr, should_pass_arguments, true, pm);
         if (!tentative_next_load_addr) {
@@ -176,10 +176,10 @@ AppLoader_DeconstructedRomDirectory::LoadResult AppLoader_DeconstructedRomDirect
         }
 
         next_load_addr = *tentative_next_load_addr;
-        modules.insert_or_assign(load_addr, module);
-        LOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
+        modules.insert_or_assign(load_addr, mod);
+        LOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", mod, load_addr);
         // Register module with GDBStub
-        GDBStub::RegisterModule(module, load_addr, next_load_addr - 1, false);
+        GDBStub::RegisterModule(mod, load_addr, next_load_addr - 1, false);
     }
 
     // Find the RomFS by searching for a ".romfs" file in this directory

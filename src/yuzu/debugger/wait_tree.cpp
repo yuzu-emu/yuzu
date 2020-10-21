@@ -162,7 +162,7 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeCallstack::GetChildren() cons
                                                                   thread.GetContext64());
 
     for (auto& entry : backtrace) {
-        std::string s = fmt::format("{:20}{:016X} {:016X} {:016X} {}", entry.module, entry.address,
+        std::string s = fmt::format("{:20}{:016X} {:016X} {:016X} {}", entry.mod, entry.address,
                                     entry.original_address, entry.offset, entry.name);
         list.push_back(std::make_unique<WaitTreeText>(QString::fromStdString(s)));
     }

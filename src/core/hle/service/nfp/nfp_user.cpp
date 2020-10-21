@@ -6,8 +6,8 @@
 
 namespace Service::NFP {
 
-NFP_User::NFP_User(std::shared_ptr<Module> module, Core::System& system)
-    : Module::Interface(std::move(module), system, "nfp:user") {
+NFP_User::NFP_User(std::shared_ptr<Module> interface_module, Core::System& system)
+    : Module::Interface(std::move(interface_module), system, "nfp:user") {
     static const FunctionInfo functions[] = {
         {0, &NFP_User::CreateUserInterface, "CreateUserInterface"},
     };

@@ -6,8 +6,8 @@
 
 namespace Service::Friend {
 
-Friend::Friend(std::shared_ptr<Module> module, Core::System& system, const char* name)
-    : Interface(std::move(module), system, name) {
+Friend::Friend(std::shared_ptr<Module> interface_module, Core::System& system, const char* name)
+    : Interface(std::move(interface_module), system, name) {
     static const FunctionInfo functions[] = {
         {0, &Friend::CreateFriendService, "CreateFriendService"},
         {1, &Friend::CreateNotificationService, "CreateNotificationService"},

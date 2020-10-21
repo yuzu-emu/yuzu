@@ -77,11 +77,11 @@ void CopyArgumentData(const std::vector<u8>& data, T& variable) {
 
 ResultCode Decode64BitError(u64 error) {
     const auto description = (error >> 32) & 0x1FFF;
-    auto module = error & 0x3FF;
-    if (module >= 2000)
-        module -= 2000;
-    module &= 0x1FF;
-    return {static_cast<ErrorModule>(module), static_cast<u32>(description)};
+    auto error_module = error & 0x3FF;
+    if (error_module >= 2000)
+        error_module -= 2000;
+    error_module &= 0x1FF;
+    return {static_cast<ErrorModule>(error_module), static_cast<u32>(description)};
 }
 
 } // Anonymous namespace

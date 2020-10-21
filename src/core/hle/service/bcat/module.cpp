@@ -579,9 +579,9 @@ std::unique_ptr<Backend> CreateBackendFromSettings([[maybe_unused]] Core::System
     return std::make_unique<NullBackend>(std::move(getter));
 }
 
-Module::Interface::Interface(Core::System& system_, std::shared_ptr<Module> module_,
+Module::Interface::Interface(Core::System& system_, std::shared_ptr<Module> interface_module,
                              FileSystem::FileSystemController& fsc_, const char* name)
-    : ServiceFramework(name), fsc{fsc_}, module{std::move(module_)},
+    : ServiceFramework(name), fsc{fsc_}, interface_module{std::move(interface_module)},
       backend{CreateBackendFromSettings(system_,
                                         [&fsc_](u64 tid) { return fsc_.GetBCATDirectory(tid); })},
       system{system_} {}
@@ -589,14 +589,14 @@ Module::Interface::Interface(Core::System& system_, std::shared_ptr<Module> modu
 Module::Interface::~Interface() = default;
 
 void InstallInterfaces(Core::System& system) {
-    auto module = std::make_shared<Module>();
-    std::make_shared<BCAT>(system, module, system.GetFileSystemController(), "bcat:a")
+    auto interface_module = std::make_shared<Module>();
+    std::make_shared<BCAT>(system, interface_module, system.GetFileSystemController(), "bcat:a")
         ->InstallAsService(system.ServiceManager());
-    std::make_shared<BCAT>(system, module, system.GetFileSystemController(), "bcat:m")
+    std::make_shared<BCAT>(system, interface_module, system.GetFileSystemController(), "bcat:m")
         ->InstallAsService(system.ServiceManager());
-    std::make_shared<BCAT>(system, module, system.GetFileSystemController(), "bcat:u")
+    std::make_shared<BCAT>(system, interface_module, system.GetFileSystemController(), "bcat:u")
         ->InstallAsService(system.ServiceManager());
-    std::make_shared<BCAT>(system, module, system.GetFileSystemController(), "bcat:s")
+    std::make_shared<BCAT>(system, interface_module, system.GetFileSystemController(), "bcat:s")
         ->InstallAsService(system.ServiceManager());
 }
 

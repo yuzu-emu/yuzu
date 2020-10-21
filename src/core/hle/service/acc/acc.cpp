@@ -824,25 +824,25 @@ void Module::Interface::TrySelectUserWithoutInteraction(Kernel::HLERequestContex
     rb.PushRaw<u128>(profile_manager->GetUser(0)->uuid);
 }
 
-Module::Interface::Interface(std::shared_ptr<Module> module,
+Module::Interface::Interface(std::shared_ptr<Module> interface_module,
                              std::shared_ptr<ProfileManager> profile_manager, Core::System& system,
                              const char* name)
-    : ServiceFramework(name), module(std::move(module)),
+    : ServiceFramework(name), interface_module(std::move(interface_module)),
       profile_manager(std::move(profile_manager)), system(system) {}
 
 Module::Interface::~Interface() = default;
 
 void InstallInterfaces(Core::System& system) {
-    auto module = std::make_shared<Module>();
+    auto interface_module = std::make_shared<Module>();
     auto profile_manager = std::make_shared<ProfileManager>();
 
-    std::make_shared<ACC_AA>(module, profile_manager, system)
+    std::make_shared<ACC_AA>(interface_module, profile_manager, system)
         ->InstallAsService(system.ServiceManager());
-    std::make_shared<ACC_SU>(module, profile_manager, system)
+    std::make_shared<ACC_SU>(interface_module, profile_manager, system)
         ->InstallAsService(system.ServiceManager());
-    std::make_shared<ACC_U0>(module, profile_manager, system)
+    std::make_shared<ACC_U0>(interface_module, profile_manager, system)
         ->InstallAsService(system.ServiceManager());
-    std::make_shared<ACC_U1>(module, profile_manager, system)
+    std::make_shared<ACC_U1>(interface_module, profile_manager, system)
         ->InstallAsService(system.ServiceManager());
 }
 

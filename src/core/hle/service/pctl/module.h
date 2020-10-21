@@ -12,14 +12,14 @@ class Module final {
 public:
     class Interface : public ServiceFramework<Interface> {
     public:
-        explicit Interface(std::shared_ptr<Module> module, const char* name);
+        explicit Interface(std::shared_ptr<Module> interface_module, const char* name);
         ~Interface() override;
 
         void CreateService(Kernel::HLERequestContext& ctx);
         void CreateServiceWithoutInitialize(Kernel::HLERequestContext& ctx);
 
     protected:
-        std::shared_ptr<Module> module;
+        std::shared_ptr<Module> interface_module;
     };
 };
 

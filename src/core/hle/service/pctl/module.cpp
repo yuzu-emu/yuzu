@@ -148,17 +148,17 @@ void Module::Interface::CreateServiceWithoutInitialize(Kernel::HLERequestContext
     rb.PushIpcInterface<IParentalControlService>();
 }
 
-Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)
-    : ServiceFramework(name), module(std::move(module)) {}
+Module::Interface::Interface(std::shared_ptr<Module> interface_module, const char* name)
+    : ServiceFramework(name), interface_module(std::move(interface_module)) {}
 
 Module::Interface::~Interface() = default;
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
-    auto module = std::make_shared<Module>();
-    std::make_shared<PCTL>(module, "pctl")->InstallAsService(service_manager);
-    std::make_shared<PCTL>(module, "pctl:a")->InstallAsService(service_manager);
-    std::make_shared<PCTL>(module, "pctl:r")->InstallAsService(service_manager);
-    std::make_shared<PCTL>(module, "pctl:s")->InstallAsService(service_manager);
+    auto interface_module = std::make_shared<Module>();
+    std::make_shared<PCTL>(interface_module, "pctl")->InstallAsService(service_manager);
+    std::make_shared<PCTL>(interface_module, "pctl:a")->InstallAsService(service_manager);
+    std::make_shared<PCTL>(interface_module, "pctl:r")->InstallAsService(service_manager);
+    std::make_shared<PCTL>(interface_module, "pctl:s")->InstallAsService(service_manager);
 }
 
 } // namespace Service::PCTL

@@ -125,7 +125,7 @@ ResultCode Module::Interface::GetClockSnapshotFromSystemClockContextInternal(
     Kernel::Thread* thread, Clock::SystemClockContext user_context,
     Clock::SystemClockContext network_context, u8 type, Clock::ClockSnapshot& clock_snapshot) {
 
-    auto& time_manager{module->GetTimeManager()};
+    auto& time_manager{interface_module->GetTimeManager()};
 
     clock_snapshot.is_automatic_correction_enabled =
         time_manager.GetStandardUserSystemClockCore().IsAutomaticCorrectionEnabled();
@@ -182,45 +182,46 @@ void Module::Interface::GetStandardUserSystemClock(Kernel::HLERequestContext& ct
     LOG_DEBUG(Service_Time, "called");
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<ISystemClock>(module->GetTimeManager().GetStandardUserSystemClockCore(),
-                                      system);
+    rb.PushIpcInterface<ISystemClock>(
+        interface_module->GetTimeManager().GetStandardUserSystemClockCore(), system);
 }
 
 void Module::Interface::GetStandardNetworkSystemClock(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<ISystemClock>(module->GetTimeManager().GetStandardNetworkSystemClockCore(),
-                                      system);
+    rb.PushIpcInterface<ISystemClock>(
+        interface_module->GetTimeManager().GetStandardNetworkSystemClockCore(), system);
 }
 
 void Module::Interface::GetStandardSteadyClock(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<ISteadyClock>(module->GetTimeManager().GetStandardSteadyClockCore(),
-                                      system);
+    rb.PushIpcInterface<ISteadyClock>(
+        interface_module->GetTimeManager().GetStandardSteadyClockCore(), system);
 }
 
 void Module::Interface::GetTimeZoneService(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<ITimeZoneService>(module->GetTimeManager().GetTimeZoneContentManager());
+    rb.PushIpcInterface<ITimeZoneService>(
+        interface_module->GetTimeManager().GetTimeZoneContentManager());
 }
 
 void Module::Interface::GetStandardLocalSystemClock(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<ISystemClock>(module->GetTimeManager().GetStandardLocalSystemClockCore(),
-                                      system);
+    rb.PushIpcInterface<ISystemClock>(
+        interface_module->GetTimeManager().GetStandardLocalSystemClockCore(), system);
 }
 
 void Module::Interface::IsStandardNetworkSystemClockAccuracySufficient(
     Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
-    auto& clock_core{module->GetTimeManager().GetStandardNetworkSystemClockCore()};
+    auto& clock_core{interface_module->GetTimeManager().GetStandardNetworkSystemClockCore()};
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(clock_core.IsStandardNetworkSystemClockAccuracySufficient(system));
@@ -229,7 +230,7 @@ void Module::Interface::IsStandardNetworkSystemClockAccuracySufficient(
 void Module::Interface::CalculateMonotonicSystemClockBaseTimePoint(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
 
-    auto& steady_clock_core{module->GetTimeManager().GetStandardSteadyClockCore()};
+    auto& steady_clock_core{interface_module->GetTimeManager().GetStandardSteadyClockCore()};
     if (!steady_clock_core.IsInitialized()) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ERROR_UNINITIALIZED_CLOCK);
@@ -262,7 +263,7 @@ void Module::Interface::GetClockSnapshot(Kernel::HLERequestContext& ctx) {
 
     Clock::SystemClockContext user_context{};
     if (const ResultCode result{
-            module->GetTimeManager().GetStandardUserSystemClockCore().GetClockContext(
+            interface_module->GetTimeManager().GetStandardUserSystemClockCore().GetClockContext(
                 system, user_context)};
         result.IsError()) {
         IPC::ResponseBuilder rb{ctx, 2};
@@ -271,7 +272,7 @@ void Module::Interface::GetClockSnapshot(Kernel::HLERequestContext& ctx) {
     }
     Clock::SystemClockContext network_context{};
     if (const ResultCode result{
-            module->GetTimeManager().GetStandardNetworkSystemClockCore().GetClockContext(
+            interface_module->GetTimeManager().GetStandardNetworkSystemClockCore().GetClockContext(
                 system, network_context)};
         result.IsError()) {
         IPC::ResponseBuilder rb{ctx, 2};
@@ -372,19 +373,24 @@ void Module::Interface::GetSharedMemoryNativeHandle(Kernel::HLERequestContext& c
     LOG_DEBUG(Service_Time, "called");
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushCopyObjects(module->GetTimeManager().GetSharedMemory().GetSharedMemoryHolder());
+    rb.PushCopyObjects(
+        interface_module->GetTimeManager().GetSharedMemory().GetSharedMemoryHolder());
 }
 
-Module::Interface::Interface(std::shared_ptr<Module> module, Core::System& system, const char* name)
-    : ServiceFramework(name), module{std::move(module)}, system{system} {}
+Module::Interface::Interface(std::shared_ptr<Module> interface_module, Core::System& system,
+                             const char* name)
+    : ServiceFramework(name), interface_module{std::move(interface_module)}, system{system} {}
 
 Module::Interface::~Interface() = default;
 
 void InstallInterfaces(Core::System& system) {
-    auto module{std::make_shared<Module>(system)};
-    std::make_shared<Time>(module, system, "time:a")->InstallAsService(system.ServiceManager());
-    std::make_shared<Time>(module, system, "time:s")->InstallAsService(system.ServiceManager());
-    std::make_shared<Time>(module, system, "time:u")->InstallAsService(system.ServiceManager());
+    auto interface_module{std::make_shared<Module>(system)};
+    std::make_shared<Time>(interface_module, system, "time:a")
+        ->InstallAsService(system.ServiceManager());
+    std::make_shared<Time>(interface_module, system, "time:s")
+        ->InstallAsService(system.ServiceManager());
+    std::make_shared<Time>(interface_module, system, "time:u")
+        ->InstallAsService(system.ServiceManager());
 }
 
 } // namespace Service::Time

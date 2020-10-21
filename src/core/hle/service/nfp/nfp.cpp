@@ -21,8 +21,9 @@ namespace ErrCodes {
 constexpr ResultCode ERR_NO_APPLICATION_AREA(ErrorModule::NFP, 152);
 } // namespace ErrCodes
 
-Module::Interface::Interface(std::shared_ptr<Module> module, Core::System& system, const char* name)
-    : ServiceFramework(name), module(std::move(module)), system(system) {
+Module::Interface::Interface(std::shared_ptr<Module> interface_module, Core::System& system,
+                             const char* name)
+    : ServiceFramework(name), interface_module(std::move(interface_module)), system(system) {
     auto& kernel = system.Kernel();
     nfc_tag_load = Kernel::WritableEvent::CreateEventPair(kernel, "IUser:NFCTagDetected");
 }
@@ -354,8 +355,8 @@ const Module::Interface::AmiiboFile& Module::Interface::GetAmiiboBuffer() const 
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
-    auto module = std::make_shared<Module>();
-    std::make_shared<NFP_User>(module, system)->InstallAsService(service_manager);
+    auto interface_module = std::make_shared<Module>();
+    std::make_shared<NFP_User>(interface_module, system)->InstallAsService(service_manager);
 }
 
 } // namespace Service::NFP

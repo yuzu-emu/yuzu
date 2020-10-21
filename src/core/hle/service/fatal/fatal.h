@@ -16,7 +16,8 @@ class Module final {
 public:
     class Interface : public ServiceFramework<Interface> {
     public:
-        explicit Interface(std::shared_ptr<Module> module, Core::System& system, const char* name);
+        explicit Interface(std::shared_ptr<Module> interface_module, Core::System& system,
+                           const char* name);
         ~Interface() override;
 
         void ThrowFatal(Kernel::HLERequestContext& ctx);
@@ -24,7 +25,7 @@ public:
         void ThrowFatalWithCpuContext(Kernel::HLERequestContext& ctx);
 
     protected:
-        std::shared_ptr<Module> module;
+        std::shared_ptr<Module> interface_module;
         Core::System& system;
     };
 };

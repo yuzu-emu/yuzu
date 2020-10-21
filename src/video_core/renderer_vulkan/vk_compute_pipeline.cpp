@@ -128,7 +128,7 @@ vk::Pipeline VKComputePipeline::CreatePipeline() const {
                 .pNext = nullptr,
                 .flags = 0,
                 .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-                .module = *shader_module,
+                .vkModule = *shader_module,
                 .pName = "main",
                 .pSpecializationInfo = nullptr,
             },

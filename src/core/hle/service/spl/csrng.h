@@ -10,7 +10,7 @@ namespace Service::SPL {
 
 class CSRNG final : public Module::Interface {
 public:
-    explicit CSRNG(std::shared_ptr<Module> module);
+    explicit CSRNG(std::shared_ptr<Module> interface_module);
     ~CSRNG() override;
 };
 

@@ -10,7 +10,8 @@ ErrorApplet::~ErrorApplet() = default;
 
 void DefaultErrorApplet::ShowError(ResultCode error, std::function<void()> finished) const {
     LOG_CRITICAL(Service_Fatal, "Application requested error display: {:04}-{:04} (raw={:08X})",
-                 static_cast<u32>(error.module.Value()), error.description.Value(), error.raw);
+                 static_cast<u32>(error.error_module.Value()), error.description.Value(),
+                 error.raw);
 }
 
 void DefaultErrorApplet::ShowErrorWithTimestamp(ResultCode error, std::chrono::seconds time,
@@ -18,7 +19,8 @@ void DefaultErrorApplet::ShowErrorWithTimestamp(ResultCode error, std::chrono::s
     LOG_CRITICAL(
         Service_Fatal,
         "Application requested error display: {:04X}-{:04X} (raw={:08X}) with timestamp={:016X}",
-        static_cast<u32>(error.module.Value()), error.description.Value(), error.raw, time.count());
+        static_cast<u32>(error.error_module.Value()), error.description.Value(), error.raw,
+        time.count());
 }
 
 void DefaultErrorApplet::ShowCustomErrorText(ResultCode error, std::string main_text,
@@ -26,7 +28,8 @@ void DefaultErrorApplet::ShowCustomErrorText(ResultCode error, std::string main_
                                              std::function<void()> finished) const {
     LOG_CRITICAL(Service_Fatal,
                  "Application requested custom error with error_code={:04X}-{:04X} (raw={:08X})",
-                 static_cast<u32>(error.module.Value()), error.description.Value(), error.raw);
+                 static_cast<u32>(error.error_module.Value()), error.description.Value(),
+                 error.raw);
     LOG_CRITICAL(Service_Fatal, "    Main Text: {}", main_text);
     LOG_CRITICAL(Service_Fatal, "    Detail Text: {}", detail_text);
 }

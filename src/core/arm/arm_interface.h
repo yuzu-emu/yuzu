@@ -162,7 +162,7 @@ public:
     virtual void PrepareReschedule() = 0;
 
     struct BacktraceEntry {
-        std::string module;
+        std::string mod;
         u64 address;
         u64 original_address;
         u64 offset;

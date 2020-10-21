@@ -116,13 +116,13 @@ enum class ErrorModule : u32 {
 union ResultCode {
     u32 raw;
 
-    BitField<0, 9, ErrorModule> module;
+    BitField<0, 9, ErrorModule> error_module;
     BitField<9, 13, u32> description;
 
     constexpr explicit ResultCode(u32 raw) : raw(raw) {}
 
     constexpr ResultCode(ErrorModule module_, u32 description_)
-        : raw(module.FormatValue(module_) | description.FormatValue(description_)) {}
+        : raw(error_module.FormatValue(module_) | description.FormatValue(description_)) {}
 
     constexpr bool IsSuccess() const {
         return raw == 0;

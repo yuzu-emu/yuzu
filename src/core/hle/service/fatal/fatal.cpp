@@ -20,8 +20,9 @@
 
 namespace Service::Fatal {
 
-Module::Interface::Interface(std::shared_ptr<Module> module, Core::System& system, const char* name)
-    : ServiceFramework(name), module(std::move(module)), system(system) {}
+Module::Interface::Interface(std::shared_ptr<Module> interface_module, Core::System& system,
+                             const char* name)
+    : ServiceFramework(name), interface_module(std::move(interface_module)), system(system) {}
 
 Module::Interface::~Interface() = default;
 
@@ -75,7 +76,7 @@ static void GenerateErrorReport(Core::System& system, ResultCode error_code,
         "Program entry point:             0x{:16X}\n"
         "\n",
         Common::g_scm_branch, Common::g_scm_desc, title_id, error_code.raw,
-        2000 + static_cast<u32>(error_code.module.Value()),
+        2000 + static_cast<u32>(error_code.error_module.Value()),
         static_cast<u32>(error_code.description.Value()), info.set_flags, info.program_entry_point);
     if (info.backtrace_size != 0x0) {
         crash_report += "Registers:\n";
@@ -166,9 +167,9 @@ void Module::Interface::ThrowFatalWithCpuContext(Kernel::HLERequestContext& ctx)
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
-    auto module = std::make_shared<Module>();
-    std::make_shared<Fatal_P>(module, system)->InstallAsService(service_manager);
-    std::make_shared<Fatal_U>(module, system)->InstallAsService(service_manager);
+    auto interface_module = std::make_shared<Module>();
+    std::make_shared<Fatal_P>(interface_module, system)->InstallAsService(service_manager);
+    std::make_shared<Fatal_U>(interface_module, system)->InstallAsService(service_manager);
 }
 
 } // namespace Service::Fatal

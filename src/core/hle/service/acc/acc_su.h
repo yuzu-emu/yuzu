@@ -10,8 +10,8 @@ namespace Service::Account {
 
 class ACC_SU final : public Module::Interface {
 public:
-    explicit ACC_SU(std::shared_ptr<Module> module, std::shared_ptr<ProfileManager> profile_manager,
-                    Core::System& system);
+    explicit ACC_SU(std::shared_ptr<Module> interface_module,
+                    std::shared_ptr<ProfileManager> profile_manager, Core::System& system);
     ~ACC_SU() override;
 };
 

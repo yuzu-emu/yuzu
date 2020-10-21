@@ -189,16 +189,16 @@ std::vector<Module> modules;
 } // Anonymous namespace
 
 void RegisterModule(std::string name, VAddr beg, VAddr end, bool add_elf_ext) {
-    Module module;
+    Module mod;
     if (add_elf_ext) {
-        Common::SplitPath(name, nullptr, &module.name, nullptr);
-        module.name += ".elf";
+        Common::SplitPath(name, nullptr, &mod.name, nullptr);
+        mod.name += ".elf";
     } else {
-        module.name = std::move(name);
+        mod.name = std::move(name);
     }
-    module.beg = beg;
-    module.end = end;
-    modules.push_back(std::move(module));
+    mod.beg = beg;
+    mod.end = end;
+    modules.push_back(std::move(mod));
 }
 
 static Kernel::Thread* FindThreadById(s64 id) {
@@ -671,10 +671,10 @@ static void HandleQuery() {
         std::string buffer;
         buffer += "l<?xml version=\"1.0\"?>";
         buffer += "<library-list>";
-        for (const auto& module : modules) {
+        for (const auto& mod : modules) {
             buffer +=
                 fmt::format(R"*("<library name = "{}"><segment address = "0x{:x}"/></library>)*",
-                            module.name, module.beg);
+                            mod.name, mod.beg);
         }
         buffer += "</library-list>";
         SendReply(buffer.c_str());

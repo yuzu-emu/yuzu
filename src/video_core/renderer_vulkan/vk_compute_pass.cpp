@@ -421,7 +421,7 @@ VKComputePass::VKComputePass(const VKDevice& device, VKDescriptorPool& descripto
     auto code_copy = std::make_unique<u32[]>(code_size / sizeof(u32) + 1);
     std::memcpy(code_copy.get(), code, code_size);
 
-    module = device.GetLogical().CreateShaderModule({
+    shader_module = device.GetLogical().CreateShaderModule({
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
@@ -439,7 +439,7 @@ VKComputePass::VKComputePass(const VKDevice& device, VKDescriptorPool& descripto
                 .pNext = nullptr,
                 .flags = 0,
                 .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-                .module = *module,
+                .vkModule = *shader_module,
                 .pName = "main",
                 .pSpecializationInfo = nullptr,
             },
