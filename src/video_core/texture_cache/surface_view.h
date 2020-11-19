@@ -20,8 +20,7 @@ struct ViewParams {
 
     std::size_t Hash() const;
 
-    bool operator==(const ViewParams& rhs) const;
-    bool operator!=(const ViewParams& rhs) const;
+    auto operator<=>(const ViewParams& rhs) const = default;
 
     bool IsLayered() const {
         switch (target) {

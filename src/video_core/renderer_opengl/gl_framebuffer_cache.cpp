@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <tuple>
 #include <unordered_map>
 #include <utility>
 
@@ -75,11 +74,6 @@ std::size_t FramebufferCacheKey::Hash() const noexcept {
     }
     hash ^= static_cast<std::size_t>(color_attachments) << 16;
     return hash;
-}
-
-bool FramebufferCacheKey::operator==(const FramebufferCacheKey& rhs) const noexcept {
-    return std::tie(colors, zeta, color_attachments) ==
-           std::tie(rhs.colors, rhs.zeta, rhs.color_attachments);
 }
 
 } // namespace OpenGL

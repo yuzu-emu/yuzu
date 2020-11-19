@@ -5,7 +5,6 @@
 #pragma once
 
 #include <list>
-#include <optional>
 #include <set>
 #include <variant>
 
@@ -30,13 +29,7 @@ struct Condition {
         return predicate == Pred::UnusedIndex && cc == ConditionCode::T;
     }
 
-    bool operator==(const Condition& other) const {
-        return std::tie(predicate, cc) == std::tie(other.predicate, other.cc);
-    }
-
-    bool operator!=(const Condition& other) const {
-        return !operator==(other);
-    }
+    auto operator<=>(const Condition&) const = default;
 };
 
 class SingleBranch {
@@ -47,14 +40,7 @@ public:
         : condition{condition}, address{address}, kill{kill}, is_sync{is_sync}, is_brk{is_brk},
           ignore{ignore} {}
 
-    bool operator==(const SingleBranch& b) const {
-        return std::tie(condition, address, kill, is_sync, is_brk, ignore) ==
-               std::tie(b.condition, b.address, b.kill, b.is_sync, b.is_brk, b.ignore);
-    }
-
-    bool operator!=(const SingleBranch& b) const {
-        return !operator==(b);
-    }
+    auto operator<=>(const SingleBranch&) const = default;
 
     Condition condition{};
     s32 address{exit_branch};

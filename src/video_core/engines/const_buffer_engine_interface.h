@@ -28,12 +28,8 @@ struct SamplerDescriptor {
         BitField<17, 7, Tegra::Texture::TextureFormat> format;
     };
 
-    bool operator==(const SamplerDescriptor& rhs) const noexcept {
-        return raw == rhs.raw;
-    }
-
-    bool operator!=(const SamplerDescriptor& rhs) const noexcept {
-        return !operator==(rhs);
+    auto operator<=>(const SamplerDescriptor& rhs) const noexcept {
+        return raw <=> rhs.raw;
     }
 
     static SamplerDescriptor FromTIC(const Tegra::Texture::TICEntry& tic) {

@@ -15,13 +15,4 @@ std::size_t ViewParams::Hash() const {
            (static_cast<std::size_t>(num_levels) << 32) ^ (static_cast<std::size_t>(target) << 36);
 }
 
-bool ViewParams::operator==(const ViewParams& rhs) const {
-    return std::tie(base_layer, num_layers, base_level, num_levels, target) ==
-           std::tie(rhs.base_layer, rhs.num_layers, rhs.base_level, rhs.num_levels, rhs.target);
-}
-
-bool ViewParams::operator!=(const ViewParams& rhs) const {
-    return !operator==(rhs);
-}
-
 } // namespace VideoCommon

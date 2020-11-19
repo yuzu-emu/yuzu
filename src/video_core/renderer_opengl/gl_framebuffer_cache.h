@@ -26,11 +26,7 @@ struct FramebufferCacheKey {
 
     std::size_t Hash() const noexcept;
 
-    bool operator==(const FramebufferCacheKey& rhs) const noexcept;
-
-    bool operator!=(const FramebufferCacheKey& rhs) const noexcept {
-        return !operator==(rhs);
-    }
+    auto operator<=>(const FramebufferCacheKey&) const noexcept = default;
 
     void SetAttachment(std::size_t index, u32 attachment) {
         color_attachments |= attachment << (BitsPerAttachment * index);

@@ -253,20 +253,20 @@ enum class MetaStackClass {
     Pbk,
 };
 
-class OperationNode;
-class ConditionalNode;
-class GprNode;
-class CustomVarNode;
-class ImmediateNode;
-class InternalFlagNode;
-class PredicateNode;
 class AbufNode;
 class CbufNode;
-class LmemNode;
-class PatchNode;
-class SmemNode;
-class GmemNode;
 class CommentNode;
+class ConditionalNode;
+class CustomVarNode;
+class GmemNode;
+class GprNode;
+class ImmediateNode;
+class InternalFlagNode;
+class LmemNode;
+class OperationNode;
+class PatchNode;
+class PredicateNode;
+class SmemNode;
 
 using NodeData = std::variant<OperationNode, ConditionalNode, GprNode, CustomVarNode, ImmediateNode,
                               InternalFlagNode, PredicateNode, AbufNode, PatchNode, CbufNode,
@@ -377,9 +377,7 @@ struct GlobalMemoryBase {
     u32 cbuf_index = 0;
     u32 cbuf_offset = 0;
 
-    bool operator<(const GlobalMemoryBase& rhs) const {
-        return std::tie(cbuf_index, cbuf_offset) < std::tie(rhs.cbuf_index, rhs.cbuf_offset);
-    }
+    auto operator<=>(const GlobalMemoryBase& rhs) const = default;
 };
 
 /// Parameters describing an arithmetic operation

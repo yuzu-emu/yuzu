@@ -505,17 +505,7 @@ struct IpaMode {
     IpaInterpMode interpolation_mode;
     IpaSampleMode sampling_mode;
 
-    bool operator==(const IpaMode& a) const {
-        return std::tie(interpolation_mode, sampling_mode) ==
-               std::tie(a.interpolation_mode, a.sampling_mode);
-    }
-    bool operator!=(const IpaMode& a) const {
-        return !operator==(a);
-    }
-    bool operator<(const IpaMode& a) const {
-        return std::tie(interpolation_mode, sampling_mode) <
-               std::tie(a.interpolation_mode, a.sampling_mode);
-    }
+    auto operator<=>(const IpaMode&) const = default;
 };
 
 enum class SystemVariable : u64 {
