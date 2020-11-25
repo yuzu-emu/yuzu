@@ -1485,9 +1485,8 @@ void ARBDecompiler::Exit() {
     }
 
     const auto safe_get_register = [this](u32 reg) -> std::string {
-        // TODO(Rodrigo): Replace with contains once C++20 releases
         const auto& used_registers = ir.GetRegisters();
-        if (used_registers.find(reg) != used_registers.end()) {
+        if (used_registers.contains(reg)) {
             return fmt::format("R{}.x", reg);
         }
         return "{0, 0, 0, 0}.x";

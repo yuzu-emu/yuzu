@@ -2271,8 +2271,7 @@ private:
         }
         const auto& used_registers = ir.GetRegisters();
         const auto SafeGetRegister = [&](u32 reg) -> Expression {
-            // TODO(Rodrigo): Replace with contains once C++20 releases
-            if (used_registers.find(reg) != used_registers.end()) {
+            if (used_registers.contains(reg)) {
                 return {GetRegister(reg), Type::Float};
             }
             return {"0.0f", Type::Float};
