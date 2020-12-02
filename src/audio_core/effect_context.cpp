@@ -150,6 +150,14 @@ void EffectBiquadFilter::UpdateForCommandGeneration() {
     GetParams().status = ParameterStatus::Updated;
 }
 
+const EffectBiquadFilter::StateType& EffectBiquadFilter::GetState() const {
+    return state;
+}
+
+EffectBiquadFilter::StateType& EffectBiquadFilter::GetState() {
+    return state;
+}
+
 EffectAuxInfo::EffectAuxInfo() : EffectGeneric::EffectGeneric(EffectType::Aux) {}
 EffectAuxInfo::~EffectAuxInfo() = default;
 

@@ -243,11 +243,18 @@ private:
 
 class EffectBiquadFilter : public EffectGeneric<BiquadFilterParams> {
 public:
+    using StateType = std::array<std::array<s64, 2>, AudioCommon::MAX_CHANNEL_COUNT>;
     explicit EffectBiquadFilter();
     ~EffectBiquadFilter() override;
 
     void Update(EffectInfo::InParams& in_params) override;
     void UpdateForCommandGeneration() override;
+
+    const StateType& GetState() const;
+    StateType& GetState();
+
+private:
+    StateType state{};
 };
 
 class EffectAuxInfo : public EffectGeneric<AuxInfo> {
