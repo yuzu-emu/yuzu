@@ -15,7 +15,6 @@
 #include "common/common_types.h"
 #include "core/core.h"
 #include "core/hle/service/acc/profile_manager.h"
-#include "ui_main.h"
 #include "yuzu/compatibility_list.h"
 #include "yuzu/hotkeys.h"
 
@@ -57,6 +56,10 @@ class InputSubsystem;
 
 namespace Service::AM::Applets {
 enum class WebExitReason : u32;
+}
+
+namespace Ui {
+class MainWindow;
 }
 
 enum class EmulatedDirectoryTarget {
@@ -270,7 +273,7 @@ private:
     void LoadTranslation();
     void OpenPerGameConfiguration(u64 title_id, const std::string& file_name);
 
-    Ui::MainWindow ui;
+    std::unique_ptr<Ui::MainWindow> ui;
 
     std::unique_ptr<DiscordRPC::DiscordInterface> discord_rpc;
     std::shared_ptr<InputCommon::InputSubsystem> input_subsystem;

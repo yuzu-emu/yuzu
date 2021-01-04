@@ -12,7 +12,8 @@
 #include "ui_configure_cpu.h"
 #include "yuzu/configuration/configure_cpu.h"
 
-ConfigureCpu::ConfigureCpu(QWidget* parent) : QWidget(parent), ui(new Ui::ConfigureCpu) {
+ConfigureCpu::ConfigureCpu(QWidget* parent)
+    : QWidget(parent), ui(std::make_unique<Ui::ConfigureCpu>()) {
     ui->setupUi(this);
 
     SetConfiguration();

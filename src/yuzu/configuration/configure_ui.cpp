@@ -30,7 +30,8 @@ constexpr std::array row_text_names{
 };
 } // Anonymous namespace
 
-ConfigureUi::ConfigureUi(QWidget* parent) : QWidget(parent), ui(new Ui::ConfigureUi) {
+ConfigureUi::ConfigureUi(QWidget* parent)
+    : QWidget(parent), ui(std::make_unique<Ui::ConfigureUi>()) {
     ui->setupUi(this);
 
     InitializeLanguageComboBox();

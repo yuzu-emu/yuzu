@@ -18,7 +18,8 @@
 #include "yuzu/configuration/configuration_shared.h"
 #include "yuzu/configuration/configure_system.h"
 
-ConfigureSystem::ConfigureSystem(QWidget* parent) : QWidget(parent), ui(new Ui::ConfigureSystem) {
+ConfigureSystem::ConfigureSystem(QWidget* parent)
+    : QWidget(parent), ui(std::make_unique<Ui::ConfigureSystem>()) {
     ui->setupUi(this);
     connect(ui->button_regenerate_console_id, &QPushButton::clicked, this,
             &ConfigureSystem::RefreshConsoleID);

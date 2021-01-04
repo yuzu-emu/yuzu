@@ -8,7 +8,8 @@
 #include "ui_aboutdialog.h"
 #include "yuzu/about_dialog.h"
 
-AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent), ui(new Ui::AboutDialog) {
+AboutDialog::AboutDialog(QWidget* parent)
+    : QDialog(parent), ui(std::make_unique<Ui::AboutDialog>()) {
     const auto build_id = std::string(Common::g_build_id);
     const auto fmt = std::string(Common::g_title_bar_format_idle);
     const auto yuzu_build_version =

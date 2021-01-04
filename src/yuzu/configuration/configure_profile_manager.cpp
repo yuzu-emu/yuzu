@@ -76,7 +76,7 @@ QString GetProfileUsernameFromUser(QWidget* parent, const QString& description_t
 } // Anonymous namespace
 
 ConfigureProfileManager ::ConfigureProfileManager(QWidget* parent)
-    : QWidget(parent), ui(new Ui::ConfigureProfileManager),
+    : QWidget(parent), ui(std::make_unique<Ui::ConfigureProfileManager>()),
       profile_manager(std::make_unique<Service::Account::ProfileManager>()) {
     ui->setupUi(this);
 

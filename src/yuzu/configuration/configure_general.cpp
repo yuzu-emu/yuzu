@@ -12,7 +12,7 @@
 #include "yuzu/uisettings.h"
 
 ConfigureGeneral::ConfigureGeneral(QWidget* parent)
-    : QWidget(parent), ui(new Ui::ConfigureGeneral) {
+    : QWidget(parent), ui(std::make_unique<Ui::ConfigureGeneral>()) {
     ui->setupUi(this);
 
     SetupPerGameUI();

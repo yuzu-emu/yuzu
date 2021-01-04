@@ -15,7 +15,7 @@
 
 ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry,
                                  InputCommon::InputSubsystem* input_subsystem)
-    : QDialog(parent), ui(new Ui::ConfigureDialog), registry(registry) {
+    : QDialog(parent), ui(std::make_unique<Ui::ConfigureDialog>()), registry(registry) {
     Settings::SetConfiguringGlobal(true);
 
     ui->setupUi(this);

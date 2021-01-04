@@ -27,7 +27,7 @@
 #include "yuzu/util/util.h"
 
 ConfigurePerGameAddons::ConfigurePerGameAddons(QWidget* parent)
-    : QWidget(parent), ui(new Ui::ConfigurePerGameAddons) {
+    : QWidget(parent), ui(std::make_unique<Ui::ConfigurePerGameAddons>()) {
     ui->setupUi(this);
 
     layout = new QVBoxLayout;

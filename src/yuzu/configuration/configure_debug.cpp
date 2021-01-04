@@ -14,7 +14,8 @@
 #include "yuzu/debugger/console.h"
 #include "yuzu/uisettings.h"
 
-ConfigureDebug::ConfigureDebug(QWidget* parent) : QWidget(parent), ui(new Ui::ConfigureDebug) {
+ConfigureDebug::ConfigureDebug(QWidget* parent)
+    : QWidget(parent), ui(std::make_unique<Ui::ConfigureDebug>()) {
     ui->setupUi(this);
     SetConfiguration();
 

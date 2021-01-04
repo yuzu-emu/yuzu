@@ -9,7 +9,7 @@
 #include "yuzu/configuration/configure_graphics_advanced.h"
 
 ConfigureGraphicsAdvanced::ConfigureGraphicsAdvanced(QWidget* parent)
-    : QWidget(parent), ui(new Ui::ConfigureGraphicsAdvanced) {
+    : QWidget(parent), ui(std::make_unique<Ui::ConfigureGraphicsAdvanced>()) {
 
     ui->setupUi(this);
 

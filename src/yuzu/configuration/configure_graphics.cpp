@@ -16,7 +16,7 @@
 #include "yuzu/configuration/configure_graphics.h"
 
 ConfigureGraphics::ConfigureGraphics(QWidget* parent)
-    : QWidget(parent), ui(new Ui::ConfigureGraphics) {
+    : QWidget(parent), ui(std::make_unique<Ui::ConfigureGraphics>()) {
     vulkan_device = Settings::values.vulkan_device.GetValue();
     RetrieveVulkanDevices();
 
