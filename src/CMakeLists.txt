@@ -142,6 +142,7 @@ add_subdirectory(core)
 add_subdirectory(audio_core)
 add_subdirectory(video_core)
 add_subdirectory(input_common)
+add_subdirectory(shader_recompiler)
 add_subdirectory(tests)
 
 if (ENABLE_SDL2)
