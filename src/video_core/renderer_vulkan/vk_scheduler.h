@@ -173,7 +173,7 @@ private:
         VkPipeline graphics_pipeline = nullptr;
     };
 
-    void WorkerThread();
+    void WorkerThread(std::stop_token stop_token);
 
     void SubmitExecution(VkSemaphore semaphore);
 
@@ -196,7 +196,7 @@ private:
     vk::CommandBuffer current_cmdbuf;
 
     std::unique_ptr<CommandChunk> chunk;
-    std::thread worker_thread;
+    std::jthread worker_thread;
 
     State state;
 
@@ -207,8 +207,7 @@ private:
     Common::SPSCQueue<std::unique_ptr<CommandChunk>> chunk_queue;
     Common::SPSCQueue<std::unique_ptr<CommandChunk>> chunk_reserve;
     std::mutex mutex;
-    std::condition_variable cv;
-    bool quit = false;
+    std::condition_variable_any cv;
 };
 
 } // namespace Vulkan

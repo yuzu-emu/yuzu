@@ -43,14 +43,10 @@ VKScheduler::VKScheduler(const Device& device_, StateTracker& state_tracker_)
       command_pool{std::make_unique<CommandPool>(*master_semaphore, device)} {
     AcquireNewChunk();
     AllocateNewContext();
-    worker_thread = std::thread(&VKScheduler::WorkerThread, this);
+    worker_thread = std::jthread([this](std::stop_token stop_token) { WorkerThread(stop_token); });
 }
 
-VKScheduler::~VKScheduler() {
-    quit = true;
-    cv.notify_all();
-    worker_thread.join();
-}
+VKScheduler::~VKScheduler() = default;
 
 void VKScheduler::Flush(VkSemaphore semaphore) {
     SubmitExecution(semaphore);
@@ -134,19 +130,19 @@ void VKScheduler::BindGraphicsPipeline(VkPipeline pipeline) {
     });
 }
 
-void VKScheduler::WorkerThread() {
+void VKScheduler::WorkerThread(std::stop_token stop_token) {
     Common::SetCurrentThreadPriority(Common::ThreadPriority::High);
     std::unique_lock lock{mutex};
-    do {
-        cv.wait(lock, [this] { return !chunk_queue.Empty() || quit; });
-        if (quit) {
-            continue;
+    for (;;) {
+        cv.wait(lock, stop_token, [this] { return !chunk_queue.Empty(); });
+        if (stop_token.stop_requested()) {
+            break;
         }
-        auto extracted_chunk = std::move(chunk_queue.Front());
-        chunk_queue.Pop();
+        std::unique_ptr<CommandChunk> extracted_chunk;
+        void(chunk_queue.Pop(extracted_chunk));
         extracted_chunk->ExecuteAll(current_cmdbuf);
         chunk_reserve.Push(std::move(extracted_chunk));
-    } while (!quit);
+    }
 }
 
 void VKScheduler::SubmitExecution(VkSemaphore semaphore) {
@@ -265,12 +261,9 @@ void VKScheduler::EndRenderPass() {
 }
 
 void VKScheduler::AcquireNewChunk() {
-    if (chunk_reserve.Empty()) {
+    if (!chunk_reserve.Pop(chunk)) {
         chunk = std::make_unique<CommandChunk>();
-        return;
     }
-    chunk = std::move(chunk_reserve.Front());
-    chunk_reserve.Pop();
 }
 
 } // namespace Vulkan
