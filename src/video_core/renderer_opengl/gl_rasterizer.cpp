@@ -172,11 +172,7 @@ RasterizerOpenGL::RasterizerOpenGL(Core::Frontend::EmuWindow& emu_window_, Tegra
       shader_cache(*this, emu_window_, gpu, maxwell3d, kepler_compute, gpu_memory, device),
       query_cache(*this, maxwell3d, gpu_memory),
       fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache),
-      async_shaders(emu_window_) {
-    if (device.UseAsynchronousShaders()) {
-        async_shaders.AllocateWorkers();
-    }
-}
+      async_shaders(emu_window_, device.UseAsynchronousShaders()) {}
 
 RasterizerOpenGL::~RasterizerOpenGL() = default;
 

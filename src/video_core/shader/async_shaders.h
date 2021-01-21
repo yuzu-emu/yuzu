@@ -57,17 +57,8 @@ public:
         Tegra::Engines::ShaderType shader_type;
     };
 
-    explicit AsyncShaders(Core::Frontend::EmuWindow& emu_window_);
+    explicit AsyncShaders(Core::Frontend::EmuWindow& emu_window_, bool allocate_workers);
     ~AsyncShaders();
-
-    /// Start up shader worker threads
-    void AllocateWorkers();
-
-    /// Clear the shader queue and kill all worker threads
-    void FreeWorkers();
-
-    // Force end all threads
-    void KillWorkers();
 
     /// Check to see if any shaders have actually been compiled
     [[nodiscard]] bool HasCompletedWork() const;
@@ -94,7 +85,7 @@ public:
                            u32 num_color_buffers);
 
 private:
-    void ShaderCompilerThread(Core::Frontend::GraphicsContext* context);
+    void ShaderCompilerThread(std::stop_token stop_token, Core::Frontend::GraphicsContext* context);
 
     /// Check our worker queue to see if we have any work queued already
     [[nodiscard]] bool HasWorkQueued() const;
@@ -124,12 +115,11 @@ private:
         u32 num_color_buffers;
     };
 
-    std::condition_variable cv;
+    std::condition_variable_any cv;
     mutable std::mutex queue_mutex;
     mutable std::shared_mutex completed_mutex;
-    std::atomic<bool> is_thread_exiting{};
     std::vector<std::unique_ptr<Core::Frontend::GraphicsContext>> context_list;
-    std::vector<std::thread> worker_threads;
+    std::vector<std::jthread> worker_threads;
     std::queue<WorkerParams> pending_queue;
     std::vector<Result> finished_work;
     Core::Frontend::EmuWindow& emu_window;
