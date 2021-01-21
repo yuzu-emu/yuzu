@@ -295,9 +295,7 @@ struct System::Impl {
         is_powered_on = false;
         exit_lock = false;
 
-        if (gpu_core) {
-            gpu_core->WaitIdle();
-        }
+        gpu_core.reset();
 
         // Shutdown emulation session
         services.reset();
@@ -314,7 +312,6 @@ struct System::Impl {
 
         // Close app loader
         app_loader.reset();
-        gpu_core.reset();
         perf_stats.reset();
 
         // Clear all applets
