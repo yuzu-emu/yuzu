@@ -30,6 +30,11 @@ static void RemovePseudoInstruction(IR::Inst*& inst, IR::Opcode expected_opcode)
 
 bool Inst::MayHaveSideEffects() const noexcept {
     switch (op) {
+    case Opcode::Branch:
+    case Opcode::BranchConditional:
+    case Opcode::Exit:
+    case Opcode::Return:
+    case Opcode::Unreachable:
     case Opcode::SetAttribute:
     case Opcode::SetAttributeIndexed:
     case Opcode::WriteGlobalU8:
@@ -113,6 +118,17 @@ void Inst::SetArg(size_t index, Value value) {
     args[index] = value;
 }
 
+std::span<const std::pair<Block*, Value>> Inst::PhiOperands() const noexcept {
+    return phi_operands;
+}
+
+void Inst::AddPhiOperand(Block* predecessor, const Value& value) {
+    if (!value.IsImmediate()) {
+        Use(value);
+    }
+    phi_operands.emplace_back(predecessor, value);
+}
+
 void Inst::Invalidate() {
     ClearArgs();
     op = Opcode::Void;
@@ -125,6 +141,12 @@ void Inst::ClearArgs() {
         }
         value = {};
     }
+    for (auto& [phi_block, phi_op] : phi_operands) {
+        if (!phi_op.IsImmediate()) {
+            UndoUse(phi_op);
+        }
+    }
+    phi_operands.clear();
 }
 
 void Inst::ReplaceUsesWith(Value replacement) {

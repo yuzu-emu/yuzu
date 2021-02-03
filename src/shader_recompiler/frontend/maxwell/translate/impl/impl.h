@@ -208,7 +208,7 @@ public:
     void P2R_reg(u64 insn);
     void P2R_cbuf(u64 insn);
     void P2R_imm(u64 insn);
-    void PBK(u64 insn);
+    void PBK();
     void PCNT(u64 insn);
     void PEXIT(u64 insn);
     void PIXLD(u64 insn);
@@ -252,7 +252,7 @@ public:
     void SHR_reg(u64 insn);
     void SHR_cbuf(u64 insn);
     void SHR_imm(u64 insn);
-    void SSY(u64 insn);
+    void SSY();
     void ST(u64 insn);
     void STG(u64 insn);
     void STL(u64 insn);

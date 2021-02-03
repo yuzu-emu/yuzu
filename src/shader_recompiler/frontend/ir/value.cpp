@@ -115,6 +115,43 @@ u64 Value::U64() const {
     return imm_u64;
 }
 
+bool Value::operator==(const Value& other) const {
+    if (type != other.type) {
+        return false;
+    }
+    switch (type) {
+    case Type::Void:
+        return true;
+    case Type::Opaque:
+        return inst == other.inst;
+    case Type::Label:
+        return label == other.label;
+    case Type::Reg:
+        return reg == other.reg;
+    case Type::Pred:
+        return pred == other.pred;
+    case Type::Attribute:
+        return attribute == other.attribute;
+    case Type::U1:
+        return imm_u1 == other.imm_u1;
+    case Type::U8:
+        return imm_u8 == other.imm_u8;
+    case Type::U16:
+        return imm_u16 == other.imm_u16;
+    case Type::U32:
+        return imm_u32 == other.imm_u32;
+    case Type::U64:
+        return imm_u64 == other.imm_u64;
+    case Type::ZSCO:
+        throw NotImplementedException("ZSCO comparison");
+    }
+    throw LogicError("Invalid type {}", type);
+}
+
+bool Value::operator!=(const Value& other) const {
+    return !operator==(other);
+}
+
 void Value::ValidateAccess(IR::Type expected) const {
     if (type != expected) {
         throw LogicError("Reading {} out of {}", expected, type);

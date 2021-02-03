@@ -28,7 +28,6 @@ void IdentityRemovalPass(IR::Block& block) {
             ++inst;
         }
     }
-
     for (IR::Inst* const inst : to_invalidate) {
         inst->Invalidate();
     }

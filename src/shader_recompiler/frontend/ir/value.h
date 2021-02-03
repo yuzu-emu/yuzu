@@ -48,6 +48,9 @@ public:
     [[nodiscard]] u32 U32() const;
     [[nodiscard]] u64 U64() const;
 
+    [[nodiscard]] bool operator==(const Value& other) const;
+    [[nodiscard]] bool operator!=(const Value& other) const;
+
 private:
     void ValidateAccess(IR::Type expected) const;
 

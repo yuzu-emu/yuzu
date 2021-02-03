@@ -10,6 +10,13 @@ namespace Shader::IR {
 
 enum class Pred { P0, P1, P2, P3, P4, P5, P6, PT };
 
+constexpr size_t NUM_USER_PREDS = 6;
+constexpr size_t NUM_PREDS = 7;
+
+[[nodiscard]] constexpr size_t PredIndex(Pred pred) noexcept {
+    return static_cast<size_t>(pred);
+}
+
 } // namespace Shader::IR
 
 template <>

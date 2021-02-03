@@ -11,6 +11,7 @@
 
 namespace Shader::Maxwell {
 
+/// Emit termination instructions and collect immediate predecessors
 void EmitTerminationCode(const Flow::Block& flow_block, std::span<IR::Block* const> block_map);
 
 } // namespace Shader::Maxwell

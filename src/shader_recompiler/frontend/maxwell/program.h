@@ -4,13 +4,16 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
+#include <boost/container/small_vector.hpp>
 #include <boost/pool/pool_alloc.hpp>
 
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
+#include "shader_recompiler/frontend/ir/function.h"
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
 
 namespace Shader::Maxwell {
@@ -22,16 +25,10 @@ public:
     explicit Program(Environment& env, const Flow::CFG& cfg);
 
 private:
-    struct Function {
-        ~Function();
-
-        std::vector<IR::Block*> blocks;
-    };
-
     boost::pool_allocator<IR::Block, boost::default_user_allocator_new_delete,
                           boost::details::pool::null_mutex>
         block_alloc_pool;
-    std::vector<Function> functions;
+    boost::container::small_vector<IR::Function, 1> functions;
 };
 
 [[nodiscard]] std::string DumpProgram(const Program& program);

@@ -47,12 +47,19 @@ static IR::U1 GetCond(IR::Condition cond, IR::IREmitter& ir) {
 
 static void EmitBranch(const Flow::Block& flow_block, std::span<IR::Block* const> block_map,
                        IR::IREmitter& ir) {
+    const auto add_immediate_predecessor = [&](Flow::BlockId label) {
+        block_map[label]->AddImmediatePredecessor(&ir.block);
+    };
     if (flow_block.cond == true) {
+        add_immediate_predecessor(flow_block.branch_true);
         return ir.Branch(block_map[flow_block.branch_true]);
     }
     if (flow_block.cond == false) {
+        add_immediate_predecessor(flow_block.branch_false);
         return ir.Branch(block_map[flow_block.branch_false]);
     }
+    add_immediate_predecessor(flow_block.branch_true);
+    add_immediate_predecessor(flow_block.branch_false);
     return ir.BranchConditional(GetCond(flow_block.cond, ir), block_map[flow_block.branch_true],
                                 block_map[flow_block.branch_false]);
 }
