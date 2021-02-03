@@ -17,7 +17,6 @@ void Invoke(Func&& func, IR::Function& function) {
 }
 
 void DeadCodeEliminationPass(IR::Block& block);
-void GetSetElimination(IR::Block& block);
 void IdentityRemovalPass(IR::Block& block);
 void SsaRewritePass(IR::Function& function);
 void VerificationPass(const IR::Block& block);

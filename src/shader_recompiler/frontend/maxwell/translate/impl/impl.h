@@ -46,7 +46,7 @@ public:
     void DADD_reg(u64 insn);
     void DADD_cbuf(u64 insn);
     void DADD_imm(u64 insn);
-    void DEPBAR(u64 insn);
+    void DEPBAR();
     void DFMA_reg(u64 insn);
     void DFMA_rc(u64 insn);
     void DFMA_cr(u64 insn);
@@ -298,9 +298,14 @@ public:
     [[nodiscard]] IR::U32 X(IR::Reg reg);
     void X(IR::Reg dest_reg, const IR::U32& value);
 
+    [[nodiscard]] IR::U32 GetReg20(u64 insn);
+    [[nodiscard]] IR::U32 GetReg39(u64 insn);
+
     [[nodiscard]] IR::U32 GetCbuf(u64 insn);
 
-    [[nodiscard]] IR::U32 GetImm(u64 insn);
+    [[nodiscard]] IR::U32 GetImm20(u64 insn);
+
+    [[nodiscard]] IR::U32 GetImm32(u64 insn);
 
     void SetZFlag(const IR::U1& value);
     void SetSFlag(const IR::U1& value);

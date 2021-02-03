@@ -129,6 +129,58 @@ void IREmitter::SetAttribute(IR::Attribute attribute, const U32& value) {
     Inst(Opcode::SetAttribute, attribute, value);
 }
 
+U32 IREmitter::WorkgroupIdX() {
+    return Inst<U32>(Opcode::WorkgroupIdX);
+}
+
+U32 IREmitter::WorkgroupIdY() {
+    return Inst<U32>(Opcode::WorkgroupIdY);
+}
+
+U32 IREmitter::WorkgroupIdZ() {
+    return Inst<U32>(Opcode::WorkgroupIdZ);
+}
+
+U32 IREmitter::LocalInvocationIdX() {
+    return Inst<U32>(Opcode::LocalInvocationIdX);
+}
+
+U32 IREmitter::LocalInvocationIdY() {
+    return Inst<U32>(Opcode::LocalInvocationIdY);
+}
+
+U32 IREmitter::LocalInvocationIdZ() {
+    return Inst<U32>(Opcode::LocalInvocationIdZ);
+}
+
+U32 IREmitter::LoadGlobalU8(const U64& address) {
+    return Inst<U32>(Opcode::LoadGlobalU8, address);
+}
+
+U32 IREmitter::LoadGlobalS8(const U64& address) {
+    return Inst<U32>(Opcode::LoadGlobalS8, address);
+}
+
+U32 IREmitter::LoadGlobalU16(const U64& address) {
+    return Inst<U32>(Opcode::LoadGlobalU16, address);
+}
+
+U32 IREmitter::LoadGlobalS16(const U64& address) {
+    return Inst<U32>(Opcode::LoadGlobalS16, address);
+}
+
+U32 IREmitter::LoadGlobal32(const U64& address) {
+    return Inst<U32>(Opcode::LoadGlobal32, address);
+}
+
+Value IREmitter::LoadGlobal64(const U64& address) {
+    return Inst<Value>(Opcode::LoadGlobal64, address);
+}
+
+Value IREmitter::LoadGlobal128(const U64& address) {
+    return Inst<Value>(Opcode::LoadGlobal128, address);
+}
+
 void IREmitter::WriteGlobalU8(const U64& address, const U32& value) {
     Inst(Opcode::WriteGlobalU8, address, value);
 }
@@ -173,17 +225,17 @@ U1 IREmitter::GetOverflowFromOp(const Value& op) {
     return Inst<U1>(Opcode::GetOverflowFromOp, op);
 }
 
-U16U32U64 IREmitter::FPAdd(const U16U32U64& a, const U16U32U64& b) {
+U16U32U64 IREmitter::FPAdd(const U16U32U64& a, const U16U32U64& b, FpControl control) {
     if (a.Type() != a.Type()) {
         throw InvalidArgument("Mismatching types {} and {}", a.Type(), b.Type());
     }
     switch (a.Type()) {
     case Type::U16:
-        return Inst<U16>(Opcode::FPAdd16, a, b);
+        return Inst<U16>(Opcode::FPAdd16, Flags{control}, a, b);
     case Type::U32:
-        return Inst<U32>(Opcode::FPAdd32, a, b);
+        return Inst<U32>(Opcode::FPAdd32, Flags{control}, a, b);
     case Type::U64:
-        return Inst<U64>(Opcode::FPAdd64, a, b);
+        return Inst<U64>(Opcode::FPAdd64, Flags{control}, a, b);
     default:
         ThrowInvalidType(a.Type());
     }
@@ -191,14 +243,14 @@ U16U32U64 IREmitter::FPAdd(const U16U32U64& a, const U16U32U64& b) {
 
 Value IREmitter::CompositeConstruct(const UAny& e1, const UAny& e2) {
     if (e1.Type() != e2.Type()) {
-        throw InvalidArgument("Incompatible types {} {}", e1.Type(), e2.Type());
+        throw InvalidArgument("Mismatching types {} and {}", e1.Type(), e2.Type());
     }
     return Inst(Opcode::CompositeConstruct2, e1, e2);
 }
 
 Value IREmitter::CompositeConstruct(const UAny& e1, const UAny& e2, const UAny& e3) {
     if (e1.Type() != e2.Type() || e1.Type() != e3.Type()) {
-        throw InvalidArgument("Incompatible types {} {} {}", e1.Type(), e2.Type(), e3.Type());
+        throw InvalidArgument("Mismatching types {}, {}, and {}", e1.Type(), e2.Type(), e3.Type());
     }
     return Inst(Opcode::CompositeConstruct3, e1, e2, e3);
 }
@@ -206,8 +258,8 @@ Value IREmitter::CompositeConstruct(const UAny& e1, const UAny& e2, const UAny& 
 Value IREmitter::CompositeConstruct(const UAny& e1, const UAny& e2, const UAny& e3,
                                     const UAny& e4) {
     if (e1.Type() != e2.Type() || e1.Type() != e3.Type() || e1.Type() != e4.Type()) {
-        throw InvalidArgument("Incompatible types {} {} {}", e1.Type(), e2.Type(), e3.Type(),
-                              e4.Type());
+        throw InvalidArgument("Mismatching types {}, {}, {}, and {}", e1.Type(), e2.Type(),
+                              e3.Type(), e4.Type());
     }
     return Inst(Opcode::CompositeConstruct4, e1, e2, e3, e4);
 }
@@ -217,6 +269,24 @@ UAny IREmitter::CompositeExtract(const Value& vector, size_t element) {
         throw InvalidArgument("Out of bounds element {}", element);
     }
     return Inst<UAny>(Opcode::CompositeExtract, vector, Imm32(static_cast<u32>(element)));
+}
+
+UAny IREmitter::Select(const U1& condition, const UAny& true_value, const UAny& false_value) {
+    if (true_value.Type() != false_value.Type()) {
+        throw InvalidArgument("Mismatching types {} and {}", true_value.Type(), false_value.Type());
+    }
+    switch (true_value.Type()) {
+    case Type::U8:
+        return Inst<UAny>(Opcode::Select8, condition, true_value, false_value);
+    case Type::U16:
+        return Inst<UAny>(Opcode::Select16, condition, true_value, false_value);
+    case Type::U32:
+        return Inst<UAny>(Opcode::Select32, condition, true_value, false_value);
+    case Type::U64:
+        return Inst<UAny>(Opcode::Select64, condition, true_value, false_value);
+    default:
+        throw InvalidArgument("Invalid type {}", true_value.Type());
+    }
 }
 
 U64 IREmitter::PackUint2x32(const Value& vector) {
@@ -243,17 +313,34 @@ Value IREmitter::UnpackDouble2x32(const U64& value) {
     return Inst<Value>(Opcode::UnpackDouble2x32, value);
 }
 
-U16U32U64 IREmitter::FPMul(const U16U32U64& a, const U16U32U64& b) {
+U16U32U64 IREmitter::FPMul(const U16U32U64& a, const U16U32U64& b, FpControl control) {
     if (a.Type() != b.Type()) {
         throw InvalidArgument("Mismatching types {} and {}", a.Type(), b.Type());
     }
     switch (a.Type()) {
     case Type::U16:
-        return Inst<U16>(Opcode::FPMul16, a, b);
+        return Inst<U16>(Opcode::FPMul16, Flags{control}, a, b);
     case Type::U32:
-        return Inst<U32>(Opcode::FPMul32, a, b);
+        return Inst<U32>(Opcode::FPMul32, Flags{control}, a, b);
     case Type::U64:
-        return Inst<U64>(Opcode::FPMul64, a, b);
+        return Inst<U64>(Opcode::FPMul64, Flags{control}, a, b);
+    default:
+        ThrowInvalidType(a.Type());
+    }
+}
+
+U16U32U64 IREmitter::FPFma(const U16U32U64& a, const U16U32U64& b, const U16U32U64& c,
+                           FpControl control) {
+    if (a.Type() != b.Type() || a.Type() != c.Type()) {
+        throw InvalidArgument("Mismatching types {}, {}, and {}", a.Type(), b.Type(), c.Type());
+    }
+    switch (a.Type()) {
+    case Type::U16:
+        return Inst<U16>(Opcode::FPFma16, Flags{control}, a, b, c);
+    case Type::U32:
+        return Inst<U32>(Opcode::FPFma32, Flags{control}, a, b, c);
+    case Type::U64:
+        return Inst<U64>(Opcode::FPFma64, Flags{control}, a, b, c);
     default:
         ThrowInvalidType(a.Type());
     }
@@ -403,12 +490,101 @@ U16U32U64 IREmitter::FPTrunc(const U16U32U64& value) {
     }
 }
 
+U32U64 IREmitter::IAdd(const U32U64& a, const U32U64& b) {
+    if (a.Type() != b.Type()) {
+        throw InvalidArgument("Mismatching types {} and {}", a.Type(), b.Type());
+    }
+    switch (a.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::IAdd32, a, b);
+    case Type::U64:
+        return Inst<U64>(Opcode::IAdd64, a, b);
+    default:
+        ThrowInvalidType(a.Type());
+    }
+}
+
+U32 IREmitter::IMul(const U32& a, const U32& b) {
+    return Inst<U32>(Opcode::IMul32, a, b);
+}
+
+U32 IREmitter::INeg(const U32& value) {
+    return Inst<U32>(Opcode::INeg32, value);
+}
+
+U32 IREmitter::IAbs(const U32& value) {
+    return Inst<U32>(Opcode::IAbs32, value);
+}
+
+U32 IREmitter::ShiftLeftLogical(const U32& base, const U32& shift) {
+    return Inst<U32>(Opcode::ShiftLeftLogical32, base, shift);
+}
+
+U32 IREmitter::ShiftRightLogical(const U32& base, const U32& shift) {
+    return Inst<U32>(Opcode::ShiftRightLogical32, base, shift);
+}
+
+U32 IREmitter::ShiftRightArithmetic(const U32& base, const U32& shift) {
+    return Inst<U32>(Opcode::ShiftRightArithmetic32, base, shift);
+}
+
+U32 IREmitter::BitwiseAnd(const U32& a, const U32& b) {
+    return Inst<U32>(Opcode::BitwiseAnd32, a, b);
+}
+
+U32 IREmitter::BitwiseOr(const U32& a, const U32& b) {
+    return Inst<U32>(Opcode::BitwiseOr32, a, b);
+}
+
+U32 IREmitter::BitwiseXor(const U32& a, const U32& b) {
+    return Inst<U32>(Opcode::BitwiseXor32, a, b);
+}
+
+U32 IREmitter::BitFieldInsert(const U32& base, const U32& insert, const U32& offset,
+                              const U32& count) {
+    return Inst<U32>(Opcode::BitFieldInsert, base, insert, offset, count);
+}
+
+U32 IREmitter::BitFieldExtract(const U32& base, const U32& offset, const U32& count,
+                               bool is_signed) {
+    return Inst<U32>(is_signed ? Opcode::BitFieldSExtract : Opcode::BitFieldUExtract, base, offset,
+                     count);
+}
+
+U1 IREmitter::ILessThan(const U32& lhs, const U32& rhs, bool is_signed) {
+    return Inst<U1>(is_signed ? Opcode::SLessThan : Opcode::ULessThan, lhs, rhs);
+}
+
+U1 IREmitter::IEqual(const U32& lhs, const U32& rhs) {
+    return Inst<U1>(Opcode::IEqual, lhs, rhs);
+}
+
+U1 IREmitter::ILessThanEqual(const U32& lhs, const U32& rhs, bool is_signed) {
+    return Inst<U1>(is_signed ? Opcode::SLessThanEqual : Opcode::ULessThanEqual, lhs, rhs);
+}
+
+U1 IREmitter::IGreaterThan(const U32& lhs, const U32& rhs, bool is_signed) {
+    return Inst<U1>(is_signed ? Opcode::SGreaterThan : Opcode::UGreaterThan, lhs, rhs);
+}
+
+U1 IREmitter::INotEqual(const U32& lhs, const U32& rhs) {
+    return Inst<U1>(Opcode::INotEqual, lhs, rhs);
+}
+
+U1 IREmitter::IGreaterThanEqual(const U32& lhs, const U32& rhs, bool is_signed) {
+    return Inst<U1>(is_signed ? Opcode::SGreaterThanEqual : Opcode::UGreaterThanEqual, lhs, rhs);
+}
+
 U1 IREmitter::LogicalOr(const U1& a, const U1& b) {
     return Inst<U1>(Opcode::LogicalOr, a, b);
 }
 
 U1 IREmitter::LogicalAnd(const U1& a, const U1& b) {
     return Inst<U1>(Opcode::LogicalAnd, a, b);
+}
+
+U1 IREmitter::LogicalXor(const U1& a, const U1& b) {
+    return Inst<U1>(Opcode::LogicalXor, a, b);
 }
 
 U1 IREmitter::LogicalNot(const U1& value) {

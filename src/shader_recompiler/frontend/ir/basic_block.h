@@ -39,7 +39,7 @@ public:
 
     /// Prepends a new instruction to this basic block before the insertion point.
     iterator PrependNewInst(iterator insertion_point, Opcode op,
-                            std::initializer_list<Value> args = {});
+                            std::initializer_list<Value> args = {}, u64 flags = 0);
 
     /// Adds a new immediate predecessor to the basic block.
     void AddImmediatePredecessor(IR::Block* immediate_predecessor);

@@ -16,6 +16,22 @@ void TranslatorVisitor::X(IR::Reg dest_reg, const IR::U32& value) {
     ir.SetReg(dest_reg, value);
 }
 
+IR::U32 TranslatorVisitor::GetReg20(u64 insn) {
+    union {
+        u64 raw;
+        BitField<20, 8, IR::Reg> index;
+    } const reg{insn};
+    return X(reg.index);
+}
+
+IR::U32 TranslatorVisitor::GetReg39(u64 insn) {
+    union {
+        u64 raw;
+        BitField<39, 8, IR::Reg> index;
+    } const reg{insn};
+    return X(reg.index);
+}
+
 IR::U32 TranslatorVisitor::GetCbuf(u64 insn) {
     union {
         u64 raw;
@@ -33,7 +49,7 @@ IR::U32 TranslatorVisitor::GetCbuf(u64 insn) {
     return ir.GetCbuf(binding, byte_offset);
 }
 
-IR::U32 TranslatorVisitor::GetImm(u64 insn) {
+IR::U32 TranslatorVisitor::GetImm20(u64 insn) {
     union {
         u64 raw;
         BitField<20, 19, u64> value;
@@ -42,6 +58,14 @@ IR::U32 TranslatorVisitor::GetImm(u64 insn) {
     const s32 positive_value{static_cast<s32>(imm.value)};
     const s32 value{imm.is_negative != 0 ? -positive_value : positive_value};
     return ir.Imm32(value);
+}
+
+IR::U32 TranslatorVisitor::GetImm32(u64 insn) {
+    union {
+        u64 raw;
+        BitField<20, 32, u64> value;
+    } const imm{insn};
+    return ir.Imm32(static_cast<u32>(imm.value));
 }
 
 void TranslatorVisitor::SetZFlag(const IR::U1& value) {

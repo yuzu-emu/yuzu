@@ -7,20 +7,7 @@
 #include "shader_recompiler/frontend/maxwell/opcode.h"
 #include "shader_recompiler/frontend/maxwell/translate/impl/impl.h"
 
-#include "shader_recompiler/ir_opt/passes.h"
-
 namespace Shader::Maxwell {
-
-[[maybe_unused]] static inline void DumpOptimized(IR::Block& block) {
-    auto raw{IR::DumpBlock(block)};
-
-    Optimization::GetSetElimination(block);
-    Optimization::DeadCodeEliminationPass(block);
-    Optimization::IdentityRemovalPass(block);
-    auto dumped{IR::DumpBlock(block)};
-
-    fmt::print(stderr, "{}", dumped);
-}
 
 [[noreturn]] static void ThrowNotImplemented(Opcode opcode) {
     throw NotImplementedException("Instruction {} is not implemented", opcode);
@@ -146,8 +133,8 @@ void TranslatorVisitor::DADD_imm(u64) {
     ThrowNotImplemented(Opcode::DADD_imm);
 }
 
-void TranslatorVisitor::DEPBAR(u64) {
-    ThrowNotImplemented(Opcode::DEPBAR);
+void TranslatorVisitor::DEPBAR() {
+    // DEPBAR is a no-op
 }
 
 void TranslatorVisitor::DFMA_reg(u64) {
@@ -230,22 +217,6 @@ void TranslatorVisitor::F2F_imm(u64) {
     ThrowNotImplemented(Opcode::F2F_imm);
 }
 
-void TranslatorVisitor::FADD_reg(u64) {
-    ThrowNotImplemented(Opcode::FADD_reg);
-}
-
-void TranslatorVisitor::FADD_cbuf(u64) {
-    ThrowNotImplemented(Opcode::FADD_cbuf);
-}
-
-void TranslatorVisitor::FADD_imm(u64) {
-    ThrowNotImplemented(Opcode::FADD_imm);
-}
-
-void TranslatorVisitor::FADD32I(u64) {
-    ThrowNotImplemented(Opcode::FADD32I);
-}
-
 void TranslatorVisitor::FCHK_reg(u64) {
     ThrowNotImplemented(Opcode::FCHK_reg);
 }
@@ -274,26 +245,6 @@ void TranslatorVisitor::FCMP_imm(u64) {
     ThrowNotImplemented(Opcode::FCMP_imm);
 }
 
-void TranslatorVisitor::FFMA_reg(u64) {
-    ThrowNotImplemented(Opcode::FFMA_reg);
-}
-
-void TranslatorVisitor::FFMA_rc(u64) {
-    ThrowNotImplemented(Opcode::FFMA_rc);
-}
-
-void TranslatorVisitor::FFMA_cr(u64) {
-    ThrowNotImplemented(Opcode::FFMA_cr);
-}
-
-void TranslatorVisitor::FFMA_imm(u64) {
-    ThrowNotImplemented(Opcode::FFMA_imm);
-}
-
-void TranslatorVisitor::FFMA32I(u64) {
-    ThrowNotImplemented(Opcode::FFMA32I);
-}
-
 void TranslatorVisitor::FLO_reg(u64) {
     ThrowNotImplemented(Opcode::FLO_reg);
 }
@@ -316,22 +267,6 @@ void TranslatorVisitor::FMNMX_cbuf(u64) {
 
 void TranslatorVisitor::FMNMX_imm(u64) {
     ThrowNotImplemented(Opcode::FMNMX_imm);
-}
-
-void TranslatorVisitor::FMUL_reg(u64) {
-    ThrowNotImplemented(Opcode::FMUL_reg);
-}
-
-void TranslatorVisitor::FMUL_cbuf(u64) {
-    ThrowNotImplemented(Opcode::FMUL_cbuf);
-}
-
-void TranslatorVisitor::FMUL_imm(u64) {
-    ThrowNotImplemented(Opcode::FMUL_imm);
-}
-
-void TranslatorVisitor::FMUL32I(u64) {
-    ThrowNotImplemented(Opcode::FMUL32I);
 }
 
 void TranslatorVisitor::FSET_reg(u64) {
@@ -470,18 +405,6 @@ void TranslatorVisitor::I2I_imm(u64) {
     ThrowNotImplemented(Opcode::I2I_imm);
 }
 
-void TranslatorVisitor::IADD_reg(u64) {
-    ThrowNotImplemented(Opcode::IADD_reg);
-}
-
-void TranslatorVisitor::IADD_cbuf(u64) {
-    ThrowNotImplemented(Opcode::IADD_cbuf);
-}
-
-void TranslatorVisitor::IADD_imm(u64) {
-    ThrowNotImplemented(Opcode::IADD_imm);
-}
-
 void TranslatorVisitor::IADD3_reg(u64) {
     ThrowNotImplemented(Opcode::IADD3_reg);
 }
@@ -492,10 +415,6 @@ void TranslatorVisitor::IADD3_cbuf(u64) {
 
 void TranslatorVisitor::IADD3_imm(u64) {
     ThrowNotImplemented(Opcode::IADD3_imm);
-}
-
-void TranslatorVisitor::IADD32I(u64) {
-    ThrowNotImplemented(Opcode::IADD32I);
 }
 
 void TranslatorVisitor::ICMP_reg(u64) {
@@ -594,22 +513,6 @@ void TranslatorVisitor::ISBERD(u64) {
     ThrowNotImplemented(Opcode::ISBERD);
 }
 
-void TranslatorVisitor::ISCADD_reg(u64) {
-    ThrowNotImplemented(Opcode::ISCADD_reg);
-}
-
-void TranslatorVisitor::ISCADD_cbuf(u64) {
-    ThrowNotImplemented(Opcode::ISCADD_cbuf);
-}
-
-void TranslatorVisitor::ISCADD_imm(u64) {
-    ThrowNotImplemented(Opcode::ISCADD_imm);
-}
-
-void TranslatorVisitor::ISCADD32I(u64) {
-    ThrowNotImplemented(Opcode::ISCADD32I);
-}
-
 void TranslatorVisitor::ISET_reg(u64) {
     ThrowNotImplemented(Opcode::ISET_reg);
 }
@@ -620,18 +523,6 @@ void TranslatorVisitor::ISET_cbuf(u64) {
 
 void TranslatorVisitor::ISET_imm(u64) {
     ThrowNotImplemented(Opcode::ISET_imm);
-}
-
-void TranslatorVisitor::ISETP_reg(u64) {
-    ThrowNotImplemented(Opcode::ISETP_reg);
-}
-
-void TranslatorVisitor::ISETP_cbuf(u64) {
-    ThrowNotImplemented(Opcode::ISETP_cbuf);
-}
-
-void TranslatorVisitor::ISETP_imm(u64) {
-    ThrowNotImplemented(Opcode::ISETP_imm);
 }
 
 void TranslatorVisitor::JCAL(u64) {
@@ -656,10 +547,6 @@ void TranslatorVisitor::LD(u64) {
 
 void TranslatorVisitor::LDC(u64) {
     ThrowNotImplemented(Opcode::LDC);
-}
-
-void TranslatorVisitor::LDG(u64) {
-    ThrowNotImplemented(Opcode::LDG);
 }
 
 void TranslatorVisitor::LDL(u64) {
@@ -866,10 +753,6 @@ void TranslatorVisitor::RTT(u64) {
     ThrowNotImplemented(Opcode::RTT);
 }
 
-void TranslatorVisitor::S2R(u64) {
-    ThrowNotImplemented(Opcode::S2R);
-}
-
 void TranslatorVisitor::SAM(u64) {
     ThrowNotImplemented(Opcode::SAM);
 }
@@ -912,18 +795,6 @@ void TranslatorVisitor::SHF_r_imm(u64) {
 
 void TranslatorVisitor::SHFL(u64) {
     ThrowNotImplemented(Opcode::SHFL);
-}
-
-void TranslatorVisitor::SHL_reg(u64) {
-    ThrowNotImplemented(Opcode::SHL_reg);
-}
-
-void TranslatorVisitor::SHL_cbuf(u64) {
-    ThrowNotImplemented(Opcode::SHL_cbuf);
-}
-
-void TranslatorVisitor::SHL_imm(u64) {
-    ThrowNotImplemented(Opcode::SHL_imm);
 }
 
 void TranslatorVisitor::SHR_reg(u64) {
@@ -1084,22 +955,6 @@ void TranslatorVisitor::VSHL(u64) {
 
 void TranslatorVisitor::VSHR(u64) {
     ThrowNotImplemented(Opcode::VSHR);
-}
-
-void TranslatorVisitor::XMAD_reg(u64) {
-    ThrowNotImplemented(Opcode::XMAD_reg);
-}
-
-void TranslatorVisitor::XMAD_rc(u64) {
-    ThrowNotImplemented(Opcode::XMAD_rc);
-}
-
-void TranslatorVisitor::XMAD_cr(u64) {
-    ThrowNotImplemented(Opcode::XMAD_cr);
-}
-
-void TranslatorVisitor::XMAD_imm(u64) {
-    ThrowNotImplemented(Opcode::XMAD_imm);
 }
 
 } // namespace Shader::Maxwell

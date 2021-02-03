@@ -39,7 +39,7 @@ void TranslatorVisitor::MOV_cbuf(u64 insn) {
 void TranslatorVisitor::MOV_imm(u64 insn) {
     const MOV mov{insn};
     CheckMask(mov);
-    X(mov.dest_reg, GetImm(insn));
+    X(mov.dest_reg, GetImm20(insn));
 }
 
 } // namespace Shader::Maxwell
