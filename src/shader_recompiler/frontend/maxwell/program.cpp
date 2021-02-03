@@ -56,6 +56,7 @@ Program::Program(Environment& env, const Flow::CFG& cfg) {
         Optimization::Invoke(Optimization::IdentityRemovalPass, function);
         // Optimization::Invoke(Optimization::VerificationPass, function);
     }
+    //*/
 }
 
 std::string DumpProgram(const Program& program) {

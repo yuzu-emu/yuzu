@@ -4,8 +4,12 @@
 
 #pragma once
 
+#include <cstring>
+#include <type_traits>
+
 #include "shader_recompiler/frontend/ir/attribute.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
+#include "shader_recompiler/frontend/ir/modifiers.h"
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::IR {
@@ -52,6 +56,22 @@ public:
     [[nodiscard]] U32 GetAttribute(IR::Attribute attribute);
     void SetAttribute(IR::Attribute attribute, const U32& value);
 
+    [[nodiscard]] U32 WorkgroupIdX();
+    [[nodiscard]] U32 WorkgroupIdY();
+    [[nodiscard]] U32 WorkgroupIdZ();
+
+    [[nodiscard]] U32 LocalInvocationIdX();
+    [[nodiscard]] U32 LocalInvocationIdY();
+    [[nodiscard]] U32 LocalInvocationIdZ();
+
+    [[nodiscard]] U32 LoadGlobalU8(const U64& address);
+    [[nodiscard]] U32 LoadGlobalS8(const U64& address);
+    [[nodiscard]] U32 LoadGlobalU16(const U64& address);
+    [[nodiscard]] U32 LoadGlobalS16(const U64& address);
+    [[nodiscard]] U32 LoadGlobal32(const U64& address);
+    [[nodiscard]] Value LoadGlobal64(const U64& address);
+    [[nodiscard]] Value LoadGlobal128(const U64& address);
+
     void WriteGlobalU8(const U64& address, const U32& value);
     void WriteGlobalS8(const U64& address, const U32& value);
     void WriteGlobalU16(const U64& address, const U32& value);
@@ -71,6 +91,8 @@ public:
                                            const UAny& e4);
     [[nodiscard]] UAny CompositeExtract(const Value& vector, size_t element);
 
+    [[nodiscard]] UAny Select(const U1& condition, const UAny& true_value, const UAny& false_value);
+
     [[nodiscard]] U64 PackUint2x32(const Value& vector);
     [[nodiscard]] Value UnpackUint2x32(const U64& value);
 
@@ -80,8 +102,10 @@ public:
     [[nodiscard]] U64 PackDouble2x32(const Value& vector);
     [[nodiscard]] Value UnpackDouble2x32(const U64& value);
 
-    [[nodiscard]] U16U32U64 FPAdd(const U16U32U64& a, const U16U32U64& b);
-    [[nodiscard]] U16U32U64 FPMul(const U16U32U64& a, const U16U32U64& b);
+    [[nodiscard]] U16U32U64 FPAdd(const U16U32U64& a, const U16U32U64& b, FpControl control = {});
+    [[nodiscard]] U16U32U64 FPMul(const U16U32U64& a, const U16U32U64& b, FpControl control = {});
+    [[nodiscard]] U16U32U64 FPFma(const U16U32U64& a, const U16U32U64& b, const U16U32U64& c,
+                                  FpControl control = {});
 
     [[nodiscard]] U16U32U64 FPAbs(const U16U32U64& value);
     [[nodiscard]] U16U32U64 FPNeg(const U16U32U64& value);
@@ -100,8 +124,31 @@ public:
     [[nodiscard]] U16U32U64 FPCeil(const U16U32U64& value);
     [[nodiscard]] U16U32U64 FPTrunc(const U16U32U64& value);
 
+    [[nodiscard]] U32U64 IAdd(const U32U64& a, const U32U64& b);
+    [[nodiscard]] U32 IMul(const U32& a, const U32& b);
+    [[nodiscard]] U32 INeg(const U32& value);
+    [[nodiscard]] U32 IAbs(const U32& value);
+    [[nodiscard]] U32 ShiftLeftLogical(const U32& base, const U32& shift);
+    [[nodiscard]] U32 ShiftRightLogical(const U32& base, const U32& shift);
+    [[nodiscard]] U32 ShiftRightArithmetic(const U32& base, const U32& shift);
+    [[nodiscard]] U32 BitwiseAnd(const U32& a, const U32& b);
+    [[nodiscard]] U32 BitwiseOr(const U32& a, const U32& b);
+    [[nodiscard]] U32 BitwiseXor(const U32& a, const U32& b);
+    [[nodiscard]] U32 BitFieldInsert(const U32& base, const U32& insert, const U32& offset,
+                                     const U32& count);
+    [[nodiscard]] U32 BitFieldExtract(const U32& base, const U32& offset, const U32& count,
+                                      bool is_signed);
+
+    [[nodiscard]] U1 ILessThan(const U32& lhs, const U32& rhs, bool is_signed);
+    [[nodiscard]] U1 IEqual(const U32& lhs, const U32& rhs);
+    [[nodiscard]] U1 ILessThanEqual(const U32& lhs, const U32& rhs, bool is_signed);
+    [[nodiscard]] U1 IGreaterThan(const U32& lhs, const U32& rhs, bool is_signed);
+    [[nodiscard]] U1 INotEqual(const U32& lhs, const U32& rhs);
+    [[nodiscard]] U1 IGreaterThanEqual(const U32& lhs, const U32& rhs, bool is_signed);
+
     [[nodiscard]] U1 LogicalOr(const U1& a, const U1& b);
     [[nodiscard]] U1 LogicalAnd(const U1& a, const U1& b);
+    [[nodiscard]] U1 LogicalXor(const U1& a, const U1& b);
     [[nodiscard]] U1 LogicalNot(const U1& value);
 
     [[nodiscard]] U32U64 ConvertFToS(size_t bitsize, const U16U32U64& value);
@@ -116,6 +163,22 @@ private:
     template <typename T = Value, typename... Args>
     T Inst(Opcode op, Args... args) {
         auto it{block.PrependNewInst(insertion_point, op, {Value{args}...})};
+        return T{Value{&*it}};
+    }
+
+    template <typename T>
+    requires(sizeof(T) <= sizeof(u64) && std::is_trivially_copyable_v<T>) struct Flags {
+        Flags() = default;
+        Flags(T proxy_) : proxy{proxy_} {}
+
+        T proxy;
+    };
+
+    template <typename T = Value, typename FlagType, typename... Args>
+    T Inst(Opcode op, Flags<FlagType> flags, Args... args) {
+        u64 raw_flags{};
+        std::memcpy(&raw_flags, &flags.proxy, sizeof(flags.proxy));
+        auto it{block.PrependNewInst(insertion_point, op, {Value{args}...}, raw_flags)};
         return T{Value{&*it}};
     }
 };

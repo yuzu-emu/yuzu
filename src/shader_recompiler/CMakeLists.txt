@@ -39,18 +39,27 @@ add_executable(shader_recompiler
     frontend/maxwell/program.h
     frontend/maxwell/termination_code.cpp
     frontend/maxwell/termination_code.h
+    frontend/maxwell/translate/impl/common_encoding.h
+    frontend/maxwell/translate/impl/floating_point_add.cpp
     frontend/maxwell/translate/impl/floating_point_conversion_integer.cpp
+    frontend/maxwell/translate/impl/floating_point_fused_multiply_add.cpp
     frontend/maxwell/translate/impl/floating_point_multi_function.cpp
+    frontend/maxwell/translate/impl/floating_point_multiply.cpp
     frontend/maxwell/translate/impl/impl.cpp
     frontend/maxwell/translate/impl/impl.h
+    frontend/maxwell/translate/impl/integer_add.cpp
+    frontend/maxwell/translate/impl/integer_scaled_add.cpp
+    frontend/maxwell/translate/impl/integer_set_predicate.cpp
+    frontend/maxwell/translate/impl/integer_shift_left.cpp
+    frontend/maxwell/translate/impl/integer_short_multiply_add.cpp
     frontend/maxwell/translate/impl/load_store_attribute.cpp
     frontend/maxwell/translate/impl/load_store_memory.cpp
     frontend/maxwell/translate/impl/not_implemented.cpp
-    frontend/maxwell/translate/impl/register_move.cpp
+    frontend/maxwell/translate/impl/move_register.cpp
+    frontend/maxwell/translate/impl/move_special_register.cpp
     frontend/maxwell/translate/translate.cpp
     frontend/maxwell/translate/translate.h
     ir_opt/dead_code_elimination_pass.cpp
-    ir_opt/get_set_elimination_pass.cpp
     ir_opt/identity_removal_pass.cpp
     ir_opt/passes.h
     ir_opt/ssa_rewrite_pass.cpp

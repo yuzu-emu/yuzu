@@ -23,8 +23,8 @@ void Block::AppendNewInst(Opcode op, std::initializer_list<Value> args) {
 }
 
 Block::iterator Block::PrependNewInst(iterator insertion_point, Opcode op,
-                                      std::initializer_list<Value> args) {
-    Inst* const inst{std::construct_at(instruction_alloc_pool.allocate(), op)};
+                                      std::initializer_list<Value> args, u64 flags) {
+    Inst* const inst{std::construct_at(instruction_alloc_pool.allocate(), op, flags)};
     const auto result_it{instructions.insert(insertion_point, *inst)};
 
     if (inst->NumArgs() != args.size()) {

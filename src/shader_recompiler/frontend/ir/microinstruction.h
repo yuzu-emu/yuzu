@@ -5,7 +5,9 @@
 #pragma once
 
 #include <array>
+#include <cstring>
 #include <span>
+#include <type_traits>
 #include <vector>
 
 #include <boost/intrusive/list.hpp>
@@ -23,7 +25,7 @@ constexpr size_t MAX_ARG_COUNT = 4;
 
 class Inst : public boost::intrusive::list_base_hook<> {
 public:
-    explicit Inst(Opcode op_) noexcept : op(op_) {}
+    explicit Inst(Opcode op_, u64 flags_) noexcept : op{op_}, flags{flags_} {}
 
     /// Get the number of uses this instruction has.
     [[nodiscard]] int UseCount() const noexcept {
@@ -72,6 +74,14 @@ public:
     void ClearArgs();
 
     void ReplaceUsesWith(Value replacement);
+
+    template <typename FlagsType>
+    requires(sizeof(FlagsType) <= sizeof(u64) && std::is_trivially_copyable_v<FlagsType>)
+        [[nodiscard]] FlagsType Flags() const noexcept {
+        FlagsType ret;
+        std::memcpy(&ret, &flags, sizeof(ret));
+        return ret;
+    }
 
 private:
     void Use(const Value& value);
