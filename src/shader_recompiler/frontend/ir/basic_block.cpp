@@ -37,6 +37,10 @@ Block::iterator Block::PrependNewInst(iterator insertion_point, Opcode op,
     return result_it;
 }
 
+void Block::AddImmediatePredecessor(IR::Block* immediate_predecessor) {
+    imm_predecessors.push_back(immediate_predecessor);
+}
+
 u32 Block::LocationBegin() const noexcept {
     return location_begin;
 }
@@ -53,6 +57,18 @@ const Block::InstructionList& Block::Instructions() const noexcept {
     return instructions;
 }
 
+std::span<IR::Block* const> Block::ImmediatePredecessors() const noexcept {
+    return imm_predecessors;
+}
+
+static std::string BlockToIndex(const std::map<const Block*, size_t>& block_to_index,
+                                Block* block) {
+    if (const auto it{block_to_index.find(block)}; it != block_to_index.end()) {
+        return fmt::format("{{Block ${}}}", it->second);
+    }
+    return fmt::format("$<unknown block {:016x}>", reinterpret_cast<u64>(block));
+}
+
 static std::string ArgToIndex(const std::map<const Block*, size_t>& block_to_index,
                               const std::map<const Inst*, size_t>& inst_to_index,
                               const Value& arg) {
@@ -60,10 +76,7 @@ static std::string ArgToIndex(const std::map<const Block*, size_t>& block_to_ind
         return "<null>";
     }
     if (arg.IsLabel()) {
-        if (const auto it{block_to_index.find(arg.Label())}; it != block_to_index.end()) {
-            return fmt::format("{{Block ${}}}", it->second);
-        }
-        return fmt::format("$<unknown block {:016x}>", reinterpret_cast<u64>(arg.Label()));
+        return BlockToIndex(block_to_index, arg.Label());
     }
     if (!arg.IsImmediate()) {
         if (const auto it{inst_to_index.find(arg.Inst())}; it != inst_to_index.end()) {
@@ -115,16 +128,26 @@ std::string DumpBlock(const Block& block, const std::map<const Block*, size_t>& 
         } else {
             ret += fmt::format("         {}", op); // '%00000 = ' -> 1 + 5 + 3 = 9 spaces
         }
-        const size_t arg_count{NumArgsOf(op)};
-        for (size_t arg_index = 0; arg_index < arg_count; ++arg_index) {
-            const Value arg{inst.Arg(arg_index)};
-            ret += arg_index != 0 ? ", " : " ";
-            ret += ArgToIndex(block_to_index, inst_to_index, arg);
+        if (op == Opcode::Phi) {
+            size_t val_index{0};
+            for (const auto& [phi_block, phi_val] : inst.PhiOperands()) {
+                ret += val_index != 0 ? ", " : " ";
+                ret += fmt::format("[ {}, {} ]", ArgToIndex(block_to_index, inst_to_index, phi_val),
+                                   BlockToIndex(block_to_index, phi_block));
+                ++val_index;
+            }
+        } else {
+            const size_t arg_count{NumArgsOf(op)};
+            for (size_t arg_index = 0; arg_index < arg_count; ++arg_index) {
+                const Value arg{inst.Arg(arg_index)};
+                ret += arg_index != 0 ? ", " : " ";
+                ret += ArgToIndex(block_to_index, inst_to_index, arg);
 
-            const Type actual_type{arg.Type()};
-            const Type expected_type{ArgTypeOf(op, arg_index)};
-            if (!AreTypesCompatible(actual_type, expected_type)) {
-                ret += fmt::format("<type error: {} != {}>", actual_type, expected_type);
+                const Type actual_type{arg.Type()};
+                const Type expected_type{ArgTypeOf(op, arg_index)};
+                if (!AreTypesCompatible(actual_type, expected_type)) {
+                    ret += fmt::format("<type error: {} != {}>", actual_type, expected_type);
+                }
             }
         }
         if (TypeOf(op) != Type::Void) {

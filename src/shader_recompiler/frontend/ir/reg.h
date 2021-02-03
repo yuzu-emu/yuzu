@@ -271,6 +271,9 @@ enum class Reg : u64 {
 };
 static_assert(static_cast<int>(Reg::RZ) == 255);
 
+constexpr size_t NUM_USER_REGS = 255;
+constexpr size_t NUM_REGS = 256;
+
 [[nodiscard]] constexpr Reg operator+(Reg reg, int num) {
     if (reg == Reg::RZ) {
         // Adding or subtracting registers from RZ yields RZ
@@ -290,8 +293,12 @@ static_assert(static_cast<int>(Reg::RZ) == 255);
     return reg + (-num);
 }
 
+[[nodiscard]] constexpr size_t RegIndex(Reg reg) noexcept {
+    return static_cast<size_t>(reg);
+}
+
 [[nodiscard]] constexpr bool IsAligned(Reg reg, size_t align) {
-    return (static_cast<size_t>(reg) / align) * align == static_cast<size_t>(reg);
+    return (RegIndex(reg) / align) * align == RegIndex(reg);
 }
 
 } // namespace Shader::IR

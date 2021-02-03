@@ -35,12 +35,12 @@ void RunDatabase() {
     ForEachFile("D:\\Shaders\\Database", [&](const std::filesystem::path& path) {
         map.emplace_back(std::make_unique<FileEnvironment>(path.string().c_str()));
     });
-    for (int i = 0; i < 1; ++i) {
+    for (int i = 0; i < 300; ++i) {
         for (auto& env : map) {
             // fmt::print(stdout, "Decoding {}\n", path.string());
             const Location start_address{0};
             auto cfg{std::make_unique<Flow::CFG>(*env, start_address)};
-            // fmt::print(stdout, "{}\n", cfg.Dot());
+            // fmt::print(stdout, "{}\n", cfg->Dot());
             // IR::Program program{env, cfg};
             // Optimize(program);
             // const std::string code{EmitGLASM(program)};

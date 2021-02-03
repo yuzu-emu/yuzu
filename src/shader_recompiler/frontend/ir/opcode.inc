@@ -5,6 +5,7 @@
 //     opcode name,                                         return type,    arg1 type,      arg2 type,      arg3 type,      arg4 type,      ...
 OPCODE(Void,                                                Void,                                                                           )
 OPCODE(Identity,                                            Opaque,         Opaque,                                                         )
+OPCODE(Phi,                                                 Opaque,         /*todo*/                                                        )
 
 // Control flow
 OPCODE(Branch,                                              Void,           Label,                                                          )
@@ -34,6 +35,13 @@ OPCODE(SetZFlag,                                            Void,           U1, 
 OPCODE(SetSFlag,                                            Void,           U1,                                                             )
 OPCODE(SetCFlag,                                            Void,           U1,                                                             )
 OPCODE(SetOFlag,                                            Void,           U1,                                                             )
+
+// Undefined
+OPCODE(Undef1,                                              U1,                                                                             )
+OPCODE(Undef8,                                              U8,                                                                             )
+OPCODE(Undef16,                                             U16,                                                                            )
+OPCODE(Undef32,                                             U32,                                                                            )
+OPCODE(Undef64,                                             U64,                                                                            )
 
 // Memory operations
 OPCODE(WriteGlobalU8,                                       Void,           U64,            U32,                                            )

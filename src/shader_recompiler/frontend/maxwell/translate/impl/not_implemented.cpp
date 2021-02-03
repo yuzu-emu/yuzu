@@ -762,7 +762,7 @@ void TranslatorVisitor::P2R_imm(u64) {
     ThrowNotImplemented(Opcode::P2R_imm);
 }
 
-void TranslatorVisitor::PBK(u64) {
+void TranslatorVisitor::PBK() {
     // PBK is a no-op
 }
 
@@ -938,8 +938,8 @@ void TranslatorVisitor::SHR_imm(u64) {
     ThrowNotImplemented(Opcode::SHR_imm);
 }
 
-void TranslatorVisitor::SSY(u64) {
-    ThrowNotImplemented(Opcode::SSY);
+void TranslatorVisitor::SSY() {
+    // SSY is a no-op
 }
 
 void TranslatorVisitor::ST(u64) {

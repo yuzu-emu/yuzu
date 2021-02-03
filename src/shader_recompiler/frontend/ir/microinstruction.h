@@ -5,6 +5,8 @@
 #pragma once
 
 #include <array>
+#include <span>
+#include <vector>
 
 #include <boost/intrusive/list.hpp>
 
@@ -14,6 +16,8 @@
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::IR {
+
+class Block;
 
 constexpr size_t MAX_ARG_COUNT = 4;
 
@@ -59,6 +63,11 @@ public:
     /// Set the value of a given argument index.
     void SetArg(size_t index, Value value);
 
+    /// Get an immutable span to the phi operands.
+    [[nodiscard]] std::span<const std::pair<Block*, Value>> PhiOperands() const noexcept;
+    /// Add phi operand to a phi instruction.
+    void AddPhiOperand(Block* predecessor, const Value& value);
+
     void Invalidate();
     void ClearArgs();
 
@@ -76,6 +85,7 @@ private:
     Inst* carry_inst{};
     Inst* overflow_inst{};
     Inst* zsco_inst{};
+    std::vector<std::pair<Block*, Value>> phi_operands;
     u64 flags{};
 };
 

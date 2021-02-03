@@ -6,6 +6,8 @@
 
 #include <initializer_list>
 #include <map>
+#include <span>
+#include <vector>
 
 #include <boost/intrusive/list.hpp>
 #include <boost/pool/pool_alloc.hpp>
@@ -36,7 +38,11 @@ public:
     void AppendNewInst(Opcode op, std::initializer_list<Value> args);
 
     /// Prepends a new instruction to this basic block before the insertion point.
-    iterator PrependNewInst(iterator insertion_point, Opcode op, std::initializer_list<Value> args);
+    iterator PrependNewInst(iterator insertion_point, Opcode op,
+                            std::initializer_list<Value> args = {});
+
+    /// Adds a new immediate predecessor to the basic block.
+    void AddImmediatePredecessor(IR::Block* immediate_predecessor);
 
     /// Gets the starting location of this basic block.
     [[nodiscard]] u32 LocationBegin() const noexcept;
@@ -44,9 +50,12 @@ public:
     [[nodiscard]] u32 LocationEnd() const noexcept;
 
     /// Gets a mutable reference to the instruction list for this basic block.
-    InstructionList& Instructions() noexcept;
+    [[nodiscard]] InstructionList& Instructions() noexcept;
     /// Gets an immutable reference to the instruction list for this basic block.
-    const InstructionList& Instructions() const noexcept;
+    [[nodiscard]] const InstructionList& Instructions() const noexcept;
+
+    /// Gets an immutable span to the immediate predecessors.
+    [[nodiscard]] std::span<IR::Block* const> ImmediatePredecessors() const noexcept;
 
     [[nodiscard]] bool empty() const {
         return instructions.empty();
@@ -115,13 +124,16 @@ private:
     /// End location of this block
     u32 location_end;
 
-    /// List of instructions in this block.
+    /// List of instructions in this block
     InstructionList instructions;
 
     /// Memory pool for instruction list
     boost::fast_pool_allocator<Inst, boost::default_user_allocator_malloc_free,
                                boost::details::pool::null_mutex>
         instruction_alloc_pool;
+
+    /// Block immediate predecessors
+    std::vector<IR::Block*> imm_predecessors;
 };
 
 [[nodiscard]] std::string DumpBlock(const Block& block);

@@ -11,6 +11,8 @@ add_executable(shader_recompiler
     frontend/ir/condition.h
     frontend/ir/flow_test.cpp
     frontend/ir/flow_test.h
+    frontend/ir/function.cpp
+    frontend/ir/function.h
     frontend/ir/ir_emitter.cpp
     frontend/ir/ir_emitter.h
     frontend/ir/microinstruction.cpp
@@ -51,6 +53,7 @@ add_executable(shader_recompiler
     ir_opt/get_set_elimination_pass.cpp
     ir_opt/identity_removal_pass.cpp
     ir_opt/passes.h
+    ir_opt/ssa_rewrite_pass.cpp
     ir_opt/verification_pass.cpp
     main.cpp
 )
