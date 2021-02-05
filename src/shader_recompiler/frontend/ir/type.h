@@ -25,7 +25,6 @@ enum class Type {
     U16 = 1 << 7,
     U32 = 1 << 8,
     U64 = 1 << 9,
-    ZSCO = 1 << 10,
 };
 DECLARE_ENUM_FLAG_OPERATORS(Type)
 

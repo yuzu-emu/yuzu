@@ -91,26 +91,41 @@ IR::Attribute Value::Attribute() const {
 }
 
 bool Value::U1() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).U1();
+    }
     ValidateAccess(Type::U1);
     return imm_u1;
 }
 
 u8 Value::U8() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).U8();
+    }
     ValidateAccess(Type::U8);
     return imm_u8;
 }
 
 u16 Value::U16() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).U16();
+    }
     ValidateAccess(Type::U16);
     return imm_u16;
 }
 
 u32 Value::U32() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).U32();
+    }
     ValidateAccess(Type::U32);
     return imm_u32;
 }
 
 u64 Value::U64() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).U64();
+    }
     ValidateAccess(Type::U64);
     return imm_u64;
 }
@@ -142,8 +157,6 @@ bool Value::operator==(const Value& other) const {
         return imm_u32 == other.imm_u32;
     case Type::U64:
         return imm_u64 == other.imm_u64;
-    case Type::ZSCO:
-        throw NotImplementedException("ZSCO comparison");
     }
     throw LogicError("Invalid type {}", type);
 }

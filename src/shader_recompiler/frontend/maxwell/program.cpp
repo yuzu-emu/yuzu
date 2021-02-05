@@ -52,9 +52,11 @@ Program::Program(Environment& env, const Flow::CFG& cfg) {
     }
     std::ranges::for_each(functions, Optimization::SsaRewritePass);
     for (IR::Function& function : functions) {
+        Optimization::Invoke(Optimization::GlobalMemoryToStorageBufferPass, function);
+        Optimization::Invoke(Optimization::ConstantPropagationPass, function);
         Optimization::Invoke(Optimization::DeadCodeEliminationPass, function);
-        Optimization::Invoke(Optimization::IdentityRemovalPass, function);
-        // Optimization::Invoke(Optimization::VerificationPass, function);
+        Optimization::IdentityRemovalPass(function);
+        Optimization::VerificationPass(function);
     }
     //*/
 }

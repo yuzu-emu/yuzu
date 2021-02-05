@@ -504,6 +504,20 @@ U32U64 IREmitter::IAdd(const U32U64& a, const U32U64& b) {
     }
 }
 
+U32U64 IREmitter::ISub(const U32U64& a, const U32U64& b) {
+    if (a.Type() != b.Type()) {
+        throw InvalidArgument("Mismatching types {} and {}", a.Type(), b.Type());
+    }
+    switch (a.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::ISub32, a, b);
+    case Type::U64:
+        return Inst<U64>(Opcode::ISub64, a, b);
+    default:
+        ThrowInvalidType(a.Type());
+    }
+}
+
 U32 IREmitter::IMul(const U32& a, const U32& b) {
     return Inst<U32>(Opcode::IMul32, a, b);
 }
@@ -679,8 +693,8 @@ U32U64 IREmitter::ConvertFToI(size_t bitsize, bool is_signed, const U16U32U64& v
     }
 }
 
-U32U64 IREmitter::ConvertU(size_t bitsize, const U32U64& value) {
-    switch (bitsize) {
+U32U64 IREmitter::ConvertU(size_t result_bitsize, const U32U64& value) {
+    switch (result_bitsize) {
     case 32:
         switch (value.Type()) {
         case Type::U32:
@@ -703,7 +717,7 @@ U32U64 IREmitter::ConvertU(size_t bitsize, const U32U64& value) {
             break;
         }
     }
-    throw NotImplementedException("Conversion from {} to {} bits", value.Type(), bitsize);
+    throw NotImplementedException("Conversion from {} to {} bits", value.Type(), result_bitsize);
 }
 
 } // namespace Shader::IR

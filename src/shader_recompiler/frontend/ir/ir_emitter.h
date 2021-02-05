@@ -17,6 +17,8 @@ namespace Shader::IR {
 class IREmitter {
 public:
     explicit IREmitter(Block& block_) : block{block_}, insertion_point{block.end()} {}
+    explicit IREmitter(Block& block_, Block::iterator insertion_point_)
+        : block{block_}, insertion_point{insertion_point_} {}
 
     Block& block;
 
@@ -125,6 +127,7 @@ public:
     [[nodiscard]] U16U32U64 FPTrunc(const U16U32U64& value);
 
     [[nodiscard]] U32U64 IAdd(const U32U64& a, const U32U64& b);
+    [[nodiscard]] U32U64 ISub(const U32U64& a, const U32U64& b);
     [[nodiscard]] U32 IMul(const U32& a, const U32& b);
     [[nodiscard]] U32 INeg(const U32& value);
     [[nodiscard]] U32 IAbs(const U32& value);
@@ -155,7 +158,7 @@ public:
     [[nodiscard]] U32U64 ConvertFToU(size_t bitsize, const U16U32U64& value);
     [[nodiscard]] U32U64 ConvertFToI(size_t bitsize, bool is_signed, const U16U32U64& value);
 
-    [[nodiscard]] U32U64 ConvertU(size_t bitsize, const U32U64& value);
+    [[nodiscard]] U32U64 ConvertU(size_t result_bitsize, const U32U64& value);
 
 private:
     IR::Block::iterator insertion_point;

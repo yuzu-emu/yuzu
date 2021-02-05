@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
+
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/type.h"
@@ -44,6 +46,13 @@ bool Inst::MayHaveSideEffects() const noexcept {
     case Opcode::WriteGlobal32:
     case Opcode::WriteGlobal64:
     case Opcode::WriteGlobal128:
+    case Opcode::WriteStorageU8:
+    case Opcode::WriteStorageS8:
+    case Opcode::WriteStorageU16:
+    case Opcode::WriteStorageS16:
+    case Opcode::WriteStorage32:
+    case Opcode::WriteStorage64:
+    case Opcode::WriteStorage128:
         return true;
     default:
         return false;
@@ -56,15 +65,19 @@ bool Inst::IsPseudoInstruction() const noexcept {
     case Opcode::GetSignFromOp:
     case Opcode::GetCarryFromOp:
     case Opcode::GetOverflowFromOp:
-    case Opcode::GetZSCOFromOp:
         return true;
     default:
         return false;
     }
 }
 
+bool Inst::AreAllArgsImmediates() const noexcept {
+    return std::all_of(args.begin(), args.begin() + NumArgs(),
+                       [](const IR::Value& value) { return value.IsImmediate(); });
+}
+
 bool Inst::HasAssociatedPseudoOperation() const noexcept {
-    return zero_inst || sign_inst || carry_inst || overflow_inst || zsco_inst;
+    return zero_inst || sign_inst || carry_inst || overflow_inst;
 }
 
 Inst* Inst::GetAssociatedPseudoOperation(IR::Opcode opcode) {
@@ -82,9 +95,6 @@ Inst* Inst::GetAssociatedPseudoOperation(IR::Opcode opcode) {
     case Opcode::GetOverflowFromOp:
         CheckPseudoInstruction(overflow_inst, Opcode::GetOverflowFromOp);
         return overflow_inst;
-    case Opcode::GetZSCOFromOp:
-        CheckPseudoInstruction(zsco_inst, Opcode::GetZSCOFromOp);
-        return zsco_inst;
     default:
         throw InvalidArgument("{} is not a pseudo-instruction", opcode);
     }
@@ -176,9 +186,6 @@ void Inst::Use(const Value& value) {
     case Opcode::GetOverflowFromOp:
         SetPseudoInstruction(value.Inst()->overflow_inst, this);
         break;
-    case Opcode::GetZSCOFromOp:
-        SetPseudoInstruction(value.Inst()->zsco_inst, this);
-        break;
     default:
         break;
     }
@@ -199,9 +206,6 @@ void Inst::UndoUse(const Value& value) {
         break;
     case Opcode::GetOverflowFromOp:
         RemovePseudoInstruction(value.Inst()->overflow_inst, Opcode::GetOverflowFromOp);
-        break;
-    case Opcode::GetZSCOFromOp:
-        RemovePseudoInstruction(value.Inst()->zsco_inst, Opcode::GetZSCOFromOp);
         break;
     default:
         break;

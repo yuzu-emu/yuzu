@@ -16,9 +16,11 @@ void Invoke(Func&& func, IR::Function& function) {
     }
 }
 
+void ConstantPropagationPass(IR::Block& block);
 void DeadCodeEliminationPass(IR::Block& block);
-void IdentityRemovalPass(IR::Block& block);
+void GlobalMemoryToStorageBufferPass(IR::Block& block);
+void IdentityRemovalPass(IR::Function& function);
 void SsaRewritePass(IR::Function& function);
-void VerificationPass(const IR::Block& block);
+void VerificationPass(const IR::Function& function);
 
 } // namespace Shader::Optimization

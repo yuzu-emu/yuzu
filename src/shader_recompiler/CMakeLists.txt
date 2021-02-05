@@ -59,7 +59,9 @@ add_executable(shader_recompiler
     frontend/maxwell/translate/impl/move_special_register.cpp
     frontend/maxwell/translate/translate.cpp
     frontend/maxwell/translate/translate.h
+    ir_opt/constant_propagation_pass.cpp
     ir_opt/dead_code_elimination_pass.cpp
+    ir_opt/global_memory_to_storage_buffer_pass.cpp
     ir_opt/identity_removal_pass.cpp
     ir_opt/passes.h
     ir_opt/ssa_rewrite_pass.cpp

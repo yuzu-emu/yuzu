@@ -14,8 +14,6 @@
 //      https://link.springer.com/chapter/10.1007/978-3-642-37051-9_6
 //
 
-#include <map>
-
 #include <boost/container/flat_map.hpp>
 
 #include "shader_recompiler/frontend/ir/basic_block.h"
@@ -30,6 +28,12 @@ namespace Shader::Optimization {
 namespace {
 using ValueMap = boost::container::flat_map<IR::Block*, IR::Value, std::less<IR::Block*>>;
 
+struct FlagTag {};
+struct ZeroFlagTag : FlagTag {};
+struct SignFlagTag : FlagTag {};
+struct CarryFlagTag : FlagTag {};
+struct OverflowFlagTag : FlagTag {};
+
 struct DefTable {
     [[nodiscard]] ValueMap& operator[](IR::Reg variable) noexcept {
         return regs[IR::RegIndex(variable)];
@@ -39,8 +43,28 @@ struct DefTable {
         return preds[IR::PredIndex(variable)];
     }
 
+    [[nodiscard]] ValueMap& operator[](ZeroFlagTag) noexcept {
+        return zero_flag;
+    }
+
+    [[nodiscard]] ValueMap& operator[](SignFlagTag) noexcept {
+        return sign_flag;
+    }
+
+    [[nodiscard]] ValueMap& operator[](CarryFlagTag) noexcept {
+        return carry_flag;
+    }
+
+    [[nodiscard]] ValueMap& operator[](OverflowFlagTag) noexcept {
+        return overflow_flag;
+    }
+
     std::array<ValueMap, IR::NUM_USER_REGS> regs;
     std::array<ValueMap, IR::NUM_USER_PREDS> preds;
+    ValueMap zero_flag;
+    ValueMap sign_flag;
+    ValueMap carry_flag;
+    ValueMap overflow_flag;
 };
 
 IR::Opcode UndefOpcode(IR::Reg) noexcept {
@@ -48,6 +72,10 @@ IR::Opcode UndefOpcode(IR::Reg) noexcept {
 }
 
 IR::Opcode UndefOpcode(IR::Pred) noexcept {
+    return IR::Opcode::Undef1;
+}
+
+IR::Opcode UndefOpcode(const FlagTag&) noexcept {
     return IR::Opcode::Undef1;
 }
 
@@ -135,6 +163,18 @@ void SsaRewritePass(IR::Function& function) {
                     pass.WriteVariable(pred, block.get(), inst.Arg(1));
                 }
                 break;
+            case IR::Opcode::SetZFlag:
+                pass.WriteVariable(ZeroFlagTag{}, block.get(), inst.Arg(0));
+                break;
+            case IR::Opcode::SetSFlag:
+                pass.WriteVariable(SignFlagTag{}, block.get(), inst.Arg(0));
+                break;
+            case IR::Opcode::SetCFlag:
+                pass.WriteVariable(CarryFlagTag{}, block.get(), inst.Arg(0));
+                break;
+            case IR::Opcode::SetOFlag:
+                pass.WriteVariable(OverflowFlagTag{}, block.get(), inst.Arg(0));
+                break;
             case IR::Opcode::GetRegister:
                 if (const IR::Reg reg{inst.Arg(0).Reg()}; reg != IR::Reg::RZ) {
                     inst.ReplaceUsesWith(pass.ReadVariable(reg, block.get()));
@@ -144,6 +184,18 @@ void SsaRewritePass(IR::Function& function) {
                 if (const IR::Pred pred{inst.Arg(0).Pred()}; pred != IR::Pred::PT) {
                     inst.ReplaceUsesWith(pass.ReadVariable(pred, block.get()));
                 }
+                break;
+            case IR::Opcode::GetZFlag:
+                inst.ReplaceUsesWith(pass.ReadVariable(ZeroFlagTag{}, block.get()));
+                break;
+            case IR::Opcode::GetSFlag:
+                inst.ReplaceUsesWith(pass.ReadVariable(SignFlagTag{}, block.get()));
+                break;
+            case IR::Opcode::GetCFlag:
+                inst.ReplaceUsesWith(pass.ReadVariable(CarryFlagTag{}, block.get()));
+                break;
+            case IR::Opcode::GetOFlag:
+                inst.ReplaceUsesWith(pass.ReadVariable(OverflowFlagTag{}, block.get()));
                 break;
             default:
                 break;
