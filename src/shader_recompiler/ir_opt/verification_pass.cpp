@@ -11,40 +11,44 @@
 
 namespace Shader::Optimization {
 
-static void ValidateTypes(const IR::Block& block) {
-    for (const IR::Inst& inst : block) {
-        const size_t num_args{inst.NumArgs()};
-        for (size_t i = 0; i < num_args; ++i) {
-            const IR::Type t1{inst.Arg(i).Type()};
-            const IR::Type t2{IR::ArgTypeOf(inst.Opcode(), i)};
-            if (!IR::AreTypesCompatible(t1, t2)) {
-                throw LogicError("Invalid types in block:\n{}", IR::DumpBlock(block));
+static void ValidateTypes(const IR::Function& function) {
+    for (const auto& block : function.blocks) {
+        for (const IR::Inst& inst : *block) {
+            const size_t num_args{inst.NumArgs()};
+            for (size_t i = 0; i < num_args; ++i) {
+                const IR::Type t1{inst.Arg(i).Type()};
+                const IR::Type t2{IR::ArgTypeOf(inst.Opcode(), i)};
+                if (!IR::AreTypesCompatible(t1, t2)) {
+                    throw LogicError("Invalid types in block:\n{}", IR::DumpBlock(*block));
+                }
             }
         }
     }
 }
 
-static void ValidateUses(const IR::Block& block) {
+static void ValidateUses(const IR::Function& function) {
     std::map<IR::Inst*, int> actual_uses;
-    for (const IR::Inst& inst : block) {
-        const size_t num_args{inst.NumArgs()};
-        for (size_t i = 0; i < num_args; ++i) {
-            const IR::Value arg{inst.Arg(i)};
-            if (!arg.IsImmediate()) {
-                ++actual_uses[arg.Inst()];
+    for (const auto& block : function.blocks) {
+        for (const IR::Inst& inst : *block) {
+            const size_t num_args{inst.NumArgs()};
+            for (size_t i = 0; i < num_args; ++i) {
+                const IR::Value arg{inst.Arg(i)};
+                if (!arg.IsImmediate()) {
+                    ++actual_uses[arg.Inst()];
+                }
             }
         }
     }
     for (const auto [inst, uses] : actual_uses) {
         if (inst->UseCount() != uses) {
-            throw LogicError("Invalid uses in block:\n{}", IR::DumpBlock(block));
+            throw LogicError("Invalid uses in block:" /*, IR::DumpFunction(function)*/);
         }
     }
 }
 
-void VerificationPass(const IR::Block& block) {
-    ValidateTypes(block);
-    ValidateUses(block);
+void VerificationPass(const IR::Function& function) {
+    ValidateTypes(function);
+    ValidateUses(function);
 }
 
 } // namespace Shader::Optimization

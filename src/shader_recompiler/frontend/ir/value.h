@@ -96,6 +96,5 @@ using U64 = TypedValue<Type::U64>;
 using U32U64 = TypedValue<Type::U32 | Type::U64>;
 using U16U32U64 = TypedValue<Type::U16 | Type::U32 | Type::U64>;
 using UAny = TypedValue<Type::U8 | Type::U16 | Type::U32 | Type::U64>;
-using ZSCO = TypedValue<Type::ZSCO>;
 
 } // namespace Shader::IR

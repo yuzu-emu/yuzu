@@ -11,7 +11,7 @@ namespace Shader::IR {
 
 std::string NameOf(Type type) {
     static constexpr std::array names{
-        "Opaque", "Label", "Reg", "Pred", "Attribute", "U1", "U8", "U16", "U32", "U64", "ZSCO",
+        "Opaque", "Label", "Reg", "Pred", "Attribute", "U1", "U8", "U16", "U32", "U64",
     };
     const size_t bits{static_cast<size_t>(type)};
     if (bits == 0) {

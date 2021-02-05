@@ -49,6 +49,9 @@ public:
     /// Pseudo-instructions depend on their parent instructions for their semantics.
     [[nodiscard]] bool IsPseudoInstruction() const noexcept;
 
+    /// Determines if all arguments of this instruction are immediates.
+    [[nodiscard]] bool AreAllArgsImmediates() const noexcept;
+
     /// Determines if there is a pseudo-operation associated with this instruction.
     [[nodiscard]] bool HasAssociatedPseudoOperation() const noexcept;
     /// Gets a pseudo-operation associated with this instruction
@@ -94,7 +97,6 @@ private:
     Inst* sign_inst{};
     Inst* carry_inst{};
     Inst* overflow_inst{};
-    Inst* zsco_inst{};
     std::vector<std::pair<Block*, Value>> phi_operands;
     u64 flags{};
 };

@@ -24,9 +24,6 @@ OPCODE(GetAttribute,                                        U32,            Attr
 OPCODE(SetAttribute,                                        U32,            Attribute,                                                      )
 OPCODE(GetAttributeIndexed,                                 U32,            U32,                                                            )
 OPCODE(SetAttributeIndexed,                                 U32,            U32,                                                            )
-OPCODE(GetZSCORaw,                                          U32,                                                                            )
-OPCODE(SetZSCORaw,                                          Void,           U32,                                                            )
-OPCODE(SetZSCO,                                             Void,           ZSCO,                                                           )
 OPCODE(GetZFlag,                                            U1,             Void,                                                           )
 OPCODE(GetSFlag,                                            U1,             Void,                                                           )
 OPCODE(GetCFlag,                                            U1,             Void,                                                           )
@@ -65,6 +62,22 @@ OPCODE(WriteGlobal32,                                       Void,           U64,
 OPCODE(WriteGlobal64,                                       Void,           U64,            Opaque,                                         )
 OPCODE(WriteGlobal128,                                      Void,           U64,            Opaque,                                         )
 
+// Storage buffer operations
+OPCODE(LoadStorageU8,                                       U32,            U32,            U32,                                            )
+OPCODE(LoadStorageS8,                                       U32,            U32,            U32,                                            )
+OPCODE(LoadStorageU16,                                      U32,            U32,            U32,                                            )
+OPCODE(LoadStorageS16,                                      U32,            U32,            U32,                                            )
+OPCODE(LoadStorage32,                                       U32,            U32,            U32,                                            )
+OPCODE(LoadStorage64,                                       Opaque,         U32,            U32,                                            )
+OPCODE(LoadStorage128,                                      Opaque,         U32,            U32,                                            )
+OPCODE(WriteStorageU8,                                      Void,           U32,            U32,            U32,                                            )
+OPCODE(WriteStorageS8,                                      Void,           U32,            U32,            U32,                                            )
+OPCODE(WriteStorageU16,                                     Void,           U32,            U32,            U32,                                            )
+OPCODE(WriteStorageS16,                                     Void,           U32,            U32,            U32,                                            )
+OPCODE(WriteStorage32,                                      Void,           U32,            U32,            U32,                                            )
+OPCODE(WriteStorage64,                                      Void,           U32,            U32,            Opaque,                                         )
+OPCODE(WriteStorage128,                                     Void,           U32,            U32,            Opaque,                                         )
+
 // Vector utility
 OPCODE(CompositeConstruct2,                                 Opaque,         Opaque,         Opaque,                                         )
 OPCODE(CompositeConstruct3,                                 Opaque,         Opaque,         Opaque,         Opaque,                         )
@@ -90,7 +103,6 @@ OPCODE(GetZeroFromOp,                                       U1,             Opaq
 OPCODE(GetSignFromOp,                                       U1,             Opaque,                                                         )
 OPCODE(GetCarryFromOp,                                      U1,             Opaque,                                                         )
 OPCODE(GetOverflowFromOp,                                   U1,             Opaque,                                                         )
-OPCODE(GetZSCOFromOp,                                       ZSCO,           Opaque,                                                         )
 
 // Floating-point operations
 OPCODE(FPAbs16,                                             U16,            U16,                                                            )
@@ -143,6 +155,8 @@ OPCODE(FPTrunc64,                                           U64,            U64,
 // Integer operations
 OPCODE(IAdd32,                                              U32,            U32,            U32,                                            )
 OPCODE(IAdd64,                                              U64,            U64,            U64,                                            )
+OPCODE(ISub32,                                              U32,            U32,            U32,                                            )
+OPCODE(ISub64,                                              U64,            U64,            U64,                                            )
 OPCODE(IMul32,                                              U32,            U32,            U32,                                            )
 OPCODE(INeg32,                                              U32,            U32,                                                            )
 OPCODE(IAbs32,                                              U32,            U32,                                                            )

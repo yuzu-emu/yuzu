@@ -10,22 +10,24 @@
 
 namespace Shader::Optimization {
 
-void IdentityRemovalPass(IR::Block& block) {
+void IdentityRemovalPass(IR::Function& function) {
     std::vector<IR::Inst*> to_invalidate;
 
-    for (auto inst = block.begin(); inst != block.end();) {
-        const size_t num_args{inst->NumArgs()};
-        for (size_t i = 0; i < num_args; ++i) {
-            IR::Value arg;
-            while ((arg = inst->Arg(i)).IsIdentity()) {
-                inst->SetArg(i, arg.Inst()->Arg(0));
+    for (auto& block : function.blocks) {
+        for (auto inst = block->begin(); inst != block->end();) {
+            const size_t num_args{inst->NumArgs()};
+            for (size_t i = 0; i < num_args; ++i) {
+                IR::Value arg;
+                while ((arg = inst->Arg(i)).IsIdentity()) {
+                    inst->SetArg(i, arg.Inst()->Arg(0));
+                }
             }
-        }
-        if (inst->Opcode() == IR::Opcode::Identity || inst->Opcode() == IR::Opcode::Void) {
-            to_invalidate.push_back(&*inst);
-            inst = block.Instructions().erase(inst);
-        } else {
-            ++inst;
+            if (inst->Opcode() == IR::Opcode::Identity || inst->Opcode() == IR::Opcode::Void) {
+                to_invalidate.push_back(&*inst);
+                inst = block->Instructions().erase(inst);
+            } else {
+                ++inst;
+            }
         }
     }
     for (IR::Inst* const inst : to_invalidate) {
