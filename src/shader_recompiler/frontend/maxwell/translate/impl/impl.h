@@ -296,12 +296,18 @@ public:
     void XMAD_imm(u64 insn);
 
     [[nodiscard]] IR::U32 X(IR::Reg reg);
+    [[nodiscard]] IR::F32 F(IR::Reg reg);
+
     void X(IR::Reg dest_reg, const IR::U32& value);
+    void F(IR::Reg dest_reg, const IR::F32& value);
 
     [[nodiscard]] IR::U32 GetReg20(u64 insn);
     [[nodiscard]] IR::U32 GetReg39(u64 insn);
+    [[nodiscard]] IR::F32 GetReg20F(u64 insn);
+    [[nodiscard]] IR::F32 GetReg39F(u64 insn);
 
     [[nodiscard]] IR::U32 GetCbuf(u64 insn);
+    [[nodiscard]] IR::F32 GetCbufF(u64 insn);
 
     [[nodiscard]] IR::U32 GetImm20(u64 insn);
 

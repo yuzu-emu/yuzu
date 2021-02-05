@@ -108,8 +108,8 @@ bool MeetsBias(const StorageBufferAddr& storage_buffer, const Bias& bias) noexce
            storage_buffer.offset < bias.offset_end;
 }
 
-/// Ignores a global memory operation, reads return zero and writes are ignored
-void IgnoreGlobalMemory(IR::Block& block, IR::Block::iterator inst) {
+/// Discards a global memory operation, reads return zero and writes are ignored
+void DiscardGlobalMemory(IR::Block& block, IR::Block::iterator inst) {
     const IR::Value zero{u32{0}};
     switch (inst->Opcode()) {
     case IR::Opcode::LoadGlobalS8:
@@ -120,12 +120,12 @@ void IgnoreGlobalMemory(IR::Block& block, IR::Block::iterator inst) {
         inst->ReplaceUsesWith(zero);
         break;
     case IR::Opcode::LoadGlobal64:
-        inst->ReplaceUsesWith(
-            IR::Value{&*block.PrependNewInst(inst, IR::Opcode::CompositeConstruct2, {zero, zero})});
+        inst->ReplaceUsesWith(IR::Value{
+            &*block.PrependNewInst(inst, IR::Opcode::CompositeConstructU32x2, {zero, zero})});
         break;
     case IR::Opcode::LoadGlobal128:
         inst->ReplaceUsesWith(IR::Value{&*block.PrependNewInst(
-            inst, IR::Opcode::CompositeConstruct4, {zero, zero, zero, zero})});
+            inst, IR::Opcode::CompositeConstructU32x4, {zero, zero, zero, zero})});
         break;
     case IR::Opcode::WriteGlobalS8:
     case IR::Opcode::WriteGlobalU8:
@@ -137,7 +137,8 @@ void IgnoreGlobalMemory(IR::Block& block, IR::Block::iterator inst) {
         inst->Invalidate();
         break;
     default:
-        throw LogicError("Invalid opcode to ignore its global memory operation {}", inst->Opcode());
+        throw LogicError("Invalid opcode to discard its global memory operation {}",
+                         inst->Opcode());
     }
 }
 
@@ -196,7 +197,7 @@ void CollectStorageBuffers(IR::Block& block, IR::Block::iterator inst,
         storage_buffer = Track(addr, nullptr);
         if (!storage_buffer) {
             // If that also failed, drop the global memory usage
-            IgnoreGlobalMemory(block, inst);
+            DiscardGlobalMemory(block, inst);
         }
     }
     // Collect storage buffer and the instruction
@@ -242,12 +243,12 @@ std::optional<IR::U32> TrackLowAddress(IR::IREmitter& ir, IR::Inst* inst) {
     if (vector.IsImmediate()) {
         return std::nullopt;
     }
-    // This vector is expected to be a CompositeConstruct2
+    // This vector is expected to be a CompositeConstructU32x2
     IR::Inst* const vector_inst{vector.InstRecursive()};
-    if (vector_inst->Opcode() != IR::Opcode::CompositeConstruct2) {
+    if (vector_inst->Opcode() != IR::Opcode::CompositeConstructU32x2) {
         return std::nullopt;
     }
-    // Grab the first argument from the CompositeConstruct2, this is the low address.
+    // Grab the first argument from the CompositeConstructU32x2, this is the low address.
     // Re-apply the offset in case we found one.
     const IR::U32 low_addr{vector_inst->Arg(0)};
     return imm_offset != 0 ? IR::U32{ir.IAdd(low_addr, ir.Imm32(imm_offset))} : low_addr;

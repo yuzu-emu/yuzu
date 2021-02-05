@@ -5,22 +5,23 @@
 #include "common/bit_field.h"
 #include "common/common_types.h"
 #include "shader_recompiler/exception.h"
+#include "shader_recompiler/frontend/ir/ir_emitter.h"
 #include "shader_recompiler/frontend/maxwell/opcode.h"
 #include "shader_recompiler/frontend/maxwell/translate/impl/impl.h"
 
 namespace Shader::Maxwell {
 namespace {
 enum class InterpolationMode : u64 {
-    Pass = 0,
-    Multiply = 1,
-    Constant = 2,
-    Sc = 3,
+    Pass,
+    Multiply,
+    Constant,
+    Sc,
 };
 
 enum class SampleMode : u64 {
-    Default = 0,
-    Centroid = 1,
-    Offset = 2,
+    Default,
+    Centroid,
+    Offset,
 };
 } // Anonymous namespace
 
@@ -54,12 +55,12 @@ void TranslatorVisitor::IPA(u64 insn) {
     }
 
     const IR::Attribute attribute{ipa.attribute};
-    IR::U32 value{ir.GetAttribute(attribute)};
+    IR::F32 value{ir.GetAttribute(attribute)};
     if (IR::IsGeneric(attribute)) {
         // const bool is_perspective{UnimplementedReadHeader(GenericAttributeIndex(attribute))};
         const bool is_perspective{false};
         if (is_perspective) {
-            const IR::U32 rcp_position_w{ir.FPRecip(ir.GetAttribute(IR::Attribute::PositionW))};
+            const IR::F32 rcp_position_w{ir.FPRecip(ir.GetAttribute(IR::Attribute::PositionW))};
             value = ir.FPMul(value, rcp_position_w);
         }
     }
@@ -68,7 +69,7 @@ void TranslatorVisitor::IPA(u64 insn) {
     case InterpolationMode::Pass:
         break;
     case InterpolationMode::Multiply:
-        value = ir.FPMul(value, ir.GetReg(ipa.multiplier));
+        value = ir.FPMul(value, F(ipa.multiplier));
         break;
     case InterpolationMode::Constant:
         throw NotImplementedException("IPA.CONSTANT");
@@ -86,7 +87,7 @@ void TranslatorVisitor::IPA(u64 insn) {
         value = ir.FPSaturate(value);
     }
 
-    ir.SetReg(ipa.dest_reg, value);
+    F(ipa.dest_reg, value);
 }
 
 } // namespace Shader::Maxwell

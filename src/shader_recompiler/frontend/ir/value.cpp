@@ -26,7 +26,11 @@ Value::Value(u16 value) noexcept : type{Type::U16}, imm_u16{value} {}
 
 Value::Value(u32 value) noexcept : type{Type::U32}, imm_u32{value} {}
 
+Value::Value(f32 value) noexcept : type{Type::F32}, imm_f32{value} {}
+
 Value::Value(u64 value) noexcept : type{Type::U64}, imm_u64{value} {}
+
+Value::Value(f64 value) noexcept : type{Type::F64}, imm_f64{value} {}
 
 bool Value::IsIdentity() const noexcept {
     return type == Type::Opaque && inst->Opcode() == Opcode::Identity;
@@ -122,6 +126,14 @@ u32 Value::U32() const {
     return imm_u32;
 }
 
+f32 Value::F32() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).F32();
+    }
+    ValidateAccess(Type::F32);
+    return imm_f32;
+}
+
 u64 Value::U64() const {
     if (IsIdentity()) {
         return inst->Arg(0).U64();
@@ -152,11 +164,27 @@ bool Value::operator==(const Value& other) const {
     case Type::U8:
         return imm_u8 == other.imm_u8;
     case Type::U16:
+    case Type::F16:
         return imm_u16 == other.imm_u16;
     case Type::U32:
+    case Type::F32:
         return imm_u32 == other.imm_u32;
     case Type::U64:
+    case Type::F64:
         return imm_u64 == other.imm_u64;
+    case Type::U32x2:
+    case Type::U32x3:
+    case Type::U32x4:
+    case Type::F16x2:
+    case Type::F16x3:
+    case Type::F16x4:
+    case Type::F32x2:
+    case Type::F32x3:
+    case Type::F32x4:
+    case Type::F64x2:
+    case Type::F64x3:
+    case Type::F64x4:
+        break;
     }
     throw LogicError("Invalid type {}", type);
 }

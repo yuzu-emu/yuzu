@@ -114,7 +114,7 @@ void TranslatorVisitor::LDG(u64 insn) {
         }
         const IR::Value vector{ir.LoadGlobal64(address)};
         for (int i = 0; i < 2; ++i) {
-            X(dest_reg + i, ir.CompositeExtract(vector, i));
+            X(dest_reg + i, IR::U32{ir.CompositeExtract(vector, i)});
         }
         break;
     }
@@ -124,7 +124,7 @@ void TranslatorVisitor::LDG(u64 insn) {
         }
         const IR::Value vector{ir.LoadGlobal128(address)};
         for (int i = 0; i < 4; ++i) {
-            X(dest_reg + i, ir.CompositeExtract(vector, i));
+            X(dest_reg + i, IR::U32{ir.CompositeExtract(vector, i)});
         }
         break;
     }

@@ -12,8 +12,16 @@ IR::U32 TranslatorVisitor::X(IR::Reg reg) {
     return ir.GetReg(reg);
 }
 
+IR::F32 TranslatorVisitor::F(IR::Reg reg) {
+    return ir.BitCast<IR::F32>(X(reg));
+}
+
 void TranslatorVisitor::X(IR::Reg dest_reg, const IR::U32& value) {
     ir.SetReg(dest_reg, value);
+}
+
+void TranslatorVisitor::F(IR::Reg dest_reg, const IR::F32& value) {
+    X(dest_reg, ir.BitCast<IR::U32>(value));
 }
 
 IR::U32 TranslatorVisitor::GetReg20(u64 insn) {
@@ -32,6 +40,14 @@ IR::U32 TranslatorVisitor::GetReg39(u64 insn) {
     return X(reg.index);
 }
 
+IR::F32 TranslatorVisitor::GetReg20F(u64 insn) {
+    return ir.BitCast<IR::F32>(GetReg20(insn));
+}
+
+IR::F32 TranslatorVisitor::GetReg39F(u64 insn) {
+    return ir.BitCast<IR::F32>(GetReg39(insn));
+}
+
 IR::U32 TranslatorVisitor::GetCbuf(u64 insn) {
     union {
         u64 raw;
@@ -47,6 +63,10 @@ IR::U32 TranslatorVisitor::GetCbuf(u64 insn) {
     const IR::U32 binding{ir.Imm32(static_cast<u32>(cbuf.binding))};
     const IR::U32 byte_offset{ir.Imm32(static_cast<u32>(cbuf.offset) * 4)};
     return ir.GetCbuf(binding, byte_offset);
+}
+
+IR::F32 TranslatorVisitor::GetCbufF(u64 insn) {
+    return ir.BitCast<IR::F32>(GetCbuf(insn));
 }
 
 IR::U32 TranslatorVisitor::GetImm20(u64 insn) {

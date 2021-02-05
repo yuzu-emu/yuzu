@@ -28,7 +28,9 @@ public:
     explicit Value(u8 value) noexcept;
     explicit Value(u16 value) noexcept;
     explicit Value(u32 value) noexcept;
+    explicit Value(f32 value) noexcept;
     explicit Value(u64 value) noexcept;
+    explicit Value(f64 value) noexcept;
 
     [[nodiscard]] bool IsIdentity() const noexcept;
     [[nodiscard]] bool IsEmpty() const noexcept;
@@ -46,6 +48,7 @@ public:
     [[nodiscard]] u8 U8() const;
     [[nodiscard]] u16 U16() const;
     [[nodiscard]] u32 U32() const;
+    [[nodiscard]] f32 F32() const;
     [[nodiscard]] u64 U64() const;
 
     [[nodiscard]] bool operator==(const Value& other) const;
@@ -65,7 +68,9 @@ private:
         u8 imm_u8;
         u16 imm_u16;
         u32 imm_u32;
+        f32 imm_f32;
         u64 imm_u64;
+        f64 imm_f64;
     };
 };
 
@@ -93,8 +98,13 @@ using U8 = TypedValue<Type::U8>;
 using U16 = TypedValue<Type::U16>;
 using U32 = TypedValue<Type::U32>;
 using U64 = TypedValue<Type::U64>;
+using F16 = TypedValue<Type::F16>;
+using F32 = TypedValue<Type::F32>;
+using F64 = TypedValue<Type::F64>;
 using U32U64 = TypedValue<Type::U32 | Type::U64>;
+using F32F64 = TypedValue<Type::F32 | Type::F64>;
 using U16U32U64 = TypedValue<Type::U16 | Type::U32 | Type::U64>;
+using F16F32F64 = TypedValue<Type::F16 | Type::F32 | Type::F64>;
 using UAny = TypedValue<Type::U8 | Type::U16 | Type::U32 | Type::U64>;
 
 } // namespace Shader::IR

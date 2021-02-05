@@ -11,7 +11,7 @@ namespace Shader::Maxwell {
 namespace {
 
 void FADD(TranslatorVisitor& v, u64 insn, bool sat, bool cc, bool ftz, FpRounding fp_rounding,
-          const IR::U32& src_b, bool abs_a, bool neg_a, bool abs_b, bool neg_b) {
+          const IR::F32& src_b, bool abs_a, bool neg_a, bool abs_b, bool neg_b) {
     union {
         u64 raw;
         BitField<0, 8, IR::Reg> dest_reg;
@@ -24,17 +24,17 @@ void FADD(TranslatorVisitor& v, u64 insn, bool sat, bool cc, bool ftz, FpRoundin
     if (cc) {
         throw NotImplementedException("FADD CC");
     }
-    const IR::U32 op_a{v.ir.FPAbsNeg(v.X(fadd.src_a), abs_a, neg_a)};
-    const IR::U32 op_b{v.ir.FPAbsNeg(src_b, abs_b, neg_b)};
+    const IR::F32 op_a{v.ir.FPAbsNeg(v.F(fadd.src_a), abs_a, neg_a)};
+    const IR::F32 op_b{v.ir.FPAbsNeg(src_b, abs_b, neg_b)};
     IR::FpControl control{
         .no_contraction{true},
         .rounding{CastFpRounding(fp_rounding)},
         .fmz_mode{ftz ? IR::FmzMode::FTZ : IR::FmzMode::None},
     };
-    v.X(fadd.dest_reg, v.ir.FPAdd(op_a, op_b, control));
+    v.F(fadd.dest_reg, v.ir.FPAdd(op_a, op_b, control));
 }
 
-void FADD(TranslatorVisitor& v, u64 insn, const IR::U32& src_b) {
+void FADD(TranslatorVisitor& v, u64 insn, const IR::F32& src_b) {
     union {
         u64 raw;
         BitField<39, 2, FpRounding> fp_rounding;
@@ -53,7 +53,7 @@ void FADD(TranslatorVisitor& v, u64 insn, const IR::U32& src_b) {
 } // Anonymous namespace
 
 void TranslatorVisitor::FADD_reg(u64 insn) {
-    FADD(*this, insn, GetReg20(insn));
+    FADD(*this, insn, GetReg20F(insn));
 }
 
 void TranslatorVisitor::FADD_cbuf(u64) {
