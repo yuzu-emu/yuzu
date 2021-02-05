@@ -35,8 +35,8 @@ void TranslatorVisitor::MUFU(u64 insn) {
         BitField<50, 1, u64> sat;
     } const mufu{insn};
 
-    const IR::U32 op_a{ir.FPAbsNeg(X(mufu.src_reg), mufu.abs != 0, mufu.neg != 0)};
-    IR::U32 value{[&]() -> IR::U32 {
+    const IR::F32 op_a{ir.FPAbsNeg(F(mufu.src_reg), mufu.abs != 0, mufu.neg != 0)};
+    IR::F32 value{[&]() -> IR::F32 {
         switch (mufu.operation) {
         case Operation::Cos:
             return ir.FPCosNotReduced(op_a);
@@ -65,7 +65,7 @@ void TranslatorVisitor::MUFU(u64 insn) {
         value = ir.FPSaturate(value);
     }
 
-    X(mufu.dest_reg, value);
+    F(mufu.dest_reg, value);
 }
 
 } // namespace Shader::Maxwell

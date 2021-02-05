@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <type_traits>
 
+#include "common/bit_cast.h"
 #include "common/bit_util.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/microinstruction.h"
@@ -25,6 +26,8 @@ template <typename T>
         return value.U1();
     } else if constexpr (std::is_same_v<T, u32>) {
         return value.U32();
+    } else if constexpr (std::is_same_v<T, f32>) {
+        return value.F32();
     } else if constexpr (std::is_same_v<T, u64>) {
         return value.U64();
     }
@@ -115,6 +118,19 @@ void FoldLogicalAnd(IR::Inst& inst) {
     }
 }
 
+template <typename Dest, typename Source>
+void FoldBitCast(IR::Inst& inst, IR::Opcode reverse) {
+    const IR::Value value{inst.Arg(0)};
+    if (value.IsImmediate()) {
+        inst.ReplaceUsesWith(IR::Value{Common::BitCast<Dest>(Arg<Source>(value))});
+        return;
+    }
+    IR::Inst* const arg_inst{value.InstRecursive()};
+    if (value.InstRecursive()->Opcode() == reverse) {
+        inst.ReplaceUsesWith(arg_inst->Arg(0));
+    }
+}
+
 void ConstantPropagation(IR::Inst& inst) {
     switch (inst.Opcode()) {
     case IR::Opcode::GetRegister:
@@ -123,6 +139,10 @@ void ConstantPropagation(IR::Inst& inst) {
         return FoldGetPred(inst);
     case IR::Opcode::IAdd32:
         return FoldAdd<u32>(inst);
+    case IR::Opcode::BitCastF32U32:
+        return FoldBitCast<f32, u32>(inst, IR::Opcode::BitCastU32F32);
+    case IR::Opcode::BitCastU32F32:
+        return FoldBitCast<u32, f32>(inst, IR::Opcode::BitCastF32U32);
     case IR::Opcode::IAdd64:
         return FoldAdd<u64>(inst);
     case IR::Opcode::BitFieldUExtract:

@@ -4,6 +4,7 @@
 
 #include "common/bit_field.h"
 #include "common/common_types.h"
+#include "shader_recompiler/frontend/ir/ir_emitter.h"
 #include "shader_recompiler/frontend/ir/modifiers.h"
 #include "shader_recompiler/frontend/maxwell/translate/impl/common_encoding.h"
 #include "shader_recompiler/frontend/maxwell/translate/impl/impl.h"
@@ -43,7 +44,7 @@ float ScaleFactor(Scale scale) {
     throw NotImplementedException("Invalid FMUL scale {}", scale);
 }
 
-void FMUL(TranslatorVisitor& v, u64 insn, const IR::U32& src_b, FmzMode fmz_mode,
+void FMUL(TranslatorVisitor& v, u64 insn, const IR::F32& src_b, FmzMode fmz_mode,
           FpRounding fp_rounding, Scale scale, bool sat, bool cc, bool neg_b) {
     union {
         u64 raw;
@@ -57,23 +58,23 @@ void FMUL(TranslatorVisitor& v, u64 insn, const IR::U32& src_b, FmzMode fmz_mode
     if (sat) {
         throw NotImplementedException("FMUL SAT");
     }
-    IR::U32 op_a{v.X(fmul.src_a)};
+    IR::F32 op_a{v.F(fmul.src_a)};
     if (scale != Scale::None) {
         if (fmz_mode != FmzMode::FTZ || fp_rounding != FpRounding::RN) {
             throw NotImplementedException("FMUL scale with non-FMZ or non-RN modifiers");
         }
         op_a = v.ir.FPMul(op_a, v.ir.Imm32(ScaleFactor(scale)));
     }
-    const IR::U32 op_b{v.ir.FPAbsNeg(src_b, false, neg_b)};
+    const IR::F32 op_b{v.ir.FPAbsNeg(src_b, false, neg_b)};
     const IR::FpControl fp_control{
         .no_contraction{true},
         .rounding{CastFpRounding(fp_rounding)},
         .fmz_mode{CastFmzMode(fmz_mode)},
     };
-    v.X(fmul.dest_reg, v.ir.FPMul(op_a, op_b, fp_control));
+    v.F(fmul.dest_reg, v.ir.FPMul(op_a, op_b, fp_control));
 }
 
-void FMUL(TranslatorVisitor& v, u64 insn, const IR::U32& src_b) {
+void FMUL(TranslatorVisitor& v, u64 insn, const IR::F32& src_b) {
     union {
         u64 raw;
         BitField<39, 2, FpRounding> fp_rounding;
@@ -90,7 +91,7 @@ void FMUL(TranslatorVisitor& v, u64 insn, const IR::U32& src_b) {
 } // Anonymous namespace
 
 void TranslatorVisitor::FMUL_reg(u64 insn) {
-    return FMUL(*this, insn, GetReg20(insn));
+    return FMUL(*this, insn, GetReg20F(insn));
 }
 
 void TranslatorVisitor::FMUL_cbuf(u64) {

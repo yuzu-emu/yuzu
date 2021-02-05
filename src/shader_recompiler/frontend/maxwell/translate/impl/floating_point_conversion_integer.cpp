@@ -55,21 +55,21 @@ size_t BitSize(DestFormat dest_format) {
     }
 }
 
-void TranslateF2I(TranslatorVisitor& v, u64 insn, const IR::U16U32U64& op_a) {
+void TranslateF2I(TranslatorVisitor& v, u64 insn, const IR::F16F32F64& src_a) {
     // F2I is used to convert from a floating point value to an integer
     const F2I f2i{insn};
 
-    const IR::U16U32U64 float_value{v.ir.FPAbsNeg(op_a, f2i.abs != 0, f2i.neg != 0)};
-    const IR::U16U32U64 rounded_value{[&] {
+    const IR::F16F32F64 op_a{v.ir.FPAbsNeg(src_a, f2i.abs != 0, f2i.neg != 0)};
+    const IR::F16F32F64 rounded_value{[&] {
         switch (f2i.rounding) {
         case Rounding::Round:
-            return v.ir.FPRoundEven(float_value);
+            return v.ir.FPRoundEven(op_a);
         case Rounding::Floor:
-            return v.ir.FPFloor(float_value);
+            return v.ir.FPFloor(op_a);
         case Rounding::Ceil:
-            return v.ir.FPCeil(float_value);
+            return v.ir.FPCeil(op_a);
         case Rounding::Trunc:
-            return v.ir.FPTrunc(float_value);
+            return v.ir.FPTrunc(op_a);
         default:
             throw NotImplementedException("Invalid F2I rounding {}", f2i.rounding.Value());
         }
@@ -105,12 +105,12 @@ void TranslatorVisitor::F2I_reg(u64 insn) {
         BitField<20, 8, IR::Reg> src_reg;
     } const f2i{insn};
 
-    const IR::U16U32U64 op_a{[&]() -> IR::U16U32U64 {
+    const IR::F16F32F64 op_a{[&]() -> IR::F16F32F64 {
         switch (f2i.base.src_format) {
         case SrcFormat::F16:
-            return ir.CompositeExtract(ir.UnpackFloat2x16(X(f2i.src_reg)), f2i.base.half);
+            return IR::F16{ir.CompositeExtract(ir.UnpackFloat2x16(X(f2i.src_reg)), f2i.base.half)};
         case SrcFormat::F32:
-            return X(f2i.src_reg);
+            return F(f2i.src_reg);
         case SrcFormat::F64:
             return ir.PackDouble2x32(ir.CompositeConstruct(X(f2i.src_reg), X(f2i.src_reg + 1)));
         default:
