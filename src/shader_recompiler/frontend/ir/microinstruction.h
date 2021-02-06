@@ -6,8 +6,8 @@
 
 #include <array>
 #include <cstring>
-#include <span>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include <boost/intrusive/list.hpp>
@@ -25,7 +25,14 @@ constexpr size_t MAX_ARG_COUNT = 4;
 
 class Inst : public boost::intrusive::list_base_hook<> {
 public:
-    explicit Inst(Opcode op_, u64 flags_) noexcept : op{op_}, flags{flags_} {}
+    explicit Inst(Opcode op_, u64 flags_) noexcept;
+    ~Inst();
+
+    Inst& operator=(const Inst&) = delete;
+    Inst(const Inst&) = delete;
+
+    Inst& operator=(Inst&&) = delete;
+    Inst(Inst&&) = delete;
 
     /// Get the number of uses this instruction has.
     [[nodiscard]] int UseCount() const noexcept {
@@ -50,26 +57,26 @@ public:
     [[nodiscard]] bool IsPseudoInstruction() const noexcept;
 
     /// Determines if all arguments of this instruction are immediates.
-    [[nodiscard]] bool AreAllArgsImmediates() const noexcept;
+    [[nodiscard]] bool AreAllArgsImmediates() const;
 
     /// Determines if there is a pseudo-operation associated with this instruction.
     [[nodiscard]] bool HasAssociatedPseudoOperation() const noexcept;
     /// Gets a pseudo-operation associated with this instruction
     [[nodiscard]] Inst* GetAssociatedPseudoOperation(IR::Opcode opcode);
 
-    /// Get the number of arguments this instruction has.
-    [[nodiscard]] size_t NumArgs() const;
-
     /// Get the type this instruction returns.
     [[nodiscard]] IR::Type Type() const;
+
+    /// Get the number of arguments this instruction has.
+    [[nodiscard]] size_t NumArgs() const;
 
     /// Get the value of a given argument index.
     [[nodiscard]] Value Arg(size_t index) const;
     /// Set the value of a given argument index.
     void SetArg(size_t index, Value value);
 
-    /// Get an immutable span to the phi operands.
-    [[nodiscard]] std::span<const std::pair<Block*, Value>> PhiOperands() const noexcept;
+    /// Get a pointer to the block of a phi argument.
+    [[nodiscard]] Block* PhiBlock(size_t index) const;
     /// Add phi operand to a phi instruction.
     void AddPhiOperand(Block* predecessor, const Value& value);
 
@@ -87,18 +94,26 @@ public:
     }
 
 private:
+    struct NonTriviallyDummy {
+        NonTriviallyDummy() noexcept {}
+    };
+
     void Use(const Value& value);
     void UndoUse(const Value& value);
 
     IR::Opcode op{};
     int use_count{};
-    std::array<Value, MAX_ARG_COUNT> args{};
+    u64 flags{};
+    union {
+        NonTriviallyDummy dummy{};
+        std::array<Value, MAX_ARG_COUNT> args;
+        std::vector<std::pair<Block*, Value>> phi_args;
+    };
     Inst* zero_inst{};
     Inst* sign_inst{};
     Inst* carry_inst{};
     Inst* overflow_inst{};
-    std::vector<std::pair<Block*, Value>> phi_operands;
-    u64 flags{};
 };
+static_assert(sizeof(Inst) <= 128, "Inst size unintentionally increased its size");
 
 } // namespace Shader::IR

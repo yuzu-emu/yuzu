@@ -129,26 +129,21 @@ std::string DumpBlock(const Block& block, const std::map<const Block*, size_t>& 
         } else {
             ret += fmt::format("         {}", op); // '%00000 = ' -> 1 + 5 + 3 = 9 spaces
         }
-        if (op == Opcode::Phi) {
-            size_t val_index{0};
-            for (const auto& [phi_block, phi_val] : inst.PhiOperands()) {
-                ret += val_index != 0 ? ", " : " ";
-                ret += fmt::format("[ {}, {} ]", ArgToIndex(block_to_index, inst_to_index, phi_val),
-                                   BlockToIndex(block_to_index, phi_block));
-                ++val_index;
+        const size_t arg_count{NumArgsOf(op)};
+        for (size_t arg_index = 0; arg_index < arg_count; ++arg_index) {
+            const Value arg{inst.Arg(arg_index)};
+            const std::string arg_str{ArgToIndex(block_to_index, inst_to_index, arg)};
+            ret += arg_index != 0 ? ", " : " ";
+            if (op == Opcode::Phi) {
+                ret += fmt::format("[ {}, {} ]", arg_index,
+                                   BlockToIndex(block_to_index, inst.PhiBlock(arg_index)));
+            } else {
+                ret += arg_str;
             }
-        } else {
-            const size_t arg_count{NumArgsOf(op)};
-            for (size_t arg_index = 0; arg_index < arg_count; ++arg_index) {
-                const Value arg{inst.Arg(arg_index)};
-                ret += arg_index != 0 ? ", " : " ";
-                ret += ArgToIndex(block_to_index, inst_to_index, arg);
-
-                const Type actual_type{arg.Type()};
-                const Type expected_type{ArgTypeOf(op, arg_index)};
-                if (!AreTypesCompatible(actual_type, expected_type)) {
-                    ret += fmt::format("<type error: {} != {}>", actual_type, expected_type);
-                }
+            const Type actual_type{arg.Type()};
+            const Type expected_type{ArgTypeOf(op, arg_index)};
+            if (!AreTypesCompatible(actual_type, expected_type)) {
+                ret += fmt::format("<type error: {} != {}>", actual_type, expected_type);
             }
         }
         if (TypeOf(op) != Type::Void) {
