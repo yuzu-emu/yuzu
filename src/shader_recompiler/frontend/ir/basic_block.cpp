@@ -87,7 +87,7 @@ static std::string ArgToIndex(const std::map<const Block*, size_t>& block_to_ind
     }
     switch (arg.Type()) {
     case Type::U1:
-        return fmt::format("#{}", arg.U1() ? '1' : '0');
+        return fmt::format("#{}", arg.U1() ? "true" : "false");
     case Type::U8:
         return fmt::format("#{}", arg.U8());
     case Type::U16:

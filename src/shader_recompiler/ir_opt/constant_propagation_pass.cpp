@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#include <tuple>
 #include <type_traits>
 
 #include "common/bit_cast.h"
@@ -13,12 +14,17 @@
 
 namespace Shader::Optimization {
 namespace {
-[[nodiscard]] u32 BitFieldUExtract(u32 base, u32 shift, u32 count) {
-    if (static_cast<size_t>(shift) + static_cast<size_t>(count) > Common::BitSize<u32>()) {
-        throw LogicError("Undefined result in BitFieldUExtract({}, {}, {})", base, shift, count);
-    }
-    return (base >> shift) & ((1U << count) - 1);
-}
+// Metaprogramming stuff to get arguments information out of a lambda
+template <typename Func>
+struct LambdaTraits : LambdaTraits<decltype(&std::remove_reference_t<Func>::operator())> {};
+
+template <typename ReturnType, typename LambdaType, typename... Args>
+struct LambdaTraits<ReturnType (LambdaType::*)(Args...) const> {
+    template <size_t I>
+    using ArgType = std::tuple_element_t<I, std::tuple<Args...>>;
+
+    static constexpr size_t NUM_ARGS{sizeof...(Args)};
+};
 
 template <typename T>
 [[nodiscard]] T Arg(const IR::Value& value) {
@@ -104,6 +110,14 @@ void FoldAdd(IR::Inst& inst) {
     }
 }
 
+template <typename T>
+void FoldSelect(IR::Inst& inst) {
+    const IR::Value cond{inst.Arg(0)};
+    if (cond.IsImmediate()) {
+        inst.ReplaceUsesWith(cond.U1() ? inst.Arg(1) : inst.Arg(2));
+    }
+}
+
 void FoldLogicalAnd(IR::Inst& inst) {
     if (!FoldCommutative(inst, [](bool a, bool b) { return a && b; })) {
         return;
@@ -131,6 +145,21 @@ void FoldBitCast(IR::Inst& inst, IR::Opcode reverse) {
     }
 }
 
+template <typename Func, size_t... I>
+IR::Value EvalImmediates(const IR::Inst& inst, Func&& func, std::index_sequence<I...>) {
+    using Traits = LambdaTraits<decltype(func)>;
+    return IR::Value{func(Arg<Traits::ArgType<I>>(inst.Arg(I))...)};
+}
+
+template <typename Func>
+void FoldWhenAllImmediates(IR::Inst& inst, Func&& func) {
+    if (!inst.AreAllArgsImmediates() || inst.HasAssociatedPseudoOperation()) {
+        return;
+    }
+    using Indices = std::make_index_sequence<LambdaTraits<decltype(func)>::NUM_ARGS>;
+    inst.ReplaceUsesWith(EvalImmediates(inst, func, Indices{}));
+}
+
 void ConstantPropagation(IR::Inst& inst) {
     switch (inst.Opcode()) {
     case IR::Opcode::GetRegister:
@@ -145,14 +174,20 @@ void ConstantPropagation(IR::Inst& inst) {
         return FoldBitCast<u32, f32>(inst, IR::Opcode::BitCastF32U32);
     case IR::Opcode::IAdd64:
         return FoldAdd<u64>(inst);
-    case IR::Opcode::BitFieldUExtract:
-        if (inst.AreAllArgsImmediates() && !inst.HasAssociatedPseudoOperation()) {
-            inst.ReplaceUsesWith(IR::Value{
-                BitFieldUExtract(inst.Arg(0).U32(), inst.Arg(1).U32(), inst.Arg(2).U32())});
-        }
-        break;
+    case IR::Opcode::Select32:
+        return FoldSelect<u32>(inst);
     case IR::Opcode::LogicalAnd:
         return FoldLogicalAnd(inst);
+    case IR::Opcode::ULessThan:
+        return FoldWhenAllImmediates(inst, [](u32 a, u32 b) { return a < b; });
+    case IR::Opcode::BitFieldUExtract:
+        return FoldWhenAllImmediates(inst, [](u32 base, u32 shift, u32 count) {
+            if (static_cast<size_t>(shift) + static_cast<size_t>(count) > Common::BitSize<u32>()) {
+                throw LogicError("Undefined result in {}({}, {}, {})", IR::Opcode::BitFieldUExtract,
+                                 base, shift, count);
+            }
+            return (base >> shift) & ((1U << count) - 1);
+        });
     default:
         break;
     }
