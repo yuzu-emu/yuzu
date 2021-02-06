@@ -13,7 +13,7 @@
 #include <boost/intrusive/list.hpp>
 
 #include "common/common_types.h"
-#include "shader_recompiler/frontend/ir/opcode.h"
+#include "shader_recompiler/frontend/ir/opcodes.h"
 #include "shader_recompiler/frontend/ir/type.h"
 #include "shader_recompiler/frontend/ir/value.h"
 

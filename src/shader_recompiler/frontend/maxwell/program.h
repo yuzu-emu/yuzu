@@ -9,28 +9,16 @@
 #include <vector>
 
 #include <boost/container/small_vector.hpp>
-#include <boost/pool/pool_alloc.hpp>
 
 #include "shader_recompiler/environment.h"
-#include "shader_recompiler/frontend/ir/basic_block.h"
-#include "shader_recompiler/frontend/ir/function.h"
+#include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
+#include "shader_recompiler/object_pool.h"
 
 namespace Shader::Maxwell {
 
-class Program {
-    friend std::string DumpProgram(const Program& program);
-
-public:
-    explicit Program(Environment& env, const Flow::CFG& cfg);
-
-private:
-    boost::pool_allocator<IR::Block, boost::default_user_allocator_new_delete,
-                          boost::details::pool::null_mutex>
-        block_alloc_pool;
-    boost::container::small_vector<IR::Function, 1> functions;
-};
-
-[[nodiscard]] std::string DumpProgram(const Program& program);
+[[nodiscard]] IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool,
+                                           ObjectPool<IR::Block>& block_pool, Environment& env,
+                                           const Flow::CFG& cfg);
 
 } // namespace Shader::Maxwell

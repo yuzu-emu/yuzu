@@ -6,7 +6,7 @@
 #include "common/common_types.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
-#include "shader_recompiler/frontend/maxwell/opcode.h"
+#include "shader_recompiler/frontend/maxwell/opcodes.h"
 #include "shader_recompiler/frontend/maxwell/translate/impl/impl.h"
 
 namespace Shader::Maxwell {

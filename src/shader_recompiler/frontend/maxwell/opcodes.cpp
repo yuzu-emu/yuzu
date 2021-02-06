@@ -5,7 +5,7 @@
 #include <array>
 
 #include "shader_recompiler/exception.h"
-#include "shader_recompiler/frontend/maxwell/opcode.h"
+#include "shader_recompiler/frontend/maxwell/opcodes.h"
 
 namespace Shader::Maxwell {
 namespace {

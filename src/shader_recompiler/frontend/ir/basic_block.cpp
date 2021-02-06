@@ -14,7 +14,8 @@
 
 namespace Shader::IR {
 
-Block::Block(u32 begin, u32 end) : location_begin{begin}, location_end{end} {}
+Block::Block(ObjectPool<Inst>& inst_pool_, u32 begin, u32 end)
+    : inst_pool{&inst_pool_}, location_begin{begin}, location_end{end} {}
 
 Block::~Block() = default;
 
@@ -24,7 +25,7 @@ void Block::AppendNewInst(Opcode op, std::initializer_list<Value> args) {
 
 Block::iterator Block::PrependNewInst(iterator insertion_point, Opcode op,
                                       std::initializer_list<Value> args, u64 flags) {
-    Inst* const inst{std::construct_at(instruction_alloc_pool.allocate(), op, flags)};
+    Inst* const inst{inst_pool->Create(op, flags)};
     const auto result_it{instructions.insert(insertion_point, *inst)};
 
     if (inst->NumArgs() != args.size()) {

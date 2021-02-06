@@ -14,7 +14,7 @@ namespace Shader::IR {
 
 enum class Opcode {
 #define OPCODE(name, ...) name,
-#include "opcode.inc"
+#include "opcodes.inc"
 #undef OPCODE
 };
 

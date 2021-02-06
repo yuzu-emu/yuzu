@@ -7,7 +7,7 @@
 #include <string_view>
 
 #include "shader_recompiler/exception.h"
-#include "shader_recompiler/frontend/ir/opcode.h"
+#include "shader_recompiler/frontend/ir/opcodes.h"
 
 namespace Shader::IR {
 namespace {
@@ -26,7 +26,7 @@ constexpr std::array META_TABLE{
         .type{type_token},                                                                         \
         .arg_types{__VA_ARGS__},                                                                   \
     },
-#include "opcode.inc"
+#include "opcodes.inc"
 #undef OPCODE
 };
 

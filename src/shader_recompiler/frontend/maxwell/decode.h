@@ -5,7 +5,7 @@
 #pragma once
 
 #include "common/common_types.h"
-#include "shader_recompiler/frontend/maxwell/opcode.h"
+#include "shader_recompiler/frontend/maxwell/opcodes.h"
 
 namespace Shader::Maxwell {
 

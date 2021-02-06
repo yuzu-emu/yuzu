@@ -56,6 +56,13 @@ int main() {
     auto cfg{std::make_unique<Flow::CFG>(env, 0)};
     // fmt::print(stdout, "{}\n", cfg->Dot());
 
-    Program program{env, *cfg};
-    fmt::print(stdout, "{}\n", DumpProgram(program));
+    auto inst_pool{std::make_unique<ObjectPool<IR::Inst>>()};
+    auto block_pool{std::make_unique<ObjectPool<IR::Block>>()};
+
+    for (int i = 0; i < 8192 * 4; ++i) {
+        void(inst_pool->Create(IR::Opcode::Void, 0));
+    }
+
+    IR::Program program{TranslateProgram(*inst_pool, *block_pool, env, *cfg)};
+    fmt::print(stdout, "{}\n", IR::DumpProgram(program));
 }
