@@ -23,8 +23,9 @@ static void Invoke(TranslatorVisitor& visitor, Location pc, u64 insn) {
     }
 }
 
-IR::Block Translate(Environment& env, const Flow::Block& flow_block) {
-    IR::Block block{flow_block.begin.Offset(), flow_block.end.Offset()};
+IR::Block Translate(ObjectPool<IR::Inst>& inst_pool, Environment& env,
+                    const Flow::Block& flow_block) {
+    IR::Block block{inst_pool, flow_block.begin.Offset(), flow_block.end.Offset()};
     TranslatorVisitor visitor{env, block};
 
     const Location pc_end{flow_block.end};

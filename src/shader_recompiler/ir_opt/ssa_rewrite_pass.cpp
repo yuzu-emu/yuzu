@@ -19,7 +19,7 @@
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/function.h"
 #include "shader_recompiler/frontend/ir/microinstruction.h"
-#include "shader_recompiler/frontend/ir/opcode.h"
+#include "shader_recompiler/frontend/ir/opcodes.h"
 #include "shader_recompiler/frontend/ir/pred.h"
 #include "shader_recompiler/frontend/ir/reg.h"
 #include "shader_recompiler/ir_opt/passes.h"
@@ -150,52 +150,52 @@ private:
 
 void SsaRewritePass(IR::Function& function) {
     Pass pass;
-    for (const auto& block : function.blocks) {
+    for (IR::Block* const block : function.blocks) {
         for (IR::Inst& inst : block->Instructions()) {
             switch (inst.Opcode()) {
             case IR::Opcode::SetRegister:
                 if (const IR::Reg reg{inst.Arg(0).Reg()}; reg != IR::Reg::RZ) {
-                    pass.WriteVariable(reg, block.get(), inst.Arg(1));
+                    pass.WriteVariable(reg, block, inst.Arg(1));
                 }
                 break;
             case IR::Opcode::SetPred:
                 if (const IR::Pred pred{inst.Arg(0).Pred()}; pred != IR::Pred::PT) {
-                    pass.WriteVariable(pred, block.get(), inst.Arg(1));
+                    pass.WriteVariable(pred, block, inst.Arg(1));
                 }
                 break;
             case IR::Opcode::SetZFlag:
-                pass.WriteVariable(ZeroFlagTag{}, block.get(), inst.Arg(0));
+                pass.WriteVariable(ZeroFlagTag{}, block, inst.Arg(0));
                 break;
             case IR::Opcode::SetSFlag:
-                pass.WriteVariable(SignFlagTag{}, block.get(), inst.Arg(0));
+                pass.WriteVariable(SignFlagTag{}, block, inst.Arg(0));
                 break;
             case IR::Opcode::SetCFlag:
-                pass.WriteVariable(CarryFlagTag{}, block.get(), inst.Arg(0));
+                pass.WriteVariable(CarryFlagTag{}, block, inst.Arg(0));
                 break;
             case IR::Opcode::SetOFlag:
-                pass.WriteVariable(OverflowFlagTag{}, block.get(), inst.Arg(0));
+                pass.WriteVariable(OverflowFlagTag{}, block, inst.Arg(0));
                 break;
             case IR::Opcode::GetRegister:
                 if (const IR::Reg reg{inst.Arg(0).Reg()}; reg != IR::Reg::RZ) {
-                    inst.ReplaceUsesWith(pass.ReadVariable(reg, block.get()));
+                    inst.ReplaceUsesWith(pass.ReadVariable(reg, block));
                 }
                 break;
             case IR::Opcode::GetPred:
                 if (const IR::Pred pred{inst.Arg(0).Pred()}; pred != IR::Pred::PT) {
-                    inst.ReplaceUsesWith(pass.ReadVariable(pred, block.get()));
+                    inst.ReplaceUsesWith(pass.ReadVariable(pred, block));
                 }
                 break;
             case IR::Opcode::GetZFlag:
-                inst.ReplaceUsesWith(pass.ReadVariable(ZeroFlagTag{}, block.get()));
+                inst.ReplaceUsesWith(pass.ReadVariable(ZeroFlagTag{}, block));
                 break;
             case IR::Opcode::GetSFlag:
-                inst.ReplaceUsesWith(pass.ReadVariable(SignFlagTag{}, block.get()));
+                inst.ReplaceUsesWith(pass.ReadVariable(SignFlagTag{}, block));
                 break;
             case IR::Opcode::GetCFlag:
-                inst.ReplaceUsesWith(pass.ReadVariable(CarryFlagTag{}, block.get()));
+                inst.ReplaceUsesWith(pass.ReadVariable(CarryFlagTag{}, block));
                 break;
             case IR::Opcode::GetOFlag:
-                inst.ReplaceUsesWith(pass.ReadVariable(OverflowFlagTag{}, block.get()));
+                inst.ReplaceUsesWith(pass.ReadVariable(OverflowFlagTag{}, block));
                 break;
             default:
                 break;

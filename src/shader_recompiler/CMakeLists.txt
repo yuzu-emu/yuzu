@@ -1,4 +1,5 @@
 add_executable(shader_recompiler
+    backend/spirv/emit_spirv.h
     environment.h
     exception.h
     file_environment.cpp
@@ -17,10 +18,12 @@ add_executable(shader_recompiler
     frontend/ir/ir_emitter.h
     frontend/ir/microinstruction.cpp
     frontend/ir/microinstruction.h
-    frontend/ir/opcode.cpp
-    frontend/ir/opcode.h
-    frontend/ir/opcode.inc
+    frontend/ir/opcodes.cpp
+    frontend/ir/opcodes.h
+    frontend/ir/opcodes.inc
     frontend/ir/pred.h
+    frontend/ir/program.cpp
+    frontend/ir/program.h
     frontend/ir/reg.h
     frontend/ir/type.cpp
     frontend/ir/type.h
@@ -33,8 +36,8 @@ add_executable(shader_recompiler
     frontend/maxwell/instruction.h
     frontend/maxwell/location.h
     frontend/maxwell/maxwell.inc
-    frontend/maxwell/opcode.cpp
-    frontend/maxwell/opcode.h
+    frontend/maxwell/opcodes.cpp
+    frontend/maxwell/opcodes.h
     frontend/maxwell/program.cpp
     frontend/maxwell/program.h
     frontend/maxwell/termination_code.cpp
@@ -67,6 +70,7 @@ add_executable(shader_recompiler
     ir_opt/ssa_rewrite_pass.cpp
     ir_opt/verification_pass.cpp
     main.cpp
+    object_pool.h
 )
 target_link_libraries(shader_recompiler PRIVATE fmt::fmt)
 

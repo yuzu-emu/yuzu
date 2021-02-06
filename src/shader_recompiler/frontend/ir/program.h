@@ -4,14 +4,18 @@
 
 #pragma once
 
+#include <string>
+
 #include <boost/container/small_vector.hpp>
 
-#include "shader_recompiler/frontend/ir/basic_block.h"
+#include "shader_recompiler/frontend/ir/function.h"
 
 namespace Shader::IR {
 
-struct Function {
-    boost::container::small_vector<Block*, 16> blocks;
+struct Program {
+    boost::container::small_vector<Function, 1> functions;
 };
+
+[[nodiscard]] std::string DumpProgram(const Program& program);
 
 } // namespace Shader::IR

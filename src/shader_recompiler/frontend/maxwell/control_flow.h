@@ -16,7 +16,7 @@
 #include "shader_recompiler/frontend/ir/condition.h"
 #include "shader_recompiler/frontend/maxwell/instruction.h"
 #include "shader_recompiler/frontend/maxwell/location.h"
-#include "shader_recompiler/frontend/maxwell/opcode.h"
+#include "shader_recompiler/frontend/maxwell/opcodes.h"
 
 namespace Shader::Maxwell::Flow {
 

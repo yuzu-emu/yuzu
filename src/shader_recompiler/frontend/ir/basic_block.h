@@ -10,9 +10,9 @@
 #include <vector>
 
 #include <boost/intrusive/list.hpp>
-#include <boost/pool/pool_alloc.hpp>
 
 #include "shader_recompiler/frontend/ir/microinstruction.h"
+#include "shader_recompiler/object_pool.h"
 
 namespace Shader::IR {
 
@@ -25,7 +25,7 @@ public:
     using reverse_iterator = InstructionList::reverse_iterator;
     using const_reverse_iterator = InstructionList::const_reverse_iterator;
 
-    explicit Block(u32 begin, u32 end);
+    explicit Block(ObjectPool<Inst>& inst_pool_, u32 begin, u32 end);
     ~Block();
 
     Block(const Block&) = delete;
@@ -119,6 +119,8 @@ public:
     }
 
 private:
+    /// Memory pool for instruction list
+    ObjectPool<Inst>* inst_pool;
     /// Starting location of this block
     u32 location_begin;
     /// End location of this block
@@ -126,11 +128,6 @@ private:
 
     /// List of instructions in this block
     InstructionList instructions;
-
-    /// Memory pool for instruction list
-    boost::fast_pool_allocator<Inst, boost::default_user_allocator_malloc_free,
-                               boost::details::pool::null_mutex>
-        instruction_alloc_pool;
 
     /// Block immediate predecessors
     std::vector<IR::Block*> imm_predecessors;
