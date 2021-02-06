@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <type_traits>
+#include <utility>
 
 namespace Shader {
 
@@ -31,14 +32,12 @@ public:
 
     void ReleaseContents() {
         Chunk* chunk{&root};
-        if (chunk) {
-            const size_t free_objects{chunk->free_objects};
-            if (free_objects == chunk_size) {
+        while (chunk) {
+            if (chunk->free_objects == chunk_size) {
                 break;
             }
-            chunk->free_objects = chunk_size;
-            for (size_t obj_id = free_objects; obj_id < chunk_size; ++obj_id) {
-                chunk->storage[obj_id].object.~T();
+            for (; chunk->free_objects < chunk_size; ++chunk->free_objects) {
+                chunk->storage[chunk->free_objects].object.~T();
             }
             chunk = chunk->next.get();
         }

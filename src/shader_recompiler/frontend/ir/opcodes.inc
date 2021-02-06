@@ -3,9 +3,9 @@
 // Refer to the license.txt file included.
 
 //     opcode name,                                         return type,    arg1 type,      arg2 type,      arg3 type,      arg4 type,      ...
+OPCODE(Phi,                                                 Opaque,                                                                         )
 OPCODE(Void,                                                Void,                                                                           )
 OPCODE(Identity,                                            Opaque,         Opaque,                                                         )
-OPCODE(Phi,                                                 Opaque,         /*todo*/                                                        )
 
 // Control flow
 OPCODE(Branch,                                              Void,           Label,                                                          )

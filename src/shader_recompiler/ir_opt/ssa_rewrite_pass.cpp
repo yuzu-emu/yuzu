@@ -104,32 +104,34 @@ private:
             val = ReadVariable(variable, preds.front());
         } else {
             // Break potential cycles with operandless phi
-            val = IR::Value{&*block->PrependNewInst(block->begin(), IR::Opcode::Phi)};
+            IR::Inst& phi_inst{*block->PrependNewInst(block->begin(), IR::Opcode::Phi)};
+            val = IR::Value{&phi_inst};
             WriteVariable(variable, block, val);
-            val = AddPhiOperands(variable, val, block);
+            val = AddPhiOperands(variable, phi_inst, block);
         }
         WriteVariable(variable, block, val);
         return val;
     }
 
-    IR::Value AddPhiOperands(auto variable, const IR::Value& phi, IR::Block* block) {
+    IR::Value AddPhiOperands(auto variable, IR::Inst& phi, IR::Block* block) {
         for (IR::Block* const pred : block->ImmediatePredecessors()) {
-            phi.Inst()->AddPhiOperand(pred, ReadVariable(variable, pred));
+            phi.AddPhiOperand(pred, ReadVariable(variable, pred));
         }
         return TryRemoveTrivialPhi(phi, block, UndefOpcode(variable));
     }
 
-    IR::Value TryRemoveTrivialPhi(const IR::Value& phi, IR::Block* block, IR::Opcode undef_opcode) {
+    IR::Value TryRemoveTrivialPhi(IR::Inst& phi, IR::Block* block, IR::Opcode undef_opcode) {
         IR::Value same;
-        for (const auto& pair : phi.Inst()->PhiOperands()) {
-            const IR::Value& op{pair.second};
-            if (op == same || op == phi) {
+        const size_t num_args{phi.NumArgs()};
+        for (size_t arg_index = 0; arg_index < num_args; ++arg_index) {
+            const IR::Value& op{phi.Arg(arg_index)};
+            if (op == same || op == IR::Value{&phi}) {
                 // Unique value or self-reference
                 continue;
             }
             if (!same.IsEmpty()) {
                 // The phi merges at least two values: not trivial
-                return phi;
+                return IR::Value{&phi};
             }
             same = op;
         }
@@ -139,7 +141,7 @@ private:
             same = IR::Value{&*block->PrependNewInst(first_not_phi, undef_opcode)};
         }
         // Reroute all uses of phi to same and remove phi
-        phi.Inst()->ReplaceUsesWith(same);
+        phi.ReplaceUsesWith(same);
         // TODO: Try to recursively remove all phi users, which might have become trivial
         return same;
     }

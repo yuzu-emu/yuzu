@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#include <memory>
 
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/microinstruction.h"
@@ -28,6 +29,22 @@ static void RemovePseudoInstruction(IR::Inst*& inst, IR::Opcode expected_opcode)
         throw LogicError("Undoing use of invalid pseudo-op");
     }
     inst = nullptr;
+}
+
+Inst::Inst(IR::Opcode op_, u64 flags_) noexcept : op{op_}, flags{flags_} {
+    if (op == Opcode::Phi) {
+        std::construct_at(&phi_args);
+    } else {
+        std::construct_at(&args);
+    }
+}
+
+Inst::~Inst() {
+    if (op == Opcode::Phi) {
+        std::destroy_at(&phi_args);
+    } else {
+        std::destroy_at(&args);
+    }
 }
 
 bool Inst::MayHaveSideEffects() const noexcept {
@@ -71,7 +88,10 @@ bool Inst::IsPseudoInstruction() const noexcept {
     }
 }
 
-bool Inst::AreAllArgsImmediates() const noexcept {
+bool Inst::AreAllArgsImmediates() const {
+    if (op == Opcode::Phi) {
+        throw LogicError("Testing for all arguments are immediates on phi instruction");
+    }
     return std::all_of(args.begin(), args.begin() + NumArgs(),
                        [](const IR::Value& value) { return value.IsImmediate(); });
 }
@@ -101,7 +121,7 @@ Inst* Inst::GetAssociatedPseudoOperation(IR::Opcode opcode) {
 }
 
 size_t Inst::NumArgs() const {
-    return NumArgsOf(op);
+    return op == Opcode::Phi ? phi_args.size() : NumArgsOf(op);
 }
 
 IR::Type Inst::Type() const {
@@ -109,13 +129,23 @@ IR::Type Inst::Type() const {
 }
 
 Value Inst::Arg(size_t index) const {
-    if (index >= NumArgsOf(op)) {
-        throw InvalidArgument("Out of bounds argument index {} in opcode {}", index, op);
+    if (op == Opcode::Phi) {
+        if (index >= phi_args.size()) {
+            throw InvalidArgument("Out of bounds argument index {} in phi instruction", index);
+        }
+        return phi_args[index].second;
+    } else {
+        if (index >= NumArgsOf(op)) {
+            throw InvalidArgument("Out of bounds argument index {} in opcode {}", index, op);
+        }
+        return args[index];
     }
-    return args[index];
 }
 
 void Inst::SetArg(size_t index, Value value) {
+    if (op == Opcode::Phi) {
+        throw LogicError("Setting argument on a phi instruction");
+    }
     if (index >= NumArgsOf(op)) {
         throw InvalidArgument("Out of bounds argument index {} in opcode {}", index, op);
     }
@@ -128,15 +158,21 @@ void Inst::SetArg(size_t index, Value value) {
     args[index] = value;
 }
 
-std::span<const std::pair<Block*, Value>> Inst::PhiOperands() const noexcept {
-    return phi_operands;
+Block* Inst::PhiBlock(size_t index) const {
+    if (op != Opcode::Phi) {
+        throw LogicError("{} is not a Phi instruction", op);
+    }
+    if (index >= phi_args.size()) {
+        throw InvalidArgument("Out of bounds argument index {} in phi instruction");
+    }
+    return phi_args[index].first;
 }
 
 void Inst::AddPhiOperand(Block* predecessor, const Value& value) {
     if (!value.IsImmediate()) {
         Use(value);
     }
-    phi_operands.emplace_back(predecessor, value);
+    phi_args.emplace_back(predecessor, value);
 }
 
 void Inst::Invalidate() {
@@ -145,18 +181,22 @@ void Inst::Invalidate() {
 }
 
 void Inst::ClearArgs() {
-    for (auto& value : args) {
-        if (!value.IsImmediate()) {
-            UndoUse(value);
+    if (op == Opcode::Phi) {
+        for (auto& pair : phi_args) {
+            IR::Value& value{pair.second};
+            if (!value.IsImmediate()) {
+                UndoUse(value);
+            }
         }
-        value = {};
-    }
-    for (auto& [phi_block, phi_op] : phi_operands) {
-        if (!phi_op.IsImmediate()) {
-            UndoUse(phi_op);
+        phi_args.clear();
+    } else {
+        for (auto& value : args) {
+            if (!value.IsImmediate()) {
+                UndoUse(value);
+            }
+            value = {};
         }
     }
-    phi_operands.clear();
 }
 
 void Inst::ReplaceUsesWith(Value replacement) {
@@ -167,24 +207,29 @@ void Inst::ReplaceUsesWith(Value replacement) {
     if (!replacement.IsImmediate()) {
         Use(replacement);
     }
-    args[0] = replacement;
+    if (op == Opcode::Phi) {
+        phi_args[0].second = replacement;
+    } else {
+        args[0] = replacement;
+    }
 }
 
 void Inst::Use(const Value& value) {
-    ++value.Inst()->use_count;
+    Inst* const inst{value.Inst()};
+    ++inst->use_count;
 
     switch (op) {
     case Opcode::GetZeroFromOp:
-        SetPseudoInstruction(value.Inst()->zero_inst, this);
+        SetPseudoInstruction(inst->zero_inst, this);
         break;
     case Opcode::GetSignFromOp:
-        SetPseudoInstruction(value.Inst()->sign_inst, this);
+        SetPseudoInstruction(inst->sign_inst, this);
         break;
     case Opcode::GetCarryFromOp:
-        SetPseudoInstruction(value.Inst()->carry_inst, this);
+        SetPseudoInstruction(inst->carry_inst, this);
         break;
     case Opcode::GetOverflowFromOp:
-        SetPseudoInstruction(value.Inst()->overflow_inst, this);
+        SetPseudoInstruction(inst->overflow_inst, this);
         break;
     default:
         break;
@@ -192,20 +237,21 @@ void Inst::Use(const Value& value) {
 }
 
 void Inst::UndoUse(const Value& value) {
-    --value.Inst()->use_count;
+    Inst* const inst{value.Inst()};
+    --inst->use_count;
 
     switch (op) {
     case Opcode::GetZeroFromOp:
-        RemovePseudoInstruction(value.Inst()->zero_inst, Opcode::GetZeroFromOp);
+        RemovePseudoInstruction(inst->zero_inst, Opcode::GetZeroFromOp);
         break;
     case Opcode::GetSignFromOp:
-        RemovePseudoInstruction(value.Inst()->sign_inst, Opcode::GetSignFromOp);
+        RemovePseudoInstruction(inst->sign_inst, Opcode::GetSignFromOp);
         break;
     case Opcode::GetCarryFromOp:
-        RemovePseudoInstruction(value.Inst()->carry_inst, Opcode::GetCarryFromOp);
+        RemovePseudoInstruction(inst->carry_inst, Opcode::GetCarryFromOp);
         break;
     case Opcode::GetOverflowFromOp:
-        RemovePseudoInstruction(value.Inst()->overflow_inst, Opcode::GetOverflowFromOp);
+        RemovePseudoInstruction(inst->overflow_inst, Opcode::GetOverflowFromOp);
         break;
     default:
         break;
