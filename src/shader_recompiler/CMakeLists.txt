@@ -1,5 +1,16 @@
 add_executable(shader_recompiler
+    backend/spirv/emit_spirv.cpp
     backend/spirv/emit_spirv.h
+    backend/spirv/emit_spirv_bitwise_conversion.cpp
+    backend/spirv/emit_spirv_composite.cpp
+    backend/spirv/emit_spirv_context_get_set.cpp
+    backend/spirv/emit_spirv_control_flow.cpp
+    backend/spirv/emit_spirv_floating_point.cpp
+    backend/spirv/emit_spirv_integer.cpp
+    backend/spirv/emit_spirv_logical.cpp
+    backend/spirv/emit_spirv_memory.cpp
+    backend/spirv/emit_spirv_select.cpp
+    backend/spirv/emit_spirv_undefined.cpp
     environment.h
     exception.h
     file_environment.cpp
@@ -72,7 +83,9 @@ add_executable(shader_recompiler
     main.cpp
     object_pool.h
 )
-target_link_libraries(shader_recompiler PRIVATE fmt::fmt)
+
+target_include_directories(video_core PRIVATE sirit)
+target_link_libraries(shader_recompiler PRIVATE fmt::fmt sirit)
 
 if (MSVC)
     target_compile_options(shader_recompiler PRIVATE

@@ -6,6 +6,7 @@
 
 #include <fmt/format.h>
 
+#include "shader_recompiler/backend/spirv/emit_spirv.h"
 #include "shader_recompiler/file_environment.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
@@ -51,18 +52,18 @@ void RunDatabase() {
 int main() {
     // RunDatabase();
 
-    // FileEnvironment env{"D:\\Shaders\\Database\\test.bin"};
-    FileEnvironment env{"D:\\Shaders\\Database\\Oninaki\\CS15C2FB1F0B965767.bin"};
-    auto cfg{std::make_unique<Flow::CFG>(env, 0)};
-    // fmt::print(stdout, "{}\n", cfg->Dot());
-
     auto inst_pool{std::make_unique<ObjectPool<IR::Inst>>()};
     auto block_pool{std::make_unique<ObjectPool<IR::Block>>()};
 
-    for (int i = 0; i < 8192 * 4; ++i) {
-        void(inst_pool->Create(IR::Opcode::Void, 0));
+    // FileEnvironment env{"D:\\Shaders\\Database\\test.bin"};
+    FileEnvironment env{"D:\\Shaders\\Database\\Oninaki\\CS15C2FB1F0B965767.bin"};
+    for (int i = 0; i < 1; ++i) {
+        block_pool->ReleaseContents();
+        inst_pool->ReleaseContents();
+        auto cfg{std::make_unique<Flow::CFG>(env, 0)};
+        // fmt::print(stdout, "{}\n", cfg->Dot());
+        IR::Program program{TranslateProgram(*inst_pool, *block_pool, env, *cfg)};
+        // fmt::print(stdout, "{}\n", IR::DumpProgram(program));
+        Backend::SPIRV::EmitSPIRV spirv{program};
     }
-
-    IR::Program program{TranslateProgram(*inst_pool, *block_pool, env, *cfg)};
-    fmt::print(stdout, "{}\n", IR::DumpProgram(program));
 }

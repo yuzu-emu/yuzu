@@ -130,27 +130,27 @@ void IREmitter::SetAttribute(IR::Attribute attribute, const F32& value) {
 }
 
 U32 IREmitter::WorkgroupIdX() {
-    return Inst<U32>(Opcode::WorkgroupIdX);
+    return U32{CompositeExtract(Inst(Opcode::WorkgroupId), 0)};
 }
 
 U32 IREmitter::WorkgroupIdY() {
-    return Inst<U32>(Opcode::WorkgroupIdY);
+    return U32{CompositeExtract(Inst(Opcode::WorkgroupId), 1)};
 }
 
 U32 IREmitter::WorkgroupIdZ() {
-    return Inst<U32>(Opcode::WorkgroupIdZ);
+    return U32{CompositeExtract(Inst(Opcode::WorkgroupId), 2)};
 }
 
 U32 IREmitter::LocalInvocationIdX() {
-    return Inst<U32>(Opcode::LocalInvocationIdX);
+    return U32{CompositeExtract(Inst(Opcode::LocalInvocationId), 0)};
 }
 
 U32 IREmitter::LocalInvocationIdY() {
-    return Inst<U32>(Opcode::LocalInvocationIdY);
+    return U32{CompositeExtract(Inst(Opcode::LocalInvocationId), 1)};
 }
 
 U32 IREmitter::LocalInvocationIdZ() {
-    return Inst<U32>(Opcode::LocalInvocationIdZ);
+    return U32{CompositeExtract(Inst(Opcode::LocalInvocationId), 2)};
 }
 
 U32 IREmitter::LoadGlobalU8(const U64& address) {
