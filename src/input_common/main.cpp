@@ -8,6 +8,8 @@
 #include "input_common/analog_from_button.h"
 #include "input_common/gcadapter/gc_adapter.h"
 #include "input_common/gcadapter/gc_poller.h"
+#include "input_common/joycon/jc_adapter.h"
+#include "input_common/joycon/jc_poller.h"
 #include "input_common/keyboard.h"
 #include "input_common/main.h"
 #include "input_common/motion_from_button.h"
@@ -31,6 +33,14 @@ struct InputSubsystem::Impl {
         Input::RegisterFactory<Input::AnalogDevice>("gcpad", gcanalog);
         gcvibration = std::make_shared<GCVibrationFactory>(gcadapter);
         Input::RegisterFactory<Input::VibrationDevice>("gcpad", gcvibration);
+
+        jcadapter = std::make_shared<JCAdapter::Joycons>();
+        jcbuttons = std::make_shared<JCButtonFactory>(jcadapter);
+        Input::RegisterFactory<Input::ButtonDevice>("jcpad", jcbuttons);
+        jcanalog = std::make_shared<JCAnalogFactory>(jcadapter);
+        Input::RegisterFactory<Input::AnalogDevice>("jcpad", jcanalog);
+        jcmotion = std::make_shared<JCMotionFactory>(jcadapter);
+        Input::RegisterFactory<Input::MotionDevice>("jcpad", jcmotion);
 
         keyboard = std::make_shared<Keyboard>();
         Input::RegisterFactory<Input::ButtonDevice>("keyboard", keyboard);
@@ -79,6 +89,14 @@ struct InputSubsystem::Impl {
         gcanalog.reset();
         gcvibration.reset();
 
+        Input::UnregisterFactory<Input::ButtonDevice>("jcpad");
+        Input::UnregisterFactory<Input::AnalogDevice>("jcpad");
+        Input::UnregisterFactory<Input::MotionDevice>("jcpad");
+
+        jcbuttons.reset();
+        jcanalog.reset();
+        jcmotion.reset();
+
         Input::UnregisterFactory<Input::MotionDevice>("cemuhookudp");
         Input::UnregisterFactory<Input::TouchDevice>("cemuhookudp");
 
@@ -105,6 +123,8 @@ struct InputSubsystem::Impl {
         auto sdl_devices = sdl->GetInputDevices();
         devices.insert(devices.end(), sdl_devices.begin(), sdl_devices.end());
 #endif
+        auto jcpad_devices = jcadapter->GetInputDevices();
+        devices.insert(devices.end(), jcpad_devices.begin(), jcpad_devices.end());
         auto udp_devices = udp->GetInputDevices();
         devices.insert(devices.end(), udp_devices.begin(), udp_devices.end());
         auto gcpad_devices = gcadapter->GetInputDevices();
@@ -119,6 +139,9 @@ struct InputSubsystem::Impl {
         }
         if (params.Get("class", "") == "gcpad") {
             return gcadapter->GetAnalogMappingForDevice(params);
+        }
+        if (params.Get("class", "") == "jcpad") {
+            return jcadapter->GetAnalogMappingForDevice(params);
         }
 #ifdef HAVE_SDL2
         if (params.Get("class", "") == "sdl") {
@@ -135,6 +158,9 @@ struct InputSubsystem::Impl {
         }
         if (params.Get("class", "") == "gcpad") {
             return gcadapter->GetButtonMappingForDevice(params);
+        }
+        if (params.Get("class", "") == "jcpad") {
+            return jcadapter->GetButtonMappingForDevice(params);
         }
 #ifdef HAVE_SDL2
         if (params.Get("class", "") == "sdl") {
@@ -169,6 +195,10 @@ struct InputSubsystem::Impl {
     std::shared_ptr<MouseAnalogFactory> mouseanalog;
     std::shared_ptr<MouseMotionFactory> mousemotion;
     std::shared_ptr<MouseTouchFactory> mousetouch;
+    std::shared_ptr<JCButtonFactory> jcbuttons;
+    std::shared_ptr<JCAnalogFactory> jcanalog;
+    std::shared_ptr<JCMotionFactory> jcmotion;
+    std::shared_ptr<JCAdapter::Joycons> jcadapter;
     std::shared_ptr<CemuhookUDP::Client> udp;
     std::shared_ptr<GCAdapter::Adapter> gcadapter;
     std::shared_ptr<MouseInput::Mouse> mouse;
@@ -232,6 +262,30 @@ GCButtonFactory* InputSubsystem::GetGCButtons() {
 
 const GCButtonFactory* InputSubsystem::GetGCButtons() const {
     return impl->gcbuttons.get();
+}
+
+JCAnalogFactory* InputSubsystem::GetJCAnalogs() {
+    return impl->jcanalog.get();
+}
+
+const JCAnalogFactory* InputSubsystem::GetJCAnalogs() const {
+    return impl->jcanalog.get();
+}
+
+JCButtonFactory* InputSubsystem::GetJCButtons() {
+    return impl->jcbuttons.get();
+}
+
+const JCButtonFactory* InputSubsystem::GetJCButtons() const {
+    return impl->jcbuttons.get();
+}
+
+JCMotionFactory* InputSubsystem::GetJCMotions() {
+    return impl->jcmotion.get();
+}
+
+const JCMotionFactory* InputSubsystem::GetJCMotions() const {
+    return impl->jcmotion.get();
 }
 
 UDPMotionFactory* InputSubsystem::GetUDPMotions() {

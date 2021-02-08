@@ -1,0 +1,20 @@
+project(hidapi)
+
+add_library(hidapi STATIC hidapi/hidapi/hidapi.h)
+target_include_directories(hidapi PUBLIC hidapi/hidapi)
+
+if(APPLE)
+  target_sources(hidapi PRIVATE hidapi/mac/hid.c)
+elseif(MSVC)
+  target_sources(hidapi PRIVATE hidapi/windows/hid.c)
+else()
+  find_package(Libudev)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND LIBUDEV_FOUND)
+    target_sources(hidapi PRIVATE hidapi/linux/hid.c)
+    target_link_libraries(hidapi PRIVATE hidapi/udev)
+  else()
+    target_sources(hidapi PRIVATE hidapi/libusb/hid.c)
+  endif()
+endif()
+
+add_library(Hidapi::Hidapi ALIAS hidapi)

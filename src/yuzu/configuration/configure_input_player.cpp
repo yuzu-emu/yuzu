@@ -17,6 +17,7 @@
 #include "core/hle/service/hid/hid.h"
 #include "core/hle/service/sm/sm.h"
 #include "input_common/gcadapter/gc_poller.h"
+#include "input_common/joycon/jc_poller.h"
 #include "input_common/main.h"
 #include "input_common/mouse/mouse_poller.h"
 #include "input_common/udp/udp.h"
@@ -128,6 +129,25 @@ QString ButtonToText(const Common::ParamPackage& param) {
         return GetKeyName(param.Get("code", 0));
     }
 
+    if (param.Get("engine", "") == "jcpad") {
+        if (param.Has("motion")) {
+            const QString motion_str = QString::fromStdString(param.Get("motion", ""));
+            const QString direction_str = QString::fromStdString(param.Get("direction", ""));
+            return QObject::tr("JC Motion %1%2").arg(motion_str, direction_str);
+        }
+        if (param.Has("axis")) {
+            const QString axis_str = QString::fromStdString(param.Get("axis", ""));
+            const QString direction_str = QString::fromStdString(param.Get("direction", ""));
+
+            return QObject::tr("JC Axis %1%2").arg(axis_str, direction_str);
+        }
+        if (param.Has("button")) {
+            const QString button_str = QString::number(int(std::log2(param.Get("button", 0))));
+            return QObject::tr("JC Button %1").arg(button_str);
+        }
+        return GetKeyName(param.Get("code", 0));
+    }
+
     if (param.Get("engine", "") == "sdl") {
         if (param.Has("hat")) {
             const QString hat_str = QString::fromStdString(param.Get("hat", ""));
@@ -197,6 +217,26 @@ QString AnalogToText(const Common::ParamPackage& param, const std::string& dir) 
         if (dir == "down") {
             const QString invert_y_str = QString::fromStdString(invert_y ? "+" : "-");
             return QObject::tr("Axis %1%2").arg(axis_y_str, invert_y_str);
+        }
+
+        return {};
+    }
+
+    if (param.Get("engine", "") == "jcpad") {
+        if (dir == "modifier") {
+            return QObject::tr("[unused]");
+        }
+
+        if (dir == "left" || dir == "right") {
+            const QString axis_x_str = QString::fromStdString(param.Get("axis_x", ""));
+
+            return QObject::tr("JC Axis %1").arg(axis_x_str);
+        }
+
+        if (dir == "up" || dir == "down") {
+            const QString axis_y_str = QString::fromStdString(param.Get("axis_y", ""));
+
+            return QObject::tr("JC Axis %1").arg(axis_y_str);
         }
 
         return {};
@@ -529,6 +569,27 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                 return;
             }
         }
+        if (input_subsystem->GetJCAnalogs()->IsPolling()) {
+            params = input_subsystem->GetJCAnalogs()->GetNextInput();
+            if (params.Has("engine")) {
+                SetPollingResult(params, false);
+                return;
+            }
+        }
+        if (input_subsystem->GetJCButtons()->IsPolling()) {
+            params = input_subsystem->GetJCButtons()->GetNextInput();
+            if (params.Has("engine")) {
+                SetPollingResult(params, false);
+                return;
+            }
+        }
+        if (input_subsystem->GetJCMotions()->IsPolling()) {
+            params = input_subsystem->GetJCMotions()->GetNextInput();
+            if (params.Has("engine")) {
+                SetPollingResult(params, false);
+                return;
+            }
+        }
         for (auto& poller : device_pollers) {
             params = poller->GetNextInput();
             if (params.Has("engine") && IsInputAcceptable(params)) {
@@ -845,9 +906,9 @@ void ConfigureInputPlayer::UpdateUI() {
 
         int slider_value;
         auto& param = analogs_param[analog_id];
-        const bool is_controller = param.Get("engine", "") == "sdl" ||
-                                   param.Get("engine", "") == "gcpad" ||
-                                   param.Get("engine", "") == "mouse";
+        const bool is_controller =
+            param.Get("engine", "") == "sdl" || param.Get("engine", "") == "gcpad" ||
+            param.Get("engine", "") == "mouse" || param.Get("engine", "") == "jcpad";
 
         if (is_controller) {
             if (!param.Has("deadzone")) {
@@ -1173,6 +1234,14 @@ void ConfigureInputPlayer::HandleClick(
         input_subsystem->GetMouseTouch()->BeginConfiguration();
     }
 
+    if (type == InputCommon::Polling::DeviceType::Button) {
+        input_subsystem->GetJCButtons()->BeginConfiguration();
+    } else if (type == InputCommon::Polling::DeviceType::AnalogPreferred) {
+        input_subsystem->GetJCAnalogs()->BeginConfiguration();
+    } else {
+        input_subsystem->GetJCMotions()->BeginConfiguration();
+    }
+
     timeout_timer->start(2500); // Cancel after 2.5 seconds
     poll_timer->start(50);      // Check for new inputs every 50ms
 }
@@ -1196,6 +1265,10 @@ void ConfigureInputPlayer::SetPollingResult(const Common::ParamPackage& params, 
     input_subsystem->GetMouseAnalogs()->EndConfiguration();
     input_subsystem->GetMouseMotions()->EndConfiguration();
     input_subsystem->GetMouseTouch()->EndConfiguration();
+
+    input_subsystem->GetJCButtons()->EndConfiguration();
+    input_subsystem->GetJCAnalogs()->EndConfiguration();
+    input_subsystem->GetJCMotions()->EndConfiguration();
 
     if (!abort) {
         (*input_setter)(params);

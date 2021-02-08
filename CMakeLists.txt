@@ -384,6 +384,10 @@ if (NOT LIBUSB_FOUND)
     set(LIBUSB_LIBRARIES usb)
 endif()
 
+find_package(HIDAPI)
+    add_subdirectory(externals/hidapi)
+    set(HIDAPI_LIBRARIES hidapi)
+	
 # Use system installed ffmpeg.
 if (NOT MSVC)
     find_package(FFmpeg REQUIRED)

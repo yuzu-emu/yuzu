@@ -37,3 +37,6 @@
 [submodule "opus"]
 	path = externals/opus/opus
 	url = https://github.com/xiph/opus.git
+[submodule "externals/hidapi/hidapi"]
+	path = externals/hidapi/hidapi
+	url = https://github.com/libusb/hidapi.git

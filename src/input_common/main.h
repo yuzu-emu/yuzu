@@ -58,6 +58,9 @@ public:
 
 class GCAnalogFactory;
 class GCButtonFactory;
+class JCAnalogFactory;
+class JCButtonFactory;
+class JCMotionFactory;
 class UDPMotionFactory;
 class UDPTouchFactory;
 class MouseButtonFactory;
@@ -131,6 +134,24 @@ public:
 
     /// Retrieves the underlying GameCube button handler.
     [[nodiscard]] const GCButtonFactory* GetGCButtons() const;
+
+    /// Retrieves the underlying joycon analog handler.
+    [[nodiscard]] JCAnalogFactory* GetJCAnalogs();
+
+    /// Retrieves the underlying joycon analog handler.
+    [[nodiscard]] const JCAnalogFactory* GetJCAnalogs() const;
+
+    /// Retrieves the underlying joycon button handler.
+    [[nodiscard]] JCButtonFactory* GetJCButtons();
+
+    /// Retrieves the underlying joycon button handler.
+    [[nodiscard]] const JCButtonFactory* GetJCButtons() const;
+
+    /// Retrieves the underlying joycon motion handler.
+    [[nodiscard]] JCMotionFactory* GetJCMotions();
+
+    /// Retrieves the underlying joycon motion handler.
+    [[nodiscard]] const JCMotionFactory* GetJCMotions() const;
 
     /// Retrieves the underlying udp motion handler.
     [[nodiscard]] UDPMotionFactory* GetUDPMotions();

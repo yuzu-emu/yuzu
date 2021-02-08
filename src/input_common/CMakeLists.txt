@@ -21,6 +21,10 @@ add_library(input_common STATIC
     mouse/mouse_input.h
     mouse/mouse_poller.cpp
     mouse/mouse_poller.h
+    joycon/jc_adapter.cpp
+    joycon/jc_adapter.h
+    joycon/jc_poller.cpp
+    joycon/jc_poller.h
     sdl/sdl.cpp
     sdl/sdl.h
     udp/client.cpp
@@ -75,6 +79,8 @@ endif()
 
 target_include_directories(input_common SYSTEM PRIVATE ${LIBUSB_INCLUDE_DIR})
 target_link_libraries(input_common PRIVATE ${LIBUSB_LIBRARIES})
+
+target_link_libraries(input_common PUBLIC ${HIDAPI_LIBRARIES})
 
 create_target_directory_groups(input_common)
 target_link_libraries(input_common PUBLIC core PRIVATE common Boost::boost)
