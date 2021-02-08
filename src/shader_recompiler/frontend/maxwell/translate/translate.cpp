@@ -11,15 +11,15 @@
 
 namespace Shader::Maxwell {
 
-template <auto visitor_method>
+template <auto method>
 static void Invoke(TranslatorVisitor& visitor, Location pc, u64 insn) {
-    using MethodType = decltype(visitor_method);
+    using MethodType = decltype(method);
     if constexpr (std::is_invocable_r_v<void, MethodType, TranslatorVisitor&, Location, u64>) {
-        (visitor.*visitor_method)(pc, insn);
+        (visitor.*method)(pc, insn);
     } else if constexpr (std::is_invocable_r_v<void, MethodType, TranslatorVisitor&, u64>) {
-        (visitor.*visitor_method)(insn);
+        (visitor.*method)(insn);
     } else {
-        (visitor.*visitor_method)();
+        (visitor.*method)();
     }
 }
 
