@@ -105,14 +105,55 @@ void EmitSPIRV::EmitInst(EmitContext& ctx, IR::Inst* inst) {
     throw LogicError("Invalid opcode {}", inst->Opcode());
 }
 
-void EmitSPIRV::EmitPhi(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+static Id TypeId(const EmitContext& ctx, IR::Type type) {
+    switch (type) {
+    case IR::Type::U1:
+        return ctx.u1;
+    default:
+        throw NotImplementedException("Phi node type {}", type);
+    }
+}
+
+Id EmitSPIRV::EmitPhi(EmitContext& ctx, IR::Inst* inst) {
+    const size_t num_args{inst->NumArgs()};
+    boost::container::small_vector<Id, 64> operands;
+    operands.reserve(num_args * 2);
+    for (size_t index = 0; index < num_args; ++index) {
+        IR::Block* const phi_block{inst->PhiBlock(index)};
+        operands.push_back(ctx.Def(inst->Arg(index)));
+        operands.push_back(ctx.BlockLabel(phi_block));
+    }
+    const Id result_type{TypeId(ctx, inst->Arg(0).Type())};
+    return ctx.OpPhi(result_type, std::span(operands.data(), operands.size()));
 }
 
 void EmitSPIRV::EmitVoid(EmitContext&) {}
 
 void EmitSPIRV::EmitIdentity(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
+}
+
+// FIXME: Move to its own file
+void EmitSPIRV::EmitBranch(EmitContext& ctx, IR::Inst* inst) {
+    ctx.OpBranch(ctx.BlockLabel(inst->Arg(0).Label()));
+}
+
+void EmitSPIRV::EmitBranchConditional(EmitContext& ctx, IR::Inst* inst) {
+    ctx.OpBranchConditional(ctx.Def(inst->Arg(0)), ctx.BlockLabel(inst->Arg(1).Label()),
+                            ctx.BlockLabel(inst->Arg(2).Label()));
+}
+
+void EmitSPIRV::EmitLoopMerge(EmitContext& ctx, IR::Inst* inst) {
+    ctx.OpLoopMerge(ctx.BlockLabel(inst->Arg(0).Label()), ctx.BlockLabel(inst->Arg(1).Label()),
+                    spv::LoopControlMask::MaskNone);
+}
+
+void EmitSPIRV::EmitSelectionMerge(EmitContext& ctx, IR::Inst* inst) {
+    ctx.OpSelectionMerge(ctx.BlockLabel(inst->Arg(0).Label()), spv::SelectionControlMask::MaskNone);
+}
+
+void EmitSPIRV::EmitReturn(EmitContext& ctx) {
+    ctx.OpReturn();
 }
 
 void EmitSPIRV::EmitGetZeroFromOp(EmitContext&) {

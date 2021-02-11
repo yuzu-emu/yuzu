@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <chrono>
 #include <filesystem>
 
 #include <fmt/format.h>
@@ -36,34 +37,46 @@ void RunDatabase() {
     ForEachFile("D:\\Shaders\\Database", [&](const std::filesystem::path& path) {
         map.emplace_back(std::make_unique<FileEnvironment>(path.string().c_str()));
     });
-    for (int i = 0; i < 300; ++i) {
+    auto block_pool{std::make_unique<ObjectPool<Flow::Block>>()};
+    auto t0 = std::chrono::high_resolution_clock::now();
+    int N = 1;
+    int n = 0;
+    for (int i = 0; i < N; ++i) {
         for (auto& env : map) {
+            ++n;
             // fmt::print(stdout, "Decoding {}\n", path.string());
+
             const Location start_address{0};
-            auto cfg{std::make_unique<Flow::CFG>(*env, start_address)};
+            block_pool->ReleaseContents();
+            Flow::CFG cfg{*env, *block_pool, start_address};
             // fmt::print(stdout, "{}\n", cfg->Dot());
             // IR::Program program{env, cfg};
             // Optimize(program);
             // const std::string code{EmitGLASM(program)};
         }
     }
+    auto t = std::chrono::high_resolution_clock::now();
+    fmt::print(stdout, "{} ms",
+               std::chrono::duration_cast<std::chrono::milliseconds>(t - t0).count() / double(N));
 }
 
 int main() {
     // RunDatabase();
 
+    auto flow_block_pool{std::make_unique<ObjectPool<Flow::Block>>()};
     auto inst_pool{std::make_unique<ObjectPool<IR::Inst>>()};
     auto block_pool{std::make_unique<ObjectPool<IR::Block>>()};
 
-    // FileEnvironment env{"D:\\Shaders\\Database\\test.bin"};
-    FileEnvironment env{"D:\\Shaders\\Database\\Oninaki\\CS15C2FB1F0B965767.bin"};
+    FileEnvironment env{"D:\\Shaders\\Database\\Oninaki\\CS8F146B41DB6BD826.bin"};
+    // FileEnvironment env{"D:\\Shaders\\shader.bin"};
     for (int i = 0; i < 1; ++i) {
         block_pool->ReleaseContents();
         inst_pool->ReleaseContents();
-        auto cfg{std::make_unique<Flow::CFG>(env, 0)};
-        // fmt::print(stdout, "{}\n", cfg->Dot());
-        IR::Program program{TranslateProgram(*inst_pool, *block_pool, env, *cfg)};
-        // fmt::print(stdout, "{}\n", IR::DumpProgram(program));
+        flow_block_pool->ReleaseContents();
+        Flow::CFG cfg{env, *flow_block_pool, 0};
+        fmt::print(stdout, "{}\n", cfg.Dot());
+        IR::Program program{TranslateProgram(*inst_pool, *block_pool, env, cfg)};
+        fmt::print(stdout, "{}\n", IR::DumpProgram(program));
         Backend::SPIRV::EmitSPIRV spirv{program};
     }
 }

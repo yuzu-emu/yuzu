@@ -124,18 +124,20 @@ private:
     void EmitInst(EmitContext& ctx, IR::Inst* inst);
 
     // Microinstruction emitters
-    void EmitPhi(EmitContext& ctx);
+    Id EmitPhi(EmitContext& ctx, IR::Inst* inst);
     void EmitVoid(EmitContext& ctx);
     void EmitIdentity(EmitContext& ctx);
     void EmitBranch(EmitContext& ctx, IR::Inst* inst);
     void EmitBranchConditional(EmitContext& ctx, IR::Inst* inst);
-    void EmitExit(EmitContext& ctx);
+    void EmitLoopMerge(EmitContext& ctx, IR::Inst* inst);
+    void EmitSelectionMerge(EmitContext& ctx, IR::Inst* inst);
     void EmitReturn(EmitContext& ctx);
-    void EmitUnreachable(EmitContext& ctx);
     void EmitGetRegister(EmitContext& ctx);
     void EmitSetRegister(EmitContext& ctx);
     void EmitGetPred(EmitContext& ctx);
     void EmitSetPred(EmitContext& ctx);
+    void EmitSetGotoVariable(EmitContext& ctx);
+    void EmitGetGotoVariable(EmitContext& ctx);
     Id EmitGetCbuf(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
     void EmitGetAttribute(EmitContext& ctx);
     void EmitSetAttribute(EmitContext& ctx);
@@ -151,11 +153,11 @@ private:
     void EmitSetOFlag(EmitContext& ctx);
     Id EmitWorkgroupId(EmitContext& ctx);
     Id EmitLocalInvocationId(EmitContext& ctx);
-    void EmitUndef1(EmitContext& ctx);
-    void EmitUndef8(EmitContext& ctx);
-    void EmitUndef16(EmitContext& ctx);
-    void EmitUndef32(EmitContext& ctx);
-    void EmitUndef64(EmitContext& ctx);
+    Id EmitUndefU1(EmitContext& ctx);
+    void EmitUndefU8(EmitContext& ctx);
+    void EmitUndefU16(EmitContext& ctx);
+    void EmitUndefU32(EmitContext& ctx);
+    void EmitUndefU64(EmitContext& ctx);
     void EmitLoadGlobalU8(EmitContext& ctx);
     void EmitLoadGlobalS8(EmitContext& ctx);
     void EmitLoadGlobalU16(EmitContext& ctx);

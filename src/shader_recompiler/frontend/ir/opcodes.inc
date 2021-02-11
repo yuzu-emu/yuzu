@@ -10,15 +10,17 @@ OPCODE(Identity,                                            Opaque,         Opaq
 // Control flow
 OPCODE(Branch,                                              Void,           Label,                                                          )
 OPCODE(BranchConditional,                                   Void,           U1,             Label,          Label,                          )
-OPCODE(Exit,                                                Void,                                                                           )
+OPCODE(LoopMerge,                                           Void,           Label,          Label,                                          )
+OPCODE(SelectionMerge,                                      Void,           Label,                                                          )
 OPCODE(Return,                                              Void,                                                                           )
-OPCODE(Unreachable,                                         Void,                                                                           )
 
 // Context getters/setters
 OPCODE(GetRegister,                                         U32,            Reg,                                                            )
 OPCODE(SetRegister,                                         Void,           Reg,            U32,                                            )
 OPCODE(GetPred,                                             U1,             Pred,                                                           )
 OPCODE(SetPred,                                             Void,           Pred,           U1,                                             )
+OPCODE(GetGotoVariable,                                     U1,             U32,                                                            )
+OPCODE(SetGotoVariable,                                     Void,           U32,            U1,                                             )
 OPCODE(GetCbuf,                                             U32,            U32,            U32,                                            )
 OPCODE(GetAttribute,                                        U32,            Attribute,                                                      )
 OPCODE(SetAttribute,                                        Void,           Attribute,      U32,                                            )
@@ -36,11 +38,11 @@ OPCODE(WorkgroupId,                                         U32x3,              
 OPCODE(LocalInvocationId,                                   U32x3,                                                                          )
 
 // Undefined
-OPCODE(Undef1,                                              U1,                                                                             )
-OPCODE(Undef8,                                              U8,                                                                             )
-OPCODE(Undef16,                                             U16,                                                                            )
-OPCODE(Undef32,                                             U32,                                                                            )
-OPCODE(Undef64,                                             U64,                                                                            )
+OPCODE(UndefU1,                                             U1,                                                                             )
+OPCODE(UndefU8,                                             U8,                                                                             )
+OPCODE(UndefU16,                                            U16,                                                                            )
+OPCODE(UndefU32,                                            U32,                                                                            )
+OPCODE(UndefU64,                                            U64,                                                                            )
 
 // Memory operations
 OPCODE(LoadGlobalU8,                                        U32,            U64,                                                            )

@@ -14,6 +14,10 @@ namespace Shader::Optimization {
 static void ValidateTypes(const IR::Function& function) {
     for (const auto& block : function.blocks) {
         for (const IR::Inst& inst : *block) {
+            if (inst.Opcode() == IR::Opcode::Phi) {
+                // Skip validation on phi nodes
+                continue;
+            }
             const size_t num_args{inst.NumArgs()};
             for (size_t i = 0; i < num_args; ++i) {
                 const IR::Type t1{inst.Arg(i).Type()};

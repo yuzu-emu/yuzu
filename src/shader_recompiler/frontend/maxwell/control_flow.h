@@ -11,25 +11,27 @@
 #include <vector>
 
 #include <boost/container/small_vector.hpp>
+#include <boost/intrusive/set.hpp>
 
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/condition.h"
 #include "shader_recompiler/frontend/maxwell/instruction.h"
 #include "shader_recompiler/frontend/maxwell/location.h"
 #include "shader_recompiler/frontend/maxwell/opcodes.h"
+#include "shader_recompiler/object_pool.h"
+
+namespace Shader::IR {
+class Block;
+}
 
 namespace Shader::Maxwell::Flow {
 
-using BlockId = u32;
 using FunctionId = size_t;
-
-constexpr BlockId UNREACHABLE_BLOCK_ID{static_cast<u32>(-1)};
 
 enum class EndClass {
     Branch,
     Exit,
     Return,
-    Unreachable,
 };
 
 enum class Token {
@@ -59,58 +61,37 @@ private:
     boost::container::small_vector<StackEntry, 3> entries;
 };
 
-struct Block {
+struct Block : boost::intrusive::set_base_hook<
+                   // Normal link is ~2.5% faster compared to safe link
+                   boost::intrusive::link_mode<boost::intrusive::normal_link>> {
     [[nodiscard]] bool Contains(Location pc) const noexcept;
+
+    bool operator<(const Block& rhs) const noexcept {
+        return begin < rhs.begin;
+    }
 
     Location begin;
     Location end;
     EndClass end_class;
-    BlockId id;
     Stack stack;
     IR::Condition cond;
-    BlockId branch_true;
-    BlockId branch_false;
-    boost::container::small_vector<BlockId, 4> imm_predecessors;
-    boost::container::small_vector<BlockId, 8> dominance_frontiers;
-    union {
-        bool post_order_visited{false};
-        Block* imm_dominator;
-    };
+    Block* branch_true;
+    Block* branch_false;
+    IR::Block* ir;
 };
 
 struct Label {
     Location address;
-    BlockId block_id;
+    Block* block;
     Stack stack;
 };
 
 struct Function {
     Function(Location start_address);
 
-    void BuildBlocksMap();
-
-    void BuildImmediatePredecessors();
-
-    void BuildPostOrder();
-
-    void BuildImmediateDominators();
-
-    void BuildDominanceFrontier();
-
-    [[nodiscard]] size_t NumBlocks() const noexcept {
-        return static_cast<size_t>(current_block_id) + 1;
-    }
-
     Location entrypoint;
-    BlockId current_block_id{0};
     boost::container::small_vector<Label, 16> labels;
-    boost::container::small_vector<u32, 0x130> blocks;
-    boost::container::small_vector<Block, 0x130> blocks_data;
-    // Translates from BlockId to block index
-    boost::container::small_vector<Block*, 0x130> blocks_map;
-
-    boost::container::small_vector<u32, 0x130> post_order_blocks;
-    boost::container::small_vector<BlockId, 0x130> post_order_map;
+    boost::intrusive::set<Block> blocks;
 };
 
 class CFG {
@@ -120,7 +101,7 @@ class CFG {
     };
 
 public:
-    explicit CFG(Environment& env, Location start_address);
+    explicit CFG(Environment& env, ObjectPool<Block>& block_pool, Location start_address);
 
     CFG& operator=(const CFG&) = delete;
     CFG(const CFG&) = delete;
@@ -133,35 +114,37 @@ public:
     [[nodiscard]] std::span<const Function> Functions() const noexcept {
         return std::span(functions.data(), functions.size());
     }
+    [[nodiscard]] std::span<Function> Functions() noexcept {
+        return std::span(functions.data(), functions.size());
+    }
 
 private:
-    void VisitFunctions(Location start_address);
-
     void AnalyzeLabel(FunctionId function_id, Label& label);
 
     /// Inspect already visited blocks.
     /// Return true when the block has already been visited
     bool InspectVisitedBlocks(FunctionId function_id, const Label& label);
 
-    AnalysisState AnalyzeInst(Block& block, FunctionId function_id, Location pc);
+    AnalysisState AnalyzeInst(Block* block, FunctionId function_id, Location pc);
 
-    void AnalyzeCondInst(Block& block, FunctionId function_id, Location pc, EndClass insn_end_class,
+    void AnalyzeCondInst(Block* block, FunctionId function_id, Location pc, EndClass insn_end_class,
                          IR::Condition cond);
 
     /// Return true when the branch instruction is confirmed to be a branch
-    bool AnalyzeBranch(Block& block, FunctionId function_id, Location pc, Instruction inst,
+    bool AnalyzeBranch(Block* block, FunctionId function_id, Location pc, Instruction inst,
                        Opcode opcode);
 
-    void AnalyzeBRA(Block& block, FunctionId function_id, Location pc, Instruction inst,
+    void AnalyzeBRA(Block* block, FunctionId function_id, Location pc, Instruction inst,
                     bool is_absolute);
-    void AnalyzeBRX(Block& block, Location pc, Instruction inst, bool is_absolute);
+    void AnalyzeBRX(Block* block, Location pc, Instruction inst, bool is_absolute);
     void AnalyzeCAL(Location pc, Instruction inst, bool is_absolute);
-    AnalysisState AnalyzeEXIT(Block& block, FunctionId function_id, Location pc, Instruction inst);
+    AnalysisState AnalyzeEXIT(Block* block, FunctionId function_id, Location pc, Instruction inst);
 
     /// Return the branch target block id
-    BlockId AddLabel(const Block& block, Stack stack, Location pc, FunctionId function_id);
+    Block* AddLabel(Block* block, Stack stack, Location pc, FunctionId function_id);
 
     Environment& env;
+    ObjectPool<Block>& block_pool;
     boost::container::small_vector<Function, 1> functions;
     FunctionId current_function_id{0};
 };
