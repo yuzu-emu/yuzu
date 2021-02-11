@@ -26,7 +26,7 @@ public:
     explicit Condition(Pred pred_, bool pred_negated_ = false) noexcept
         : Condition(FlowTest::T, pred_, pred_negated_) {}
 
-    Condition(bool value) : Condition(Pred::PT, !value) {}
+    explicit Condition(bool value) : Condition(Pred::PT, !value) {}
 
     auto operator<=>(const Condition&) const noexcept = default;
 

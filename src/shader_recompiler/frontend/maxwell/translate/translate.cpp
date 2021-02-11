@@ -23,14 +23,13 @@ static void Invoke(TranslatorVisitor& visitor, Location pc, u64 insn) {
     }
 }
 
-IR::Block Translate(ObjectPool<IR::Inst>& inst_pool, Environment& env,
-                    const Flow::Block& flow_block) {
-    IR::Block block{inst_pool, flow_block.begin.Offset(), flow_block.end.Offset()};
-    TranslatorVisitor visitor{env, block};
-
-    const Location pc_end{flow_block.end};
-    Location pc{flow_block.begin};
-    while (pc != pc_end) {
+void Translate(Environment& env, IR::Block* block) {
+    if (block->IsVirtual()) {
+        return;
+    }
+    TranslatorVisitor visitor{env, *block};
+    const Location pc_end{block->LocationEnd()};
+    for (Location pc = block->LocationBegin(); pc != pc_end; ++pc) {
         const u64 insn{env.ReadInstruction(pc.Offset())};
         const Opcode opcode{Decode(insn)};
         switch (opcode) {
@@ -43,9 +42,7 @@ IR::Block Translate(ObjectPool<IR::Inst>& inst_pool, Environment& env,
         default:
             throw LogicError("Invalid opcode {}", opcode);
         }
-        ++pc;
     }
-    return block;
 }
 
 } // namespace Shader::Maxwell

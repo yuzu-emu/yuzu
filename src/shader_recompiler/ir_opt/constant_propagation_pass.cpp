@@ -132,6 +132,32 @@ void FoldLogicalAnd(IR::Inst& inst) {
     }
 }
 
+void FoldLogicalOr(IR::Inst& inst) {
+    if (!FoldCommutative(inst, [](bool a, bool b) { return a || b; })) {
+        return;
+    }
+    const IR::Value rhs{inst.Arg(1)};
+    if (rhs.IsImmediate()) {
+        if (rhs.U1()) {
+            inst.ReplaceUsesWith(IR::Value{true});
+        } else {
+            inst.ReplaceUsesWith(inst.Arg(0));
+        }
+    }
+}
+
+void FoldLogicalNot(IR::Inst& inst) {
+    const IR::U1 value{inst.Arg(0)};
+    if (value.IsImmediate()) {
+        inst.ReplaceUsesWith(IR::Value{!value.U1()});
+        return;
+    }
+    IR::Inst* const arg{value.InstRecursive()};
+    if (arg->Opcode() == IR::Opcode::LogicalNot) {
+        inst.ReplaceUsesWith(arg->Arg(0));
+    }
+}
+
 template <typename Dest, typename Source>
 void FoldBitCast(IR::Inst& inst, IR::Opcode reverse) {
     const IR::Value value{inst.Arg(0)};
@@ -160,6 +186,24 @@ void FoldWhenAllImmediates(IR::Inst& inst, Func&& func) {
     inst.ReplaceUsesWith(EvalImmediates(inst, func, Indices{}));
 }
 
+void FoldBranchConditional(IR::Inst& inst) {
+    const IR::U1 cond{inst.Arg(0)};
+    if (cond.IsImmediate()) {
+        // TODO: Convert to Branch
+        return;
+    }
+    const IR::Inst* cond_inst{cond.InstRecursive()};
+    if (cond_inst->Opcode() == IR::Opcode::LogicalNot) {
+        const IR::Value true_label{inst.Arg(1)};
+        const IR::Value false_label{inst.Arg(2)};
+        // Remove negation on the conditional (take the parameter out of LogicalNot) and swap
+        // the branches
+        inst.SetArg(0, cond_inst->Arg(0));
+        inst.SetArg(1, false_label);
+        inst.SetArg(2, true_label);
+    }
+}
+
 void ConstantPropagation(IR::Inst& inst) {
     switch (inst.Opcode()) {
     case IR::Opcode::GetRegister:
@@ -178,6 +222,10 @@ void ConstantPropagation(IR::Inst& inst) {
         return FoldSelect<u32>(inst);
     case IR::Opcode::LogicalAnd:
         return FoldLogicalAnd(inst);
+    case IR::Opcode::LogicalOr:
+        return FoldLogicalOr(inst);
+    case IR::Opcode::LogicalNot:
+        return FoldLogicalNot(inst);
     case IR::Opcode::ULessThan:
         return FoldWhenAllImmediates(inst, [](u32 a, u32 b) { return a < b; });
     case IR::Opcode::BitFieldUExtract:
@@ -188,6 +236,8 @@ void ConstantPropagation(IR::Inst& inst) {
             }
             return (base >> shift) & ((1U << count) - 1);
         });
+    case IR::Opcode::BranchConditional:
+        return FoldBranchConditional(inst);
     default:
         break;
     }

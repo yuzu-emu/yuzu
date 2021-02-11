@@ -44,24 +44,27 @@ F64 IREmitter::Imm64(f64 value) const {
     return F64{Value{value}};
 }
 
-void IREmitter::Branch(IR::Block* label) {
+void IREmitter::Branch(Block* label) {
+    label->AddImmediatePredecessor(block);
     Inst(Opcode::Branch, label);
 }
 
-void IREmitter::BranchConditional(const U1& cond, IR::Block* true_label, IR::Block* false_label) {
-    Inst(Opcode::BranchConditional, cond, true_label, false_label);
+void IREmitter::BranchConditional(const U1& condition, Block* true_label, Block* false_label) {
+    true_label->AddImmediatePredecessor(block);
+    false_label->AddImmediatePredecessor(block);
+    Inst(Opcode::BranchConditional, condition, true_label, false_label);
 }
 
-void IREmitter::Exit() {
-    Inst(Opcode::Exit);
+void IREmitter::LoopMerge(Block* merge_block, Block* continue_target) {
+    Inst(Opcode::LoopMerge, merge_block, continue_target);
+}
+
+void IREmitter::SelectionMerge(Block* merge_block) {
+    Inst(Opcode::SelectionMerge, merge_block);
 }
 
 void IREmitter::Return() {
     Inst(Opcode::Return);
-}
-
-void IREmitter::Unreachable() {
-    Inst(Opcode::Unreachable);
 }
 
 U32 IREmitter::GetReg(IR::Reg reg) {
@@ -79,6 +82,14 @@ U1 IREmitter::GetPred(IR::Pred pred, bool is_negated) {
     } else {
         return value;
     }
+}
+
+U1 IREmitter::GetGotoVariable(u32 id) {
+    return Inst<U1>(Opcode::GetGotoVariable, id);
+}
+
+void IREmitter::SetGotoVariable(u32 id, const U1& value) {
+    Inst(Opcode::SetGotoVariable, id, value);
 }
 
 void IREmitter::SetPred(IR::Pred pred, const U1& value) {
@@ -119,6 +130,20 @@ void IREmitter::SetCFlag(const U1& value) {
 
 void IREmitter::SetOFlag(const U1& value) {
     Inst(Opcode::SetOFlag, value);
+}
+
+U1 IREmitter::Condition(IR::Condition cond) {
+    if (cond == IR::Condition{true}) {
+        return Imm1(true);
+    } else if (cond == IR::Condition{false}) {
+        return Imm1(false);
+    }
+    const FlowTest flow_test{cond.FlowTest()};
+    const auto [pred, is_negated]{cond.Pred()};
+    if (flow_test == FlowTest::T) {
+        return GetPred(pred, is_negated);
+    }
+    throw NotImplementedException("Condition {}", cond);
 }
 
 F32 IREmitter::GetAttribute(IR::Attribute attribute) {

@@ -36,6 +36,8 @@ add_executable(shader_recompiler
     frontend/ir/program.cpp
     frontend/ir/program.h
     frontend/ir/reg.h
+    frontend/ir/structured_control_flow.cpp
+    frontend/ir/structured_control_flow.h
     frontend/ir/type.cpp
     frontend/ir/type.h
     frontend/ir/value.cpp
@@ -51,8 +53,6 @@ add_executable(shader_recompiler
     frontend/maxwell/opcodes.h
     frontend/maxwell/program.cpp
     frontend/maxwell/program.h
-    frontend/maxwell/termination_code.cpp
-    frontend/maxwell/termination_code.h
     frontend/maxwell/translate/impl/common_encoding.h
     frontend/maxwell/translate/impl/floating_point_add.cpp
     frontend/maxwell/translate/impl/floating_point_conversion_integer.cpp

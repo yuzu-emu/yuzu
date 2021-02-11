@@ -16,11 +16,11 @@ namespace Shader::IR {
 
 class IREmitter {
 public:
-    explicit IREmitter(Block& block_) : block{block_}, insertion_point{block.end()} {}
+    explicit IREmitter(Block& block_) : block{&block_}, insertion_point{block->end()} {}
     explicit IREmitter(Block& block_, Block::iterator insertion_point_)
-        : block{block_}, insertion_point{insertion_point_} {}
+        : block{&block_}, insertion_point{insertion_point_} {}
 
-    Block& block;
+    Block* block;
 
     [[nodiscard]] U1 Imm1(bool value) const;
     [[nodiscard]] U8 Imm8(u8 value) const;
@@ -31,17 +31,20 @@ public:
     [[nodiscard]] U64 Imm64(u64 value) const;
     [[nodiscard]] F64 Imm64(f64 value) const;
 
-    void Branch(IR::Block* label);
-    void BranchConditional(const U1& cond, IR::Block* true_label, IR::Block* false_label);
-    void Exit();
+    void Branch(Block* label);
+    void BranchConditional(const U1& condition, Block* true_label, Block* false_label);
+    void LoopMerge(Block* merge_block, Block* continue_target);
+    void SelectionMerge(Block* merge_block);
     void Return();
-    void Unreachable();
 
     [[nodiscard]] U32 GetReg(IR::Reg reg);
     void SetReg(IR::Reg reg, const U32& value);
 
     [[nodiscard]] U1 GetPred(IR::Pred pred, bool is_negated = false);
     void SetPred(IR::Pred pred, const U1& value);
+
+    [[nodiscard]] U1 GetGotoVariable(u32 id);
+    void SetGotoVariable(u32 id, const U1& value);
 
     [[nodiscard]] U32 GetCbuf(const U32& binding, const U32& byte_offset);
 
@@ -54,6 +57,8 @@ public:
     void SetSFlag(const U1& value);
     void SetCFlag(const U1& value);
     void SetOFlag(const U1& value);
+
+    [[nodiscard]] U1 Condition(IR::Condition cond);
 
     [[nodiscard]] F32 GetAttribute(IR::Attribute attribute);
     void SetAttribute(IR::Attribute attribute, const F32& value);
@@ -168,7 +173,7 @@ private:
 
     template <typename T = Value, typename... Args>
     T Inst(Opcode op, Args... args) {
-        auto it{block.PrependNewInst(insertion_point, op, {Value{args}...})};
+        auto it{block->PrependNewInst(insertion_point, op, {Value{args}...})};
         return T{Value{&*it}};
     }
 
@@ -184,7 +189,7 @@ private:
     T Inst(Opcode op, Flags<FlagType> flags, Args... args) {
         u64 raw_flags{};
         std::memcpy(&raw_flags, &flags.proxy, sizeof(flags.proxy));
-        auto it{block.PrependNewInst(insertion_point, op, {Value{args}...}, raw_flags)};
+        auto it{block->PrependNewInst(insertion_point, op, {Value{args}...}, raw_flags)};
         return T{Value{&*it}};
     }
 };

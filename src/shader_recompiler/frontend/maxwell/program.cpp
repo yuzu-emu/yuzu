@@ -4,57 +4,58 @@
 
 #include <algorithm>
 #include <memory>
+#include <vector>
 
 #include "shader_recompiler/frontend/ir/basic_block.h"
+#include "shader_recompiler/frontend/ir/structured_control_flow.h"
 #include "shader_recompiler/frontend/maxwell/program.h"
-#include "shader_recompiler/frontend/maxwell/termination_code.h"
 #include "shader_recompiler/frontend/maxwell/translate/translate.h"
 #include "shader_recompiler/ir_opt/passes.h"
 
 namespace Shader::Maxwell {
 namespace {
-void TranslateCode(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
-                   Environment& env, const Flow::Function& cfg_function, IR::Function& function,
-                   std::span<IR::Block*> block_map) {
+IR::BlockList TranslateCode(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
+                            Environment& env, Flow::Function& cfg_function) {
     const size_t num_blocks{cfg_function.blocks.size()};
-    function.blocks.reserve(num_blocks);
-
-    for (const Flow::BlockId block_id : cfg_function.blocks) {
-        const Flow::Block& flow_block{cfg_function.blocks_data[block_id]};
-
-        IR::Block* const ir_block{block_pool.Create(Translate(inst_pool, env, flow_block))};
-        block_map[flow_block.id] = ir_block;
-        function.blocks.emplace_back(ir_block);
-    }
-}
-
-void EmitTerminationInsts(const Flow::Function& cfg_function,
-                          std::span<IR::Block* const> block_map) {
-    for (const Flow::BlockId block_id : cfg_function.blocks) {
-        const Flow::Block& flow_block{cfg_function.blocks_data[block_id]};
-        EmitTerminationCode(flow_block, block_map);
-    }
-}
-
-void TranslateFunction(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
-                       Environment& env, const Flow::Function& cfg_function,
-                       IR::Function& function) {
-    std::vector<IR::Block*> block_map;
-    block_map.resize(cfg_function.blocks_data.size());
-
-    TranslateCode(inst_pool, block_pool, env, cfg_function, function, block_map);
-    EmitTerminationInsts(cfg_function, block_map);
+    std::vector<IR::Block*> blocks(cfg_function.blocks.size());
+    std::ranges::for_each(cfg_function.blocks, [&, i = size_t{0}](auto& cfg_block) mutable {
+        const u32 begin{cfg_block.begin.Offset()};
+        const u32 end{cfg_block.end.Offset()};
+        blocks[i] = block_pool.Create(inst_pool, begin, end);
+        cfg_block.ir = blocks[i];
+        ++i;
+    });
+    std::ranges::for_each(cfg_function.blocks, [&, i = size_t{0}](auto& cfg_block) mutable {
+        IR::Block* const block{blocks[i]};
+        ++i;
+        if (cfg_block.end_class != Flow::EndClass::Branch) {
+            block->SetReturn();
+        } else if (cfg_block.cond == IR::Condition{true}) {
+            block->SetBranch(cfg_block.branch_true->ir);
+        } else if (cfg_block.cond == IR::Condition{false}) {
+            block->SetBranch(cfg_block.branch_false->ir);
+        } else {
+            block->SetBranches(cfg_block.cond, cfg_block.branch_true->ir,
+                               cfg_block.branch_false->ir);
+        }
+    });
+    return IR::VisitAST(inst_pool, block_pool, blocks,
+                        [&](IR::Block* block) { Translate(env, block); });
 }
 } // Anonymous namespace
 
 IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
-                             Environment& env, const Flow::CFG& cfg) {
+                             Environment& env, Flow::CFG& cfg) {
     IR::Program program;
     auto& functions{program.functions};
     functions.reserve(cfg.Functions().size());
-    for (const Flow::Function& cfg_function : cfg.Functions()) {
-        TranslateFunction(inst_pool, block_pool, env, cfg_function, functions.emplace_back());
+    for (Flow::Function& cfg_function : cfg.Functions()) {
+        functions.push_back(IR::Function{
+            .blocks{TranslateCode(inst_pool, block_pool, env, cfg_function)},
+        });
     }
+
+    fmt::print(stdout, "No optimizations: {}", IR::DumpProgram(program));
     std::ranges::for_each(functions, Optimization::SsaRewritePass);
     for (IR::Function& function : functions) {
         Optimization::Invoke(Optimization::GlobalMemoryToStorageBufferPass, function);

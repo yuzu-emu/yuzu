@@ -19,6 +19,6 @@ namespace Shader::Maxwell {
 
 [[nodiscard]] IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool,
                                            ObjectPool<IR::Block>& block_pool, Environment& env,
-                                           const Flow::CFG& cfg);
+                                           Flow::CFG& cfg);
 
 } // namespace Shader::Maxwell

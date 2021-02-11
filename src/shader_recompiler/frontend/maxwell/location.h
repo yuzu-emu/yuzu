@@ -15,7 +15,7 @@
 namespace Shader::Maxwell {
 
 class Location {
-    static constexpr u32 VIRTUAL_OFFSET{std::numeric_limits<u32>::max()};
+    static constexpr u32 VIRTUAL_BIAS{4};
 
 public:
     constexpr Location() = default;
@@ -27,12 +27,18 @@ public:
         Align();
     }
 
+    constexpr Location Virtual() const noexcept {
+        Location virtual_location;
+        virtual_location.offset = offset - VIRTUAL_BIAS;
+        return virtual_location;
+    }
+
     [[nodiscard]] constexpr u32 Offset() const noexcept {
         return offset;
     }
 
     [[nodiscard]] constexpr bool IsVirtual() const {
-        return offset == VIRTUAL_OFFSET;
+        return offset % 8 == VIRTUAL_BIAS;
     }
 
     constexpr auto operator<=>(const Location&) const noexcept = default;
@@ -89,7 +95,7 @@ private:
         offset -= 8 + (offset % 32 == 8 ? 8 : 0);
     }
 
-    u32 offset{VIRTUAL_OFFSET};
+    u32 offset{0xcccccccc};
 };
 
 } // namespace Shader::Maxwell

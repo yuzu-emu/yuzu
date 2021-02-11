@@ -11,7 +11,9 @@
 
 #include <boost/intrusive/list.hpp>
 
+#include "shader_recompiler/frontend/ir/condition.h"
 #include "shader_recompiler/frontend/ir/microinstruction.h"
+#include "shader_recompiler/frontend/ir/value.h"
 #include "shader_recompiler/object_pool.h"
 
 namespace Shader::IR {
@@ -26,6 +28,7 @@ public:
     using const_reverse_iterator = InstructionList::const_reverse_iterator;
 
     explicit Block(ObjectPool<Inst>& inst_pool_, u32 begin, u32 end);
+    explicit Block(ObjectPool<Inst>& inst_pool_);
     ~Block();
 
     Block(const Block&) = delete;
@@ -41,9 +44,15 @@ public:
     iterator PrependNewInst(iterator insertion_point, Opcode op,
                             std::initializer_list<Value> args = {}, u64 flags = 0);
 
-    /// Adds a new immediate predecessor to the basic block.
-    void AddImmediatePredecessor(IR::Block* immediate_predecessor);
+    /// Set the branches to jump to when all instructions have executed.
+    void SetBranches(Condition cond, Block* branch_true, Block* branch_false);
+    /// Set the branch to unconditionally jump to when all instructions have executed.
+    void SetBranch(Block* branch);
+    /// Mark the block as a return block.
+    void SetReturn();
 
+    /// Returns true when the block does not implement any guest instructions directly.
+    [[nodiscard]] bool IsVirtual() const noexcept;
     /// Gets the starting location of this basic block.
     [[nodiscard]] u32 LocationBegin() const noexcept;
     /// Gets the end location for this basic block.
@@ -54,8 +63,23 @@ public:
     /// Gets an immutable reference to the instruction list for this basic block.
     [[nodiscard]] const InstructionList& Instructions() const noexcept;
 
+    /// Adds a new immediate predecessor to this basic block.
+    void AddImmediatePredecessor(Block* block);
     /// Gets an immutable span to the immediate predecessors.
-    [[nodiscard]] std::span<IR::Block* const> ImmediatePredecessors() const noexcept;
+    [[nodiscard]] std::span<Block* const> ImmediatePredecessors() const noexcept;
+
+    [[nodiscard]] Condition BranchCondition() const noexcept {
+        return branch_cond;
+    }
+    [[nodiscard]] bool IsTerminationBlock() const noexcept {
+        return !branch_true && !branch_false;
+    }
+    [[nodiscard]] Block* TrueBranch() const noexcept {
+        return branch_true;
+    }
+    [[nodiscard]] Block* FalseBranch() const noexcept {
+        return branch_false;
+    }
 
     [[nodiscard]] bool empty() const {
         return instructions.empty();
@@ -129,9 +153,17 @@ private:
     /// List of instructions in this block
     InstructionList instructions;
 
+    /// Condition to choose the branch to take
+    Condition branch_cond{true};
+    /// Block to jump into when the branch condition evaluates as true
+    Block* branch_true{nullptr};
+    /// Block to jump into when the branch condition evaluates as false
+    Block* branch_false{nullptr};
     /// Block immediate predecessors
-    std::vector<IR::Block*> imm_predecessors;
+    std::vector<Block*> imm_predecessors;
 };
+
+using BlockList = std::vector<Block*>;
 
 [[nodiscard]] std::string DumpBlock(const Block& block);
 

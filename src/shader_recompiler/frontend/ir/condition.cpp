@@ -16,15 +16,13 @@ std::string NameOf(Condition condition) {
         ret = fmt::to_string(condition.FlowTest());
     }
     const auto [pred, negated]{condition.Pred()};
-    if (pred != Pred::PT || negated) {
-        if (!ret.empty()) {
-            ret += '&';
-        }
-        if (negated) {
-            ret += '!';
-        }
-        ret += fmt::to_string(pred);
+    if (!ret.empty()) {
+        ret += '&';
     }
+    if (negated) {
+        ret += '!';
+    }
+    ret += fmt::to_string(pred);
     return ret;
 }
 

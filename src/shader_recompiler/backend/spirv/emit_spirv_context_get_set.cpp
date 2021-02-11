@@ -22,6 +22,14 @@ void EmitSPIRV::EmitSetPred(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
+void EmitSPIRV::EmitSetGotoVariable(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+void EmitSPIRV::EmitGetGotoVariable(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
 Id EmitSPIRV::EmitGetCbuf(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
     if (!binding.IsImmediate()) {
         throw NotImplementedException("Constant buffer indexing");

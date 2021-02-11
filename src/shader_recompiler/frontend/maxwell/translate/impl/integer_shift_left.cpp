@@ -28,7 +28,7 @@ void SHL(TranslatorVisitor& v, u64 insn, const IR::U32& unsafe_shift) {
     IR::U32 result;
     if (shl.w != 0) {
         // When .W is set, the shift value is wrapped
-        // To emulate this we just have to clamp it ourselves.
+        // To emulate this we just have to wrap it ourselves.
         const IR::U32 shift{v.ir.BitwiseAnd(unsafe_shift, v.ir.Imm32(31))};
         result = v.ir.ShiftLeftLogical(base, shift);
     } else {

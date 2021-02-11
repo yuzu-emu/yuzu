@@ -51,9 +51,9 @@ bool Inst::MayHaveSideEffects() const noexcept {
     switch (op) {
     case Opcode::Branch:
     case Opcode::BranchConditional:
-    case Opcode::Exit:
+    case Opcode::LoopMerge:
+    case Opcode::SelectionMerge:
     case Opcode::Return:
-    case Opcode::Unreachable:
     case Opcode::SetAttribute:
     case Opcode::SetAttributeIndexed:
     case Opcode::WriteGlobalU8:

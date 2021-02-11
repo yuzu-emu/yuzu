@@ -11,7 +11,7 @@
 namespace Shader::IR {
 
 struct Function {
-    boost::container::small_vector<Block*, 16> blocks;
+    BlockList blocks;
 };
 
 } // namespace Shader::IR

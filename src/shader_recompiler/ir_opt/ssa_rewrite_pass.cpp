@@ -34,6 +34,13 @@ struct SignFlagTag : FlagTag {};
 struct CarryFlagTag : FlagTag {};
 struct OverflowFlagTag : FlagTag {};
 
+struct GotoVariable : FlagTag {
+    GotoVariable() = default;
+    explicit GotoVariable(u32 index_) : index{index_} {}
+
+    u32 index;
+};
+
 struct DefTable {
     [[nodiscard]] ValueMap& operator[](IR::Reg variable) noexcept {
         return regs[IR::RegIndex(variable)];
@@ -41,6 +48,10 @@ struct DefTable {
 
     [[nodiscard]] ValueMap& operator[](IR::Pred variable) noexcept {
         return preds[IR::PredIndex(variable)];
+    }
+
+    [[nodiscard]] ValueMap& operator[](GotoVariable goto_variable) {
+        return goto_vars[goto_variable.index];
     }
 
     [[nodiscard]] ValueMap& operator[](ZeroFlagTag) noexcept {
@@ -61,6 +72,7 @@ struct DefTable {
 
     std::array<ValueMap, IR::NUM_USER_REGS> regs;
     std::array<ValueMap, IR::NUM_USER_PREDS> preds;
+    boost::container::flat_map<u32, ValueMap> goto_vars;
     ValueMap zero_flag;
     ValueMap sign_flag;
     ValueMap carry_flag;
@@ -68,15 +80,15 @@ struct DefTable {
 };
 
 IR::Opcode UndefOpcode(IR::Reg) noexcept {
-    return IR::Opcode::Undef32;
+    return IR::Opcode::UndefU32;
 }
 
 IR::Opcode UndefOpcode(IR::Pred) noexcept {
-    return IR::Opcode::Undef1;
+    return IR::Opcode::UndefU1;
 }
 
 IR::Opcode UndefOpcode(const FlagTag&) noexcept {
-    return IR::Opcode::Undef1;
+    return IR::Opcode::UndefU1;
 }
 
 [[nodiscard]] bool IsPhi(const IR::Inst& inst) noexcept {
@@ -165,6 +177,9 @@ void SsaRewritePass(IR::Function& function) {
                     pass.WriteVariable(pred, block, inst.Arg(1));
                 }
                 break;
+            case IR::Opcode::SetGotoVariable:
+                pass.WriteVariable(GotoVariable{inst.Arg(0).U32()}, block, inst.Arg(1));
+                break;
             case IR::Opcode::SetZFlag:
                 pass.WriteVariable(ZeroFlagTag{}, block, inst.Arg(0));
                 break;
@@ -186,6 +201,9 @@ void SsaRewritePass(IR::Function& function) {
                 if (const IR::Pred pred{inst.Arg(0).Pred()}; pred != IR::Pred::PT) {
                     inst.ReplaceUsesWith(pass.ReadVariable(pred, block));
                 }
+                break;
+            case IR::Opcode::GetGotoVariable:
+                inst.ReplaceUsesWith(pass.ReadVariable(GotoVariable{inst.Arg(0).U32()}, block));
                 break;
             case IR::Opcode::GetZFlag:
                 inst.ReplaceUsesWith(pass.ReadVariable(ZeroFlagTag{}, block));
