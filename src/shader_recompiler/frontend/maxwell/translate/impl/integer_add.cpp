@@ -76,8 +76,8 @@ void IADD(TranslatorVisitor& v, u64 insn, IR::U32 op_b) {
 }
 } // Anonymous namespace
 
-void TranslatorVisitor::IADD_reg(u64) {
-    throw NotImplementedException("IADD (reg)");
+void TranslatorVisitor::IADD_reg(u64 insn) {
+    IADD(*this, insn, GetReg20(insn));
 }
 
 void TranslatorVisitor::IADD_cbuf(u64 insn) {

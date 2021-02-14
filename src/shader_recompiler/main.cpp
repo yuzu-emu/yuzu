@@ -38,7 +38,8 @@ void RunDatabase() {
         map.emplace_back(std::make_unique<FileEnvironment>(path.string().c_str()));
     });
     auto block_pool{std::make_unique<ObjectPool<Flow::Block>>()};
-    auto t0 = std::chrono::high_resolution_clock::now();
+    using namespace std::chrono;
+    auto t0 = high_resolution_clock::now();
     int N = 1;
     int n = 0;
     for (int i = 0; i < N; ++i) {
@@ -55,9 +56,8 @@ void RunDatabase() {
             // const std::string code{EmitGLASM(program)};
         }
     }
-    auto t = std::chrono::high_resolution_clock::now();
-    fmt::print(stdout, "{} ms",
-               std::chrono::duration_cast<std::chrono::milliseconds>(t - t0).count() / double(N));
+    auto t = high_resolution_clock::now();
+    fmt::print(stdout, "{} ms", duration_cast<milliseconds>(t - t0).count() / double(N));
 }
 
 int main() {
@@ -67,8 +67,8 @@ int main() {
     auto inst_pool{std::make_unique<ObjectPool<IR::Inst>>()};
     auto block_pool{std::make_unique<ObjectPool<IR::Block>>()};
 
-    FileEnvironment env{"D:\\Shaders\\Database\\Oninaki\\CS8F146B41DB6BD826.bin"};
-    // FileEnvironment env{"D:\\Shaders\\shader.bin"};
+    // FileEnvironment env{"D:\\Shaders\\Database\\Oninaki\\CS8F146B41DB6BD826.bin"};
+    FileEnvironment env{"D:\\Shaders\\shader.bin"};
     for (int i = 0; i < 1; ++i) {
         block_pool->ReleaseContents();
         inst_pool->ReleaseContents();

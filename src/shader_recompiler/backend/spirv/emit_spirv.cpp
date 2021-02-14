@@ -25,6 +25,9 @@ EmitContext::EmitContext(IR::Program& program) {
     f16.Define(*this, TypeFloat(16), "f16");
     f64.Define(*this, TypeFloat(64), "f64");
 
+    true_value = ConstantTrue(u1);
+    false_value = ConstantFalse(u1);
+
     for (const IR::Function& function : program.functions) {
         for (IR::Block* const block : function.blocks) {
             block_label_map.emplace_back(block, OpLabel());
@@ -58,6 +61,7 @@ EmitSPIRV::EmitSPIRV(IR::Program& program) {
     std::fclose(file);
     std::system("spirv-dis shader.spv");
     std::system("spirv-val shader.spv");
+    std::system("spirv-cross shader.spv");
 }
 
 template <auto method>
@@ -109,6 +113,8 @@ static Id TypeId(const EmitContext& ctx, IR::Type type) {
     switch (type) {
     case IR::Type::U1:
         return ctx.u1;
+    case IR::Type::U32:
+        return ctx.u32[1];
     default:
         throw NotImplementedException("Phi node type {}", type);
     }
