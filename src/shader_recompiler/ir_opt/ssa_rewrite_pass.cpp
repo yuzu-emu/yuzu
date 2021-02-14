@@ -14,7 +14,13 @@
 //      https://link.springer.com/chapter/10.1007/978-3-642-37051-9_6
 //
 
+#include <ranges>
+#include <span>
+#include <variant>
+#include <vector>
+
 #include <boost/container/flat_map.hpp>
+#include <boost/container/flat_set.hpp>
 
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/function.h"
@@ -26,9 +32,9 @@
 
 namespace Shader::Optimization {
 namespace {
-using ValueMap = boost::container::flat_map<IR::Block*, IR::Value, std::less<IR::Block*>>;
-
-struct FlagTag {};
+struct FlagTag {
+    auto operator<=>(const FlagTag&) const noexcept = default;
+};
 struct ZeroFlagTag : FlagTag {};
 struct SignFlagTag : FlagTag {};
 struct CarryFlagTag : FlagTag {};
@@ -38,8 +44,14 @@ struct GotoVariable : FlagTag {
     GotoVariable() = default;
     explicit GotoVariable(u32 index_) : index{index_} {}
 
+    auto operator<=>(const GotoVariable&) const noexcept = default;
+
     u32 index;
 };
+
+using Variant = std::variant<IR::Reg, IR::Pred, ZeroFlagTag, SignFlagTag, CarryFlagTag,
+                             OverflowFlagTag, GotoVariable>;
+using ValueMap = boost::container::flat_map<IR::Block*, IR::Value, std::less<IR::Block*>>;
 
 struct DefTable {
     [[nodiscard]] ValueMap& operator[](IR::Reg variable) noexcept {
@@ -102,19 +114,35 @@ public:
     }
 
     IR::Value ReadVariable(auto variable, IR::Block* block) {
-        auto& def{current_def[variable]};
+        const ValueMap& def{current_def[variable]};
         if (const auto it{def.find(block)}; it != def.end()) {
             return it->second;
         }
         return ReadVariableRecursive(variable, block);
     }
 
+    void SealBlock(IR::Block* block) {
+        const auto it{incomplete_phis.find(block)};
+        if (it != incomplete_phis.end()) {
+            for (auto& [variant, phi] : it->second) {
+                std::visit([&](auto& variable) { AddPhiOperands(variable, *phi, block); }, variant);
+            }
+        }
+        sealed_blocks.insert(block);
+    }
+
 private:
     IR::Value ReadVariableRecursive(auto variable, IR::Block* block) {
         IR::Value val;
-        if (const std::span preds{block->ImmediatePredecessors()}; preds.size() == 1) {
+        if (!sealed_blocks.contains(block)) {
+            // Incomplete CFG
+            IR::Inst* phi{&*block->PrependNewInst(block->begin(), IR::Opcode::Phi)};
+            incomplete_phis[block].insert_or_assign(variable, phi);
+            val = IR::Value{&*phi};
+        } else if (const std::span imm_preds{block->ImmediatePredecessors()};
+                   imm_preds.size() == 1) {
             // Optimize the common case of one predecessor: no phi needed
-            val = ReadVariable(variable, preds.front());
+            val = ReadVariable(variable, imm_preds.front());
         } else {
             // Break potential cycles with operandless phi
             IR::Inst& phi_inst{*block->PrependNewInst(block->begin(), IR::Opcode::Phi)};
@@ -127,8 +155,8 @@ private:
     }
 
     IR::Value AddPhiOperands(auto variable, IR::Inst& phi, IR::Block* block) {
-        for (IR::Block* const pred : block->ImmediatePredecessors()) {
-            phi.AddPhiOperand(pred, ReadVariable(variable, pred));
+        for (IR::Block* const imm_pred : block->ImmediatePredecessors()) {
+            phi.AddPhiOperand(imm_pred, ReadVariable(variable, imm_pred));
         }
         return TryRemoveTrivialPhi(phi, block, UndefOpcode(variable));
     }
@@ -159,6 +187,9 @@ private:
         return same;
     }
 
+    boost::container::flat_set<IR::Block*> sealed_blocks;
+    boost::container::flat_map<IR::Block*, boost::container::flat_map<Variant, IR::Inst*>>
+        incomplete_phis;
     DefTable current_def;
 };
 
@@ -218,14 +249,19 @@ void VisitInst(Pass& pass, IR::Block* block, IR::Inst& inst) {
         break;
     }
 }
+
+void VisitBlock(Pass& pass, IR::Block* block) {
+    for (IR::Inst& inst : block->Instructions()) {
+        VisitInst(pass, block, inst);
+    }
+    pass.SealBlock(block);
+}
 } // Anonymous namespace
 
-void SsaRewritePass(IR::Function& function) {
+void SsaRewritePass(std::span<IR::Block* const> post_order_blocks) {
     Pass pass;
-    for (IR::Block* const block : function.blocks) {
-        for (IR::Inst& inst : block->Instructions()) {
-            VisitInst(pass, block, inst);
-        }
+    for (IR::Block* const block : post_order_blocks | std::views::reverse) {
+        VisitBlock(pass, block);
     }
 }
 

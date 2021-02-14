@@ -69,14 +69,12 @@ int main() {
 
     // FileEnvironment env{"D:\\Shaders\\Database\\Oninaki\\CS8F146B41DB6BD826.bin"};
     FileEnvironment env{"D:\\Shaders\\shader.bin"};
-    for (int i = 0; i < 1; ++i) {
-        block_pool->ReleaseContents();
-        inst_pool->ReleaseContents();
-        flow_block_pool->ReleaseContents();
-        Flow::CFG cfg{env, *flow_block_pool, 0};
-        fmt::print(stdout, "{}\n", cfg.Dot());
-        IR::Program program{TranslateProgram(*inst_pool, *block_pool, env, cfg)};
-        fmt::print(stdout, "{}\n", IR::DumpProgram(program));
-        Backend::SPIRV::EmitSPIRV spirv{program};
-    }
+    block_pool->ReleaseContents();
+    inst_pool->ReleaseContents();
+    flow_block_pool->ReleaseContents();
+    Flow::CFG cfg{env, *flow_block_pool, 0};
+    fmt::print(stdout, "{}\n", cfg.Dot());
+    IR::Program program{TranslateProgram(*inst_pool, *block_pool, env, cfg)};
+    fmt::print(stdout, "{}\n", IR::DumpProgram(program));
+    // Backend::SPIRV::EmitSPIRV spirv{program};
 }

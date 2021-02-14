@@ -10,19 +10,19 @@ Id EmitSPIRV::EmitUndefU1(EmitContext& ctx) {
     return ctx.OpUndef(ctx.u1);
 }
 
-void EmitSPIRV::EmitUndefU8(EmitContext&) {
+Id EmitSPIRV::EmitUndefU8(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitUndefU16(EmitContext&) {
+Id EmitSPIRV::EmitUndefU16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitUndefU32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitSPIRV::EmitUndefU32(EmitContext& ctx) {
+    return ctx.OpUndef(ctx.u32[1]);
 }
 
-void EmitSPIRV::EmitUndefU64(EmitContext&) {
+Id EmitSPIRV::EmitUndefU64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 

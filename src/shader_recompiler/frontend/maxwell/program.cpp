@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "shader_recompiler/frontend/ir/basic_block.h"
+#include "shader_recompiler/frontend/ir/post_order.h"
 #include "shader_recompiler/frontend/ir/structured_control_flow.h"
 #include "shader_recompiler/frontend/maxwell/program.h"
 #include "shader_recompiler/frontend/maxwell/translate/translate.h"
@@ -56,11 +57,14 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
     }
 
     fmt::print(stdout, "No optimizations: {}", IR::DumpProgram(program));
-    std::ranges::for_each(functions, Optimization::SsaRewritePass);
     for (IR::Function& function : functions) {
-        Optimization::Invoke(Optimization::GlobalMemoryToStorageBufferPass, function);
-        Optimization::Invoke(Optimization::ConstantPropagationPass, function);
-        Optimization::Invoke(Optimization::DeadCodeEliminationPass, function);
+        function.post_order_blocks = PostOrder(function.blocks);
+        Optimization::SsaRewritePass(function.post_order_blocks);
+    }
+    for (IR::Function& function : functions) {
+        Optimization::PostOrderInvoke(Optimization::GlobalMemoryToStorageBufferPass, function);
+        Optimization::PostOrderInvoke(Optimization::ConstantPropagationPass, function);
+        Optimization::PostOrderInvoke(Optimization::DeadCodeEliminationPass, function);
         Optimization::IdentityRemovalPass(function);
         Optimization::VerificationPass(function);
     }

@@ -32,6 +32,8 @@ add_executable(shader_recompiler
     frontend/ir/opcodes.cpp
     frontend/ir/opcodes.h
     frontend/ir/opcodes.inc
+    frontend/ir/post_order.cpp
+    frontend/ir/post_order.h
     frontend/ir/pred.h
     frontend/ir/program.cpp
     frontend/ir/program.h

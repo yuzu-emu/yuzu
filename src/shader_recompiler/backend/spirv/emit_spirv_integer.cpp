@@ -73,8 +73,8 @@ Id EmitSPIRV::EmitBitFieldUExtract(EmitContext& ctx, Id base, Id offset, Id coun
     return ctx.OpBitFieldUExtract(ctx.u32[1], base, offset, count);
 }
 
-void EmitSPIRV::EmitSLessThan(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitSPIRV::EmitSLessThan(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpSLessThan(ctx.u1, lhs, rhs);
 }
 
 void EmitSPIRV::EmitULessThan(EmitContext&) {
@@ -93,8 +93,8 @@ void EmitSPIRV::EmitULessThanEqual(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitSGreaterThan(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitSPIRV::EmitSGreaterThan(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpSGreaterThan(ctx.u1, lhs, rhs);
 }
 
 void EmitSPIRV::EmitUGreaterThan(EmitContext&) {
