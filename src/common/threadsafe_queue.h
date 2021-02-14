@@ -14,7 +14,7 @@
 #include <utility>
 
 namespace Common {
-template <typename T>
+template <typename T, bool with_stop_token = false>
 class SPSCQueue {
 public:
     SPSCQueue() {
@@ -70,9 +70,9 @@ public:
     }
 
     bool Pop(T& t) {
-        if (Empty())
+        if (Empty()) {
             return false;
-
+        }
         --size;
 
         ElementPtr* tmpptr = read_ptr;
@@ -83,10 +83,23 @@ public:
         return true;
     }
 
+    T PopWait(std::stop_token stop_token) {
+        if (Empty()) {
+            std::unique_lock lock{cv_mutex};
+            cv.wait(lock, stop_token, [this] { return !Empty(); });
+            if (stop_token.stop_requested()) {
+                return T{};
+            }
+        }
+        T t;
+        Pop(t);
+        return t;
+    }
+
     T PopWait() {
         if (Empty()) {
             std::unique_lock lock{cv_mutex};
-            cv.wait(lock, [this]() { return !Empty(); });
+            cv.wait(lock, [this] { return !Empty(); });
         }
         T t;
         Pop(t);
@@ -121,13 +134,13 @@ private:
     ElementPtr* read_ptr;
     std::atomic_size_t size{0};
     std::mutex cv_mutex;
-    std::condition_variable cv;
+    std::conditional_t<with_stop_token, std::condition_variable_any, std::condition_variable> cv;
 };
 
 // a simple thread-safe,
 // single reader, multiple writer queue
 
-template <typename T>
+template <typename T, bool with_stop_token = false>
 class MPSCQueue {
 public:
     [[nodiscard]] std::size_t Size() const {
@@ -160,13 +173,17 @@ public:
         return spsc_queue.PopWait();
     }
 
+    T PopWait(std::stop_token stop_token) {
+        return spsc_queue.PopWait(stop_token);
+    }
+
     // not thread-safe
     void Clear() {
         spsc_queue.Clear();
     }
 
 private:
-    SPSCQueue<T> spsc_queue;
+    SPSCQueue<T, with_stop_token> spsc_queue;
     std::mutex write_lock;
 };
 } // namespace Common

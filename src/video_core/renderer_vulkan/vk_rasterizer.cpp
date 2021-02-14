@@ -250,11 +250,9 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
                      descriptor_pool, update_descriptor_queue),
       query_cache{*this, maxwell3d, gpu_memory, device, scheduler},
       fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache, device, scheduler),
-      wfi_event(device.GetLogical().CreateEvent()), async_shaders(emu_window_) {
+      wfi_event(device.GetLogical().CreateEvent()),
+      async_shaders(emu_window_, device.UseAsynchronousShaders()) {
     scheduler.SetQueryCache(query_cache);
-    if (device.UseAsynchronousShaders()) {
-        async_shaders.AllocateWorkers();
-    }
 }
 
 RasterizerVulkan::~RasterizerVulkan() = default;

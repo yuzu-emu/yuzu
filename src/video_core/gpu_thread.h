@@ -33,9 +33,6 @@ class RendererBase;
 
 namespace VideoCommon::GPUThread {
 
-/// Command to signal to the GPU thread that processing has ended
-struct EndProcessingCommand final {};
-
 /// Command to signal to the GPU thread that a command list is ready for processing
 struct SubmitListCommand final {
     explicit SubmitListCommand(Tegra::CommandList&& entries_) : entries{std::move(entries_)} {}
@@ -91,9 +88,9 @@ struct OnCommandListEndCommand final {};
 struct GPUTickCommand final {};
 
 using CommandData =
-    std::variant<EndProcessingCommand, SubmitListCommand, SubmitChCommandEntries,
-                 SwapBuffersCommand, FlushRegionCommand, InvalidateRegionCommand,
-                 FlushAndInvalidateRegionCommand, OnCommandListEndCommand, GPUTickCommand>;
+    std::variant<std::monostate, SubmitListCommand, SubmitChCommandEntries, SwapBuffersCommand,
+                 FlushRegionCommand, InvalidateRegionCommand, FlushAndInvalidateRegionCommand,
+                 OnCommandListEndCommand, GPUTickCommand>;
 
 struct CommandDataContainer {
     CommandDataContainer() = default;
@@ -107,9 +104,7 @@ struct CommandDataContainer {
 
 /// Struct used to synchronize the GPU thread
 struct SynchState final {
-    std::atomic_bool is_running{true};
-
-    using CommandQueue = Common::MPSCQueue<CommandDataContainer>;
+    using CommandQueue = Common::MPSCQueue<CommandDataContainer, true>;
     CommandQueue queue;
     u64 last_fence{};
     std::atomic<u64> signaled_fence{};
@@ -157,7 +152,7 @@ private:
     VideoCore::RasterizerInterface* rasterizer = nullptr;
 
     SynchState state;
-    std::thread thread;
+    std::jthread thread;
 };
 
 } // namespace VideoCommon::GPUThread

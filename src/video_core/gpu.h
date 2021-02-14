@@ -219,9 +219,6 @@ public:
         return *shader_notify;
     }
 
-    // Waits for the GPU to finish working
-    void WaitIdle() const;
-
     /// Allows the CPU/NvFlinger to wait on the GPU before presenting a frame.
     void WaitFence(u32 syncpoint_id, u32 value);
 

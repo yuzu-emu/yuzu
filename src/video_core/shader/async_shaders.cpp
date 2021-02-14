@@ -13,66 +13,31 @@
 
 namespace VideoCommon::Shader {
 
-AsyncShaders::AsyncShaders(Core::Frontend::EmuWindow& emu_window_) : emu_window(emu_window_) {}
-
-AsyncShaders::~AsyncShaders() {
-    KillWorkers();
-}
-
-void AsyncShaders::AllocateWorkers() {
+AsyncShaders::AsyncShaders(Core::Frontend::EmuWindow& emu_window_, bool allocate_workers)
+    : emu_window(emu_window_) {
+    if (!allocate_workers) {
+        // Don't allocate workers unless it's requested
+        return;
+    }
     // Use at least one thread
     u32 num_workers = 1;
-
     // Deduce how many more threads we can use
     const u32 thread_count = std::thread::hardware_concurrency();
     if (thread_count >= 8) {
         // Increase async workers by 1 for every 2 threads >= 8
         num_workers += 1 + (thread_count - 8) / 2;
     }
-
-    // If we already have workers queued, ignore
-    if (num_workers == worker_threads.size()) {
-        return;
-    }
-
-    // If workers already exist, clear them
-    if (!worker_threads.empty()) {
-        FreeWorkers();
-    }
-
     // Create workers
-    for (std::size_t i = 0; i < num_workers; i++) {
-        context_list.push_back(emu_window.CreateSharedContext());
-        worker_threads.emplace_back(&AsyncShaders::ShaderCompilerThread, this,
-                                    context_list[i].get());
+    context_list.reserve(num_workers);
+    for (size_t i = 0; i < num_workers; i++) {
+        const auto context = context_list.emplace_back(emu_window.CreateSharedContext()).get();
+        worker_threads.emplace_back([this, context](std::stop_token stop_token) {
+            ShaderCompilerThread(stop_token, context);
+        });
     }
 }
 
-void AsyncShaders::FreeWorkers() {
-    // Mark all threads to quit
-    is_thread_exiting.store(true);
-    cv.notify_all();
-    for (auto& thread : worker_threads) {
-        thread.join();
-    }
-    // Clear our shared contexts
-    context_list.clear();
-
-    // Clear our worker threads
-    worker_threads.clear();
-}
-
-void AsyncShaders::KillWorkers() {
-    is_thread_exiting.store(true);
-    for (auto& thread : worker_threads) {
-        thread.detach();
-    }
-    // Clear our shared contexts
-    context_list.clear();
-
-    // Clear our worker threads
-    worker_threads.clear();
-}
+AsyncShaders::~AsyncShaders() = default;
 
 bool AsyncShaders::HasWorkQueued() const {
     return !pending_queue.empty();
@@ -174,11 +139,12 @@ void AsyncShaders::QueueVulkanShader(Vulkan::VKPipelineCache* pp_cache,
     cv.notify_one();
 }
 
-void AsyncShaders::ShaderCompilerThread(Core::Frontend::GraphicsContext* context) {
-    while (!is_thread_exiting.load(std::memory_order_relaxed)) {
+void AsyncShaders::ShaderCompilerThread(std::stop_token stop_token,
+                                        Core::Frontend::GraphicsContext* context) {
+    while (!stop_token.stop_requested()) {
         std::unique_lock lock{queue_mutex};
-        cv.wait(lock, [this] { return HasWorkQueued() || is_thread_exiting; });
-        if (is_thread_exiting) {
+        cv.wait(lock, stop_token, [this] { return HasWorkQueued(); });
+        if (stop_token.stop_requested()) {
             return;
         }
 
