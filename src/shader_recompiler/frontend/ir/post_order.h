@@ -4,15 +4,10 @@
 
 #pragma once
 
-#include <boost/container/small_vector.hpp>
-
 #include "shader_recompiler/frontend/ir/basic_block.h"
 
 namespace Shader::IR {
 
-struct Function {
-    BlockList blocks;
-    BlockList post_order_blocks;
-};
+BlockList PostOrder(const BlockList& blocks);
 
 } // namespace Shader::IR
