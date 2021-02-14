@@ -92,8 +92,8 @@ void TranslatorVisitor::ISETP_cbuf(u64 insn) {
     ISETP(*this, insn, GetCbuf(insn));
 }
 
-void TranslatorVisitor::ISETP_imm(u64) {
-    throw NotImplementedException("ISETP_imm");
+void TranslatorVisitor::ISETP_imm(u64 insn) {
+    ISETP(*this, insn, GetImm20(insn));
 }
 
 } // namespace Shader::Maxwell

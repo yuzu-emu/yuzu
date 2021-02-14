@@ -46,10 +46,12 @@ F64 IREmitter::Imm64(f64 value) const {
 
 void IREmitter::Branch(Block* label) {
     label->AddImmediatePredecessor(block);
+    block->SetBranch(label);
     Inst(Opcode::Branch, label);
 }
 
 void IREmitter::BranchConditional(const U1& condition, Block* true_label, Block* false_label) {
+    block->SetBranches(IR::Condition{true}, true_label, false_label);
     true_label->AddImmediatePredecessor(block);
     false_label->AddImmediatePredecessor(block);
     Inst(Opcode::BranchConditional, condition, true_label, false_label);

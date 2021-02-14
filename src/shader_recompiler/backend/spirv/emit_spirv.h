@@ -79,6 +79,8 @@ public:
             return def_map.Consume(value.Inst());
         }
         switch (value.Type()) {
+        case IR::Type::U1:
+            return value.U1() ? true_value : false_value;
         case IR::Type::U32:
             return Constant(u32[1], value.U32());
         case IR::Type::F32:
@@ -107,6 +109,9 @@ public:
     VectorTypes u32;
     VectorTypes f16;
     VectorTypes f64;
+
+    Id true_value{};
+    Id false_value{};
 
     Id workgroup_id{};
     Id local_invocation_id{};

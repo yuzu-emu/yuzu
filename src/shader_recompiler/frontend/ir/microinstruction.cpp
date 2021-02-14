@@ -143,19 +143,21 @@ Value Inst::Arg(size_t index) const {
 }
 
 void Inst::SetArg(size_t index, Value value) {
-    if (op == Opcode::Phi) {
-        throw LogicError("Setting argument on a phi instruction");
-    }
-    if (index >= NumArgsOf(op)) {
+    if (index >= NumArgs()) {
         throw InvalidArgument("Out of bounds argument index {} in opcode {}", index, op);
     }
-    if (!args[index].IsImmediate()) {
-        UndoUse(args[index]);
+    const IR::Value arg{Arg(index)};
+    if (!arg.IsImmediate()) {
+        UndoUse(arg);
     }
     if (!value.IsImmediate()) {
         Use(value);
     }
-    args[index] = value;
+    if (op == Opcode::Phi) {
+        phi_args[index].second = value;
+    } else {
+        args[index] = value;
+    }
 }
 
 Block* Inst::PhiBlock(size_t index) const {

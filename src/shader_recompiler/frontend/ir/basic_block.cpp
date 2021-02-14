@@ -113,7 +113,7 @@ static std::string ArgToIndex(const std::map<const Block*, size_t>& block_to_ind
     if (arg.IsLabel()) {
         return BlockToIndex(block_to_index, arg.Label());
     }
-    if (!arg.IsImmediate()) {
+    if (!arg.IsImmediate() || arg.IsIdentity()) {
         return fmt::format("%{}", InstIndex(inst_to_index, inst_index, arg.Inst()));
     }
     switch (arg.Type()) {
@@ -166,7 +166,7 @@ std::string DumpBlock(const Block& block, const std::map<const Block*, size_t>& 
             const std::string arg_str{ArgToIndex(block_to_index, inst_to_index, inst_index, arg)};
             ret += arg_index != 0 ? ", " : " ";
             if (op == Opcode::Phi) {
-                ret += fmt::format("[ {}, {} ]", arg_index,
+                ret += fmt::format("[ {}, {} ]", arg_str,
                                    BlockToIndex(block_to_index, inst.PhiBlock(arg_index)));
             } else {
                 ret += arg_str;

@@ -32,6 +32,8 @@ template <typename T>
         return value.U1();
     } else if constexpr (std::is_same_v<T, u32>) {
         return value.U32();
+    } else if constexpr (std::is_same_v<T, s32>) {
+        return static_cast<s32>(value.U32());
     } else if constexpr (std::is_same_v<T, f32>) {
         return value.F32();
     } else if constexpr (std::is_same_v<T, u64>) {
@@ -39,17 +41,8 @@ template <typename T>
     }
 }
 
-template <typename ImmFn>
+template <typename T, typename ImmFn>
 bool FoldCommutative(IR::Inst& inst, ImmFn&& imm_fn) {
-    const auto arg = [](const IR::Value& value) {
-        if constexpr (std::is_invocable_r_v<bool, ImmFn, bool, bool>) {
-            return value.U1();
-        } else if constexpr (std::is_invocable_r_v<u32, ImmFn, u32, u32>) {
-            return value.U32();
-        } else if constexpr (std::is_invocable_r_v<u64, ImmFn, u64, u64>) {
-            return value.U64();
-        }
-    };
     const IR::Value lhs{inst.Arg(0)};
     const IR::Value rhs{inst.Arg(1)};
 
@@ -57,14 +50,14 @@ bool FoldCommutative(IR::Inst& inst, ImmFn&& imm_fn) {
     const bool is_rhs_immediate{rhs.IsImmediate()};
 
     if (is_lhs_immediate && is_rhs_immediate) {
-        const auto result{imm_fn(arg(lhs), arg(rhs))};
+        const auto result{imm_fn(Arg<T>(lhs), Arg<T>(rhs))};
         inst.ReplaceUsesWith(IR::Value{result});
         return false;
     }
     if (is_lhs_immediate && !is_rhs_immediate) {
         IR::Inst* const rhs_inst{rhs.InstRecursive()};
         if (rhs_inst->Opcode() == inst.Opcode() && rhs_inst->Arg(1).IsImmediate()) {
-            const auto combined{imm_fn(arg(lhs), arg(rhs_inst->Arg(1)))};
+            const auto combined{imm_fn(Arg<T>(lhs), Arg<T>(rhs_inst->Arg(1)))};
             inst.SetArg(0, rhs_inst->Arg(0));
             inst.SetArg(1, IR::Value{combined});
         } else {
@@ -76,7 +69,7 @@ bool FoldCommutative(IR::Inst& inst, ImmFn&& imm_fn) {
     if (!is_lhs_immediate && is_rhs_immediate) {
         const IR::Inst* const lhs_inst{lhs.InstRecursive()};
         if (lhs_inst->Opcode() == inst.Opcode() && lhs_inst->Arg(1).IsImmediate()) {
-            const auto combined{imm_fn(arg(rhs), arg(lhs_inst->Arg(1)))};
+            const auto combined{imm_fn(Arg<T>(rhs), Arg<T>(lhs_inst->Arg(1)))};
             inst.SetArg(0, lhs_inst->Arg(0));
             inst.SetArg(1, IR::Value{combined});
         }
@@ -101,7 +94,7 @@ void FoldAdd(IR::Inst& inst) {
     if (inst.HasAssociatedPseudoOperation()) {
         return;
     }
-    if (!FoldCommutative(inst, [](T a, T b) { return a + b; })) {
+    if (!FoldCommutative<T>(inst, [](T a, T b) { return a + b; })) {
         return;
     }
     const IR::Value rhs{inst.Arg(1)};
@@ -119,7 +112,7 @@ void FoldSelect(IR::Inst& inst) {
 }
 
 void FoldLogicalAnd(IR::Inst& inst) {
-    if (!FoldCommutative(inst, [](bool a, bool b) { return a && b; })) {
+    if (!FoldCommutative<bool>(inst, [](bool a, bool b) { return a && b; })) {
         return;
     }
     const IR::Value rhs{inst.Arg(1)};
@@ -133,7 +126,7 @@ void FoldLogicalAnd(IR::Inst& inst) {
 }
 
 void FoldLogicalOr(IR::Inst& inst) {
-    if (!FoldCommutative(inst, [](bool a, bool b) { return a || b; })) {
+    if (!FoldCommutative<bool>(inst, [](bool a, bool b) { return a || b; })) {
         return;
     }
     const IR::Value rhs{inst.Arg(1)};
@@ -226,6 +219,8 @@ void ConstantPropagation(IR::Inst& inst) {
         return FoldLogicalOr(inst);
     case IR::Opcode::LogicalNot:
         return FoldLogicalNot(inst);
+    case IR::Opcode::SLessThan:
+        return FoldWhenAllImmediates(inst, [](s32 a, s32 b) { return a < b; });
     case IR::Opcode::ULessThan:
         return FoldWhenAllImmediates(inst, [](u32 a, u32 b) { return a < b; });
     case IR::Opcode::BitFieldUExtract:
