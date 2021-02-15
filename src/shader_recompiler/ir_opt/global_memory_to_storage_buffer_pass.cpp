@@ -142,6 +142,58 @@ void DiscardGlobalMemory(IR::Block& block, IR::Block::iterator inst) {
     }
 }
 
+struct LowAddrInfo {
+    IR::U32 value;
+    s32 imm_offset;
+};
+
+/// Tries to track the first 32-bits of a global memory instruction
+std::optional<LowAddrInfo> TrackLowAddress(IR::Inst* inst) {
+    // The first argument is the low level GPU pointer to the global memory instruction
+    const IR::U64 addr{inst->Arg(0)};
+    if (addr.IsImmediate()) {
+        // Not much we can do if it's an immediate
+        return std::nullopt;
+    }
+    // This address is expected to either be a PackUint2x32 or a IAdd64
+    IR::Inst* addr_inst{addr.InstRecursive()};
+    s32 imm_offset{0};
+    if (addr_inst->Opcode() == IR::Opcode::IAdd64) {
+        // If it's an IAdd64, get the immediate offset it is applying and grab the address
+        // instruction. This expects for the instruction to be canonicalized having the address on
+        // the first argument and the immediate offset on the second one.
+        const IR::U64 imm_offset_value{addr_inst->Arg(1)};
+        if (!imm_offset_value.IsImmediate()) {
+            return std::nullopt;
+        }
+        imm_offset = static_cast<s32>(static_cast<s64>(imm_offset_value.U64()));
+        const IR::U64 iadd_addr{addr_inst->Arg(0)};
+        if (iadd_addr.IsImmediate()) {
+            return std::nullopt;
+        }
+        addr_inst = iadd_addr.Inst();
+    }
+    // With IAdd64 handled, now PackUint2x32 is expected without exceptions
+    if (addr_inst->Opcode() != IR::Opcode::PackUint2x32) {
+        return std::nullopt;
+    }
+    // PackUint2x32 is expected to be generated from a vector
+    const IR::Value vector{addr_inst->Arg(0)};
+    if (vector.IsImmediate()) {
+        return std::nullopt;
+    }
+    // This vector is expected to be a CompositeConstructU32x2
+    IR::Inst* const vector_inst{vector.InstRecursive()};
+    if (vector_inst->Opcode() != IR::Opcode::CompositeConstructU32x2) {
+        return std::nullopt;
+    }
+    // Grab the first argument from the CompositeConstructU32x2, this is the low address.
+    return LowAddrInfo{
+        .value{IR::U32{vector_inst->Arg(0)}},
+        .imm_offset{imm_offset},
+    };
+}
+
 /// Recursively tries to track the storage buffer address used by a global memory instruction
 std::optional<StorageBufferAddr> Track(const IR::Value& value, const Bias* bias) {
     if (value.IsImmediate()) {
@@ -191,13 +243,26 @@ void CollectStorageBuffers(IR::Block& block, IR::Block::iterator inst,
     };
     // First try to find storage buffers in the NVN address
     const IR::U64 addr{inst->Arg(0)};
-    std::optional<StorageBufferAddr> storage_buffer{Track(addr, &nvn_bias)};
+    if (addr.IsImmediate()) {
+        // Immediate addresses can't be lowered to a storage buffer
+        DiscardGlobalMemory(block, inst);
+        return;
+    }
+    // Track the low address of the instruction
+    const std::optional<LowAddrInfo> low_addr_info{TrackLowAddress(addr.InstRecursive())};
+    if (!low_addr_info) {
+        DiscardGlobalMemory(block, inst);
+        return;
+    }
+    const IR::U32 low_addr{low_addr_info->value};
+    std::optional<StorageBufferAddr> storage_buffer{Track(low_addr, &nvn_bias)};
     if (!storage_buffer) {
         // If it fails, track without a bias
-        storage_buffer = Track(addr, nullptr);
+        storage_buffer = Track(low_addr, nullptr);
         if (!storage_buffer) {
             // If that also failed, drop the global memory usage
             DiscardGlobalMemory(block, inst);
+            return;
         }
     }
     // Collect storage buffer and the instruction
@@ -208,58 +273,15 @@ void CollectStorageBuffers(IR::Block& block, IR::Block::iterator inst,
     });
 }
 
-/// Tries to track the first 32-bits of a global memory instruction
-std::optional<IR::U32> TrackLowAddress(IR::IREmitter& ir, IR::Inst* inst) {
-    // The first argument is the low level GPU pointer to the global memory instruction
-    const IR::U64 addr{inst->Arg(0)};
-    if (addr.IsImmediate()) {
-        // Not much we can do if it's an immediate
-        return std::nullopt;
-    }
-    // This address is expected to either be a PackUint2x32 or a IAdd64
-    IR::Inst* addr_inst{addr.InstRecursive()};
-    s32 imm_offset{0};
-    if (addr_inst->Opcode() == IR::Opcode::IAdd64) {
-        // If it's an IAdd64, get the immediate offset it is applying and grab the address
-        // instruction. This expects for the instruction to be canonicalized having the address on
-        // the first argument and the immediate offset on the second one.
-        const IR::U64 imm_offset_value{addr_inst->Arg(1)};
-        if (!imm_offset_value.IsImmediate()) {
-            return std::nullopt;
-        }
-        imm_offset = static_cast<s32>(static_cast<s64>(imm_offset_value.U64()));
-        const IR::U64 iadd_addr{addr_inst->Arg(0)};
-        if (iadd_addr.IsImmediate()) {
-            return std::nullopt;
-        }
-        addr_inst = iadd_addr.Inst();
-    }
-    // With IAdd64 handled, now PackUint2x32 is expected without exceptions
-    if (addr_inst->Opcode() != IR::Opcode::PackUint2x32) {
-        return std::nullopt;
-    }
-    // PackUint2x32 is expected to be generated from a vector
-    const IR::Value vector{addr_inst->Arg(0)};
-    if (vector.IsImmediate()) {
-        return std::nullopt;
-    }
-    // This vector is expected to be a CompositeConstructU32x2
-    IR::Inst* const vector_inst{vector.InstRecursive()};
-    if (vector_inst->Opcode() != IR::Opcode::CompositeConstructU32x2) {
-        return std::nullopt;
-    }
-    // Grab the first argument from the CompositeConstructU32x2, this is the low address.
-    // Re-apply the offset in case we found one.
-    const IR::U32 low_addr{vector_inst->Arg(0)};
-    return imm_offset != 0 ? IR::U32{ir.IAdd(low_addr, ir.Imm32(imm_offset))} : low_addr;
-}
-
 /// Returns the offset in indices (not bytes) for an equivalent storage instruction
 IR::U32 StorageOffset(IR::Block& block, IR::Block::iterator inst, StorageBufferAddr buffer) {
     IR::IREmitter ir{block, inst};
     IR::U32 offset;
-    if (const std::optional<IR::U32> low_addr{TrackLowAddress(ir, &*inst)}) {
-        offset = *low_addr;
+    if (const std::optional<LowAddrInfo> low_addr{TrackLowAddress(&*inst)}) {
+        offset = low_addr->value;
+        if (low_addr->imm_offset != 0) {
+            offset = ir.IAdd(offset, ir.Imm32(low_addr->imm_offset));
+        }
     } else {
         offset = ir.ConvertU(32, IR::U64{inst->Arg(0)});
     }
