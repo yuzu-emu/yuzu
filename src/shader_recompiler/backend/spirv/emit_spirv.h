@@ -6,8 +6,6 @@
 
 #include <sirit/sirit.h>
 
-#include <boost/container/flat_map.hpp>
-
 #include "common/common_types.h"
 #include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/program.h"
@@ -15,37 +13,6 @@
 namespace Shader::Backend::SPIRV {
 
 using Sirit::Id;
-
-class DefMap {
-public:
-    void Define(IR::Inst* inst, Id def_id) {
-        const InstInfo info{.use_count{inst->UseCount()}, .def_id{def_id}};
-        const auto it{map.insert(map.end(), std::make_pair(inst, info))};
-        if (it == map.end()) {
-            throw LogicError("Defining already defined instruction");
-        }
-    }
-
-    [[nodiscard]] Id Consume(IR::Inst* inst) {
-        const auto it{map.find(inst)};
-        if (it == map.end()) {
-            throw LogicError("Consuming undefined instruction");
-        }
-        const Id def_id{it->second.def_id};
-        if (--it->second.use_count == 0) {
-            map.erase(it);
-        }
-        return def_id;
-    }
-
-private:
-    struct InstInfo {
-        int use_count;
-        Id def_id;
-    };
-
-    boost::container::flat_map<IR::Inst*, InstInfo> map;
-};
 
 class VectorTypes {
 public:
@@ -76,7 +43,7 @@ public:
 
     [[nodiscard]] Id Def(const IR::Value& value) {
         if (!value.IsImmediate()) {
-            return def_map.Consume(value.Inst());
+            return value.Inst()->Definition<Id>();
         }
         switch (value.Type()) {
         case IR::Type::U1:
@@ -88,10 +55,6 @@ public:
         default:
             throw NotImplementedException("Immediate type {}", value.Type());
         }
-    }
-
-    void Define(IR::Inst* inst, Id def_id) {
-        def_map.Define(inst, def_id);
     }
 
     [[nodiscard]] Id BlockLabel(IR::Block* block) const {
@@ -117,7 +80,6 @@ public:
     Id local_invocation_id{};
 
 private:
-    DefMap def_map;
     std::vector<std::pair<IR::Block*, Id>> block_label_map;
 };
 
