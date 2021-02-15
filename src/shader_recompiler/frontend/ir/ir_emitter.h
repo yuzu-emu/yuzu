@@ -178,7 +178,7 @@ private:
     }
 
     template <typename T>
-    requires(sizeof(T) <= sizeof(u64) && std::is_trivially_copyable_v<T>) struct Flags {
+    requires(sizeof(T) <= sizeof(u32) && std::is_trivially_copyable_v<T>) struct Flags {
         Flags() = default;
         Flags(T proxy_) : proxy{proxy_} {}
 
@@ -187,7 +187,7 @@ private:
 
     template <typename T = Value, typename FlagType, typename... Args>
     T Inst(Opcode op, Flags<FlagType> flags, Args... args) {
-        u64 raw_flags{};
+        u32 raw_flags{};
         std::memcpy(&raw_flags, &flags.proxy, sizeof(flags.proxy));
         auto it{block->PrependNewInst(insertion_point, op, {Value{args}...}, raw_flags)};
         return T{Value{&*it}};

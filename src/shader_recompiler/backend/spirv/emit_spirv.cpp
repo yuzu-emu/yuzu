@@ -64,31 +64,49 @@ EmitSPIRV::EmitSPIRV(IR::Program& program) {
     std::system("spirv-cross shader.spv");
 }
 
+template <auto method, typename... Args>
+static void SetDefinition(EmitSPIRV& emit, EmitContext& ctx, IR::Inst* inst, Args... args) {
+    const Id forward_id{inst->Definition<Id>()};
+    const bool has_forward_id{Sirit::ValidId(forward_id)};
+    Id current_id{};
+    if (has_forward_id) {
+        current_id = ctx.ExchangeCurrentId(forward_id);
+    }
+    const Id new_id{(emit.*method)(ctx, std::forward<Args>(args)...)};
+    if (has_forward_id) {
+        ctx.ExchangeCurrentId(current_id);
+    } else {
+        inst->SetDefinition<Id>(new_id);
+    }
+}
+
 template <auto method>
 static void Invoke(EmitSPIRV& emit, EmitContext& ctx, IR::Inst* inst) {
     using M = decltype(method);
     using std::is_invocable_r_v;
     if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&>) {
-        ctx.Define(inst, (emit.*method)(ctx));
+        SetDefinition<method>(emit, ctx, inst);
     } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, Id>) {
-        ctx.Define(inst, (emit.*method)(ctx, ctx.Def(inst->Arg(0))));
+        SetDefinition<method>(emit, ctx, inst, ctx.Def(inst->Arg(0)));
     } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, Id, Id>) {
-        ctx.Define(inst, (emit.*method)(ctx, ctx.Def(inst->Arg(0)), ctx.Def(inst->Arg(1))));
+        SetDefinition<method>(emit, ctx, inst, ctx.Def(inst->Arg(0)), ctx.Def(inst->Arg(1)));
     } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, Id, Id, Id>) {
-        ctx.Define(inst, (emit.*method)(ctx, ctx.Def(inst->Arg(0)), ctx.Def(inst->Arg(1)),
-                                        ctx.Def(inst->Arg(2))));
+        SetDefinition<method>(emit, ctx, inst, ctx.Def(inst->Arg(0)), ctx.Def(inst->Arg(1)),
+                              ctx.Def(inst->Arg(2)));
+    } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, IR::Inst*>) {
+        SetDefinition<method>(emit, ctx, inst, inst);
     } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, IR::Inst*, Id, Id>) {
-        ctx.Define(inst, (emit.*method)(ctx, inst, ctx.Def(inst->Arg(0)), ctx.Def(inst->Arg(1))));
+        SetDefinition<method>(emit, ctx, inst, inst, ctx.Def(inst->Arg(0)), ctx.Def(inst->Arg(1)));
     } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, IR::Inst*, Id, Id, Id>) {
-        ctx.Define(inst, (emit.*method)(ctx, inst, ctx.Def(inst->Arg(0)), ctx.Def(inst->Arg(1)),
-                                        ctx.Def(inst->Arg(2))));
+        SetDefinition<method>(emit, ctx, inst, inst, ctx.Def(inst->Arg(0)), ctx.Def(inst->Arg(1)),
+                              ctx.Def(inst->Arg(2)));
     } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, Id, u32>) {
-        ctx.Define(inst, (emit.*method)(ctx, ctx.Def(inst->Arg(0)), inst->Arg(1).U32()));
+        SetDefinition<method>(emit, ctx, inst, ctx.Def(inst->Arg(0)), inst->Arg(1).U32());
     } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, const IR::Value&>) {
-        ctx.Define(inst, (emit.*method)(ctx, inst->Arg(0)));
+        SetDefinition<method>(emit, ctx, inst, inst->Arg(0));
     } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, const IR::Value&,
                                           const IR::Value&>) {
-        ctx.Define(inst, (emit.*method)(ctx, inst->Arg(0), inst->Arg(1)));
+        SetDefinition<method>(emit, ctx, inst, inst->Arg(0), inst->Arg(1));
     } else if constexpr (is_invocable_r_v<void, M, EmitSPIRV&, EmitContext&, IR::Inst*>) {
         (emit.*method)(ctx, inst);
     } else if constexpr (is_invocable_r_v<void, M, EmitSPIRV&, EmitContext&>) {
@@ -122,11 +140,28 @@ static Id TypeId(const EmitContext& ctx, IR::Type type) {
 
 Id EmitSPIRV::EmitPhi(EmitContext& ctx, IR::Inst* inst) {
     const size_t num_args{inst->NumArgs()};
-    boost::container::small_vector<Id, 64> operands;
+    boost::container::small_vector<Id, 32> operands;
     operands.reserve(num_args * 2);
     for (size_t index = 0; index < num_args; ++index) {
+        // Phi nodes can have forward declarations, if an argument is not defined provide a forward
+        // declaration of it. Invoke will take care of giving it the right definition when it's
+        // actually defined.
+        const IR::Value arg{inst->Arg(index)};
+        Id def{};
+        if (arg.IsImmediate()) {
+            // Let the context handle immediate definitions, as it already knows how
+            def = ctx.Def(arg);
+        } else {
+            IR::Inst* const arg_inst{arg.Inst()};
+            def = arg_inst->Definition<Id>();
+            if (!Sirit::ValidId(def)) {
+                // If it hasn't been defined, get a forward declaration
+                def = ctx.ForwardDeclarationId();
+                arg_inst->SetDefinition<Id>(def);
+            }
+        }
         IR::Block* const phi_block{inst->PhiBlock(index)};
-        operands.push_back(ctx.Def(inst->Arg(index)));
+        operands.push_back(def);
         operands.push_back(ctx.BlockLabel(phi_block));
     }
     const Id result_type{TypeId(ctx, inst->Arg(0).Type())};

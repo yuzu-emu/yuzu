@@ -161,8 +161,8 @@ std::optional<StorageBufferAddr> Track(const IR::Value& value, const Bias* bias)
             return std::nullopt;
         }
         const StorageBufferAddr storage_buffer{
-            .index = index.U32(),
-            .offset = offset.U32(),
+            .index{index.U32()},
+            .offset{offset.U32()},
         };
         if (bias && !MeetsBias(storage_buffer, *bias)) {
             // We have to blacklist some addresses in case we wrongly point to them

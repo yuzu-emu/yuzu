@@ -76,5 +76,5 @@ int main() {
     fmt::print(stdout, "{}\n", cfg.Dot());
     IR::Program program{TranslateProgram(*inst_pool, *block_pool, env, cfg)};
     fmt::print(stdout, "{}\n", IR::DumpProgram(program));
-    // Backend::SPIRV::EmitSPIRV spirv{program};
+    Backend::SPIRV::EmitSPIRV spirv{program};
 }

@@ -12,6 +12,7 @@
 
 #include <boost/intrusive/list.hpp>
 
+#include "common/bit_cast.h"
 #include "common/common_types.h"
 #include "shader_recompiler/frontend/ir/opcodes.h"
 #include "shader_recompiler/frontend/ir/type.h"
@@ -25,7 +26,7 @@ constexpr size_t MAX_ARG_COUNT = 4;
 
 class Inst : public boost::intrusive::list_base_hook<> {
 public:
-    explicit Inst(Opcode op_, u64 flags_) noexcept;
+    explicit Inst(Opcode op_, u32 flags_) noexcept;
     ~Inst();
 
     Inst& operator=(const Inst&) = delete;
@@ -86,11 +87,23 @@ public:
     void ReplaceUsesWith(Value replacement);
 
     template <typename FlagsType>
-    requires(sizeof(FlagsType) <= sizeof(u64) && std::is_trivially_copyable_v<FlagsType>)
+    requires(sizeof(FlagsType) <= sizeof(u32) && std::is_trivially_copyable_v<FlagsType>)
         [[nodiscard]] FlagsType Flags() const noexcept {
         FlagsType ret;
         std::memcpy(&ret, &flags, sizeof(ret));
         return ret;
+    }
+
+    /// Intrusively store the host definition of this instruction.
+    template <typename DefinitionType>
+    void SetDefinition(DefinitionType def) {
+        definition = Common::BitCast<u32>(def);
+    }
+
+    /// Return the intrusively stored host definition of this instruction.
+    template <typename DefinitionType>
+    [[nodiscard]] DefinitionType Definition() const noexcept {
+        return Common::BitCast<DefinitionType>(definition);
     }
 
 private:
@@ -103,7 +116,8 @@ private:
 
     IR::Opcode op{};
     int use_count{};
-    u64 flags{};
+    u32 flags{};
+    u32 definition{};
     union {
         NonTriviallyDummy dummy{};
         std::array<Value, MAX_ARG_COUNT> args;

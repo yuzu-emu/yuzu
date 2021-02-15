@@ -42,7 +42,7 @@ public:
 
     /// Prepends a new instruction to this basic block before the insertion point.
     iterator PrependNewInst(iterator insertion_point, Opcode op,
-                            std::initializer_list<Value> args = {}, u64 flags = 0);
+                            std::initializer_list<Value> args = {}, u32 flags = 0);
 
     /// Set the branches to jump to when all instructions have executed.
     void SetBranches(Condition cond, Block* branch_true, Block* branch_false);
