@@ -37,7 +37,7 @@ void RunDatabase() {
     ForEachFile("D:\\Shaders\\Database", [&](const std::filesystem::path& path) {
         map.emplace_back(std::make_unique<FileEnvironment>(path.string().c_str()));
     });
-    auto block_pool{std::make_unique<ObjectPool<Flow::Block>>()};
+    ObjectPool<Flow::Block> block_pool;
     using namespace std::chrono;
     auto t0 = high_resolution_clock::now();
     int N = 1;
@@ -48,8 +48,8 @@ void RunDatabase() {
             // fmt::print(stdout, "Decoding {}\n", path.string());
 
             const Location start_address{0};
-            block_pool->ReleaseContents();
-            Flow::CFG cfg{*env, *block_pool, start_address};
+            block_pool.ReleaseContents();
+            Flow::CFG cfg{*env, block_pool, start_address};
             // fmt::print(stdout, "{}\n", cfg->Dot());
             // IR::Program program{env, cfg};
             // Optimize(program);
@@ -63,18 +63,18 @@ void RunDatabase() {
 int main() {
     // RunDatabase();
 
-    auto flow_block_pool{std::make_unique<ObjectPool<Flow::Block>>()};
-    auto inst_pool{std::make_unique<ObjectPool<IR::Inst>>()};
-    auto block_pool{std::make_unique<ObjectPool<IR::Block>>()};
+    ObjectPool<Flow::Block> flow_block_pool;
+    ObjectPool<IR::Inst> inst_pool;
+    ObjectPool<IR::Block> block_pool;
 
     // FileEnvironment env{"D:\\Shaders\\Database\\Oninaki\\CS8F146B41DB6BD826.bin"};
     FileEnvironment env{"D:\\Shaders\\shader.bin"};
-    block_pool->ReleaseContents();
-    inst_pool->ReleaseContents();
-    flow_block_pool->ReleaseContents();
-    Flow::CFG cfg{env, *flow_block_pool, 0};
+    block_pool.ReleaseContents();
+    inst_pool.ReleaseContents();
+    flow_block_pool.ReleaseContents();
+    Flow::CFG cfg{env, flow_block_pool, 0};
     fmt::print(stdout, "{}\n", cfg.Dot());
-    IR::Program program{TranslateProgram(*inst_pool, *block_pool, env, cfg)};
+    IR::Program program{TranslateProgram(inst_pool, block_pool, env, cfg)};
     fmt::print(stdout, "{}\n", IR::DumpProgram(program));
     Backend::SPIRV::EmitSPIRV spirv{program};
 }

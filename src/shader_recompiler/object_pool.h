@@ -10,19 +10,11 @@
 
 namespace Shader {
 
-template <typename T, size_t chunk_size = 8192>
+template <typename T>
 requires std::is_destructible_v<T> class ObjectPool {
 public:
-    ~ObjectPool() {
-        std::unique_ptr<Chunk> tree_owner;
-        Chunk* chunk{&root};
-        while (chunk) {
-            for (size_t obj_id = chunk->free_objects; obj_id < chunk_size; ++obj_id) {
-                chunk->storage[obj_id].object.~T();
-            }
-            tree_owner = std::move(chunk->next);
-            chunk = tree_owner.get();
-        }
+    explicit ObjectPool(size_t chunk_size = 8192) : new_chunk_size{chunk_size} {
+        node = &chunks.emplace_back(new_chunk_size);
     }
 
     template <typename... Args>
@@ -31,17 +23,21 @@ public:
     }
 
     void ReleaseContents() {
-        Chunk* chunk{&root};
-        while (chunk) {
-            if (chunk->free_objects == chunk_size) {
-                break;
-            }
-            for (; chunk->free_objects < chunk_size; ++chunk->free_objects) {
-                chunk->storage[chunk->free_objects].object.~T();
-            }
-            chunk = chunk->next.get();
+        if (chunks.empty()) {
+            return;
         }
-        node = &root;
+        Chunk& root{chunks.front()};
+        if (root.used_objects == root.num_objects) {
+            // Root chunk has been filled, squash allocations into it
+            const size_t total_objects{root.num_objects + new_chunk_size * (chunks.size() - 1)};
+            chunks.clear();
+            chunks.emplace_back(total_objects);
+            chunks.shrink_to_fit();
+        } else {
+            root.Release();
+            chunks.resize(1);
+            chunks.shrink_to_fit();
+        }
     }
 
 private:
@@ -58,31 +54,51 @@ private:
     };
 
     struct Chunk {
-        size_t free_objects = chunk_size;
-        std::array<Storage, chunk_size> storage;
-        std::unique_ptr<Chunk> next;
+        explicit Chunk() = default;
+        explicit Chunk(size_t size)
+            : num_objects{size}, storage{std::make_unique<Storage[]>(size)} {}
+
+        Chunk& operator=(Chunk&& rhs) noexcept {
+            Release();
+            used_objects = std::exchange(rhs.used_objects, 0);
+            num_objects = std::exchange(rhs.num_objects, 0);
+            storage = std::move(rhs.storage);
+        }
+
+        Chunk(Chunk&& rhs) noexcept
+            : used_objects{std::exchange(rhs.used_objects, 0)},
+              num_objects{std::exchange(rhs.num_objects, 0)}, storage{std::move(rhs.storage)} {}
+
+        ~Chunk() {
+            Release();
+        }
+
+        void Release() {
+            std::destroy_n(storage.get(), used_objects);
+            used_objects = 0;
+        }
+
+        size_t used_objects{};
+        size_t num_objects{};
+        std::unique_ptr<Storage[]> storage;
     };
 
     [[nodiscard]] T* Memory() {
         Chunk* const chunk{FreeChunk()};
-        return &chunk->storage[--chunk->free_objects].object;
+        return &chunk->storage[chunk->used_objects++].object;
     }
 
     [[nodiscard]] Chunk* FreeChunk() {
-        if (node->free_objects > 0) {
+        if (node->used_objects != node->num_objects) {
             return node;
         }
-        if (node->next) {
-            node = node->next.get();
-            return node;
-        }
-        node->next = std::make_unique<Chunk>();
-        node = node->next.get();
+        node = &chunks.emplace_back(new_chunk_size);
         return node;
     }
 
-    Chunk* node{&root};
-    Chunk root;
+    Chunk* node{};
+    std::vector<Chunk> chunks;
+    size_t new_chunk_size{};
 };
 
 } // namespace Shader

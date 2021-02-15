@@ -269,7 +269,7 @@ bool SearchNode(const Tree& tree, ConstNode stmt, size_t& offset) {
 
 class GotoPass {
 public:
-    explicit GotoPass(std::span<Block* const> blocks, ObjectPool<Statement, 64>& stmt_pool)
+    explicit GotoPass(std::span<Block* const> blocks, ObjectPool<Statement>& stmt_pool)
         : pool{stmt_pool} {
         std::vector gotos{BuildUnorderedTreeGetGotos(blocks)};
         fmt::print(stdout, "BEFORE\n{}\n", DumpTree(root_stmt.children));
@@ -554,7 +554,7 @@ private:
         return offset;
     }
 
-    ObjectPool<Statement, 64>& pool;
+    ObjectPool<Statement>& pool;
     Statement root_stmt{FunctionTag{}};
 };
 
@@ -589,7 +589,7 @@ Block* TryFindForwardBlock(const Statement& stmt) {
 class TranslatePass {
 public:
     TranslatePass(ObjectPool<Inst>& inst_pool_, ObjectPool<Block>& block_pool_,
-                  ObjectPool<Statement, 64>& stmt_pool_, Statement& root_stmt,
+                  ObjectPool<Statement>& stmt_pool_, Statement& root_stmt,
                   const std::function<void(IR::Block*)>& func_, BlockList& block_list_)
         : stmt_pool{stmt_pool_}, inst_pool{inst_pool_}, block_pool{block_pool_}, func{func_},
           block_list{block_list_} {
@@ -720,7 +720,7 @@ private:
         return block;
     }
 
-    ObjectPool<Statement, 64>& stmt_pool;
+    ObjectPool<Statement>& stmt_pool;
     ObjectPool<Inst>& inst_pool;
     ObjectPool<Block>& block_pool;
     const std::function<void(IR::Block*)>& func;
@@ -731,7 +731,7 @@ private:
 BlockList VisitAST(ObjectPool<Inst>& inst_pool, ObjectPool<Block>& block_pool,
                    std::span<Block* const> unordered_blocks,
                    const std::function<void(Block*)>& func) {
-    ObjectPool<Statement, 64> stmt_pool;
+    ObjectPool<Statement> stmt_pool{64};
     GotoPass goto_pass{unordered_blocks, stmt_pool};
     BlockList block_list;
     TranslatePass translate_pass{inst_pool, block_pool, stmt_pool, goto_pass.RootStatement(),
