@@ -23,7 +23,7 @@ private:
     // Microinstruction emitters
     Id EmitPhi(EmitContext& ctx, IR::Inst* inst);
     void EmitVoid(EmitContext& ctx);
-    void EmitIdentity(EmitContext& ctx);
+    Id EmitIdentity(EmitContext& ctx, const IR::Value& value);
     void EmitBranch(EmitContext& ctx, IR::Block* label);
     void EmitBranchConditional(EmitContext& ctx, Id condition, IR::Block* true_label,
                                IR::Block* false_label);
