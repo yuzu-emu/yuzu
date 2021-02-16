@@ -12,60 +12,22 @@
 #include "shader_recompiler/frontend/ir/program.h"
 
 namespace Shader::Backend::SPIRV {
+namespace {
+template <class Func>
+struct FuncTraits : FuncTraits<decltype(&Func::operator())> {};
 
-EmitContext::EmitContext(IR::Program& program) {
-    AddCapability(spv::Capability::Shader);
-    AddCapability(spv::Capability::Float16);
-    AddCapability(spv::Capability::Float64);
-    void_id = TypeVoid();
+template <class ClassType, class ReturnType_, class... Args>
+struct FuncTraits<ReturnType_ (ClassType::*)(Args...)> {
+    using ReturnType = ReturnType_;
 
-    u1 = Name(TypeBool(), "u1");
-    f32.Define(*this, TypeFloat(32), "f32");
-    u32.Define(*this, TypeInt(32, false), "u32");
-    f16.Define(*this, TypeFloat(16), "f16");
-    f64.Define(*this, TypeFloat(64), "f64");
+    static constexpr size_t NUM_ARGS = sizeof...(Args);
 
-    true_value = ConstantTrue(u1);
-    false_value = ConstantFalse(u1);
-
-    for (const IR::Function& function : program.functions) {
-        for (IR::Block* const block : function.blocks) {
-            block_label_map.emplace_back(block, OpLabel());
-        }
-    }
-    std::ranges::sort(block_label_map, {}, &std::pair<IR::Block*, Id>::first);
-}
-
-EmitContext::~EmitContext() = default;
-
-EmitSPIRV::EmitSPIRV(IR::Program& program) {
-    EmitContext ctx{program};
-    const Id void_function{ctx.TypeFunction(ctx.void_id)};
-    // FIXME: Forward declare functions (needs sirit support)
-    Id func{};
-    for (IR::Function& function : program.functions) {
-        func = ctx.OpFunction(ctx.void_id, spv::FunctionControlMask::MaskNone, void_function);
-        for (IR::Block* const block : function.blocks) {
-            ctx.AddLabel(ctx.BlockLabel(block));
-            for (IR::Inst& inst : block->Instructions()) {
-                EmitInst(ctx, &inst);
-            }
-        }
-        ctx.OpFunctionEnd();
-    }
-    ctx.AddEntryPoint(spv::ExecutionModel::GLCompute, func, "main");
-
-    std::vector<u32> result{ctx.Assemble()};
-    std::FILE* file{std::fopen("shader.spv", "wb")};
-    std::fwrite(result.data(), sizeof(u32), result.size(), file);
-    std::fclose(file);
-    std::system("spirv-dis shader.spv");
-    std::system("spirv-val shader.spv");
-    std::system("spirv-cross shader.spv");
-}
+    template <size_t I>
+    using ArgType = std::tuple_element_t<I, std::tuple<Args...>>;
+};
 
 template <auto method, typename... Args>
-static void SetDefinition(EmitSPIRV& emit, EmitContext& ctx, IR::Inst* inst, Args... args) {
+void SetDefinition(EmitSPIRV& emit, EmitContext& ctx, IR::Inst* inst, Args... args) {
     const Id forward_id{inst->Definition<Id>()};
     const bool has_forward_id{Sirit::ValidId(forward_id)};
     Id current_id{};
@@ -80,40 +42,88 @@ static void SetDefinition(EmitSPIRV& emit, EmitContext& ctx, IR::Inst* inst, Arg
     }
 }
 
-template <auto method>
-static void Invoke(EmitSPIRV& emit, EmitContext& ctx, IR::Inst* inst) {
-    using M = decltype(method);
-    using std::is_invocable_r_v;
-    if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&>) {
-        SetDefinition<method>(emit, ctx, inst);
-    } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, Id>) {
-        SetDefinition<method>(emit, ctx, inst, ctx.Def(inst->Arg(0)));
-    } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, Id, Id>) {
-        SetDefinition<method>(emit, ctx, inst, ctx.Def(inst->Arg(0)), ctx.Def(inst->Arg(1)));
-    } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, Id, Id, Id>) {
-        SetDefinition<method>(emit, ctx, inst, ctx.Def(inst->Arg(0)), ctx.Def(inst->Arg(1)),
-                              ctx.Def(inst->Arg(2)));
-    } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, IR::Inst*>) {
-        SetDefinition<method>(emit, ctx, inst, inst);
-    } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, IR::Inst*, Id, Id>) {
-        SetDefinition<method>(emit, ctx, inst, inst, ctx.Def(inst->Arg(0)), ctx.Def(inst->Arg(1)));
-    } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, IR::Inst*, Id, Id, Id>) {
-        SetDefinition<method>(emit, ctx, inst, inst, ctx.Def(inst->Arg(0)), ctx.Def(inst->Arg(1)),
-                              ctx.Def(inst->Arg(2)));
-    } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, Id, u32>) {
-        SetDefinition<method>(emit, ctx, inst, ctx.Def(inst->Arg(0)), inst->Arg(1).U32());
-    } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, const IR::Value&>) {
-        SetDefinition<method>(emit, ctx, inst, inst->Arg(0));
-    } else if constexpr (is_invocable_r_v<Id, M, EmitSPIRV&, EmitContext&, const IR::Value&,
-                                          const IR::Value&>) {
-        SetDefinition<method>(emit, ctx, inst, inst->Arg(0), inst->Arg(1));
-    } else if constexpr (is_invocable_r_v<void, M, EmitSPIRV&, EmitContext&, IR::Inst*>) {
-        (emit.*method)(ctx, inst);
-    } else if constexpr (is_invocable_r_v<void, M, EmitSPIRV&, EmitContext&>) {
-        (emit.*method)(ctx);
-    } else {
-        static_assert(false, "Bad format");
+template <typename ArgType>
+ArgType Arg(EmitContext& ctx, const IR::Value& arg) {
+    if constexpr (std::is_same_v<ArgType, Id>) {
+        return ctx.Def(arg);
+    } else if constexpr (std::is_same_v<ArgType, const IR::Value&>) {
+        return arg;
+    } else if constexpr (std::is_same_v<ArgType, u32>) {
+        return arg.U32();
+    } else if constexpr (std::is_same_v<ArgType, IR::Block*>) {
+        return arg.Label();
     }
+}
+
+template <auto method, bool is_first_arg_inst, size_t... I>
+void Invoke(EmitSPIRV& emit, EmitContext& ctx, IR::Inst* inst, std::index_sequence<I...>) {
+    using Traits = FuncTraits<decltype(method)>;
+    if constexpr (std::is_same_v<Traits::ReturnType, Id>) {
+        if constexpr (is_first_arg_inst) {
+            SetDefinition<method>(emit, ctx, inst, inst,
+                                  Arg<Traits::ArgType<I + 2>>(ctx, inst->Arg(I))...);
+        } else {
+            SetDefinition<method>(emit, ctx, inst,
+                                  Arg<Traits::ArgType<I + 1>>(ctx, inst->Arg(I))...);
+        }
+    } else {
+        if constexpr (is_first_arg_inst) {
+            (emit.*method)(ctx, inst, Arg<Traits::ArgType<I + 2>>(ctx, inst->Arg(I))...);
+        } else {
+            (emit.*method)(ctx, Arg<Traits::ArgType<I + 1>>(ctx, inst->Arg(I))...);
+        }
+    }
+}
+
+template <auto method>
+void Invoke(EmitSPIRV& emit, EmitContext& ctx, IR::Inst* inst) {
+    using Traits = FuncTraits<decltype(method)>;
+    static_assert(Traits::NUM_ARGS >= 1, "Insufficient arguments");
+    if constexpr (Traits::NUM_ARGS == 1) {
+        Invoke<method, false>(emit, ctx, inst, std::make_index_sequence<0>{});
+    } else {
+        using FirstArgType = typename Traits::template ArgType<1>;
+        static constexpr bool is_first_arg_inst = std::is_same_v<FirstArgType, IR::Inst*>;
+        using Indices = std::make_index_sequence<Traits::NUM_ARGS - (is_first_arg_inst ? 2 : 1)>;
+        Invoke<method, is_first_arg_inst>(emit, ctx, inst, Indices{});
+    }
+}
+} // Anonymous namespace
+
+EmitSPIRV::EmitSPIRV(IR::Program& program) {
+    EmitContext ctx{program};
+    const Id void_function{ctx.TypeFunction(ctx.void_id)};
+    // FIXME: Forward declare functions (needs sirit support)
+    Id func{};
+    for (IR::Function& function : program.functions) {
+        func = ctx.OpFunction(ctx.void_id, spv::FunctionControlMask::MaskNone, void_function);
+        for (IR::Block* const block : function.blocks) {
+            ctx.AddLabel(block->Definition<Id>());
+            for (IR::Inst& inst : block->Instructions()) {
+                EmitInst(ctx, &inst);
+            }
+        }
+        ctx.OpFunctionEnd();
+    }
+    boost::container::small_vector<Id, 32> interfaces;
+    if (program.info.uses_workgroup_id) {
+        interfaces.push_back(ctx.workgroup_id);
+    }
+    if (program.info.uses_local_invocation_id) {
+        interfaces.push_back(ctx.local_invocation_id);
+    }
+
+    const std::span interfaces_span(interfaces.data(), interfaces.size());
+    ctx.AddEntryPoint(spv::ExecutionModel::Fragment, func, "main", interfaces_span);
+    ctx.AddExecutionMode(func, spv::ExecutionMode::OriginUpperLeft);
+
+    std::vector<u32> result{ctx.Assemble()};
+    std::FILE* file{std::fopen("D:\\shader.spv", "wb")};
+    std::fwrite(result.data(), sizeof(u32), result.size(), file);
+    std::fclose(file);
+    std::system("spirv-dis D:\\shader.spv") == 0 &&
+        std::system("spirv-val --uniform-buffer-standard-layout D:\\shader.spv") == 0 &&
+        std::system("spirv-cross -V D:\\shader.spv") == 0;
 }
 
 void EmitSPIRV::EmitInst(EmitContext& ctx, IR::Inst* inst) {
@@ -130,9 +140,9 @@ void EmitSPIRV::EmitInst(EmitContext& ctx, IR::Inst* inst) {
 static Id TypeId(const EmitContext& ctx, IR::Type type) {
     switch (type) {
     case IR::Type::U1:
-        return ctx.u1;
+        return ctx.U1;
     case IR::Type::U32:
-        return ctx.u32[1];
+        return ctx.U32[1];
     default:
         throw NotImplementedException("Phi node type {}", type);
     }
@@ -162,7 +172,7 @@ Id EmitSPIRV::EmitPhi(EmitContext& ctx, IR::Inst* inst) {
         }
         IR::Block* const phi_block{inst->PhiBlock(index)};
         operands.push_back(def);
-        operands.push_back(ctx.BlockLabel(phi_block));
+        operands.push_back(phi_block->Definition<Id>());
     }
     const Id result_type{TypeId(ctx, inst->Arg(0).Type())};
     return ctx.OpPhi(result_type, std::span(operands.data(), operands.size()));
@@ -172,29 +182,6 @@ void EmitSPIRV::EmitVoid(EmitContext&) {}
 
 void EmitSPIRV::EmitIdentity(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
-}
-
-// FIXME: Move to its own file
-void EmitSPIRV::EmitBranch(EmitContext& ctx, IR::Inst* inst) {
-    ctx.OpBranch(ctx.BlockLabel(inst->Arg(0).Label()));
-}
-
-void EmitSPIRV::EmitBranchConditional(EmitContext& ctx, IR::Inst* inst) {
-    ctx.OpBranchConditional(ctx.Def(inst->Arg(0)), ctx.BlockLabel(inst->Arg(1).Label()),
-                            ctx.BlockLabel(inst->Arg(2).Label()));
-}
-
-void EmitSPIRV::EmitLoopMerge(EmitContext& ctx, IR::Inst* inst) {
-    ctx.OpLoopMerge(ctx.BlockLabel(inst->Arg(0).Label()), ctx.BlockLabel(inst->Arg(1).Label()),
-                    spv::LoopControlMask::MaskNone);
-}
-
-void EmitSPIRV::EmitSelectionMerge(EmitContext& ctx, IR::Inst* inst) {
-    ctx.OpSelectionMerge(ctx.BlockLabel(inst->Arg(0).Label()), spv::SelectionControlMask::MaskNone);
-}
-
-void EmitSPIRV::EmitReturn(EmitContext& ctx) {
-    ctx.OpReturn();
 }
 
 void EmitSPIRV::EmitGetZeroFromOp(EmitContext&) {

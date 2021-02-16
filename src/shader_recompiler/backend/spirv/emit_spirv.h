@@ -7,81 +7,11 @@
 #include <sirit/sirit.h>
 
 #include "common/common_types.h"
+#include "shader_recompiler/backend/spirv/emit_context.h"
 #include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/program.h"
 
 namespace Shader::Backend::SPIRV {
-
-using Sirit::Id;
-
-class VectorTypes {
-public:
-    void Define(Sirit::Module& sirit_ctx, Id base_type, std::string_view name) {
-        defs[0] = sirit_ctx.Name(base_type, name);
-
-        std::array<char, 6> def_name;
-        for (int i = 1; i < 4; ++i) {
-            const std::string_view def_name_view(
-                def_name.data(),
-                fmt::format_to_n(def_name.data(), def_name.size(), "{}x{}", name, i + 1).size);
-            defs[i] = sirit_ctx.Name(sirit_ctx.TypeVector(base_type, i + 1), def_name_view);
-        }
-    }
-
-    [[nodiscard]] Id operator[](size_t size) const noexcept {
-        return defs[size - 1];
-    }
-
-private:
-    std::array<Id, 4> defs;
-};
-
-class EmitContext final : public Sirit::Module {
-public:
-    explicit EmitContext(IR::Program& program);
-    ~EmitContext();
-
-    [[nodiscard]] Id Def(const IR::Value& value) {
-        if (!value.IsImmediate()) {
-            return value.Inst()->Definition<Id>();
-        }
-        switch (value.Type()) {
-        case IR::Type::U1:
-            return value.U1() ? true_value : false_value;
-        case IR::Type::U32:
-            return Constant(u32[1], value.U32());
-        case IR::Type::F32:
-            return Constant(f32[1], value.F32());
-        default:
-            throw NotImplementedException("Immediate type {}", value.Type());
-        }
-    }
-
-    [[nodiscard]] Id BlockLabel(IR::Block* block) const {
-        const auto it{std::ranges::lower_bound(block_label_map, block, {},
-                                               &std::pair<IR::Block*, Id>::first)};
-        if (it == block_label_map.end()) {
-            throw LogicError("Undefined block");
-        }
-        return it->second;
-    }
-
-    Id void_id{};
-    Id u1{};
-    VectorTypes f32;
-    VectorTypes u32;
-    VectorTypes f16;
-    VectorTypes f64;
-
-    Id true_value{};
-    Id false_value{};
-
-    Id workgroup_id{};
-    Id local_invocation_id{};
-
-private:
-    std::vector<std::pair<IR::Block*, Id>> block_label_map;
-};
 
 class EmitSPIRV {
 public:
@@ -94,10 +24,11 @@ private:
     Id EmitPhi(EmitContext& ctx, IR::Inst* inst);
     void EmitVoid(EmitContext& ctx);
     void EmitIdentity(EmitContext& ctx);
-    void EmitBranch(EmitContext& ctx, IR::Inst* inst);
-    void EmitBranchConditional(EmitContext& ctx, IR::Inst* inst);
-    void EmitLoopMerge(EmitContext& ctx, IR::Inst* inst);
-    void EmitSelectionMerge(EmitContext& ctx, IR::Inst* inst);
+    void EmitBranch(EmitContext& ctx, IR::Block* label);
+    void EmitBranchConditional(EmitContext& ctx, Id condition, IR::Block* true_label,
+                               IR::Block* false_label);
+    void EmitLoopMerge(EmitContext& ctx, IR::Block* merge_label, IR::Block* continue_label);
+    void EmitSelectionMerge(EmitContext& ctx, IR::Block* merge_label);
     void EmitReturn(EmitContext& ctx);
     void EmitGetRegister(EmitContext& ctx);
     void EmitSetRegister(EmitContext& ctx);
@@ -150,7 +81,8 @@ private:
     void EmitWriteStorageS8(EmitContext& ctx);
     void EmitWriteStorageU16(EmitContext& ctx);
     void EmitWriteStorageS16(EmitContext& ctx);
-    void EmitWriteStorage32(EmitContext& ctx);
+    void EmitWriteStorage32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                            Id value);
     void EmitWriteStorage64(EmitContext& ctx);
     void EmitWriteStorage128(EmitContext& ctx);
     void EmitCompositeConstructU32x2(EmitContext& ctx);

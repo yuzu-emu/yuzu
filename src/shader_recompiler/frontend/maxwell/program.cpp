@@ -53,21 +53,22 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
     for (Flow::Function& cfg_function : cfg.Functions()) {
         functions.push_back(IR::Function{
             .blocks{TranslateCode(inst_pool, block_pool, env, cfg_function)},
+            .post_order_blocks{},
         });
     }
-
-    fmt::print(stdout, "No optimizations: {}", IR::DumpProgram(program));
     for (IR::Function& function : functions) {
         function.post_order_blocks = PostOrder(function.blocks);
         Optimization::SsaRewritePass(function.post_order_blocks);
     }
+    fmt::print(stdout, "{}\n", IR::DumpProgram(program));
+    Optimization::GlobalMemoryToStorageBufferPass(program);
     for (IR::Function& function : functions) {
-        Optimization::PostOrderInvoke(Optimization::GlobalMemoryToStorageBufferPass, function);
         Optimization::PostOrderInvoke(Optimization::ConstantPropagationPass, function);
         Optimization::PostOrderInvoke(Optimization::DeadCodeEliminationPass, function);
         Optimization::IdentityRemovalPass(function);
         Optimization::VerificationPass(function);
     }
+    Optimization::CollectShaderInfoPass(program);
     //*/
     return program;
 }
