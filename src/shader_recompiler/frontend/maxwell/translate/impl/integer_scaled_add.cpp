@@ -50,12 +50,7 @@ void ISCADD(TranslatorVisitor& v, u64 insn, IR::U32 op_b) {
 } // Anonymous namespace
 
 void TranslatorVisitor::ISCADD_reg(u64 insn) {
-    union {
-        u64 raw;
-        BitField<20, 8, IR::Reg> op_b;
-    } const iscadd{insn};
-
-    ISCADD(*this, insn, X(iscadd.op_b));
+    ISCADD(*this, insn, GetReg20(insn));
 }
 
 void TranslatorVisitor::ISCADD_cbuf(u64) {
