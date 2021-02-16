@@ -17,7 +17,6 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/math_util.h"
-#include "video_core/engines/const_buffer_engine_interface.h"
 #include "video_core/engines/const_buffer_info.h"
 #include "video_core/engines/engine_interface.h"
 #include "video_core/engines/engine_upload.h"
@@ -49,7 +48,7 @@ namespace Tegra::Engines {
 #define MAXWELL3D_REG_INDEX(field_name)                                                            \
     (offsetof(Tegra::Engines::Maxwell3D::Regs, field_name) / sizeof(u32))
 
-class Maxwell3D final : public ConstBufferEngineInterface, public EngineInterface {
+class Maxwell3D final : public EngineInterface {
 public:
     explicit Maxwell3D(Core::System& system, MemoryManager& memory_manager);
     ~Maxwell3D();
@@ -1423,23 +1422,6 @@ public:
     void CallMethodFromMME(u32 method, u32 method_argument);
 
     void FlushMMEInlineDraw();
-
-    u32 AccessConstBuffer32(ShaderType stage, u64 const_buffer, u64 offset) const override;
-
-    SamplerDescriptor AccessBoundSampler(ShaderType stage, u64 offset) const override;
-
-    SamplerDescriptor AccessBindlessSampler(ShaderType stage, u64 const_buffer,
-                                            u64 offset) const override;
-
-    SamplerDescriptor AccessSampler(u32 handle) const override;
-
-    u32 GetBoundBuffer() const override {
-        return regs.tex_cb_index;
-    }
-
-    VideoCore::GuestDriverProfile& AccessGuestDriverProfile() override;
-
-    const VideoCore::GuestDriverProfile& AccessGuestDriverProfile() const override;
 
     bool ShouldExecute() const {
         return execute_on;
