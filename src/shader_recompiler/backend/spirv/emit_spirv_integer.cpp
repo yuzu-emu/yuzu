@@ -10,7 +10,7 @@ Id EmitSPIRV::EmitIAdd32(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
     if (inst->HasAssociatedPseudoOperation()) {
         throw NotImplementedException("Pseudo-operations on IAdd32");
     }
-    return ctx.OpIAdd(ctx.u32[1], a, b);
+    return ctx.OpIAdd(ctx.U32[1], a, b);
 }
 
 void EmitSPIRV::EmitIAdd64(EmitContext&) {
@@ -18,7 +18,7 @@ void EmitSPIRV::EmitIAdd64(EmitContext&) {
 }
 
 Id EmitSPIRV::EmitISub32(EmitContext& ctx, Id a, Id b) {
-    return ctx.OpISub(ctx.u32[1], a, b);
+    return ctx.OpISub(ctx.U32[1], a, b);
 }
 
 void EmitSPIRV::EmitISub64(EmitContext&) {
@@ -26,7 +26,7 @@ void EmitSPIRV::EmitISub64(EmitContext&) {
 }
 
 Id EmitSPIRV::EmitIMul32(EmitContext& ctx, Id a, Id b) {
-    return ctx.OpIMul(ctx.u32[1], a, b);
+    return ctx.OpIMul(ctx.U32[1], a, b);
 }
 
 void EmitSPIRV::EmitINeg32(EmitContext&) {
@@ -38,7 +38,7 @@ void EmitSPIRV::EmitIAbs32(EmitContext&) {
 }
 
 Id EmitSPIRV::EmitShiftLeftLogical32(EmitContext& ctx, Id base, Id shift) {
-    return ctx.OpShiftLeftLogical(ctx.u32[1], base, shift);
+    return ctx.OpShiftLeftLogical(ctx.U32[1], base, shift);
 }
 
 void EmitSPIRV::EmitShiftRightLogical32(EmitContext&) {
@@ -70,11 +70,11 @@ void EmitSPIRV::EmitBitFieldSExtract(EmitContext&) {
 }
 
 Id EmitSPIRV::EmitBitFieldUExtract(EmitContext& ctx, Id base, Id offset, Id count) {
-    return ctx.OpBitFieldUExtract(ctx.u32[1], base, offset, count);
+    return ctx.OpBitFieldUExtract(ctx.U32[1], base, offset, count);
 }
 
 Id EmitSPIRV::EmitSLessThan(EmitContext& ctx, Id lhs, Id rhs) {
-    return ctx.OpSLessThan(ctx.u1, lhs, rhs);
+    return ctx.OpSLessThan(ctx.U1, lhs, rhs);
 }
 
 void EmitSPIRV::EmitULessThan(EmitContext&) {
@@ -94,7 +94,7 @@ void EmitSPIRV::EmitULessThanEqual(EmitContext&) {
 }
 
 Id EmitSPIRV::EmitSGreaterThan(EmitContext& ctx, Id lhs, Id rhs) {
-    return ctx.OpSGreaterThan(ctx.u1, lhs, rhs);
+    return ctx.OpSGreaterThan(ctx.U1, lhs, rhs);
 }
 
 void EmitSPIRV::EmitUGreaterThan(EmitContext&) {
@@ -110,7 +110,7 @@ void EmitSPIRV::EmitSGreaterThanEqual(EmitContext&) {
 }
 
 Id EmitSPIRV::EmitUGreaterThanEqual(EmitContext& ctx, Id lhs, Id rhs) {
-    return ctx.OpUGreaterThanEqual(ctx.u1, lhs, rhs);
+    return ctx.OpUGreaterThanEqual(ctx.U1, lhs, rhs);
 }
 
 void EmitSPIRV::EmitLogicalOr(EmitContext&) {

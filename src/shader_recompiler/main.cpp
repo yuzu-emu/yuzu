@@ -67,8 +67,8 @@ int main() {
     ObjectPool<IR::Inst> inst_pool;
     ObjectPool<IR::Block> block_pool;
 
-    // FileEnvironment env{"D:\\Shaders\\Database\\Oninaki\\CS8F146B41DB6BD826.bin"};
-    FileEnvironment env{"D:\\Shaders\\shader.bin"};
+    FileEnvironment env{"D:\\Shaders\\Database\\Oninaki\\CS8F146B41DB6BD826.bin"};
+    // FileEnvironment env{"D:\\Shaders\\shader.bin"};
     block_pool.ReleaseContents();
     inst_pool.ReleaseContents();
     flow_block_pool.ReleaseContents();

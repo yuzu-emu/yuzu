@@ -46,27 +46,27 @@ void EmitSPIRV::EmitFPAbs64(EmitContext&) {
 }
 
 Id EmitSPIRV::EmitFPAdd16(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
-    return Decorate(ctx, inst, ctx.OpFAdd(ctx.f16[1], a, b));
+    return Decorate(ctx, inst, ctx.OpFAdd(ctx.F16[1], a, b));
 }
 
 Id EmitSPIRV::EmitFPAdd32(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
-    return Decorate(ctx, inst, ctx.OpFAdd(ctx.f32[1], a, b));
+    return Decorate(ctx, inst, ctx.OpFAdd(ctx.F32[1], a, b));
 }
 
 Id EmitSPIRV::EmitFPAdd64(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
-    return Decorate(ctx, inst, ctx.OpFAdd(ctx.f64[1], a, b));
+    return Decorate(ctx, inst, ctx.OpFAdd(ctx.F64[1], a, b));
 }
 
 Id EmitSPIRV::EmitFPFma16(EmitContext& ctx, IR::Inst* inst, Id a, Id b, Id c) {
-    return Decorate(ctx, inst, ctx.OpFma(ctx.f16[1], a, b, c));
+    return Decorate(ctx, inst, ctx.OpFma(ctx.F16[1], a, b, c));
 }
 
 Id EmitSPIRV::EmitFPFma32(EmitContext& ctx, IR::Inst* inst, Id a, Id b, Id c) {
-    return Decorate(ctx, inst, ctx.OpFma(ctx.f32[1], a, b, c));
+    return Decorate(ctx, inst, ctx.OpFma(ctx.F32[1], a, b, c));
 }
 
 Id EmitSPIRV::EmitFPFma64(EmitContext& ctx, IR::Inst* inst, Id a, Id b, Id c) {
-    return Decorate(ctx, inst, ctx.OpFma(ctx.f64[1], a, b, c));
+    return Decorate(ctx, inst, ctx.OpFma(ctx.F64[1], a, b, c));
 }
 
 void EmitSPIRV::EmitFPMax32(EmitContext&) {
@@ -86,15 +86,15 @@ void EmitSPIRV::EmitFPMin64(EmitContext&) {
 }
 
 Id EmitSPIRV::EmitFPMul16(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
-    return Decorate(ctx, inst, ctx.OpFMul(ctx.f16[1], a, b));
+    return Decorate(ctx, inst, ctx.OpFMul(ctx.F16[1], a, b));
 }
 
 Id EmitSPIRV::EmitFPMul32(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
-    return Decorate(ctx, inst, ctx.OpFMul(ctx.f32[1], a, b));
+    return Decorate(ctx, inst, ctx.OpFMul(ctx.F32[1], a, b));
 }
 
 Id EmitSPIRV::EmitFPMul64(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
-    return Decorate(ctx, inst, ctx.OpFMul(ctx.f64[1], a, b));
+    return Decorate(ctx, inst, ctx.OpFMul(ctx.F64[1], a, b));
 }
 
 void EmitSPIRV::EmitFPNeg16(EmitContext&) {

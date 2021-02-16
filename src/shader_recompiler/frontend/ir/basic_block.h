@@ -11,6 +11,7 @@
 
 #include <boost/intrusive/list.hpp>
 
+#include "common/bit_cast.h"
 #include "shader_recompiler/frontend/ir/condition.h"
 #include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/value.h"
@@ -67,6 +68,18 @@ public:
     void AddImmediatePredecessor(Block* block);
     /// Gets an immutable span to the immediate predecessors.
     [[nodiscard]] std::span<Block* const> ImmediatePredecessors() const noexcept;
+
+    /// Intrusively store the host definition of this instruction.
+    template <typename DefinitionType>
+    void SetDefinition(DefinitionType def) {
+        definition = Common::BitCast<u32>(def);
+    }
+
+    /// Return the intrusively stored host definition of this instruction.
+    template <typename DefinitionType>
+    [[nodiscard]] DefinitionType Definition() const noexcept {
+        return Common::BitCast<DefinitionType>(definition);
+    }
 
     [[nodiscard]] Condition BranchCondition() const noexcept {
         return branch_cond;
@@ -161,6 +174,9 @@ private:
     Block* branch_false{nullptr};
     /// Block immediate predecessors
     std::vector<Block*> imm_predecessors;
+
+    /// Intrusively stored host definition of this block.
+    u32 definition{};
 };
 
 using BlockList = std::vector<Block*>;

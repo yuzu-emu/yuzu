@@ -1,4 +1,6 @@
 add_executable(shader_recompiler
+    backend/spirv/emit_context.cpp
+    backend/spirv/emit_context.h
     backend/spirv/emit_spirv.cpp
     backend/spirv/emit_spirv.h
     backend/spirv/emit_spirv_bitwise_conversion.cpp
@@ -75,6 +77,7 @@ add_executable(shader_recompiler
     frontend/maxwell/translate/impl/move_special_register.cpp
     frontend/maxwell/translate/translate.cpp
     frontend/maxwell/translate/translate.h
+    ir_opt/collect_shader_info_pass.cpp
     ir_opt/constant_propagation_pass.cpp
     ir_opt/dead_code_elimination_pass.cpp
     ir_opt/global_memory_to_storage_buffer_pass.cpp
@@ -84,6 +87,7 @@ add_executable(shader_recompiler
     ir_opt/verification_pass.cpp
     main.cpp
     object_pool.h
+    shader_info.h
 )
 
 target_include_directories(video_core PRIVATE sirit)

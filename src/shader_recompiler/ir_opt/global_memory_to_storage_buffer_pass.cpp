@@ -28,7 +28,8 @@ struct StorageBufferAddr {
 /// Block iterator to a global memory instruction and the storage buffer it uses
 struct StorageInst {
     StorageBufferAddr storage_buffer;
-    IR::Block::iterator inst;
+    IR::Inst* inst;
+    IR::Block* block;
 };
 
 /// Bias towards a certain range of constant buffers when looking for storage buffers
@@ -41,7 +42,7 @@ struct Bias {
 using StorageBufferSet =
     boost::container::flat_set<StorageBufferAddr, std::less<StorageBufferAddr>,
                                boost::container::small_vector<StorageBufferAddr, 16>>;
-using StorageInstVector = boost::container::small_vector<StorageInst, 32>;
+using StorageInstVector = boost::container::small_vector<StorageInst, 24>;
 
 /// Returns true when the instruction is a global memory instruction
 bool IsGlobalMemory(const IR::Inst& inst) {
@@ -109,23 +110,22 @@ bool MeetsBias(const StorageBufferAddr& storage_buffer, const Bias& bias) noexce
 }
 
 /// Discards a global memory operation, reads return zero and writes are ignored
-void DiscardGlobalMemory(IR::Block& block, IR::Block::iterator inst) {
+void DiscardGlobalMemory(IR::Block& block, IR::Inst& inst) {
+    IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
     const IR::Value zero{u32{0}};
-    switch (inst->Opcode()) {
+    switch (inst.Opcode()) {
     case IR::Opcode::LoadGlobalS8:
     case IR::Opcode::LoadGlobalU8:
     case IR::Opcode::LoadGlobalS16:
     case IR::Opcode::LoadGlobalU16:
     case IR::Opcode::LoadGlobal32:
-        inst->ReplaceUsesWith(zero);
+        inst.ReplaceUsesWith(zero);
         break;
     case IR::Opcode::LoadGlobal64:
-        inst->ReplaceUsesWith(IR::Value{
-            &*block.PrependNewInst(inst, IR::Opcode::CompositeConstructU32x2, {zero, zero})});
+        inst.ReplaceUsesWith(IR::Value{ir.CompositeConstruct(zero, zero)});
         break;
     case IR::Opcode::LoadGlobal128:
-        inst->ReplaceUsesWith(IR::Value{&*block.PrependNewInst(
-            inst, IR::Opcode::CompositeConstructU32x4, {zero, zero, zero, zero})});
+        inst.ReplaceUsesWith(IR::Value{ir.CompositeConstruct(zero, zero, zero, zero)});
         break;
     case IR::Opcode::WriteGlobalS8:
     case IR::Opcode::WriteGlobalU8:
@@ -134,11 +134,10 @@ void DiscardGlobalMemory(IR::Block& block, IR::Block::iterator inst) {
     case IR::Opcode::WriteGlobal32:
     case IR::Opcode::WriteGlobal64:
     case IR::Opcode::WriteGlobal128:
-        inst->Invalidate();
+        inst.Invalidate();
         break;
     default:
-        throw LogicError("Invalid opcode to discard its global memory operation {}",
-                         inst->Opcode());
+        throw LogicError("Invalid opcode to discard its global memory operation {}", inst.Opcode());
     }
 }
 
@@ -232,8 +231,8 @@ std::optional<StorageBufferAddr> Track(const IR::Value& value, const Bias* bias)
 }
 
 /// Collects the storage buffer used by a global memory instruction and the instruction itself
-void CollectStorageBuffers(IR::Block& block, IR::Block::iterator inst,
-                           StorageBufferSet& storage_buffer_set, StorageInstVector& to_replace) {
+void CollectStorageBuffers(IR::Block& block, IR::Inst& inst, StorageBufferSet& storage_buffer_set,
+                           StorageInstVector& to_replace) {
     // NVN puts storage buffers in a specific range, we have to bias towards these addresses to
     // avoid getting false positives
     static constexpr Bias nvn_bias{
@@ -241,19 +240,13 @@ void CollectStorageBuffers(IR::Block& block, IR::Block::iterator inst,
         .offset_begin{0x110},
         .offset_end{0x610},
     };
-    // First try to find storage buffers in the NVN address
-    const IR::U64 addr{inst->Arg(0)};
-    if (addr.IsImmediate()) {
-        // Immediate addresses can't be lowered to a storage buffer
-        DiscardGlobalMemory(block, inst);
-        return;
-    }
     // Track the low address of the instruction
-    const std::optional<LowAddrInfo> low_addr_info{TrackLowAddress(addr.InstRecursive())};
+    const std::optional<LowAddrInfo> low_addr_info{TrackLowAddress(&inst)};
     if (!low_addr_info) {
         DiscardGlobalMemory(block, inst);
         return;
     }
+    // First try to find storage buffers in the NVN address
     const IR::U32 low_addr{low_addr_info->value};
     std::optional<StorageBufferAddr> storage_buffer{Track(low_addr, &nvn_bias)};
     if (!storage_buffer) {
@@ -269,21 +262,22 @@ void CollectStorageBuffers(IR::Block& block, IR::Block::iterator inst,
     storage_buffer_set.insert(*storage_buffer);
     to_replace.push_back(StorageInst{
         .storage_buffer{*storage_buffer},
-        .inst{inst},
+        .inst{&inst},
+        .block{&block},
     });
 }
 
 /// Returns the offset in indices (not bytes) for an equivalent storage instruction
-IR::U32 StorageOffset(IR::Block& block, IR::Block::iterator inst, StorageBufferAddr buffer) {
-    IR::IREmitter ir{block, inst};
+IR::U32 StorageOffset(IR::Block& block, IR::Inst& inst, StorageBufferAddr buffer) {
+    IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
     IR::U32 offset;
-    if (const std::optional<LowAddrInfo> low_addr{TrackLowAddress(&*inst)}) {
+    if (const std::optional<LowAddrInfo> low_addr{TrackLowAddress(&inst)}) {
         offset = low_addr->value;
         if (low_addr->imm_offset != 0) {
             offset = ir.IAdd(offset, ir.Imm32(low_addr->imm_offset));
         }
     } else {
-        offset = ir.ConvertU(32, IR::U64{inst->Arg(0)});
+        offset = ir.ConvertU(32, IR::U64{inst.Arg(0)});
     }
     // Subtract the least significant 32 bits from the guest offset. The result is the storage
     // buffer offset in bytes.
@@ -292,25 +286,27 @@ IR::U32 StorageOffset(IR::Block& block, IR::Block::iterator inst, StorageBufferA
 }
 
 /// Replace a global memory load instruction with its storage buffer equivalent
-void ReplaceLoad(IR::Block& block, IR::Block::iterator inst, const IR::U32& storage_index,
+void ReplaceLoad(IR::Block& block, IR::Inst& inst, const IR::U32& storage_index,
                  const IR::U32& offset) {
-    const IR::Opcode new_opcode{GlobalToStorage(inst->Opcode())};
-    const IR::Value value{&*block.PrependNewInst(inst, new_opcode, {storage_index, offset})};
-    inst->ReplaceUsesWith(value);
+    const IR::Opcode new_opcode{GlobalToStorage(inst.Opcode())};
+    const auto it{IR::Block::InstructionList::s_iterator_to(inst)};
+    const IR::Value value{&*block.PrependNewInst(it, new_opcode, {storage_index, offset})};
+    inst.ReplaceUsesWith(value);
 }
 
 /// Replace a global memory write instruction with its storage buffer equivalent
-void ReplaceWrite(IR::Block& block, IR::Block::iterator inst, const IR::U32& storage_index,
+void ReplaceWrite(IR::Block& block, IR::Inst& inst, const IR::U32& storage_index,
                   const IR::U32& offset) {
-    const IR::Opcode new_opcode{GlobalToStorage(inst->Opcode())};
-    block.PrependNewInst(inst, new_opcode, {storage_index, offset, inst->Arg(1)});
-    inst->Invalidate();
+    const IR::Opcode new_opcode{GlobalToStorage(inst.Opcode())};
+    const auto it{IR::Block::InstructionList::s_iterator_to(inst)};
+    block.PrependNewInst(it, new_opcode, {storage_index, offset, inst.Arg(1)});
+    inst.Invalidate();
 }
 
 /// Replace a global memory instruction with its storage buffer equivalent
-void Replace(IR::Block& block, IR::Block::iterator inst, const IR::U32& storage_index,
+void Replace(IR::Block& block, IR::Inst& inst, const IR::U32& storage_index,
              const IR::U32& offset) {
-    switch (inst->Opcode()) {
+    switch (inst.Opcode()) {
     case IR::Opcode::LoadGlobalS8:
     case IR::Opcode::LoadGlobalU8:
     case IR::Opcode::LoadGlobalS16:
@@ -328,26 +324,44 @@ void Replace(IR::Block& block, IR::Block::iterator inst, const IR::U32& storage_
     case IR::Opcode::WriteGlobal128:
         return ReplaceWrite(block, inst, storage_index, offset);
     default:
-        throw InvalidArgument("Invalid global memory opcode {}", inst->Opcode());
+        throw InvalidArgument("Invalid global memory opcode {}", inst.Opcode());
     }
 }
 } // Anonymous namespace
 
-void GlobalMemoryToStorageBufferPass(IR::Block& block) {
+void GlobalMemoryToStorageBufferPass(IR::Program& program) {
     StorageBufferSet storage_buffers;
     StorageInstVector to_replace;
 
-    for (IR::Block::iterator inst{block.begin()}; inst != block.end(); ++inst) {
-        if (!IsGlobalMemory(*inst)) {
-            continue;
+    for (IR::Function& function : program.functions) {
+        for (IR::Block* const block : function.post_order_blocks) {
+            for (IR::Inst& inst : block->Instructions()) {
+                if (!IsGlobalMemory(inst)) {
+                    continue;
+                }
+                CollectStorageBuffers(*block, inst, storage_buffers, to_replace);
+            }
         }
-        CollectStorageBuffers(block, inst, storage_buffers, to_replace);
     }
-    for (const auto [storage_buffer, inst] : to_replace) {
-        const auto it{storage_buffers.find(storage_buffer)};
-        const IR::U32 storage_index{IR::Value{static_cast<u32>(storage_buffers.index_of(it))}};
-        const IR::U32 offset{StorageOffset(block, inst, storage_buffer)};
-        Replace(block, inst, storage_index, offset);
+    Info& info{program.info};
+    u32 storage_index{};
+    for (const StorageBufferAddr& storage_buffer : storage_buffers) {
+        info.storage_buffers_descriptors.push_back({
+            .cbuf_index{storage_buffer.index},
+            .cbuf_offset{storage_buffer.offset},
+            .count{1},
+        });
+        info.storage_buffers[storage_index] = &info.storage_buffers_descriptors.back();
+        ++storage_index;
+    }
+    for (const StorageInst& storage_inst : to_replace) {
+        const StorageBufferAddr storage_buffer{storage_inst.storage_buffer};
+        const auto it{storage_buffers.find(storage_inst.storage_buffer)};
+        const IR::U32 index{IR::Value{static_cast<u32>(storage_buffers.index_of(it))}};
+        IR::Block* const block{storage_inst.block};
+        IR::Inst* const inst{storage_inst.inst};
+        const IR::U32 offset{StorageOffset(*block, *inst, storage_buffer)};
+        Replace(*block, *inst, index, offset);
     }
 }
 

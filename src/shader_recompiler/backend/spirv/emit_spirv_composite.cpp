@@ -23,7 +23,7 @@ void EmitSPIRV::EmitCompositeExtractU32x2(EmitContext&) {
 }
 
 Id EmitSPIRV::EmitCompositeExtractU32x3(EmitContext& ctx, Id vector, u32 index) {
-    return ctx.OpCompositeExtract(ctx.u32[1], vector, index);
+    return ctx.OpCompositeExtract(ctx.U32[1], vector, index);
 }
 
 void EmitSPIRV::EmitCompositeExtractU32x4(EmitContext&) {

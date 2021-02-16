@@ -7,7 +7,7 @@
 namespace Shader::Backend::SPIRV {
 
 Id EmitSPIRV::EmitUndefU1(EmitContext& ctx) {
-    return ctx.OpUndef(ctx.u1);
+    return ctx.OpUndef(ctx.U1);
 }
 
 Id EmitSPIRV::EmitUndefU8(EmitContext&) {
@@ -19,7 +19,7 @@ Id EmitSPIRV::EmitUndefU16(EmitContext&) {
 }
 
 Id EmitSPIRV::EmitUndefU32(EmitContext& ctx) {
-    return ctx.OpUndef(ctx.u32[1]);
+    return ctx.OpUndef(ctx.U32[1]);
 }
 
 Id EmitSPIRV::EmitUndefU64(EmitContext&) {

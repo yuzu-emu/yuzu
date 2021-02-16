@@ -11,7 +11,7 @@ void EmitSPIRV::EmitBitCastU16F16(EmitContext&) {
 }
 
 Id EmitSPIRV::EmitBitCastU32F32(EmitContext& ctx, Id value) {
-    return ctx.OpBitcast(ctx.u32[1], value);
+    return ctx.OpBitcast(ctx.U32[1], value);
 }
 
 void EmitSPIRV::EmitBitCastU64F64(EmitContext&) {
@@ -23,7 +23,7 @@ void EmitSPIRV::EmitBitCastF16U16(EmitContext&) {
 }
 
 Id EmitSPIRV::EmitBitCastF32U32(EmitContext& ctx, Id value) {
-    return ctx.OpBitcast(ctx.f32[1], value);
+    return ctx.OpBitcast(ctx.F32[1], value);
 }
 
 void EmitSPIRV::EmitBitCastF64U64(EmitContext&) {

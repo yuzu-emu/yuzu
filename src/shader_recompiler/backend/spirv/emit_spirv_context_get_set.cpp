@@ -37,7 +37,10 @@ Id EmitSPIRV::EmitGetCbuf(EmitContext& ctx, const IR::Value& binding, const IR::
     if (!offset.IsImmediate()) {
         throw NotImplementedException("Variable constant buffer offset");
     }
-    return ctx.Name(ctx.OpUndef(ctx.u32[1]), "unimplemented_cbuf");
+    const Id imm_offset{ctx.Constant(ctx.U32[1], offset.U32() / 4)};
+    const Id cbuf{ctx.cbufs[binding.U32()]};
+    const Id access_chain{ctx.OpAccessChain(ctx.uniform_u32, cbuf, ctx.u32_zero_value, imm_offset)};
+    return ctx.OpLoad(ctx.U32[1], access_chain);
 }
 
 void EmitSPIRV::EmitGetAttribute(EmitContext&) {
@@ -89,22 +92,11 @@ void EmitSPIRV::EmitSetOFlag(EmitContext&) {
 }
 
 Id EmitSPIRV::EmitWorkgroupId(EmitContext& ctx) {
-    if (ctx.workgroup_id.value == 0) {
-        ctx.workgroup_id = ctx.AddGlobalVariable(
-            ctx.TypePointer(spv::StorageClass::Input, ctx.u32[3]), spv::StorageClass::Input);
-        ctx.Decorate(ctx.workgroup_id, spv::Decoration::BuiltIn, spv::BuiltIn::WorkgroupId);
-    }
-    return ctx.OpLoad(ctx.u32[3], ctx.workgroup_id);
+    return ctx.OpLoad(ctx.U32[3], ctx.workgroup_id);
 }
 
 Id EmitSPIRV::EmitLocalInvocationId(EmitContext& ctx) {
-    if (ctx.local_invocation_id.value == 0) {
-        ctx.local_invocation_id = ctx.AddGlobalVariable(
-            ctx.TypePointer(spv::StorageClass::Input, ctx.u32[3]), spv::StorageClass::Input);
-        ctx.Decorate(ctx.local_invocation_id, spv::Decoration::BuiltIn,
-                     spv::BuiltIn::LocalInvocationId);
-    }
-    return ctx.OpLoad(ctx.u32[3], ctx.local_invocation_id);
+    return ctx.OpLoad(ctx.U32[3], ctx.local_invocation_id);
 }
 
 } // namespace Shader::Backend::SPIRV
