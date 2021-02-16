@@ -41,6 +41,7 @@ public:
     [[nodiscard]] IR::Inst* Inst() const;
     [[nodiscard]] IR::Block* Label() const;
     [[nodiscard]] IR::Inst* InstRecursive() const;
+    [[nodiscard]] IR::Value Resolve() const;
     [[nodiscard]] IR::Reg Reg() const;
     [[nodiscard]] IR::Pred Pred() const;
     [[nodiscard]] IR::Attribute Attribute() const;

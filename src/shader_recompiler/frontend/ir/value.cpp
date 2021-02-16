@@ -79,6 +79,13 @@ IR::Inst* Value::InstRecursive() const {
     return inst;
 }
 
+IR::Value Value::Resolve() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).Resolve();
+    }
+    return *this;
+}
+
 IR::Reg Value::Reg() const {
     ValidateAccess(Type::Reg);
     return reg;
