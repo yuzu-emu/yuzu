@@ -28,11 +28,9 @@
 #include "video_core/renderer_opengl/gl_query_cache.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/renderer_opengl/gl_shader_cache.h"
-#include "video_core/renderer_opengl/gl_shader_decompiler.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
 #include "video_core/renderer_opengl/gl_state_tracker.h"
 #include "video_core/renderer_opengl/gl_texture_cache.h"
-#include "video_core/shader/async_shaders.h"
 #include "video_core/textures/texture.h"
 
 namespace Core::Memory {
@@ -79,7 +77,7 @@ public:
 
     void Draw(bool is_indexed, bool is_instanced) override;
     void Clear() override;
-    void DispatchCompute(GPUVAddr code_addr) override;
+    void DispatchCompute() override;
     void ResetCounter(VideoCore::QueryType type) override;
     void Query(GPUVAddr gpu_addr, VideoCore::QueryType type, std::optional<u64> timestamp) override;
     void BindGraphicsUniformBuffer(size_t stage, u32 index, GPUVAddr gpu_addr, u32 size) override;
@@ -116,35 +114,10 @@ public:
         return num_queued_commands > 0;
     }
 
-    VideoCommon::Shader::AsyncShaders& GetAsyncShaders() {
-        return async_shaders;
-    }
-
-    const VideoCommon::Shader::AsyncShaders& GetAsyncShaders() const {
-        return async_shaders;
-    }
-
 private:
     static constexpr size_t MAX_TEXTURES = 192;
     static constexpr size_t MAX_IMAGES = 48;
     static constexpr size_t MAX_IMAGE_VIEWS = MAX_TEXTURES + MAX_IMAGES;
-
-    void BindComputeTextures(Shader* kernel);
-
-    void BindTextures(const ShaderEntries& entries, GLuint base_texture, GLuint base_image,
-                      size_t& image_view_index, size_t& texture_index, size_t& image_index);
-
-    /// Configures the current textures to use for the draw command.
-    void SetupDrawTextures(const Shader* shader, size_t stage_index);
-
-    /// Configures the textures used in a compute shader.
-    void SetupComputeTextures(const Shader* kernel);
-
-    /// Configures images in a graphics shader.
-    void SetupDrawImages(const Shader* shader, size_t stage_index);
-
-    /// Configures images in a compute shader.
-    void SetupComputeImages(const Shader* shader);
 
     /// Syncs state to match guest's
     void SyncState();
@@ -228,8 +201,6 @@ private:
     /// End a transform feedback
     void EndTransformFeedback();
 
-    void SetupShaders(bool is_indexed);
-
     Tegra::GPU& gpu;
     Tegra::Engines::Maxwell3D& maxwell3d;
     Tegra::Engines::KeplerCompute& kepler_compute;
@@ -248,8 +219,6 @@ private:
     QueryCache query_cache;
     AccelerateDMA accelerate_dma;
     FenceManagerOpenGL fence_manager;
-
-    VideoCommon::Shader::AsyncShaders async_shaders;
 
     boost::container::static_vector<u32, MAX_IMAGE_VIEWS> image_view_indices;
     std::array<ImageViewId, MAX_IMAGE_VIEWS> image_view_ids;

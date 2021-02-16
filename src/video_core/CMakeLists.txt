@@ -29,7 +29,6 @@ add_library(video_core STATIC
     dirty_flags.h
     dma_pusher.cpp
     dma_pusher.h
-    engines/const_buffer_engine_interface.h
     engines/const_buffer_info.h
     engines/engine_interface.h
     engines/engine_upload.cpp
@@ -61,8 +60,6 @@ add_library(video_core STATIC
     gpu.h
     gpu_thread.cpp
     gpu_thread.h
-    guest_driver.cpp
-    guest_driver.h
     memory_manager.cpp
     memory_manager.h
     query_cache.h
@@ -71,8 +68,6 @@ add_library(video_core STATIC
     rasterizer_interface.h
     renderer_base.cpp
     renderer_base.h
-    renderer_opengl/gl_arb_decompiler.cpp
-    renderer_opengl/gl_arb_decompiler.h
     renderer_opengl/gl_buffer_cache.cpp
     renderer_opengl/gl_buffer_cache.h
     renderer_opengl/gl_device.cpp
@@ -85,10 +80,6 @@ add_library(video_core STATIC
     renderer_opengl/gl_resource_manager.h
     renderer_opengl/gl_shader_cache.cpp
     renderer_opengl/gl_shader_cache.h
-    renderer_opengl/gl_shader_decompiler.cpp
-    renderer_opengl/gl_shader_decompiler.h
-    renderer_opengl/gl_shader_disk_cache.cpp
-    renderer_opengl/gl_shader_disk_cache.h
     renderer_opengl/gl_shader_manager.cpp
     renderer_opengl/gl_shader_manager.h
     renderer_opengl/gl_shader_util.cpp
@@ -128,8 +119,6 @@ add_library(video_core STATIC
     renderer_vulkan/vk_descriptor_pool.h
     renderer_vulkan/vk_fence_manager.cpp
     renderer_vulkan/vk_fence_manager.h
-    renderer_vulkan/vk_graphics_pipeline.cpp
-    renderer_vulkan/vk_graphics_pipeline.h
     renderer_vulkan/vk_master_semaphore.cpp
     renderer_vulkan/vk_master_semaphore.h
     renderer_vulkan/vk_pipeline_cache.cpp
@@ -142,8 +131,6 @@ add_library(video_core STATIC
     renderer_vulkan/vk_resource_pool.h
     renderer_vulkan/vk_scheduler.cpp
     renderer_vulkan/vk_scheduler.h
-    renderer_vulkan/vk_shader_decompiler.cpp
-    renderer_vulkan/vk_shader_decompiler.h
     renderer_vulkan/vk_shader_util.cpp
     renderer_vulkan/vk_shader_util.h
     renderer_vulkan/vk_staging_buffer_pool.cpp
@@ -159,57 +146,6 @@ add_library(video_core STATIC
     shader_cache.h
     shader_notify.cpp
     shader_notify.h
-    shader/decode/arithmetic.cpp
-    shader/decode/arithmetic_immediate.cpp
-    shader/decode/bfe.cpp
-    shader/decode/bfi.cpp
-    shader/decode/shift.cpp
-    shader/decode/arithmetic_integer.cpp
-    shader/decode/arithmetic_integer_immediate.cpp
-    shader/decode/arithmetic_half.cpp
-    shader/decode/arithmetic_half_immediate.cpp
-    shader/decode/ffma.cpp
-    shader/decode/hfma2.cpp
-    shader/decode/conversion.cpp
-    shader/decode/memory.cpp
-    shader/decode/texture.cpp
-    shader/decode/image.cpp
-    shader/decode/float_set_predicate.cpp
-    shader/decode/integer_set_predicate.cpp
-    shader/decode/half_set_predicate.cpp
-    shader/decode/predicate_set_register.cpp
-    shader/decode/predicate_set_predicate.cpp
-    shader/decode/register_set_predicate.cpp
-    shader/decode/float_set.cpp
-    shader/decode/integer_set.cpp
-    shader/decode/half_set.cpp
-    shader/decode/video.cpp
-    shader/decode/warp.cpp
-    shader/decode/xmad.cpp
-    shader/decode/other.cpp
-    shader/ast.cpp
-    shader/ast.h
-    shader/async_shaders.cpp
-    shader/async_shaders.h
-    shader/compiler_settings.cpp
-    shader/compiler_settings.h
-    shader/control_flow.cpp
-    shader/control_flow.h
-    shader/decode.cpp
-    shader/expr.cpp
-    shader/expr.h
-    shader/memory_util.cpp
-    shader/memory_util.h
-    shader/node_helper.cpp
-    shader/node_helper.h
-    shader/node.h
-    shader/registry.cpp
-    shader/registry.h
-    shader/shader_ir.cpp
-    shader/shader_ir.h
-    shader/track.cpp
-    shader/transform_feedback.cpp
-    shader/transform_feedback.h
     surface.cpp
     surface.h
     texture_cache/accelerated_swizzle.cpp

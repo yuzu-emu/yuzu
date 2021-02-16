@@ -11,7 +11,6 @@
 #include "common/common_types.h"
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/gpu.h"
-#include "video_core/guest_driver.h"
 
 namespace Tegra {
 class MemoryManager;
@@ -45,7 +44,7 @@ public:
     virtual void Clear() = 0;
 
     /// Dispatches a compute shader invocation
-    virtual void DispatchCompute(GPUVAddr code_addr) = 0;
+    virtual void DispatchCompute() = 0;
 
     /// Resets the counter of a query
     virtual void ResetCounter(QueryType type) = 0;
@@ -136,18 +135,5 @@ public:
     /// Initialize disk cached resources for the game being emulated
     virtual void LoadDiskResources(u64 title_id, std::stop_token stop_loading,
                                    const DiskResourceLoadCallback& callback) {}
-
-    /// Grant access to the Guest Driver Profile for recording/obtaining info on the guest driver.
-    [[nodiscard]] GuestDriverProfile& AccessGuestDriverProfile() {
-        return guest_driver_profile;
-    }
-
-    /// Grant access to the Guest Driver Profile for recording/obtaining info on the guest driver.
-    [[nodiscard]] const GuestDriverProfile& AccessGuestDriverProfile() const {
-        return guest_driver_profile;
-    }
-
-private:
-    GuestDriverProfile guest_driver_profile{};
 };
 } // namespace VideoCore

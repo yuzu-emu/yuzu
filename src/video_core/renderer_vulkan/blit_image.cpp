@@ -323,7 +323,6 @@ void BindBlitState(vk::CommandBuffer cmdbuf, VkPipelineLayout layout, const Regi
     cmdbuf.SetScissor(0, scissor);
     cmdbuf.PushConstants(layout, VK_SHADER_STAGE_VERTEX_BIT, push_constants);
 }
-
 } // Anonymous namespace
 
 BlitImageHelper::BlitImageHelper(const Device& device_, VKScheduler& scheduler_,
