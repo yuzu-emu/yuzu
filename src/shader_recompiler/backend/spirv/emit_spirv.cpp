@@ -180,8 +180,8 @@ Id EmitSPIRV::EmitPhi(EmitContext& ctx, IR::Inst* inst) {
 
 void EmitSPIRV::EmitVoid(EmitContext&) {}
 
-void EmitSPIRV::EmitIdentity(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitSPIRV::EmitIdentity(EmitContext& ctx, const IR::Value& value) {
+    return ctx.Def(value);
 }
 
 void EmitSPIRV::EmitGetZeroFromOp(EmitContext&) {
