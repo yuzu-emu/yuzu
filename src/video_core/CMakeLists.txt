@@ -43,9 +43,6 @@ add_library(video_core STATIC
     engines/maxwell_3d.h
     engines/maxwell_dma.cpp
     engines/maxwell_dma.h
-    engines/shader_bytecode.h
-    engines/shader_header.h
-    engines/shader_type.h
     framebuffer_config.h
     macro/macro.cpp
     macro/macro.h
@@ -123,6 +120,7 @@ add_library(video_core STATIC
     renderer_vulkan/vk_master_semaphore.h
     renderer_vulkan/vk_pipeline_cache.cpp
     renderer_vulkan/vk_pipeline_cache.h
+    renderer_vulkan/vk_pipeline.h
     renderer_vulkan/vk_query_cache.cpp
     renderer_vulkan/vk_query_cache.h
     renderer_vulkan/vk_rasterizer.cpp
@@ -201,7 +199,7 @@ add_library(video_core STATIC
 create_target_directory_groups(video_core)
 
 target_link_libraries(video_core PUBLIC common core)
-target_link_libraries(video_core PRIVATE glad xbyak)
+target_link_libraries(video_core PRIVATE glad shader_recompiler xbyak)
 
 if (YUZU_USE_BUNDLED_FFMPEG AND NOT WIN32)
     add_dependencies(video_core ffmpeg-build)

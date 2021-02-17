@@ -6,51 +6,51 @@
 
 namespace Shader::Backend::SPIRV {
 
-void EmitSPIRV::EmitBitCastU16F16(EmitContext&) {
+void EmitBitCastU16F16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-Id EmitSPIRV::EmitBitCastU32F32(EmitContext& ctx, Id value) {
+Id EmitBitCastU32F32(EmitContext& ctx, Id value) {
     return ctx.OpBitcast(ctx.U32[1], value);
 }
 
-void EmitSPIRV::EmitBitCastU64F64(EmitContext&) {
+void EmitBitCastU64F64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitBitCastF16U16(EmitContext&) {
+void EmitBitCastF16U16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-Id EmitSPIRV::EmitBitCastF32U32(EmitContext& ctx, Id value) {
+Id EmitBitCastF32U32(EmitContext& ctx, Id value) {
     return ctx.OpBitcast(ctx.F32[1], value);
 }
 
-void EmitSPIRV::EmitBitCastF64U64(EmitContext&) {
+void EmitBitCastF64U64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitPackUint2x32(EmitContext&) {
+void EmitPackUint2x32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitUnpackUint2x32(EmitContext&) {
+void EmitUnpackUint2x32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitPackFloat2x16(EmitContext&) {
+void EmitPackFloat2x16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitUnpackFloat2x16(EmitContext&) {
+void EmitUnpackFloat2x16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitPackDouble2x32(EmitContext&) {
+void EmitPackDouble2x32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitUnpackDouble2x32(EmitContext&) {
+void EmitUnpackDouble2x32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 

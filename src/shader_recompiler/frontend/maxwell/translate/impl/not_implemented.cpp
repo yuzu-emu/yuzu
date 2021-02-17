@@ -617,10 +617,6 @@ void TranslatorVisitor::MEMBAR(u64) {
     ThrowNotImplemented(Opcode::MEMBAR);
 }
 
-void TranslatorVisitor::MOV32I(u64) {
-    ThrowNotImplemented(Opcode::MOV32I);
-}
-
 void TranslatorVisitor::NOP(u64) {
     ThrowNotImplemented(Opcode::NOP);
 }

@@ -36,6 +36,8 @@
 #include "video_core/vulkan_common/vulkan_device.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
+#pragma optimize("", off)
+
 namespace Vulkan {
 
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
@@ -237,7 +239,26 @@ void RasterizerVulkan::Clear() {
 }
 
 void RasterizerVulkan::DispatchCompute() {
-    UNREACHABLE_MSG("Not implemented");
+    ComputePipeline* const pipeline{pipeline_cache.CurrentComputePipeline()};
+    if (!pipeline) {
+        return;
+    }
+    std::scoped_lock lock{buffer_cache.mutex};
+    update_descriptor_queue.Acquire();
+    pipeline->ConfigureBufferCache(buffer_cache);
+    const VkDescriptorSet descriptor_set{pipeline->UpdateDescriptorSet()};
+
+    const auto& qmd{kepler_compute.launch_description};
+    const std::array<u32, 3> dim{qmd.grid_dim_x, qmd.grid_dim_y, qmd.grid_dim_z};
+    const VkPipeline pipeline_handle{pipeline->Handle()};
+    const VkPipelineLayout pipeline_layout{pipeline->PipelineLayout()};
+    scheduler.Record(
+        [pipeline_handle, pipeline_layout, dim, descriptor_set](vk::CommandBuffer cmdbuf) {
+            cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_handle);
+            cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0,
+                                      descriptor_set, nullptr);
+            cmdbuf.Dispatch(dim[0], dim[1], dim[2]);
+        });
 }
 
 void RasterizerVulkan::ResetCounter(VideoCore::QueryType type) {

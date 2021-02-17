@@ -18,8 +18,16 @@ class MasterSemaphore;
  */
 class ResourcePool {
 public:
+    explicit ResourcePool() = default;
     explicit ResourcePool(MasterSemaphore& master_semaphore, size_t grow_step);
-    virtual ~ResourcePool();
+
+    virtual ~ResourcePool() = default;
+
+    ResourcePool& operator=(ResourcePool&&) noexcept = default;
+    ResourcePool(ResourcePool&&) noexcept = default;
+
+    ResourcePool& operator=(const ResourcePool&) = default;
+    ResourcePool(const ResourcePool&) = default;
 
 protected:
     size_t CommitResource();
@@ -34,7 +42,7 @@ private:
     /// Allocates a new page of resources.
     void Grow();
 
-    MasterSemaphore& master_semaphore;
+    MasterSemaphore* master_semaphore{};
     size_t grow_step = 0;     ///< Number of new resources created after an overflow
     size_t hint_iterator = 0; ///< Hint to where the next free resources is likely to be found
     std::vector<u64> ticks;   ///< Ticks for each resource

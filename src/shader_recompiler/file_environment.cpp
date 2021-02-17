@@ -29,7 +29,7 @@ FileEnvironment::FileEnvironment(const char* path) {
 
 FileEnvironment::~FileEnvironment() = default;
 
-u64 FileEnvironment::ReadInstruction(u32 offset) const {
+u64 FileEnvironment::ReadInstruction(u32 offset) {
     if (offset % 8 != 0) {
         throw InvalidArgument("offset={} is not aligned to 8", offset);
     }
@@ -37,6 +37,10 @@ u64 FileEnvironment::ReadInstruction(u32 offset) const {
         throw InvalidArgument("offset={} is out of bounds", offset);
     }
     return data[offset / 8];
+}
+
+std::array<u32, 3> FileEnvironment::WorkgroupSize() {
+    return {1, 1, 1};
 }
 
 } // namespace Shader

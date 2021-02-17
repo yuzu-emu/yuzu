@@ -19,9 +19,7 @@ constexpr std::size_t SETS_GROW_RATE = 0x20;
 DescriptorAllocator::DescriptorAllocator(VKDescriptorPool& descriptor_pool_,
                                          VkDescriptorSetLayout layout_)
     : ResourcePool(descriptor_pool_.master_semaphore, SETS_GROW_RATE),
-      descriptor_pool{descriptor_pool_}, layout{layout_} {}
-
-DescriptorAllocator::~DescriptorAllocator() = default;
+      descriptor_pool{&descriptor_pool_}, layout{layout_} {}
 
 VkDescriptorSet DescriptorAllocator::Commit() {
     const std::size_t index = CommitResource();
@@ -29,7 +27,7 @@ VkDescriptorSet DescriptorAllocator::Commit() {
 }
 
 void DescriptorAllocator::Allocate(std::size_t begin, std::size_t end) {
-    descriptors_allocations.push_back(descriptor_pool.AllocateDescriptors(layout, end - begin));
+    descriptors_allocations.push_back(descriptor_pool->AllocateDescriptors(layout, end - begin));
 }
 
 VKDescriptorPool::VKDescriptorPool(const Device& device_, VKScheduler& scheduler)

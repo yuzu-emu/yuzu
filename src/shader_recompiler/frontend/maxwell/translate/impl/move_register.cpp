@@ -10,36 +10,35 @@
 
 namespace Shader::Maxwell {
 namespace {
-union MOV {
-    u64 raw;
-    BitField<0, 8, IR::Reg> dest_reg;
-    BitField<20, 8, IR::Reg> src_reg;
-    BitField<39, 4, u64> mask;
-};
+void MOV(TranslatorVisitor& v, u64 insn, const IR::U32& src, bool is_mov32i = false) {
+    union {
+        u64 raw;
+        BitField<0, 8, IR::Reg> dest_reg;
+        BitField<39, 4, u64> mask;
+        BitField<12, 4, u64> mov32i_mask;
+    } const mov{insn};
 
-void CheckMask(MOV mov) {
-    if (mov.mask != 0xf) {
+    if ((is_mov32i ? mov.mov32i_mask : mov.mask) != 0xf) {
         throw NotImplementedException("Non-full move mask");
     }
+    v.X(mov.dest_reg, src);
 }
 } // Anonymous namespace
 
 void TranslatorVisitor::MOV_reg(u64 insn) {
-    const MOV mov{insn};
-    CheckMask(mov);
-    X(mov.dest_reg, X(mov.src_reg));
+    MOV(*this, insn, GetReg8(insn));
 }
 
 void TranslatorVisitor::MOV_cbuf(u64 insn) {
-    const MOV mov{insn};
-    CheckMask(mov);
-    X(mov.dest_reg, GetCbuf(insn));
+    MOV(*this, insn, GetCbuf(insn));
 }
 
 void TranslatorVisitor::MOV_imm(u64 insn) {
-    const MOV mov{insn};
-    CheckMask(mov);
-    X(mov.dest_reg, GetImm20(insn));
+    MOV(*this, insn, GetImm20(insn));
+}
+
+void TranslatorVisitor::MOV32I(u64 insn) {
+    MOV(*this, insn, GetImm32(insn), true);
 }
 
 } // namespace Shader::Maxwell

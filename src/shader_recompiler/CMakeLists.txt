@@ -1,4 +1,4 @@
-add_executable(shader_recompiler
+add_library(shader_recompiler STATIC
     backend/spirv/emit_context.cpp
     backend/spirv/emit_context.h
     backend/spirv/emit_spirv.cpp
@@ -85,13 +85,19 @@ add_executable(shader_recompiler
     ir_opt/passes.h
     ir_opt/ssa_rewrite_pass.cpp
     ir_opt/verification_pass.cpp
-    main.cpp
     object_pool.h
+    profile.h
+    recompiler.cpp
+    recompiler.h
     shader_info.h
 )
 
-target_include_directories(video_core PRIVATE sirit)
+target_include_directories(shader_recompiler PRIVATE sirit)
 target_link_libraries(shader_recompiler PRIVATE fmt::fmt sirit)
+target_link_libraries(shader_recompiler INTERFACE fmt::fmt sirit)
+
+add_executable(shader_util main.cpp)
+target_link_libraries(shader_util PRIVATE shader_recompiler)
 
 if (MSVC)
     target_compile_options(shader_recompiler PRIVATE
@@ -121,3 +127,4 @@ else()
 endif()
 
 create_target_directory_groups(shader_recompiler)
+create_target_directory_groups(shader_util)

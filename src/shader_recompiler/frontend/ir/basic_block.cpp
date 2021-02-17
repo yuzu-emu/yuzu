@@ -127,6 +127,8 @@ static std::string ArgToIndex(const std::map<const Block*, size_t>& block_to_ind
         return fmt::format("#{}", arg.U32());
     case Type::U64:
         return fmt::format("#{}", arg.U64());
+    case Type::F32:
+        return fmt::format("#{}", arg.F32());
     case Type::Reg:
         return fmt::format("{}", arg.Reg());
     case Type::Pred:

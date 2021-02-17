@@ -33,187 +33,187 @@ Id Decorate(EmitContext& ctx, IR::Inst* inst, Id op) {
 
 } // Anonymous namespace
 
-void EmitSPIRV::EmitFPAbs16(EmitContext&) {
+void EmitFPAbs16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPAbs32(EmitContext&) {
+void EmitFPAbs32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPAbs64(EmitContext&) {
+void EmitFPAbs64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-Id EmitSPIRV::EmitFPAdd16(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
+Id EmitFPAdd16(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
     return Decorate(ctx, inst, ctx.OpFAdd(ctx.F16[1], a, b));
 }
 
-Id EmitSPIRV::EmitFPAdd32(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
+Id EmitFPAdd32(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
     return Decorate(ctx, inst, ctx.OpFAdd(ctx.F32[1], a, b));
 }
 
-Id EmitSPIRV::EmitFPAdd64(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
+Id EmitFPAdd64(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
     return Decorate(ctx, inst, ctx.OpFAdd(ctx.F64[1], a, b));
 }
 
-Id EmitSPIRV::EmitFPFma16(EmitContext& ctx, IR::Inst* inst, Id a, Id b, Id c) {
+Id EmitFPFma16(EmitContext& ctx, IR::Inst* inst, Id a, Id b, Id c) {
     return Decorate(ctx, inst, ctx.OpFma(ctx.F16[1], a, b, c));
 }
 
-Id EmitSPIRV::EmitFPFma32(EmitContext& ctx, IR::Inst* inst, Id a, Id b, Id c) {
+Id EmitFPFma32(EmitContext& ctx, IR::Inst* inst, Id a, Id b, Id c) {
     return Decorate(ctx, inst, ctx.OpFma(ctx.F32[1], a, b, c));
 }
 
-Id EmitSPIRV::EmitFPFma64(EmitContext& ctx, IR::Inst* inst, Id a, Id b, Id c) {
+Id EmitFPFma64(EmitContext& ctx, IR::Inst* inst, Id a, Id b, Id c) {
     return Decorate(ctx, inst, ctx.OpFma(ctx.F64[1], a, b, c));
 }
 
-void EmitSPIRV::EmitFPMax32(EmitContext&) {
+void EmitFPMax32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPMax64(EmitContext&) {
+void EmitFPMax64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPMin32(EmitContext&) {
+void EmitFPMin32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPMin64(EmitContext&) {
+void EmitFPMin64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-Id EmitSPIRV::EmitFPMul16(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
+Id EmitFPMul16(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
     return Decorate(ctx, inst, ctx.OpFMul(ctx.F16[1], a, b));
 }
 
-Id EmitSPIRV::EmitFPMul32(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
+Id EmitFPMul32(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
     return Decorate(ctx, inst, ctx.OpFMul(ctx.F32[1], a, b));
 }
 
-Id EmitSPIRV::EmitFPMul64(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
+Id EmitFPMul64(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
     return Decorate(ctx, inst, ctx.OpFMul(ctx.F64[1], a, b));
 }
 
-void EmitSPIRV::EmitFPNeg16(EmitContext&) {
+void EmitFPNeg16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPNeg32(EmitContext&) {
+void EmitFPNeg32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPNeg64(EmitContext&) {
+void EmitFPNeg64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPRecip32(EmitContext&) {
+void EmitFPRecip32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPRecip64(EmitContext&) {
+void EmitFPRecip64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPRecipSqrt32(EmitContext&) {
+void EmitFPRecipSqrt32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPRecipSqrt64(EmitContext&) {
+void EmitFPRecipSqrt64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPSqrt(EmitContext&) {
+void EmitFPSqrt(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPSin(EmitContext&) {
+void EmitFPSin(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPSinNotReduced(EmitContext&) {
+void EmitFPSinNotReduced(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPExp2(EmitContext&) {
+void EmitFPExp2(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPExp2NotReduced(EmitContext&) {
+void EmitFPExp2NotReduced(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPCos(EmitContext&) {
+void EmitFPCos(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPCosNotReduced(EmitContext&) {
+void EmitFPCosNotReduced(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPLog2(EmitContext&) {
+void EmitFPLog2(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPSaturate16(EmitContext&) {
+void EmitFPSaturate16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPSaturate32(EmitContext&) {
+void EmitFPSaturate32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPSaturate64(EmitContext&) {
+void EmitFPSaturate64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPRoundEven16(EmitContext&) {
+void EmitFPRoundEven16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPRoundEven32(EmitContext&) {
+void EmitFPRoundEven32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPRoundEven64(EmitContext&) {
+void EmitFPRoundEven64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPFloor16(EmitContext&) {
+void EmitFPFloor16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPFloor32(EmitContext&) {
+void EmitFPFloor32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPFloor64(EmitContext&) {
+void EmitFPFloor64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPCeil16(EmitContext&) {
+void EmitFPCeil16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPCeil32(EmitContext&) {
+void EmitFPCeil32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPCeil64(EmitContext&) {
+void EmitFPCeil64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPTrunc16(EmitContext&) {
+void EmitFPTrunc16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPTrunc32(EmitContext&) {
+void EmitFPTrunc32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitFPTrunc64(EmitContext&) {
+void EmitFPTrunc64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 

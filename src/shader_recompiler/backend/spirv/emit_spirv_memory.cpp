@@ -22,79 +22,79 @@ static Id StorageIndex(EmitContext& ctx, const IR::Value& offset, size_t element
     return ctx.OpShiftRightLogical(ctx.U32[1], index, shift_id);
 }
 
-void EmitSPIRV::EmitLoadGlobalU8(EmitContext&) {
+void EmitLoadGlobalU8(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitLoadGlobalS8(EmitContext&) {
+void EmitLoadGlobalS8(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitLoadGlobalU16(EmitContext&) {
+void EmitLoadGlobalU16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitLoadGlobalS16(EmitContext&) {
+void EmitLoadGlobalS16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitLoadGlobal32(EmitContext&) {
+void EmitLoadGlobal32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitLoadGlobal64(EmitContext&) {
+void EmitLoadGlobal64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitLoadGlobal128(EmitContext&) {
+void EmitLoadGlobal128(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitWriteGlobalU8(EmitContext&) {
+void EmitWriteGlobalU8(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitWriteGlobalS8(EmitContext&) {
+void EmitWriteGlobalS8(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitWriteGlobalU16(EmitContext&) {
+void EmitWriteGlobalU16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitWriteGlobalS16(EmitContext&) {
+void EmitWriteGlobalS16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitWriteGlobal32(EmitContext&) {
+void EmitWriteGlobal32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitWriteGlobal64(EmitContext&) {
+void EmitWriteGlobal64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitWriteGlobal128(EmitContext&) {
+void EmitWriteGlobal128(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitLoadStorageU8(EmitContext&) {
+void EmitLoadStorageU8(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitLoadStorageS8(EmitContext&) {
+void EmitLoadStorageS8(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitLoadStorageU16(EmitContext&) {
+void EmitLoadStorageU16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitLoadStorageS16(EmitContext&) {
+void EmitLoadStorageS16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-Id EmitSPIRV::EmitLoadStorage32(EmitContext& ctx, const IR::Value& binding,
+Id EmitLoadStorage32(EmitContext& ctx, const IR::Value& binding,
                                 const IR::Value& offset) {
     if (!binding.IsImmediate()) {
         throw NotImplementedException("Dynamic storage buffer indexing");
@@ -105,31 +105,31 @@ Id EmitSPIRV::EmitLoadStorage32(EmitContext& ctx, const IR::Value& binding,
     return ctx.OpLoad(ctx.U32[1], pointer);
 }
 
-void EmitSPIRV::EmitLoadStorage64(EmitContext&) {
+void EmitLoadStorage64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitLoadStorage128(EmitContext&) {
+void EmitLoadStorage128(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitWriteStorageU8(EmitContext&) {
+void EmitWriteStorageU8(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitWriteStorageS8(EmitContext&) {
+void EmitWriteStorageS8(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitWriteStorageU16(EmitContext&) {
+void EmitWriteStorageU16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitWriteStorageS16(EmitContext&) {
+void EmitWriteStorageS16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitWriteStorage32(EmitContext& ctx, const IR::Value& binding,
+void EmitWriteStorage32(EmitContext& ctx, const IR::Value& binding,
                                    const IR::Value& offset, Id value) {
     if (!binding.IsImmediate()) {
         throw NotImplementedException("Dynamic storage buffer indexing");
@@ -140,11 +140,11 @@ void EmitSPIRV::EmitWriteStorage32(EmitContext& ctx, const IR::Value& binding,
     ctx.OpStore(pointer, value);
 }
 
-void EmitSPIRV::EmitWriteStorage64(EmitContext&) {
+void EmitWriteStorage64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitWriteStorage128(EmitContext&) {
+void EmitWriteStorage128(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 

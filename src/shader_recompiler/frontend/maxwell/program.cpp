@@ -69,7 +69,7 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
         Optimization::VerificationPass(function);
     }
     Optimization::CollectShaderInfoPass(program);
-    //*/
+    fmt::print(stdout, "{}\n", IR::DumpProgram(program));
     return program;
 }
 
