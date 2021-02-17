@@ -24,6 +24,14 @@ void TranslatorVisitor::F(IR::Reg dest_reg, const IR::F32& value) {
     X(dest_reg, ir.BitCast<IR::U32>(value));
 }
 
+IR::U32 TranslatorVisitor::GetReg8(u64 insn) {
+    union {
+        u64 raw;
+        BitField<8, 8, IR::Reg> index;
+    } const reg{insn};
+    return X(reg.index);
+}
+
 IR::U32 TranslatorVisitor::GetReg20(u64 insn) {
     union {
         u64 raw;

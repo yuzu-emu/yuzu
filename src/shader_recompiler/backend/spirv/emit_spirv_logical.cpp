@@ -6,83 +6,83 @@
 
 namespace Shader::Backend::SPIRV {
 
-void EmitSPIRV::EmitConvertS16F16(EmitContext&) {
+void EmitConvertS16F16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertS16F32(EmitContext&) {
+void EmitConvertS16F32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertS16F64(EmitContext&) {
+void EmitConvertS16F64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertS32F16(EmitContext&) {
+void EmitConvertS32F16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertS32F32(EmitContext&) {
+void EmitConvertS32F32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertS32F64(EmitContext&) {
+void EmitConvertS32F64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertS64F16(EmitContext&) {
+void EmitConvertS64F16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertS64F32(EmitContext&) {
+void EmitConvertS64F32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertS64F64(EmitContext&) {
+void EmitConvertS64F64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertU16F16(EmitContext&) {
+void EmitConvertU16F16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertU16F32(EmitContext&) {
+void EmitConvertU16F32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertU16F64(EmitContext&) {
+void EmitConvertU16F64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertU32F16(EmitContext&) {
+void EmitConvertU32F16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertU32F32(EmitContext&) {
+void EmitConvertU32F32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertU32F64(EmitContext&) {
+void EmitConvertU32F64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertU64F16(EmitContext&) {
+void EmitConvertU64F16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertU64F32(EmitContext&) {
+void EmitConvertU64F32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertU64F64(EmitContext&) {
+void EmitConvertU64F64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertU64U32(EmitContext&) {
+void EmitConvertU64U32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitConvertU32U64(EmitContext&) {
+void EmitConvertU32U64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 

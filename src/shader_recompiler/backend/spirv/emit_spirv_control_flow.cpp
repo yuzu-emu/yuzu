@@ -6,25 +6,25 @@
 
 namespace Shader::Backend::SPIRV {
 
-void EmitSPIRV::EmitBranch(EmitContext& ctx, IR::Block* label) {
+void EmitBranch(EmitContext& ctx, IR::Block* label) {
     ctx.OpBranch(label->Definition<Id>());
 }
 
-void EmitSPIRV::EmitBranchConditional(EmitContext& ctx, Id condition, IR::Block* true_label,
+void EmitBranchConditional(EmitContext& ctx, Id condition, IR::Block* true_label,
                                       IR::Block* false_label) {
     ctx.OpBranchConditional(condition, true_label->Definition<Id>(), false_label->Definition<Id>());
 }
 
-void EmitSPIRV::EmitLoopMerge(EmitContext& ctx, IR::Block* merge_label, IR::Block* continue_label) {
+void EmitLoopMerge(EmitContext& ctx, IR::Block* merge_label, IR::Block* continue_label) {
     ctx.OpLoopMerge(merge_label->Definition<Id>(), continue_label->Definition<Id>(),
                     spv::LoopControlMask::MaskNone);
 }
 
-void EmitSPIRV::EmitSelectionMerge(EmitContext& ctx, IR::Block* merge_label) {
+void EmitSelectionMerge(EmitContext& ctx, IR::Block* merge_label) {
     ctx.OpSelectionMerge(merge_label->Definition<Id>(), spv::SelectionControlMask::MaskNone);
 }
 
-void EmitSPIRV::EmitReturn(EmitContext& ctx) {
+void EmitReturn(EmitContext& ctx) {
     ctx.OpReturn();
 }
 

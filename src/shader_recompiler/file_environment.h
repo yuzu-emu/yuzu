@@ -12,7 +12,9 @@ public:
     explicit FileEnvironment(const char* path);
     ~FileEnvironment() override;
 
-    u64 ReadInstruction(u32 offset) const override;
+    u64 ReadInstruction(u32 offset) override;
+
+    std::array<u32, 3> WorkgroupSize() override;
 
 private:
     std::vector<u64> data;

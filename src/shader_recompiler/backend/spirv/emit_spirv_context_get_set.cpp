@@ -6,31 +6,31 @@
 
 namespace Shader::Backend::SPIRV {
 
-void EmitSPIRV::EmitGetRegister(EmitContext&) {
+void EmitGetRegister(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitSetRegister(EmitContext&) {
+void EmitSetRegister(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitGetPred(EmitContext&) {
+void EmitGetPred(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitSetPred(EmitContext&) {
+void EmitSetPred(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitSetGotoVariable(EmitContext&) {
+void EmitSetGotoVariable(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitGetGotoVariable(EmitContext&) {
+void EmitGetGotoVariable(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-Id EmitSPIRV::EmitGetCbuf(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
+Id EmitGetCbuf(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
     if (!binding.IsImmediate()) {
         throw NotImplementedException("Constant buffer indexing");
     }
@@ -43,59 +43,59 @@ Id EmitSPIRV::EmitGetCbuf(EmitContext& ctx, const IR::Value& binding, const IR::
     return ctx.OpLoad(ctx.U32[1], access_chain);
 }
 
-void EmitSPIRV::EmitGetAttribute(EmitContext&) {
+void EmitGetAttribute(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitSetAttribute(EmitContext&) {
+void EmitSetAttribute(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitGetAttributeIndexed(EmitContext&) {
+void EmitGetAttributeIndexed(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitSetAttributeIndexed(EmitContext&) {
+void EmitSetAttributeIndexed(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitGetZFlag(EmitContext&) {
+void EmitGetZFlag(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitGetSFlag(EmitContext&) {
+void EmitGetSFlag(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitGetCFlag(EmitContext&) {
+void EmitGetCFlag(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitGetOFlag(EmitContext&) {
+void EmitGetOFlag(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitSetZFlag(EmitContext&) {
+void EmitSetZFlag(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitSetSFlag(EmitContext&) {
+void EmitSetSFlag(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitSetCFlag(EmitContext&) {
+void EmitSetCFlag(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitSetOFlag(EmitContext&) {
+void EmitSetOFlag(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-Id EmitSPIRV::EmitWorkgroupId(EmitContext& ctx) {
+Id EmitWorkgroupId(EmitContext& ctx) {
     return ctx.OpLoad(ctx.U32[3], ctx.workgroup_id);
 }
 
-Id EmitSPIRV::EmitLocalInvocationId(EmitContext& ctx) {
+Id EmitLocalInvocationId(EmitContext& ctx) {
     return ctx.OpLoad(ctx.U32[3], ctx.local_invocation_id);
 }
 

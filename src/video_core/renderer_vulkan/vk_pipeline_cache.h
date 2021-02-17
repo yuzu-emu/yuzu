@@ -36,7 +36,7 @@ class VKUpdateDescriptorQueue;
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 
 struct ComputePipelineCacheKey {
-    GPUVAddr shader;
+    u128 unique_hash;
     u32 shared_memory_size;
     std::array<u32, 3> workgroup_size;
 
@@ -67,13 +67,13 @@ struct hash<Vulkan::ComputePipelineCacheKey> {
 
 namespace Vulkan {
 
-class Shader {
-public:
-    explicit Shader();
-    ~Shader();
+struct ShaderInfo {
+    u128 unique_hash{};
+    size_t size_bytes{};
+    std::vector<ComputePipelineCacheKey> compute_users;
 };
 
-class PipelineCache final : public VideoCommon::ShaderCache<Shader> {
+class PipelineCache final : public VideoCommon::ShaderCache<ShaderInfo> {
 public:
     explicit PipelineCache(RasterizerVulkan& rasterizer, Tegra::GPU& gpu,
                            Tegra::Engines::Maxwell3D& maxwell3d,
@@ -83,12 +83,18 @@ public:
                            VKUpdateDescriptorQueue& update_descriptor_queue);
     ~PipelineCache() override;
 
-    ComputePipeline& GetComputePipeline(const ComputePipelineCacheKey& key);
+    [[nodiscard]] ComputePipeline* CurrentComputePipeline();
 
 protected:
-    void OnShaderRemoval(Shader* shader) final;
+    void OnShaderRemoval(ShaderInfo* shader) override;
 
 private:
+    ComputePipeline CreateComputePipeline(ShaderInfo* shader);
+
+    ComputePipeline* CreateComputePipelineWithoutShader(VAddr shader_cpu_addr);
+
+    ComputePipelineCacheKey MakeComputePipelineKey(u128 unique_hash) const;
+
     Tegra::GPU& gpu;
     Tegra::Engines::Maxwell3D& maxwell3d;
     Tegra::Engines::KeplerCompute& kepler_compute;
@@ -99,13 +105,7 @@ private:
     VKDescriptorPool& descriptor_pool;
     VKUpdateDescriptorQueue& update_descriptor_queue;
 
-    std::unique_ptr<Shader> null_shader;
-    std::unique_ptr<Shader> null_kernel;
-
-    std::array<Shader*, Maxwell::MaxShaderProgram> last_shaders{};
-
-    std::mutex pipeline_cache;
-    std::unordered_map<ComputePipelineCacheKey, std::unique_ptr<ComputePipeline>> compute_cache;
+    std::unordered_map<ComputePipelineCacheKey, ComputePipeline> compute_cache;
 };
 
 } // namespace Vulkan

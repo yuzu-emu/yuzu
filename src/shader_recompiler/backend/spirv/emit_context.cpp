@@ -115,6 +115,7 @@ void EmitContext::DefineConstantBuffers(const Info& info) {
     for (const Info::ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
         const Id id{AddGlobalVariable(uniform_type, spv::StorageClass::Uniform)};
         Decorate(id, spv::Decoration::Binding, binding);
+        Decorate(id, spv::Decoration::DescriptorSet, 0U);
         Name(id, fmt::format("c{}", desc.index));
         std::fill_n(cbufs.data() + desc.index, desc.count, id);
         binding += desc.count;
@@ -143,6 +144,7 @@ void EmitContext::DefineStorageBuffers(const Info& info) {
     for (const Info::StorageBufferDescriptor& desc : info.storage_buffers_descriptors) {
         const Id id{AddGlobalVariable(storage_type, spv::StorageClass::StorageBuffer)};
         Decorate(id, spv::Decoration::Binding, binding);
+        Decorate(id, spv::Decoration::DescriptorSet, 0U);
         Name(id, fmt::format("ssbo{}", binding));
         std::fill_n(ssbos.data() + binding, desc.count, id);
         binding += desc.count;

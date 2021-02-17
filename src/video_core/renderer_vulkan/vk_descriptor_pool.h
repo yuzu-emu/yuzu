@@ -17,8 +17,12 @@ class VKScheduler;
 
 class DescriptorAllocator final : public ResourcePool {
 public:
+    explicit DescriptorAllocator() = default;
     explicit DescriptorAllocator(VKDescriptorPool& descriptor_pool, VkDescriptorSetLayout layout);
-    ~DescriptorAllocator() override;
+    ~DescriptorAllocator() override = default;
+
+    DescriptorAllocator& operator=(DescriptorAllocator&&) noexcept = default;
+    DescriptorAllocator(DescriptorAllocator&&) noexcept = default;
 
     DescriptorAllocator& operator=(const DescriptorAllocator&) = delete;
     DescriptorAllocator(const DescriptorAllocator&) = delete;
@@ -29,8 +33,8 @@ protected:
     void Allocate(std::size_t begin, std::size_t end) override;
 
 private:
-    VKDescriptorPool& descriptor_pool;
-    const VkDescriptorSetLayout layout;
+    VKDescriptorPool* descriptor_pool{};
+    VkDescriptorSetLayout layout{};
 
     std::vector<vk::DescriptorSets> descriptors_allocations;
 };

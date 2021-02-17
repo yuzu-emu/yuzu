@@ -6,19 +6,19 @@
 
 namespace Shader::Backend::SPIRV {
 
-void EmitSPIRV::EmitSelect8(EmitContext&) {
+void EmitSelect8(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitSelect16(EmitContext&) {
+void EmitSelect16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitSelect32(EmitContext&) {
+void EmitSelect32(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSPIRV::EmitSelect64(EmitContext&) {
+void EmitSelect64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 

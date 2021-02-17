@@ -6,23 +6,23 @@
 
 namespace Shader::Backend::SPIRV {
 
-Id EmitSPIRV::EmitUndefU1(EmitContext& ctx) {
+Id EmitUndefU1(EmitContext& ctx) {
     return ctx.OpUndef(ctx.U1);
 }
 
-Id EmitSPIRV::EmitUndefU8(EmitContext&) {
+Id EmitUndefU8(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-Id EmitSPIRV::EmitUndefU16(EmitContext&) {
+Id EmitUndefU16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-Id EmitSPIRV::EmitUndefU32(EmitContext& ctx) {
+Id EmitUndefU32(EmitContext& ctx) {
     return ctx.OpUndef(ctx.U32[1]);
 }
 
-Id EmitSPIRV::EmitUndefU64(EmitContext&) {
+Id EmitUndefU64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
