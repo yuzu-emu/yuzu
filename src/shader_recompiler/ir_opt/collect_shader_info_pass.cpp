@@ -26,6 +26,22 @@ void Visit(Info& info, IR::Inst& inst) {
     case IR::Opcode::LocalInvocationId:
         info.uses_local_invocation_id = true;
         break;
+    case IR::Opcode::CompositeConstructF16x2:
+    case IR::Opcode::CompositeConstructF16x3:
+    case IR::Opcode::CompositeConstructF16x4:
+    case IR::Opcode::CompositeExtractF16x2:
+    case IR::Opcode::CompositeExtractF16x3:
+    case IR::Opcode::CompositeExtractF16x4:
+    case IR::Opcode::BitCastU16F16:
+    case IR::Opcode::BitCastF16U16:
+    case IR::Opcode::PackFloat2x16:
+    case IR::Opcode::UnpackFloat2x16:
+    case IR::Opcode::ConvertS16F16:
+    case IR::Opcode::ConvertS32F16:
+    case IR::Opcode::ConvertS64F16:
+    case IR::Opcode::ConvertU16F16:
+    case IR::Opcode::ConvertU32F16:
+    case IR::Opcode::ConvertU64F16:
     case IR::Opcode::FPAbs16:
     case IR::Opcode::FPAdd16:
     case IR::Opcode::FPCeil16:
@@ -36,7 +52,7 @@ void Visit(Info& info, IR::Inst& inst) {
     case IR::Opcode::FPRoundEven16:
     case IR::Opcode::FPSaturate16:
     case IR::Opcode::FPTrunc16:
-        info.uses_fp16;
+        info.uses_fp16 = true;
         break;
     case IR::Opcode::FPAbs64:
     case IR::Opcode::FPAdd64:

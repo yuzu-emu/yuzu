@@ -119,8 +119,10 @@ OPCODE(PackUint2x32,                                        U64,            U32x
 OPCODE(UnpackUint2x32,                                      U32x2,          U64,                                                            )
 OPCODE(PackFloat2x16,                                       U32,            F16x2,                                                          )
 OPCODE(UnpackFloat2x16,                                     F16x2,          U32,                                                            )
-OPCODE(PackDouble2x32,                                      U64,            U32x2,                                                          )
-OPCODE(UnpackDouble2x32,                                    U32x2,          U64,                                                            )
+OPCODE(PackHalf2x16,                                        U32,            F32x2,                                                          )
+OPCODE(UnpackHalf2x16,                                      F32x2,          U32,                                                            )
+OPCODE(PackDouble2x32,                                      F64,            U32x2,                                                          )
+OPCODE(UnpackDouble2x32,                                    U32x2,          F64,                                                            )
 
 // Pseudo-operation, handled specially at final emit
 OPCODE(GetZeroFromOp,                                       U1,             Opaque,                                                         )

@@ -34,7 +34,7 @@ union F2I {
     BitField<8, 2, DestFormat> dest_format;
     BitField<10, 2, SrcFormat> src_format;
     BitField<12, 1, u64> is_signed;
-    BitField<39, 1, Rounding> rounding;
+    BitField<39, 2, Rounding> rounding;
     BitField<49, 1, u64> half;
     BitField<44, 1, u64> ftz;
     BitField<45, 1, u64> abs;
@@ -53,6 +53,28 @@ size_t BitSize(DestFormat dest_format) {
     default:
         throw NotImplementedException("Invalid destination format {}", dest_format);
     }
+}
+
+IR::F64 UnpackCbuf(TranslatorVisitor& v, u64 insn) {
+    union {
+        u64 raw;
+        BitField<20, 14, s64> offset;
+        BitField<34, 5, u64> binding;
+    } const cbuf{insn};
+    if (cbuf.binding >= 18) {
+        throw NotImplementedException("Out of bounds constant buffer binding {}", cbuf.binding);
+    }
+    if (cbuf.offset >= 0x4'000 || cbuf.offset < 0) {
+        throw NotImplementedException("Out of bounds constant buffer offset {}", cbuf.offset * 4);
+    }
+    if (cbuf.offset % 2 != 0) {
+        throw NotImplementedException("Unaligned F64 constant buffer offset {}", cbuf.offset * 4);
+    }
+    const IR::U32 binding{v.ir.Imm32(static_cast<u32>(cbuf.binding))};
+    const IR::U32 byte_offset{v.ir.Imm32(static_cast<u32>(cbuf.offset) * 4 + 4)};
+    const IR::U32 cbuf_data{v.ir.GetCbuf(binding, byte_offset)};
+    const IR::Value vector{v.ir.CompositeConstruct(v.ir.Imm32(0U), cbuf_data)};
+    return v.ir.PackDouble2x32(vector);
 }
 
 void TranslateF2I(TranslatorVisitor& v, u64 insn, const IR::F16F32F64& src_a) {
@@ -82,19 +104,16 @@ void TranslateF2I(TranslatorVisitor& v, u64 insn, const IR::F16F32F64& src_a) {
     const size_t bitsize{BitSize(f2i.dest_format)};
     const IR::U16U32U64 result{v.ir.ConvertFToI(bitsize, is_signed, rounded_value)};
 
-    v.X(f2i.dest_reg, result);
+    if (bitsize == 64) {
+        const IR::Value vector{v.ir.UnpackUint2x32(result)};
+        v.X(f2i.dest_reg + 0, IR::U32{v.ir.CompositeExtract(vector, 0)});
+        v.X(f2i.dest_reg + 1, IR::U32{v.ir.CompositeExtract(vector, 1)});
+    } else {
+        v.X(f2i.dest_reg, result);
+    }
 
     if (f2i.cc != 0) {
-        v.SetZFlag(v.ir.GetZeroFromOp(result));
-        if (is_signed) {
-            v.SetSFlag(v.ir.GetSignFromOp(result));
-        } else {
-            v.ResetSFlag();
-        }
-        v.ResetCFlag();
-
-        // TODO: Investigate if out of bound conversions sets the overflow flag
-        v.ResetOFlag();
+        throw NotImplementedException("F2I CC");
     }
 }
 } // Anonymous namespace
@@ -118,12 +137,25 @@ void TranslatorVisitor::F2I_reg(u64 insn) {
                                           f2i.base.src_format.Value());
         }
     }()};
-
     TranslateF2I(*this, insn, op_a);
 }
 
-void TranslatorVisitor::F2I_cbuf(u64) {
-    throw NotImplementedException("{}", Opcode::F2I_cbuf);
+void TranslatorVisitor::F2I_cbuf(u64 insn) {
+    const F2I f2i{insn};
+    const IR::F16F32F64 op_a{[&]() -> IR::F16F32F64 {
+        switch (f2i.src_format) {
+        case SrcFormat::F16:
+            return IR::F16{ir.CompositeExtract(ir.UnpackFloat2x16(GetCbuf(insn)), f2i.half)};
+        case SrcFormat::F32:
+            return GetCbufF(insn);
+        case SrcFormat::F64: {
+            return UnpackCbuf(*this, insn);
+        }
+        default:
+            throw NotImplementedException("Invalid F2I source format {}", f2i.src_format.Value());
+        }
+    }()};
+    TranslateF2I(*this, insn, op_a);
 }
 
 void TranslatorVisitor::F2I_imm(u64) {

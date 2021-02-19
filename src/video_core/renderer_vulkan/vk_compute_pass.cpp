@@ -206,6 +206,8 @@ VKComputePass::VKComputePass(const Device& device, VKDescriptorPool& descriptor_
         .codeSize = static_cast<u32>(code.size_bytes()),
         .pCode = code.data(),
     });
+    /*
+    FIXME
     pipeline = device.GetLogical().CreateComputePipeline({
         .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
         .pNext = nullptr,
@@ -224,6 +226,7 @@ VKComputePass::VKComputePass(const Device& device, VKDescriptorPool& descriptor_
         .basePipelineHandle = nullptr,
         .basePipelineIndex = 0,
     });
+    */
 }
 
 VKComputePass::~VKComputePass() = default;

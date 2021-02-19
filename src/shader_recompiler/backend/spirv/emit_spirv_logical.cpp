@@ -6,83 +6,19 @@
 
 namespace Shader::Backend::SPIRV {
 
-void EmitConvertS16F16(EmitContext&) {
+void EmitLogicalOr(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitConvertS16F32(EmitContext&) {
+void EmitLogicalAnd(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitConvertS16F64(EmitContext&) {
+void EmitLogicalXor(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitConvertS32F16(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitConvertS32F32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitConvertS32F64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitConvertS64F16(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitConvertS64F32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitConvertS64F64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitConvertU16F16(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitConvertU16F32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitConvertU16F64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitConvertU32F16(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitConvertU32F32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitConvertU32F64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitConvertU64F16(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitConvertU64F32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitConvertU64F64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitConvertU64U32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitConvertU32U64(EmitContext&) {
+void EmitLogicalNot(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 

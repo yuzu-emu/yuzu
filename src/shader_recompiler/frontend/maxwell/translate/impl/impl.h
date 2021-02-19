@@ -11,7 +11,7 @@ namespace Shader::Maxwell {
 
 class TranslatorVisitor {
 public:
-    explicit TranslatorVisitor(Environment& env_, IR::Block& block) : env{env_} ,ir(block) {}
+    explicit TranslatorVisitor(Environment& env_, IR::Block& block) : env{env_}, ir(block) {}
 
     Environment& env;
     IR::IREmitter ir;

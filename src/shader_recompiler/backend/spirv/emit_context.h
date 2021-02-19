@@ -37,6 +37,8 @@ public:
 
     Id void_id{};
     Id U1{};
+    Id U16{};
+    Id U64{};
     VectorTypes F32;
     VectorTypes U32;
     VectorTypes F16;
@@ -59,8 +61,8 @@ private:
     void DefineCommonTypes(const Info& info);
     void DefineCommonConstants();
     void DefineSpecialVariables(const Info& info);
-    void DefineConstantBuffers(const Info& info);
-    void DefineStorageBuffers(const Info& info);
+    void DefineConstantBuffers(const Info& info, u32& binding);
+    void DefineStorageBuffers(const Info& info, u32& binding);
     void DefineLabels(IR::Program& program);
 };
 

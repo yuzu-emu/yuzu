@@ -24,6 +24,7 @@ void ConstantPropagationPass(IR::Block& block);
 void DeadCodeEliminationPass(IR::Block& block);
 void GlobalMemoryToStorageBufferPass(IR::Program& program);
 void IdentityRemovalPass(IR::Function& function);
+void LowerFp16ToFp32(IR::Program& program);
 void SsaRewritePass(std::span<IR::Block* const> post_order_blocks);
 void VerificationPass(const IR::Function& function);
 

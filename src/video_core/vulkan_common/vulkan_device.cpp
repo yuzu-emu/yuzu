@@ -247,9 +247,9 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             .shaderStorageImageArrayDynamicIndexing = false,
             .shaderClipDistance = false,
             .shaderCullDistance = false,
-            .shaderFloat64 = false,
-            .shaderInt64 = false,
-            .shaderInt16 = false,
+            .shaderFloat64 = true,
+            .shaderInt64 = true,
+            .shaderInt16 = true,
             .shaderResourceResidency = false,
             .shaderResourceMinLod = false,
             .sparseBinding = false,
@@ -420,8 +420,8 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     }
     if (is_float16_supported && driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS) {
         // Intel's compiler crashes when using fp16 on Astral Chain, disable it for the time being.
-        LOG_WARNING(Render_Vulkan, "Blacklisting Intel proprietary from float16 math");
-        is_float16_supported = false;
+        // LOG_WARNING(Render_Vulkan, "Blacklisting Intel proprietary from float16 math");
+        // is_float16_supported = false;
     }
 
     graphics_queue = logical.GetQueue(graphics_family);

@@ -169,52 +169,52 @@ void EmitFPSaturate64(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitFPRoundEven16(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPRoundEven16(EmitContext& ctx, Id value) {
+    return ctx.OpRoundEven(ctx.F16[1], value);
 }
 
-void EmitFPRoundEven32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPRoundEven32(EmitContext& ctx, Id value) {
+    return ctx.OpRoundEven(ctx.F32[1], value);
 }
 
-void EmitFPRoundEven64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPRoundEven64(EmitContext& ctx, Id value) {
+    return ctx.OpRoundEven(ctx.F64[1], value);
 }
 
-void EmitFPFloor16(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPFloor16(EmitContext& ctx, Id value) {
+    return ctx.OpFloor(ctx.F16[1], value);
 }
 
-void EmitFPFloor32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPFloor32(EmitContext& ctx, Id value) {
+    return ctx.OpFloor(ctx.F32[1], value);
 }
 
-void EmitFPFloor64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPFloor64(EmitContext& ctx, Id value) {
+    return ctx.OpFloor(ctx.F64[1], value);
 }
 
-void EmitFPCeil16(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPCeil16(EmitContext& ctx, Id value) {
+    return ctx.OpCeil(ctx.F16[1], value);
 }
 
-void EmitFPCeil32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPCeil32(EmitContext& ctx, Id value) {
+    return ctx.OpCeil(ctx.F32[1], value);
 }
 
-void EmitFPCeil64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPCeil64(EmitContext& ctx, Id value) {
+    return ctx.OpCeil(ctx.F64[1], value);
 }
 
-void EmitFPTrunc16(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPTrunc16(EmitContext& ctx, Id value) {
+    return ctx.OpTrunc(ctx.F16[1], value);
 }
 
-void EmitFPTrunc32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPTrunc32(EmitContext& ctx, Id value) {
+    return ctx.OpTrunc(ctx.F32[1], value);
 }
 
-void EmitFPTrunc64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPTrunc64(EmitContext& ctx, Id value) {
+    return ctx.OpTrunc(ctx.F64[1], value);
 }
 
 } // namespace Shader::Backend::SPIRV
