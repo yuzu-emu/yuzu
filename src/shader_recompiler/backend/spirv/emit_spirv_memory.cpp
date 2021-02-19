@@ -94,8 +94,7 @@ void EmitLoadStorageS16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-Id EmitLoadStorage32(EmitContext& ctx, const IR::Value& binding,
-                                const IR::Value& offset) {
+Id EmitLoadStorage32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
     if (!binding.IsImmediate()) {
         throw NotImplementedException("Dynamic storage buffer indexing");
     }
@@ -129,8 +128,8 @@ void EmitWriteStorageS16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitWriteStorage32(EmitContext& ctx, const IR::Value& binding,
-                                   const IR::Value& offset, Id value) {
+void EmitWriteStorage32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                        Id value) {
     if (!binding.IsImmediate()) {
         throw NotImplementedException("Dynamic storage buffer indexing");
     }
@@ -140,8 +139,19 @@ void EmitWriteStorage32(EmitContext& ctx, const IR::Value& binding,
     ctx.OpStore(pointer, value);
 }
 
-void EmitWriteStorage64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+void EmitWriteStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                        Id value) {
+    if (!binding.IsImmediate()) {
+        throw NotImplementedException("Dynamic storage buffer indexing");
+    }
+    // TODO: Support reinterpreting bindings, guaranteed to be aligned
+    const Id ssbo{ctx.ssbos[binding.U32()]};
+    const Id low_index{StorageIndex(ctx, offset, sizeof(u32))};
+    const Id high_index{ctx.OpIAdd(ctx.U32[1], low_index, ctx.Constant(ctx.U32[1], 1U))};
+    const Id low_pointer{ctx.OpAccessChain(ctx.storage_u32, ssbo, ctx.u32_zero_value, low_index)};
+    const Id high_pointer{ctx.OpAccessChain(ctx.storage_u32, ssbo, ctx.u32_zero_value, high_index)};
+    ctx.OpStore(low_pointer, ctx.OpCompositeExtract(ctx.U32[1], value, 0U));
+    ctx.OpStore(high_pointer, ctx.OpCompositeExtract(ctx.U32[1], value, 1U));
 }
 
 void EmitWriteStorage128(EmitContext&) {

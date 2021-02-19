@@ -30,8 +30,11 @@ EmitContext::EmitContext(IR::Program& program) : Sirit::Module(0x00010000) {
     DefineCommonTypes(program.info);
     DefineCommonConstants();
     DefineSpecialVariables(program.info);
-    DefineConstantBuffers(program.info);
-    DefineStorageBuffers(program.info);
+
+    u32 binding{};
+    DefineConstantBuffers(program.info, binding);
+    DefineStorageBuffers(program.info, binding);
+
     DefineLabels(program);
 }
 
@@ -57,6 +60,12 @@ void EmitContext::DefineCommonTypes(const Info& info) {
     void_id = TypeVoid();
 
     U1 = Name(TypeBool(), "u1");
+
+    // TODO: Conditionally define these
+    AddCapability(spv::Capability::Int16);
+    AddCapability(spv::Capability::Int64);
+    U16 = Name(TypeInt(16, false), "u16");
+    U64 = Name(TypeInt(64, false), "u64");
 
     F32.Define(*this, TypeFloat(32), "f32");
     U32.Define(*this, TypeInt(32, false), "u32");
@@ -95,12 +104,12 @@ void EmitContext::DefineSpecialVariables(const Info& info) {
     }
 }
 
-void EmitContext::DefineConstantBuffers(const Info& info) {
+void EmitContext::DefineConstantBuffers(const Info& info, u32& binding) {
     if (info.constant_buffer_descriptors.empty()) {
         return;
     }
     const Id array_type{TypeArray(U32[1], Constant(U32[1], 4096))};
-    Decorate(array_type, spv::Decoration::ArrayStride, 16U);
+    Decorate(array_type, spv::Decoration::ArrayStride, 4U);
 
     const Id struct_type{TypeStruct(array_type)};
     Name(struct_type, "cbuf_block");
@@ -111,18 +120,19 @@ void EmitContext::DefineConstantBuffers(const Info& info) {
     const Id uniform_type{TypePointer(spv::StorageClass::Uniform, struct_type)};
     uniform_u32 = TypePointer(spv::StorageClass::Uniform, U32[1]);
 
-    u32 binding{};
+    u32 index{};
     for (const Info::ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
         const Id id{AddGlobalVariable(uniform_type, spv::StorageClass::Uniform)};
         Decorate(id, spv::Decoration::Binding, binding);
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
         Name(id, fmt::format("c{}", desc.index));
         std::fill_n(cbufs.data() + desc.index, desc.count, id);
+        index += desc.count;
         binding += desc.count;
     }
 }
 
-void EmitContext::DefineStorageBuffers(const Info& info) {
+void EmitContext::DefineStorageBuffers(const Info& info, u32& binding) {
     if (info.storage_buffers_descriptors.empty()) {
         return;
     }
@@ -140,13 +150,14 @@ void EmitContext::DefineStorageBuffers(const Info& info) {
     const Id storage_type{TypePointer(spv::StorageClass::StorageBuffer, struct_type)};
     storage_u32 = TypePointer(spv::StorageClass::StorageBuffer, U32[1]);
 
-    u32 binding{};
+    u32 index{};
     for (const Info::StorageBufferDescriptor& desc : info.storage_buffers_descriptors) {
         const Id id{AddGlobalVariable(storage_type, spv::StorageClass::StorageBuffer)};
         Decorate(id, spv::Decoration::Binding, binding);
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
-        Name(id, fmt::format("ssbo{}", binding));
-        std::fill_n(ssbos.data() + binding, desc.count, id);
+        Name(id, fmt::format("ssbo{}", index));
+        std::fill_n(ssbos.data() + index, desc.count, id);
+        index += desc.count;
         binding += desc.count;
     }
 }

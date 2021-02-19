@@ -86,6 +86,8 @@ public:
 
     void ReplaceUsesWith(Value replacement);
 
+    void ReplaceOpcode(IR::Opcode opcode);
+
     template <typename FlagsType>
     requires(sizeof(FlagsType) <= sizeof(u32) && std::is_trivially_copyable_v<FlagsType>)
         [[nodiscard]] FlagsType Flags() const noexcept {

@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <string>
 #include <compare>
+#include <string>
 
 #include <fmt/format.h>
 

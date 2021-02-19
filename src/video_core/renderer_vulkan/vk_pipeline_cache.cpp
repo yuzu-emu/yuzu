@@ -31,8 +31,6 @@
 #include "video_core/vulkan_common/vulkan_device.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
-#pragma optimize("", off)
-
 namespace Vulkan {
 MICROPROFILE_DECLARE(Vulkan_PipelineCache);
 
@@ -180,6 +178,12 @@ ComputePipeline PipelineCache::CreateComputePipeline(ShaderInfo* shader_info) {
         // TODO: Load from cache
     }
     const auto [info, code]{Shader::RecompileSPIRV(env, qmd.program_start)};
+
+    FILE* file = fopen("D:\\shader.spv", "wb");
+    fwrite(code.data(), 4, code.size(), file);
+    fclose(file);
+    std::system("spirv-dis D:\\shader.spv");
+
     shader_info->unique_hash = env.ComputeHash();
     shader_info->size_bytes = env.ShaderSize();
     return ComputePipeline{device, descriptor_pool, update_descriptor_queue, info,

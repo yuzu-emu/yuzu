@@ -18,7 +18,7 @@ public:
     }
 
     template <typename... Args>
-    requires std::is_constructible_v<T, Args...> [[nodiscard]] T* Create(Args&&... args) {
+    requires std::is_constructible_v<T, Args...>[[nodiscard]] T* Create(Args&&... args) {
         return std::construct_at(Memory(), std::forward<Args>(args)...);
     }
 

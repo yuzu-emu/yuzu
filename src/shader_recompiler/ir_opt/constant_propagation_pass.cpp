@@ -104,12 +104,12 @@ void FoldGetPred(IR::Inst& inst) {
 bool FoldXmadMultiply(IR::Block& block, IR::Inst& inst) {
     /*
      * We are looking for this pattern:
-     *   %rhs_bfe = BitFieldUExtract %factor_a, #0, #16 (uses: 1)
-     *   %rhs_mul = IMul32 %rhs_bfe, %factor_b (uses: 1)
-     *   %lhs_bfe = BitFieldUExtract %factor_a, #16, #16 (uses: 1)
-     *   %rhs_mul = IMul32 %lhs_bfe, %factor_b (uses: 1)
-     *   %lhs_shl = ShiftLeftLogical32 %rhs_mul, #16 (uses: 1)
-     *   %result  = IAdd32 %lhs_shl, %rhs_mul (uses: 10)
+     *   %rhs_bfe = BitFieldUExtract %factor_a, #0, #16
+     *   %rhs_mul = IMul32 %rhs_bfe, %factor_b
+     *   %lhs_bfe = BitFieldUExtract %factor_a, #16, #16
+     *   %rhs_mul = IMul32 %lhs_bfe, %factor_b
+     *   %lhs_shl = ShiftLeftLogical32 %rhs_mul, #16
+     *   %result  = IAdd32 %lhs_shl, %rhs_mul
      *
      * And replacing it with
      *   %result  = IMul32 %factor_a, %factor_b

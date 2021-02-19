@@ -113,20 +113,4 @@ Id EmitUGreaterThanEqual(EmitContext& ctx, Id lhs, Id rhs) {
     return ctx.OpUGreaterThanEqual(ctx.U1, lhs, rhs);
 }
 
-void EmitLogicalOr(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitLogicalAnd(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitLogicalXor(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitLogicalNot(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
 } // namespace Shader::Backend::SPIRV

@@ -14,6 +14,8 @@
 #include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/program.h"
 
+#pragma optimize("", off)
+
 namespace Shader::Backend::SPIRV {
 namespace {
 template <class Func>

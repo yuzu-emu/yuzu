@@ -216,6 +216,10 @@ void Inst::ReplaceUsesWith(Value replacement) {
     }
 }
 
+void Inst::ReplaceOpcode(IR::Opcode opcode) {
+    op = opcode;
+}
+
 void Inst::Use(const Value& value) {
     Inst* const inst{value.Inst()};
     ++inst->use_count;

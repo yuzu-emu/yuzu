@@ -67,8 +67,8 @@ int main() {
     ObjectPool<IR::Inst> inst_pool;
     ObjectPool<IR::Block> block_pool;
 
-    FileEnvironment env{"D:\\Shaders\\Database\\Oninaki\\CS8F146B41DB6BD826.bin"};
-    // FileEnvironment env{"D:\\Shaders\\shader.bin"};
+    // FileEnvironment env{"D:\\Shaders\\Database\\Oninaki\\CS8F146B41DB6BD826.bin"};
+    FileEnvironment env{"D:\\Shaders\\shader.bin"};
     block_pool.ReleaseContents();
     inst_pool.ReleaseContents();
     flow_block_pool.ReleaseContents();
@@ -76,5 +76,9 @@ int main() {
     fmt::print(stdout, "{}\n", cfg.Dot());
     IR::Program program{TranslateProgram(inst_pool, block_pool, env, cfg)};
     fmt::print(stdout, "{}\n", IR::DumpProgram(program));
-    void(Backend::SPIRV::EmitSPIRV(env, program));
+    const std::vector<u32> spirv{Backend::SPIRV::EmitSPIRV(env, program)};
+    std::FILE* const file{std::fopen("D:\\shader.spv", "wb")};
+    std::fwrite(spirv.data(), spirv.size(), sizeof(u32), file);
+    std::fclose(file);
+    std::system("spirv-dis D:\\shader.spv");
 }

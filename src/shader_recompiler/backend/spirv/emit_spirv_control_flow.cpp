@@ -11,7 +11,7 @@ void EmitBranch(EmitContext& ctx, IR::Block* label) {
 }
 
 void EmitBranchConditional(EmitContext& ctx, Id condition, IR::Block* true_label,
-                                      IR::Block* false_label) {
+                           IR::Block* false_label) {
     ctx.OpBranchConditional(condition, true_label->Definition<Id>(), false_label->Definition<Id>());
 }
 

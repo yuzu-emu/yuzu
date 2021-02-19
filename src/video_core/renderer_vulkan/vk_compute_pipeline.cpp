@@ -15,8 +15,6 @@
 #include "video_core/vulkan_common/vulkan_device.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
-#pragma optimize("", off)
-
 namespace Vulkan {
 namespace {
 vk::DescriptorSetLayout CreateDescriptorSetLayout(const Device& device, const Shader::Info& info) {
