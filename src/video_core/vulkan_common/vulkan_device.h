@@ -128,6 +128,11 @@ public:
         return properties.limits.maxComputeSharedMemorySize;
     }
 
+    /// Returns float control properties of the device.
+    const VkPhysicalDeviceFloatControlsPropertiesKHR& FloatControlProperties() const {
+        return float_controls;
+    }
+
     /// Returns true if ASTC is natively supported.
     bool IsOptimalAstcSupported() const {
         return is_optimal_astc_supported;
@@ -223,11 +228,6 @@ public:
         return reported_extensions;
     }
 
-    /// Returns true if the setting for async shader compilation is enabled.
-    bool UseAsynchronousShaders() const {
-        return use_asynchronous_shaders;
-    }
-
     u64 GetDeviceLocalMemory() const {
         return device_access_memory;
     }
@@ -244,6 +244,9 @@ private:
 
     /// Sets up device features.
     void SetupFeatures();
+
+    /// Sets up device properties.
+    void SetupProperties();
 
     /// Collects telemetry information from the device.
     void CollectTelemetryParameters();
@@ -267,14 +270,15 @@ private:
     bool IsFormatSupported(VkFormat wanted_format, VkFormatFeatureFlags wanted_usage,
                            FormatType format_type) const;
 
-    VkInstance instance;                        ///< Vulkan instance.
-    vk::DeviceDispatch dld;                     ///< Device function pointers.
-    vk::PhysicalDevice physical;                ///< Physical device.
-    VkPhysicalDeviceProperties properties;      ///< Device properties.
-    vk::Device logical;                         ///< Logical device.
-    vk::Queue graphics_queue;                   ///< Main graphics queue.
-    vk::Queue present_queue;                    ///< Main present queue.
-    u32 instance_version{};                     ///< Vulkan onstance version.
+    VkInstance instance;                                         ///< Vulkan instance.
+    vk::DeviceDispatch dld;                                      ///< Device function pointers.
+    vk::PhysicalDevice physical;                                 ///< Physical device.
+    VkPhysicalDeviceProperties properties;                       ///< Device properties.
+    VkPhysicalDeviceFloatControlsPropertiesKHR float_controls{}; ///< Float control properties.
+    vk::Device logical;                                          ///< Logical device.
+    vk::Queue graphics_queue;                                    ///< Main graphics queue.
+    vk::Queue present_queue;                                     ///< Main present queue.
+    u32 instance_version{};                                      ///< Vulkan onstance version.
     u32 graphics_family{};                      ///< Main graphics queue family index.
     u32 present_family{};                       ///< Main present queue family index.
     VkDriverIdKHR driver_id{};                  ///< Driver ID.
@@ -300,9 +304,6 @@ private:
     bool nv_device_diagnostics_config{};        ///< Support for VK_NV_device_diagnostics_config.
     bool has_renderdoc{};                       ///< Has RenderDoc attached
     bool has_nsight_graphics{};                 ///< Has Nsight Graphics attached
-
-    // Asynchronous Graphics Pipeline setting
-    bool use_asynchronous_shaders{}; ///< Setting to use asynchronous shaders/graphics pipeline
 
     // Telemetry parameters
     std::string vendor_name;                      ///< Device's driver name.

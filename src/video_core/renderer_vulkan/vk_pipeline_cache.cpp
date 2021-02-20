@@ -177,7 +177,20 @@ ComputePipeline PipelineCache::CreateComputePipeline(ShaderInfo* shader_info) {
     if (const std::optional<u128> cached_hash{env.Analyze(qmd.program_start)}) {
         // TODO: Load from cache
     }
-    const auto [info, code]{Shader::RecompileSPIRV(env, qmd.program_start)};
+    const auto& float_control{device.FloatControlProperties()};
+    const Shader::Profile profile{
+        .unified_descriptor_binding = true,
+        .support_float_controls = true,
+        .support_separate_denorm_behavior = float_control.denormBehaviorIndependence ==
+                                            VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL_KHR,
+        .support_separate_rounding_mode =
+            float_control.roundingModeIndependence == VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL_KHR,
+        .support_fp16_denorm_preserve = float_control.shaderDenormPreserveFloat16 != VK_FALSE,
+        .support_fp32_denorm_preserve = float_control.shaderDenormPreserveFloat32 != VK_FALSE,
+        .support_fp16_denorm_flush = float_control.shaderDenormFlushToZeroFloat16 != VK_FALSE,
+        .support_fp32_denorm_flush = float_control.shaderDenormFlushToZeroFloat32 != VK_FALSE,
+    };
+    const auto [info, code]{Shader::RecompileSPIRV(profile, env, qmd.program_start)};
 
     FILE* file = fopen("D:\\shader.spv", "wb");
     fwrite(code.data(), 4, code.size(), file);

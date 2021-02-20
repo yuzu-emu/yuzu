@@ -81,17 +81,28 @@ void TranslateF2I(TranslatorVisitor& v, u64 insn, const IR::F16F32F64& src_a) {
     // F2I is used to convert from a floating point value to an integer
     const F2I f2i{insn};
 
+    const bool denorm_cares{f2i.src_format != SrcFormat::F16 && f2i.src_format != SrcFormat::F64 &&
+                            f2i.dest_format != DestFormat::I64};
+    IR::FmzMode fmz_mode{IR::FmzMode::DontCare};
+    if (denorm_cares) {
+        fmz_mode = f2i.ftz != 0 ? IR::FmzMode::FTZ : IR::FmzMode::None;
+    }
+    const IR::FpControl fp_control{
+        .no_contraction{true},
+        .rounding{IR::FpRounding::DontCare},
+        .fmz_mode{fmz_mode},
+    };
     const IR::F16F32F64 op_a{v.ir.FPAbsNeg(src_a, f2i.abs != 0, f2i.neg != 0)};
     const IR::F16F32F64 rounded_value{[&] {
         switch (f2i.rounding) {
         case Rounding::Round:
-            return v.ir.FPRoundEven(op_a);
+            return v.ir.FPRoundEven(op_a, fp_control);
         case Rounding::Floor:
-            return v.ir.FPFloor(op_a);
+            return v.ir.FPFloor(op_a, fp_control);
         case Rounding::Ceil:
-            return v.ir.FPCeil(op_a);
+            return v.ir.FPCeil(op_a, fp_control);
         case Rounding::Trunc:
-            return v.ir.FPTrunc(op_a);
+            return v.ir.FPTrunc(op_a, fp_control);
         default:
             throw NotImplementedException("Invalid F2I rounding {}", f2i.rounding.Value());
         }

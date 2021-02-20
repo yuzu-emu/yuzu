@@ -558,53 +558,53 @@ F16F32F64 IREmitter::FPSaturate(const F16F32F64& value) {
     }
 }
 
-F16F32F64 IREmitter::FPRoundEven(const F16F32F64& value) {
+F16F32F64 IREmitter::FPRoundEven(const F16F32F64& value, FpControl control) {
     switch (value.Type()) {
     case Type::F16:
-        return Inst<F16>(Opcode::FPRoundEven16, value);
+        return Inst<F16>(Opcode::FPRoundEven16, Flags{control}, value);
     case Type::F32:
-        return Inst<F32>(Opcode::FPRoundEven32, value);
+        return Inst<F32>(Opcode::FPRoundEven32, Flags{control}, value);
     case Type::F64:
-        return Inst<F64>(Opcode::FPRoundEven64, value);
+        return Inst<F64>(Opcode::FPRoundEven64, Flags{control}, value);
     default:
         ThrowInvalidType(value.Type());
     }
 }
 
-F16F32F64 IREmitter::FPFloor(const F16F32F64& value) {
+F16F32F64 IREmitter::FPFloor(const F16F32F64& value, FpControl control) {
     switch (value.Type()) {
     case Type::F16:
-        return Inst<F16>(Opcode::FPFloor16, value);
+        return Inst<F16>(Opcode::FPFloor16, Flags{control}, value);
     case Type::F32:
-        return Inst<F32>(Opcode::FPFloor32, value);
+        return Inst<F32>(Opcode::FPFloor32, Flags{control}, value);
     case Type::F64:
-        return Inst<F64>(Opcode::FPFloor64, value);
+        return Inst<F64>(Opcode::FPFloor64, Flags{control}, value);
     default:
         ThrowInvalidType(value.Type());
     }
 }
 
-F16F32F64 IREmitter::FPCeil(const F16F32F64& value) {
+F16F32F64 IREmitter::FPCeil(const F16F32F64& value, FpControl control) {
     switch (value.Type()) {
     case Type::F16:
-        return Inst<F16>(Opcode::FPCeil16, value);
+        return Inst<F16>(Opcode::FPCeil16, Flags{control}, value);
     case Type::F32:
-        return Inst<F32>(Opcode::FPCeil32, value);
+        return Inst<F32>(Opcode::FPCeil32, Flags{control}, value);
     case Type::F64:
-        return Inst<F64>(Opcode::FPCeil64, value);
+        return Inst<F64>(Opcode::FPCeil64, Flags{control}, value);
     default:
         ThrowInvalidType(value.Type());
     }
 }
 
-F16F32F64 IREmitter::FPTrunc(const F16F32F64& value) {
+F16F32F64 IREmitter::FPTrunc(const F16F32F64& value, FpControl control) {
     switch (value.Type()) {
     case Type::F16:
-        return Inst<F16>(Opcode::FPTrunc16, value);
+        return Inst<F16>(Opcode::FPTrunc16, Flags{control}, value);
     case Type::F32:
-        return Inst<F32>(Opcode::FPTrunc32, value);
+        return Inst<F32>(Opcode::FPTrunc32, Flags{control}, value);
     case Type::F64:
-        return Inst<F64>(Opcode::FPTrunc64, value);
+        return Inst<F64>(Opcode::FPTrunc64, Flags{control}, value);
     default:
         ThrowInvalidType(value.Type());
     }

@@ -14,14 +14,15 @@
 
 namespace Shader {
 
-std::pair<Info, std::vector<u32>> RecompileSPIRV(Environment& env, u32 start_address) {
+std::pair<Info, std::vector<u32>> RecompileSPIRV(const Profile& profile, Environment& env,
+                                                 u32 start_address) {
     ObjectPool<Maxwell::Flow::Block> flow_block_pool;
     ObjectPool<IR::Inst> inst_pool;
     ObjectPool<IR::Block> block_pool;
 
     Maxwell::Flow::CFG cfg{env, flow_block_pool, start_address};
     IR::Program program{Maxwell::TranslateProgram(inst_pool, block_pool, env, cfg)};
-    return {std::move(program.info), Backend::SPIRV::EmitSPIRV(env, program)};
+    return {std::move(program.info), Backend::SPIRV::EmitSPIRV(profile, env, program)};
 }
 
 } // namespace Shader

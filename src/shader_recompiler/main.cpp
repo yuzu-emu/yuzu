@@ -60,6 +60,17 @@ void RunDatabase() {
     fmt::print(stdout, "{} ms", duration_cast<milliseconds>(t - t0).count() / double(N));
 }
 
+static constexpr Profile PROFILE{
+    .unified_descriptor_binding = true,
+    .support_float_controls = true,
+    .support_separate_denorm_behavior = true,
+    .support_separate_rounding_mode = true,
+    .support_fp16_denorm_preserve = true,
+    .support_fp32_denorm_preserve = true,
+    .support_fp16_denorm_flush = true,
+    .support_fp32_denorm_flush = true,
+};
+
 int main() {
     // RunDatabase();
 
@@ -76,7 +87,7 @@ int main() {
     fmt::print(stdout, "{}\n", cfg.Dot());
     IR::Program program{TranslateProgram(inst_pool, block_pool, env, cfg)};
     fmt::print(stdout, "{}\n", IR::DumpProgram(program));
-    const std::vector<u32> spirv{Backend::SPIRV::EmitSPIRV(env, program)};
+    const std::vector<u32> spirv{Backend::SPIRV::EmitSPIRV(PROFILE, env, program)};
     std::FILE* const file{std::fopen("D:\\shader.spv", "wb")};
     std::fwrite(spirv.data(), spirv.size(), sizeof(u32), file);
     std::fclose(file);

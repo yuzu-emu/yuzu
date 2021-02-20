@@ -32,6 +32,7 @@ add_library(shader_recompiler STATIC
     frontend/ir/ir_emitter.h
     frontend/ir/microinstruction.cpp
     frontend/ir/microinstruction.h
+    frontend/ir/modifiers.h
     frontend/ir/opcodes.cpp
     frontend/ir/opcodes.h
     frontend/ir/opcodes.inc
@@ -94,9 +95,7 @@ add_library(shader_recompiler STATIC
     shader_info.h
 )
 
-target_include_directories(shader_recompiler PRIVATE sirit)
-target_link_libraries(shader_recompiler PRIVATE fmt::fmt sirit)
-target_link_libraries(shader_recompiler INTERFACE fmt::fmt sirit)
+target_link_libraries(shader_recompiler PUBLIC fmt::fmt sirit)
 
 add_executable(shader_util main.cpp)
 target_link_libraries(shader_util PRIVATE shader_recompiler)

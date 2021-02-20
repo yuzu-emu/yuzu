@@ -11,10 +11,12 @@
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/program.h"
+#include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::SPIRV {
 
-[[nodiscard]] std::vector<u32> EmitSPIRV(Environment& env, IR::Program& program);
+[[nodiscard]] std::vector<u32> EmitSPIRV(const Profile& profile, Environment& env,
+                                         IR::Program& program);
 
 // Microinstruction emitters
 Id EmitPhi(EmitContext& ctx, IR::Inst* inst);

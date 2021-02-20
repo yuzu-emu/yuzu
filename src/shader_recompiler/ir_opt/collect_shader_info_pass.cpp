@@ -2,23 +2,28 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include "shader_recompiler/frontend/ir/microinstruction.h"
+#include "shader_recompiler/frontend/ir/modifiers.h"
 #include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/shader_info.h"
 
 namespace Shader::Optimization {
 namespace {
-void AddConstantBufferDescriptor(Info& info, u32 index) {
-    auto& descriptor{info.constant_buffers.at(index)};
-    if (descriptor) {
+void AddConstantBufferDescriptor(Info& info, u32 index, u32 count) {
+    if (count != 1) {
+        throw NotImplementedException("Constant buffer descriptor indexing");
+    }
+    if ((info.constant_buffer_mask & (1U << index)) != 0) {
         return;
     }
-    descriptor = &info.constant_buffer_descriptors.emplace_back(Info::ConstantBufferDescriptor{
+    info.constant_buffer_mask |= 1U << index;
+    info.constant_buffer_descriptors.push_back({
         .index{index},
         .count{1},
     });
 }
 
-void Visit(Info& info, IR::Inst& inst) {
+void VisitUsages(Info& info, IR::Inst& inst) {
     switch (inst.Opcode()) {
     case IR::Opcode::WorkgroupId:
         info.uses_workgroup_id = true;
@@ -72,7 +77,7 @@ void Visit(Info& info, IR::Inst& inst) {
         break;
     case IR::Opcode::GetCbuf:
         if (const IR::Value index{inst.Arg(0)}; index.IsImmediate()) {
-            AddConstantBufferDescriptor(info, index.U32());
+            AddConstantBufferDescriptor(info, index.U32(), 1);
         } else {
             throw NotImplementedException("Constant buffer with non-immediate index");
         }
@@ -80,6 +85,60 @@ void Visit(Info& info, IR::Inst& inst) {
     default:
         break;
     }
+}
+
+void VisitFpModifiers(Info& info, IR::Inst& inst) {
+    switch (inst.Opcode()) {
+    case IR::Opcode::FPAdd16:
+    case IR::Opcode::FPFma16:
+    case IR::Opcode::FPMul16:
+    case IR::Opcode::FPRoundEven16:
+    case IR::Opcode::FPFloor16:
+    case IR::Opcode::FPCeil16:
+    case IR::Opcode::FPTrunc16: {
+        const auto control{inst.Flags<IR::FpControl>()};
+        switch (control.fmz_mode) {
+        case IR::FmzMode::DontCare:
+            break;
+        case IR::FmzMode::FTZ:
+        case IR::FmzMode::FMZ:
+            info.uses_fp16_denorms_flush = true;
+            break;
+        case IR::FmzMode::None:
+            info.uses_fp16_denorms_preserve = true;
+            break;
+        }
+        break;
+    }
+    case IR::Opcode::FPAdd32:
+    case IR::Opcode::FPFma32:
+    case IR::Opcode::FPMul32:
+    case IR::Opcode::FPRoundEven32:
+    case IR::Opcode::FPFloor32:
+    case IR::Opcode::FPCeil32:
+    case IR::Opcode::FPTrunc32: {
+        const auto control{inst.Flags<IR::FpControl>()};
+        switch (control.fmz_mode) {
+        case IR::FmzMode::DontCare:
+            break;
+        case IR::FmzMode::FTZ:
+        case IR::FmzMode::FMZ:
+            info.uses_fp32_denorms_flush = true;
+            break;
+        case IR::FmzMode::None:
+            info.uses_fp32_denorms_preserve = true;
+            break;
+        }
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+void Visit(Info& info, IR::Inst& inst) {
+    VisitUsages(info, inst);
+    VisitFpModifiers(info, inst);
 }
 } // Anonymous namespace
 

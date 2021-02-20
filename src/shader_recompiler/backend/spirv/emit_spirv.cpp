@@ -14,8 +14,6 @@
 #include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/program.h"
 
-#pragma optimize("", off)
-
 namespace Shader::Backend::SPIRV {
 namespace {
 template <class Func>
@@ -113,9 +111,61 @@ Id TypeId(const EmitContext& ctx, IR::Type type) {
         throw NotImplementedException("Phi node type {}", type);
     }
 }
+
+void SetupDenormControl(const Profile& profile, const IR::Program& program, EmitContext& ctx,
+                        Id main_func) {
+    if (!profile.support_float_controls) {
+        return;
+    }
+    const Info& info{program.info};
+    if (!info.uses_fp32_denorms_flush && !info.uses_fp32_denorms_preserve &&
+        !info.uses_fp16_denorms_flush && !info.uses_fp16_denorms_preserve) {
+        return;
+    }
+    ctx.AddExtension("SPV_KHR_float_controls");
+
+    if (info.uses_fp32_denorms_flush && info.uses_fp32_denorms_preserve) {
+        // LOG_ERROR(HW_GPU, "Fp32 denorm flush and preserve on the same shader");
+    } else if (info.uses_fp32_denorms_flush) {
+        if (profile.support_fp32_denorm_flush) {
+            ctx.AddCapability(spv::Capability::DenormFlushToZero);
+            ctx.AddExecutionMode(main_func, spv::ExecutionMode::DenormFlushToZero, 32U);
+        } else {
+            // Drivers will most likely flush denorms by default, no need to warn
+        }
+    } else if (info.uses_fp32_denorms_preserve) {
+        if (profile.support_fp32_denorm_preserve) {
+            ctx.AddCapability(spv::Capability::DenormPreserve);
+            ctx.AddExecutionMode(main_func, spv::ExecutionMode::DenormPreserve, 32U);
+        } else {
+            // LOG_WARNING(HW_GPU, "Fp32 denorm preserve used in shader without host support");
+        }
+    }
+    if (!profile.support_separate_denorm_behavior) {
+        // No separate denorm behavior
+        return;
+    }
+    if (info.uses_fp16_denorms_flush && info.uses_fp16_denorms_preserve) {
+        // LOG_ERROR(HW_GPU, "Fp16 denorm flush and preserve on the same shader");
+    } else if (info.uses_fp16_denorms_flush) {
+        if (profile.support_fp16_denorm_flush) {
+            ctx.AddCapability(spv::Capability::DenormFlushToZero);
+            ctx.AddExecutionMode(main_func, spv::ExecutionMode::DenormPreserve, 16U);
+        } else {
+            // Same as fp32, no need to warn as most drivers will flush by default
+        }
+    } else if (info.uses_fp32_denorms_preserve) {
+        if (profile.support_fp16_denorm_preserve) {
+            ctx.AddCapability(spv::Capability::DenormPreserve);
+            ctx.AddExecutionMode(main_func, spv::ExecutionMode::DenormPreserve, 16U);
+        } else {
+            // LOG_WARNING(HW_GPU, "Fp16 denorm preserve used in shader without host support");
+        }
+    }
+}
 } // Anonymous namespace
 
-std::vector<u32> EmitSPIRV(Environment& env, IR::Program& program) {
+std::vector<u32> EmitSPIRV(const Profile& profile, Environment& env, IR::Program& program) {
     EmitContext ctx{program};
     const Id void_function{ctx.TypeFunction(ctx.void_id)};
     // FIXME: Forward declare functions (needs sirit support)
@@ -131,10 +181,11 @@ std::vector<u32> EmitSPIRV(Environment& env, IR::Program& program) {
         ctx.OpFunctionEnd();
     }
     boost::container::small_vector<Id, 32> interfaces;
-    if (program.info.uses_workgroup_id) {
+    const Info& info{program.info};
+    if (info.uses_workgroup_id) {
         interfaces.push_back(ctx.workgroup_id);
     }
-    if (program.info.uses_local_invocation_id) {
+    if (info.uses_local_invocation_id) {
         interfaces.push_back(ctx.local_invocation_id);
     }
     const std::span interfaces_span(interfaces.data(), interfaces.size());
@@ -143,6 +194,8 @@ std::vector<u32> EmitSPIRV(Environment& env, IR::Program& program) {
     const std::array<u32, 3> workgroup_size{env.WorkgroupSize()};
     ctx.AddExecutionMode(func, spv::ExecutionMode::LocalSize, workgroup_size[0], workgroup_size[1],
                          workgroup_size[2]);
+
+    SetupDenormControl(profile, program, ctx, func);
 
     return ctx.Assemble();
 }

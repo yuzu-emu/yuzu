@@ -43,6 +43,7 @@ constexpr std::array REQUIRED_EXTENSIONS{
     VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME,
     VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
     VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
+    VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
     VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME,
@@ -200,6 +201,7 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     CheckSuitability(surface != nullptr);
     SetupFamilies(surface);
     SetupFeatures();
+    SetupProperties();
 
     const auto queue_cis = GetDeviceQueueCreateInfos();
     const std::vector extensions = LoadExtensions(surface != nullptr);
@@ -426,8 +428,6 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
 
     graphics_queue = logical.GetQueue(graphics_family);
     present_queue = logical.GetQueue(present_family);
-
-    use_asynchronous_shaders = Settings::values.use_asynchronous_shaders.GetValue();
 }
 
 Device::~Device() = default;
@@ -600,7 +600,7 @@ void Device::CheckSuitability(bool requires_swapchain) const {
     VkPhysicalDeviceRobustness2FeaturesEXT robustness2{};
     robustness2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
 
-    VkPhysicalDeviceFeatures2 features2{};
+    VkPhysicalDeviceFeatures2KHR features2{};
     features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
     features2.pNext = &robustness2;
 
@@ -684,7 +684,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
                  true);
         }
     }
-    VkPhysicalDeviceFeatures2KHR features;
+    VkPhysicalDeviceFeatures2KHR features{};
     features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR;
 
     VkPhysicalDeviceProperties2KHR physical_properties;
@@ -806,11 +806,21 @@ void Device::SetupFamilies(VkSurfaceKHR surface) {
 }
 
 void Device::SetupFeatures() {
-    const auto supported_features{physical.GetFeatures()};
-    is_formatless_image_load_supported = supported_features.shaderStorageImageReadWithoutFormat;
-    is_shader_storage_image_multisample = supported_features.shaderStorageImageMultisample;
+    const VkPhysicalDeviceFeatures features{physical.GetFeatures()};
+    is_formatless_image_load_supported = features.shaderStorageImageReadWithoutFormat;
+    is_shader_storage_image_multisample = features.shaderStorageImageMultisample;
     is_blit_depth_stencil_supported = TestDepthStencilBlits();
-    is_optimal_astc_supported = IsOptimalAstcSupported(supported_features);
+    is_optimal_astc_supported = IsOptimalAstcSupported(features);
+}
+
+void Device::SetupProperties() {
+    float_controls.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES_KHR;
+
+    VkPhysicalDeviceProperties2KHR properties2{};
+    properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
+    properties2.pNext = &float_controls;
+
+    physical.GetProperties2KHR(properties2);
 }
 
 void Device::CollectTelemetryParameters() {
