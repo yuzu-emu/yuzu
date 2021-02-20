@@ -13,7 +13,10 @@ Id Decorate(EmitContext& ctx, IR::Inst* inst, Id op) {
         ctx.Decorate(op, spv::Decoration::NoContraction);
     }
     switch (flags.rounding) {
+    case IR::FpRounding::DontCare:
+        break;
     case IR::FpRounding::RN:
+        ctx.Decorate(op, spv::Decoration::FPRoundingMode, spv::FPRoundingMode::RTE);
         break;
     case IR::FpRounding::RM:
         ctx.Decorate(op, spv::Decoration::FPRoundingMode, spv::FPRoundingMode::RTN);
@@ -24,9 +27,6 @@ Id Decorate(EmitContext& ctx, IR::Inst* inst, Id op) {
     case IR::FpRounding::RZ:
         ctx.Decorate(op, spv::Decoration::FPRoundingMode, spv::FPRoundingMode::RTZ);
         break;
-    }
-    if (flags.fmz_mode != IR::FmzMode::FTZ) {
-        throw NotImplementedException("Denorm management not implemented");
     }
     return op;
 }

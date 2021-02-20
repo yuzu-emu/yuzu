@@ -9,10 +9,12 @@
 
 #include "common/common_types.h"
 #include "shader_recompiler/environment.h"
+#include "shader_recompiler/profile.h"
 #include "shader_recompiler/shader_info.h"
 
 namespace Shader {
 
-[[nodiscard]] std::pair<Info, std::vector<u32>> RecompileSPIRV(Environment& env, u32 start_address);
+[[nodiscard]] std::pair<Info, std::vector<u32>> RecompileSPIRV(const Profile& profile,
+                                                               Environment& env, u32 start_address);
 
 } // namespace Shader

@@ -351,7 +351,6 @@ void GlobalMemoryToStorageBufferPass(IR::Program& program) {
             .cbuf_offset{storage_buffer.offset},
             .count{1},
         });
-        info.storage_buffers[storage_index] = &info.storage_buffers_descriptors.back();
         ++storage_index;
     }
     for (const StorageInst& storage_inst : to_replace) {

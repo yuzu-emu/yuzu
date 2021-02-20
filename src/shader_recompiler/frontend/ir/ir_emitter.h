@@ -129,10 +129,10 @@ public:
     [[nodiscard]] F32 FPSinNotReduced(const F32& value);
     [[nodiscard]] F32 FPSqrt(const F32& value);
     [[nodiscard]] F16F32F64 FPSaturate(const F16F32F64& value);
-    [[nodiscard]] F16F32F64 FPRoundEven(const F16F32F64& value);
-    [[nodiscard]] F16F32F64 FPFloor(const F16F32F64& value);
-    [[nodiscard]] F16F32F64 FPCeil(const F16F32F64& value);
-    [[nodiscard]] F16F32F64 FPTrunc(const F16F32F64& value);
+    [[nodiscard]] F16F32F64 FPRoundEven(const F16F32F64& value, FpControl control = {});
+    [[nodiscard]] F16F32F64 FPFloor(const F16F32F64& value, FpControl control = {});
+    [[nodiscard]] F16F32F64 FPCeil(const F16F32F64& value, FpControl control = {});
+    [[nodiscard]] F16F32F64 FPTrunc(const F16F32F64& value, FpControl control = {});
 
     [[nodiscard]] U32U64 IAdd(const U32U64& a, const U32U64& b);
     [[nodiscard]] U32U64 ISub(const U32U64& a, const U32U64& b);

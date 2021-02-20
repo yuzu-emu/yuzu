@@ -31,14 +31,15 @@ struct Info {
     bool uses_local_invocation_id{};
     bool uses_fp16{};
     bool uses_fp64{};
+    bool uses_fp16_denorms_flush{};
+    bool uses_fp16_denorms_preserve{};
+    bool uses_fp32_denorms_flush{};
+    bool uses_fp32_denorms_preserve{};
 
     u32 constant_buffer_mask{};
 
-    std::array<ConstantBufferDescriptor*, MAX_CBUFS> constant_buffers{};
     boost::container::static_vector<ConstantBufferDescriptor, MAX_CBUFS>
         constant_buffer_descriptors;
-
-    std::array<StorageBufferDescriptor*, MAX_SSBOS> storage_buffers{};
     boost::container::static_vector<StorageBufferDescriptor, MAX_SSBOS> storage_buffers_descriptors;
 };
 

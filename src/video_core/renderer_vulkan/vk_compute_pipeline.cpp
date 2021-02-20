@@ -131,12 +131,7 @@ ComputePipeline::ComputePipeline(const Device& device, VKDescriptorPool& descrip
       })} {}
 
 void ComputePipeline::ConfigureBufferCache(BufferCache& buffer_cache) {
-    u32 enabled_uniforms{};
-    for (const auto& desc : info.constant_buffer_descriptors) {
-        enabled_uniforms |= ((1ULL << desc.count) - 1) << desc.index;
-    }
-    buffer_cache.SetEnabledComputeUniformBuffers(enabled_uniforms);
-
+    buffer_cache.SetEnabledComputeUniformBuffers(info.constant_buffer_mask);
     buffer_cache.UnbindComputeStorageBuffers();
     size_t index{};
     for (const auto& desc : info.storage_buffers_descriptors) {
