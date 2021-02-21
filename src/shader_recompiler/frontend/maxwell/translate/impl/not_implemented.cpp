@@ -633,18 +633,6 @@ void TranslatorVisitor::OUT_imm(u64) {
     ThrowNotImplemented(Opcode::OUT_imm);
 }
 
-void TranslatorVisitor::P2R_reg(u64) {
-    ThrowNotImplemented(Opcode::P2R_reg);
-}
-
-void TranslatorVisitor::P2R_cbuf(u64) {
-    ThrowNotImplemented(Opcode::P2R_cbuf);
-}
-
-void TranslatorVisitor::P2R_imm(u64) {
-    ThrowNotImplemented(Opcode::P2R_imm);
-}
-
 void TranslatorVisitor::PBK() {
     // PBK is a no-op
 }

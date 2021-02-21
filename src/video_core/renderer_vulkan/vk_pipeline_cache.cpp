@@ -191,12 +191,12 @@ ComputePipeline PipelineCache::CreateComputePipeline(ShaderInfo* shader_info) {
         .support_fp32_denorm_flush = float_control.shaderDenormFlushToZeroFloat32 != VK_FALSE,
     };
     const auto [info, code]{Shader::RecompileSPIRV(profile, env, qmd.program_start)};
-
+    /*
     FILE* file = fopen("D:\\shader.spv", "wb");
     fwrite(code.data(), 4, code.size(), file);
     fclose(file);
     std::system("spirv-dis D:\\shader.spv");
-
+    */
     shader_info->unique_hash = env.ComputeHash();
     shader_info->size_bytes = env.ShaderSize();
     return ComputePipeline{device, descriptor_pool, update_descriptor_queue, info,

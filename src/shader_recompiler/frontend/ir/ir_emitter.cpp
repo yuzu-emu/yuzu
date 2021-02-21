@@ -468,11 +468,11 @@ F16F32F64 IREmitter::FPFma(const F16F32F64& a, const F16F32F64& b, const F16F32F
 
 F16F32F64 IREmitter::FPAbs(const F16F32F64& value) {
     switch (value.Type()) {
-    case Type::U16:
+    case Type::F16:
         return Inst<F16>(Opcode::FPAbs16, value);
-    case Type::U32:
+    case Type::F32:
         return Inst<F32>(Opcode::FPAbs32, value);
-    case Type::U64:
+    case Type::F64:
         return Inst<F64>(Opcode::FPAbs64, value);
     default:
         ThrowInvalidType(value.Type());
@@ -481,11 +481,11 @@ F16F32F64 IREmitter::FPAbs(const F16F32F64& value) {
 
 F16F32F64 IREmitter::FPNeg(const F16F32F64& value) {
     switch (value.Type()) {
-    case Type::U16:
+    case Type::F16:
         return Inst<F16>(Opcode::FPNeg16, value);
-    case Type::U32:
+    case Type::F32:
         return Inst<F32>(Opcode::FPNeg32, value);
-    case Type::U64:
+    case Type::F64:
         return Inst<F64>(Opcode::FPNeg64, value);
     default:
         ThrowInvalidType(value.Type());
@@ -495,10 +495,10 @@ F16F32F64 IREmitter::FPNeg(const F16F32F64& value) {
 F16F32F64 IREmitter::FPAbsNeg(const F16F32F64& value, bool abs, bool neg) {
     F16F32F64 result{value};
     if (abs) {
-        result = FPAbs(value);
+        result = FPAbs(result);
     }
     if (neg) {
-        result = FPNeg(value);
+        result = FPNeg(result);
     }
     return result;
 }

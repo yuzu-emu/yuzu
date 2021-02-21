@@ -48,11 +48,11 @@ IR::U32 TranslatorVisitor::GetReg39(u64 insn) {
     return X(reg.index);
 }
 
-IR::F32 TranslatorVisitor::GetReg20F(u64 insn) {
+IR::F32 TranslatorVisitor::GetRegFloat20(u64 insn) {
     return ir.BitCast<IR::F32>(GetReg20(insn));
 }
 
-IR::F32 TranslatorVisitor::GetReg39F(u64 insn) {
+IR::F32 TranslatorVisitor::GetRegFloat39(u64 insn) {
     return ir.BitCast<IR::F32>(GetReg39(insn));
 }
 
@@ -73,7 +73,7 @@ IR::U32 TranslatorVisitor::GetCbuf(u64 insn) {
     return ir.GetCbuf(binding, byte_offset);
 }
 
-IR::F32 TranslatorVisitor::GetCbufF(u64 insn) {
+IR::F32 TranslatorVisitor::GetFloatCbuf(u64 insn) {
     return ir.BitCast<IR::F32>(GetCbuf(insn));
 }
 
@@ -85,6 +85,17 @@ IR::U32 TranslatorVisitor::GetImm20(u64 insn) {
     } const imm{insn};
     const s32 positive_value{static_cast<s32>(imm.value)};
     const s32 value{imm.is_negative != 0 ? -positive_value : positive_value};
+    return ir.Imm32(value);
+}
+
+IR::F32 TranslatorVisitor::GetFloatImm20(u64 insn) {
+    union {
+        u64 raw;
+        BitField<20, 19, u64> value;
+        BitField<56, 1, u64> is_negative;
+    } const imm{insn};
+    const f32 positive_value{Common::BitCast<f32>(static_cast<u32>(imm.value) << 12)};
+    const f32 value{imm.is_negative != 0 ? -positive_value : positive_value};
     return ir.Imm32(value);
 }
 

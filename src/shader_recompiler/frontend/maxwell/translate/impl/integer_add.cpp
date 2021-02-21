@@ -84,8 +84,8 @@ void TranslatorVisitor::IADD_cbuf(u64 insn) {
     IADD(*this, insn, GetCbuf(insn));
 }
 
-void TranslatorVisitor::IADD_imm(u64) {
-    throw NotImplementedException("IADD (imm)");
+void TranslatorVisitor::IADD_imm(u64 insn) {
+    IADD(*this, insn, GetImm20(insn));
 }
 
 void TranslatorVisitor::IADD32I(u64 insn) {

@@ -19,8 +19,8 @@ enum class Pred : u64 {
     PT,
 };
 
-constexpr size_t NUM_USER_PREDS = 6;
-constexpr size_t NUM_PREDS = 7;
+constexpr size_t NUM_USER_PREDS = 7;
+constexpr size_t NUM_PREDS = 8;
 
 [[nodiscard]] constexpr size_t PredIndex(Pred pred) noexcept {
     return static_cast<size_t>(pred);
