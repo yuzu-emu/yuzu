@@ -14,8 +14,8 @@ void EmitSelect16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitSelect32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitSelect32(EmitContext& ctx, Id cond, Id true_value, Id false_value) {
+    return ctx.OpSelect(ctx.U32[1], cond, true_value, false_value);
 }
 
 void EmitSelect64(EmitContext&) {

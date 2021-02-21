@@ -91,7 +91,7 @@ void FMUL(TranslatorVisitor& v, u64 insn, const IR::F32& src_b) {
 } // Anonymous namespace
 
 void TranslatorVisitor::FMUL_reg(u64 insn) {
-    return FMUL(*this, insn, GetReg20F(insn));
+    return FMUL(*this, insn, GetRegFloat20(insn));
 }
 
 void TranslatorVisitor::FMUL_cbuf(u64) {

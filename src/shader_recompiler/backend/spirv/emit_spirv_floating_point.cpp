@@ -12,37 +12,21 @@ Id Decorate(EmitContext& ctx, IR::Inst* inst, Id op) {
     if (flags.no_contraction) {
         ctx.Decorate(op, spv::Decoration::NoContraction);
     }
-    switch (flags.rounding) {
-    case IR::FpRounding::DontCare:
-        break;
-    case IR::FpRounding::RN:
-        ctx.Decorate(op, spv::Decoration::FPRoundingMode, spv::FPRoundingMode::RTE);
-        break;
-    case IR::FpRounding::RM:
-        ctx.Decorate(op, spv::Decoration::FPRoundingMode, spv::FPRoundingMode::RTN);
-        break;
-    case IR::FpRounding::RP:
-        ctx.Decorate(op, spv::Decoration::FPRoundingMode, spv::FPRoundingMode::RTP);
-        break;
-    case IR::FpRounding::RZ:
-        ctx.Decorate(op, spv::Decoration::FPRoundingMode, spv::FPRoundingMode::RTZ);
-        break;
-    }
     return op;
 }
 
 } // Anonymous namespace
 
-void EmitFPAbs16(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPAbs16(EmitContext& ctx, Id value) {
+    return ctx.OpFAbs(ctx.F16[1], value);
 }
 
-void EmitFPAbs32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPAbs32(EmitContext& ctx, Id value) {
+    return ctx.OpFAbs(ctx.F32[1], value);
 }
 
-void EmitFPAbs64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPAbs64(EmitContext& ctx, Id value) {
+    return ctx.OpFAbs(ctx.F64[1], value);
 }
 
 Id EmitFPAdd16(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
@@ -97,16 +81,16 @@ Id EmitFPMul64(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
     return Decorate(ctx, inst, ctx.OpFMul(ctx.F64[1], a, b));
 }
 
-void EmitFPNeg16(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPNeg16(EmitContext& ctx, Id value) {
+    return ctx.OpFNegate(ctx.F16[1], value);
 }
 
-void EmitFPNeg32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPNeg32(EmitContext& ctx, Id value) {
+    return ctx.OpFNegate(ctx.F32[1], value);
 }
 
-void EmitFPNeg64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPNeg64(EmitContext& ctx, Id value) {
+    return ctx.OpFNegate(ctx.F64[1], value);
 }
 
 void EmitFPRecip32(EmitContext&) {
@@ -157,16 +141,22 @@ void EmitFPLog2(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitFPSaturate16(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPSaturate16(EmitContext& ctx, Id value) {
+    const Id zero{ctx.Constant(ctx.F16[1], u16{0})};
+    const Id one{ctx.Constant(ctx.F16[1], u16{0x3c00})};
+    return ctx.OpFClamp(ctx.F32[1], value, zero, one);
 }
 
-void EmitFPSaturate32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPSaturate32(EmitContext& ctx, Id value) {
+    const Id zero{ctx.Constant(ctx.F32[1], f32{0.0})};
+    const Id one{ctx.Constant(ctx.F32[1], f32{1.0})};
+    return ctx.OpFClamp(ctx.F32[1], value, zero, one);
 }
 
-void EmitFPSaturate64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPSaturate64(EmitContext& ctx, Id value) {
+    const Id zero{ctx.Constant(ctx.F64[1], f64{0.0})};
+    const Id one{ctx.Constant(ctx.F64[1], f64{1.0})};
+    return ctx.OpFClamp(ctx.F64[1], value, zero, one);
 }
 
 Id EmitFPRoundEven16(EmitContext& ctx, Id value) {

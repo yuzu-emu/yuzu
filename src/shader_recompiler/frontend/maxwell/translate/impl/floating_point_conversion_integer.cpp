@@ -158,7 +158,7 @@ void TranslatorVisitor::F2I_cbuf(u64 insn) {
         case SrcFormat::F16:
             return IR::F16{ir.CompositeExtract(ir.UnpackFloat2x16(GetCbuf(insn)), f2i.half)};
         case SrcFormat::F32:
-            return GetCbufF(insn);
+            return GetFloatCbuf(insn);
         case SrcFormat::F64: {
             return UnpackCbuf(*this, insn);
         }

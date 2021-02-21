@@ -304,13 +304,14 @@ public:
     [[nodiscard]] IR::U32 GetReg8(u64 insn);
     [[nodiscard]] IR::U32 GetReg20(u64 insn);
     [[nodiscard]] IR::U32 GetReg39(u64 insn);
-    [[nodiscard]] IR::F32 GetReg20F(u64 insn);
-    [[nodiscard]] IR::F32 GetReg39F(u64 insn);
+    [[nodiscard]] IR::F32 GetRegFloat20(u64 insn);
+    [[nodiscard]] IR::F32 GetRegFloat39(u64 insn);
 
     [[nodiscard]] IR::U32 GetCbuf(u64 insn);
-    [[nodiscard]] IR::F32 GetCbufF(u64 insn);
+    [[nodiscard]] IR::F32 GetFloatCbuf(u64 insn);
 
     [[nodiscard]] IR::U32 GetImm20(u64 insn);
+    [[nodiscard]] IR::F32 GetFloatImm20(u64 insn);
 
     [[nodiscard]] IR::U32 GetImm32(u64 insn);
 
