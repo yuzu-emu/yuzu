@@ -26,7 +26,7 @@ void MOV(TranslatorVisitor& v, u64 insn, const IR::U32& src, bool is_mov32i = fa
 } // Anonymous namespace
 
 void TranslatorVisitor::MOV_reg(u64 insn) {
-    MOV(*this, insn, GetReg8(insn));
+    MOV(*this, insn, GetReg20(insn));
 }
 
 void TranslatorVisitor::MOV_cbuf(u64 insn) {
