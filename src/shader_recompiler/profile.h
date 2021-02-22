@@ -15,6 +15,9 @@ struct Profile {
     bool support_fp32_denorm_preserve{};
     bool support_fp16_denorm_flush{};
     bool support_fp32_denorm_flush{};
+
+    // FClamp is broken and OpFMax + OpFMin should be used instead
+    bool has_broken_spirv_clamp{};
 };
 
 } // namespace Shader

@@ -56,7 +56,6 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
             .post_order_blocks{},
         });
     }
-    fmt::print(stdout, "{}\n", IR::DumpProgram(program));
     Optimization::LowerFp16ToFp32(program);
     for (IR::Function& function : functions) {
         function.post_order_blocks = PostOrder(function.blocks);
@@ -70,8 +69,6 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
         Optimization::VerificationPass(function);
     }
     Optimization::CollectShaderInfoPass(program);
-
-    fmt::print(stdout, "{}\n", IR::DumpProgram(program));
     return program;
 }
 

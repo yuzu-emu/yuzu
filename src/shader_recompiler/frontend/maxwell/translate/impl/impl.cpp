@@ -83,9 +83,12 @@ IR::U32 TranslatorVisitor::GetImm20(u64 insn) {
         BitField<20, 19, u64> value;
         BitField<56, 1, u64> is_negative;
     } const imm{insn};
-    const s32 positive_value{static_cast<s32>(imm.value)};
-    const s32 value{imm.is_negative != 0 ? -positive_value : positive_value};
-    return ir.Imm32(value);
+    if (imm.is_negative != 0) {
+        const s64 raw{static_cast<s64>(imm.value)};
+        return ir.Imm32(static_cast<s32>(-(1LL << 19) + raw));
+    } else {
+        return ir.Imm32(static_cast<u32>(imm.value));
+    }
 }
 
 IR::F32 TranslatorVisitor::GetFloatImm20(u64 insn) {
@@ -94,9 +97,9 @@ IR::F32 TranslatorVisitor::GetFloatImm20(u64 insn) {
         BitField<20, 19, u64> value;
         BitField<56, 1, u64> is_negative;
     } const imm{insn};
-    const f32 positive_value{Common::BitCast<f32>(static_cast<u32>(imm.value) << 12)};
-    const f32 value{imm.is_negative != 0 ? -positive_value : positive_value};
-    return ir.Imm32(value);
+    const u32 sign_bit{imm.is_negative != 0 ? (1ULL << 31) : 0};
+    const u32 value{static_cast<u32>(imm.value) << 12};
+    return ir.Imm32(Common::BitCast<f32>(value | sign_bit));
 }
 
 IR::U32 TranslatorVisitor::GetImm32(u64 insn) {

@@ -25,7 +25,8 @@ void VectorTypes::Define(Sirit::Module& sirit_ctx, Id base_type, std::string_vie
     }
 }
 
-EmitContext::EmitContext(IR::Program& program) : Sirit::Module(0x00010000) {
+EmitContext::EmitContext(const Profile& profile_, IR::Program& program)
+    : Sirit::Module(0x00010000), profile{profile_} {
     AddCapability(spv::Capability::Shader);
     DefineCommonTypes(program.info);
     DefineCommonConstants();

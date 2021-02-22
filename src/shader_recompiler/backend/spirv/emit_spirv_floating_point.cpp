@@ -15,6 +15,13 @@ Id Decorate(EmitContext& ctx, IR::Inst* inst, Id op) {
     return op;
 }
 
+Id Saturate(EmitContext& ctx, Id type, Id value, Id zero, Id one) {
+    if (ctx.profile.has_broken_spirv_clamp) {
+        return ctx.OpFMin(type, ctx.OpFMax(type, value, zero), one);
+    } else {
+        return ctx.OpFClamp(type, value, zero, one);
+    }
+}
 } // Anonymous namespace
 
 Id EmitFPAbs16(EmitContext& ctx, Id value) {
@@ -144,19 +151,19 @@ void EmitFPLog2(EmitContext&) {
 Id EmitFPSaturate16(EmitContext& ctx, Id value) {
     const Id zero{ctx.Constant(ctx.F16[1], u16{0})};
     const Id one{ctx.Constant(ctx.F16[1], u16{0x3c00})};
-    return ctx.OpFClamp(ctx.F32[1], value, zero, one);
+    return Saturate(ctx, ctx.F16[1], value, zero, one);
 }
 
 Id EmitFPSaturate32(EmitContext& ctx, Id value) {
     const Id zero{ctx.Constant(ctx.F32[1], f32{0.0})};
     const Id one{ctx.Constant(ctx.F32[1], f32{1.0})};
-    return ctx.OpFClamp(ctx.F32[1], value, zero, one);
+    return Saturate(ctx, ctx.F32[1], value, zero, one);
 }
 
 Id EmitFPSaturate64(EmitContext& ctx, Id value) {
     const Id zero{ctx.Constant(ctx.F64[1], f64{0.0})};
     const Id one{ctx.Constant(ctx.F64[1], f64{1.0})};
-    return ctx.OpFClamp(ctx.F64[1], value, zero, one);
+    return Saturate(ctx, ctx.F64[1], value, zero, one);
 }
 
 Id EmitFPRoundEven16(EmitContext& ctx, Id value) {

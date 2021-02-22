@@ -150,11 +150,11 @@ void SetupDenormControl(const Profile& profile, const IR::Program& program, Emit
     } else if (info.uses_fp16_denorms_flush) {
         if (profile.support_fp16_denorm_flush) {
             ctx.AddCapability(spv::Capability::DenormFlushToZero);
-            ctx.AddExecutionMode(main_func, spv::ExecutionMode::DenormPreserve, 16U);
+            ctx.AddExecutionMode(main_func, spv::ExecutionMode::DenormFlushToZero, 16U);
         } else {
             // Same as fp32, no need to warn as most drivers will flush by default
         }
-    } else if (info.uses_fp32_denorms_preserve) {
+    } else if (info.uses_fp16_denorms_preserve) {
         if (profile.support_fp16_denorm_preserve) {
             ctx.AddCapability(spv::Capability::DenormPreserve);
             ctx.AddExecutionMode(main_func, spv::ExecutionMode::DenormPreserve, 16U);
@@ -166,7 +166,7 @@ void SetupDenormControl(const Profile& profile, const IR::Program& program, Emit
 } // Anonymous namespace
 
 std::vector<u32> EmitSPIRV(const Profile& profile, Environment& env, IR::Program& program) {
-    EmitContext ctx{program};
+    EmitContext ctx{profile, program};
     const Id void_function{ctx.TypeFunction(ctx.void_id)};
     // FIXME: Forward declare functions (needs sirit support)
     Id func{};

@@ -11,6 +11,7 @@
 
 #include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/shader_info.h"
+#include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::SPIRV {
 
@@ -30,10 +31,12 @@ private:
 
 class EmitContext final : public Sirit::Module {
 public:
-    explicit EmitContext(IR::Program& program);
+    explicit EmitContext(const Profile& profile, IR::Program& program);
     ~EmitContext();
 
     [[nodiscard]] Id Def(const IR::Value& value);
+
+    const Profile& profile;
 
     Id void_id{};
     Id U1{};

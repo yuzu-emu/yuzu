@@ -272,11 +272,9 @@ public:
     explicit GotoPass(std::span<Block* const> blocks, ObjectPool<Statement>& stmt_pool)
         : pool{stmt_pool} {
         std::vector gotos{BuildUnorderedTreeGetGotos(blocks)};
-        fmt::print(stdout, "BEFORE\n{}\n", DumpTree(root_stmt.children));
         for (const Node& goto_stmt : gotos | std::views::reverse) {
             RemoveGoto(goto_stmt);
         }
-        fmt::print(stdout, "AFTER\n{}\n", DumpTree(root_stmt.children));
     }
 
     Statement& RootStatement() noexcept {
@@ -548,7 +546,6 @@ private:
     size_t Offset(ConstNode stmt) const {
         size_t offset{0};
         if (!SearchNode(root_stmt.children, stmt, offset)) {
-            fmt::print(stdout, "{}\n", DumpTree(root_stmt.children));
             throw LogicError("Node not found in tree");
         }
         return offset;
