@@ -6,20 +6,20 @@
 
 namespace Shader::Backend::SPIRV {
 
-void EmitLogicalOr(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitLogicalOr(EmitContext& ctx, Id a, Id b) {
+    return ctx.OpLogicalOr(ctx.U1, a, b);
 }
 
-void EmitLogicalAnd(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitLogicalAnd(EmitContext& ctx, Id a, Id b) {
+    return ctx.OpLogicalAnd(ctx.U1, a, b);
 }
 
-void EmitLogicalXor(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitLogicalXor(EmitContext& ctx, Id a, Id b) {
+    return ctx.OpLogicalNotEqual(ctx.U1, a, b);
 }
 
-void EmitLogicalNot(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitLogicalNot(EmitContext& ctx, Id value) {
+    return ctx.OpLogicalNot(ctx.U1, value);
 }
 
 } // namespace Shader::Backend::SPIRV
