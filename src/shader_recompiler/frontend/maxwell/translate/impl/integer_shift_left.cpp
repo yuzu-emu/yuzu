@@ -56,12 +56,12 @@ void SHL(TranslatorVisitor& v, u64 insn, const IR::U32& unsafe_shift) {
 }
 } // Anonymous namespace
 
-void TranslatorVisitor::SHL_reg(u64) {
-    throw NotImplementedException("SHL_reg");
+void TranslatorVisitor::SHL_reg(u64 insn) {
+    SHL(*this, insn, GetReg20(insn));
 }
 
-void TranslatorVisitor::SHL_cbuf(u64) {
-    throw NotImplementedException("SHL_cbuf");
+void TranslatorVisitor::SHL_cbuf(u64 insn) {
+    SHL(*this, insn, GetCbuf(insn));
 }
 
 void TranslatorVisitor::SHL_imm(u64 insn) {

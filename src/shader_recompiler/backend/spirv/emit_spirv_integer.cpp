@@ -58,12 +58,12 @@ Id EmitIMul32(EmitContext& ctx, Id a, Id b) {
     return ctx.OpIMul(ctx.U32[1], a, b);
 }
 
-void EmitINeg32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitINeg32(EmitContext& ctx, Id value) {
+    return ctx.OpSNegate(ctx.U32[1], value);
 }
 
-void EmitIAbs32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitIAbs32(EmitContext& ctx, Id value) {
+    return ctx.OpSAbs(ctx.U32[1], value);
 }
 
 Id EmitShiftLeftLogical32(EmitContext& ctx, Id base, Id shift) {
