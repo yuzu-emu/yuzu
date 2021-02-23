@@ -48,11 +48,11 @@ IR::U32 TranslatorVisitor::GetReg39(u64 insn) {
     return X(reg.index);
 }
 
-IR::F32 TranslatorVisitor::GetRegFloat20(u64 insn) {
+IR::F32 TranslatorVisitor::GetFloatReg20(u64 insn) {
     return ir.BitCast<IR::F32>(GetReg20(insn));
 }
 
-IR::F32 TranslatorVisitor::GetRegFloat39(u64 insn) {
+IR::F32 TranslatorVisitor::GetFloatReg39(u64 insn) {
     return ir.BitCast<IR::F32>(GetReg39(insn));
 }
 
@@ -108,6 +108,14 @@ IR::U32 TranslatorVisitor::GetImm32(u64 insn) {
         BitField<20, 32, u64> value;
     } const imm{insn};
     return ir.Imm32(static_cast<u32>(imm.value));
+}
+
+IR::F32 TranslatorVisitor::GetFloatImm32(u64 insn) {
+    union {
+        u64 raw;
+        BitField<20, 32, u64> value;
+    } const imm{insn};
+    return ir.Imm32(Common::BitCast<f32>(static_cast<u32>(imm.value)));
 }
 
 void TranslatorVisitor::SetZFlag(const IR::U1& value) {

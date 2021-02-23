@@ -721,18 +721,6 @@ void TranslatorVisitor::RET(u64) {
     ThrowNotImplemented(Opcode::RET);
 }
 
-void TranslatorVisitor::RRO_reg(u64) {
-    ThrowNotImplemented(Opcode::RRO_reg);
-}
-
-void TranslatorVisitor::RRO_cbuf(u64) {
-    ThrowNotImplemented(Opcode::RRO_cbuf);
-}
-
-void TranslatorVisitor::RRO_imm(u64) {
-    ThrowNotImplemented(Opcode::RRO_imm);
-}
-
 void TranslatorVisitor::RTT(u64) {
     ThrowNotImplemented(Opcode::RTT);
 }

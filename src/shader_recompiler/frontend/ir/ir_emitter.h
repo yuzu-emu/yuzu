@@ -98,7 +98,8 @@ public:
                                            const Value& e4);
     [[nodiscard]] Value CompositeExtract(const Value& vector, size_t element);
 
-    [[nodiscard]] UAny Select(const U1& condition, const UAny& true_value, const UAny& false_value);
+    [[nodiscard]] Value Select(const U1& condition, const Value& true_value,
+                               const Value& false_value);
 
     template <typename Dest, typename Source>
     [[nodiscard]] Dest BitCast(const Source& value);
@@ -121,18 +122,27 @@ public:
     [[nodiscard]] F16F32F64 FPNeg(const F16F32F64& value);
     [[nodiscard]] F16F32F64 FPAbsNeg(const F16F32F64& value, bool abs, bool neg);
 
-    [[nodiscard]] F32 FPCosNotReduced(const F32& value);
-    [[nodiscard]] F32 FPExp2NotReduced(const F32& value);
+    [[nodiscard]] F32 FPCos(const F32& value);
+    [[nodiscard]] F32 FPSin(const F32& value);
+    [[nodiscard]] F32 FPExp2(const F32& value);
     [[nodiscard]] F32 FPLog2(const F32& value);
     [[nodiscard]] F32F64 FPRecip(const F32F64& value);
     [[nodiscard]] F32F64 FPRecipSqrt(const F32F64& value);
-    [[nodiscard]] F32 FPSinNotReduced(const F32& value);
     [[nodiscard]] F32 FPSqrt(const F32& value);
     [[nodiscard]] F16F32F64 FPSaturate(const F16F32F64& value);
     [[nodiscard]] F16F32F64 FPRoundEven(const F16F32F64& value, FpControl control = {});
     [[nodiscard]] F16F32F64 FPFloor(const F16F32F64& value, FpControl control = {});
     [[nodiscard]] F16F32F64 FPCeil(const F16F32F64& value, FpControl control = {});
     [[nodiscard]] F16F32F64 FPTrunc(const F16F32F64& value, FpControl control = {});
+
+    [[nodiscard]] U1 FPEqual(const F16F32F64& lhs, const F16F32F64& rhs, bool ordered = true);
+    [[nodiscard]] U1 FPNotEqual(const F16F32F64& lhs, const F16F32F64& rhs, bool ordered = true);
+    [[nodiscard]] U1 FPLessThan(const F16F32F64& lhs, const F16F32F64& rhs, bool ordered = true);
+    [[nodiscard]] U1 FPGreaterThan(const F16F32F64& lhs, const F16F32F64& rhs, bool ordered = true);
+    [[nodiscard]] U1 FPLessThanEqual(const F16F32F64& lhs, const F16F32F64& rhs,
+                                     bool ordered = true);
+    [[nodiscard]] U1 FPGreaterThanEqual(const F16F32F64& lhs, const F16F32F64& rhs,
+                                        bool ordered = true);
 
     [[nodiscard]] U32U64 IAdd(const U32U64& a, const U32U64& b);
     [[nodiscard]] U32U64 ISub(const U32U64& a, const U32U64& b);

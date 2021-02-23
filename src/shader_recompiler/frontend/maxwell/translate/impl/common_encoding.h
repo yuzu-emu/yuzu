@@ -46,7 +46,8 @@ inline IR::FmzMode CastFmzMode(FmzMode fmz_mode) {
     case FmzMode::FTZ:
         return IR::FmzMode::FTZ;
     case FmzMode::FMZ:
-        return IR::FmzMode::FMZ;
+        // FMZ is manually handled in the instruction
+        return IR::FmzMode::FTZ;
     case FmzMode::INVALIDFMZ3:
         break;
     }

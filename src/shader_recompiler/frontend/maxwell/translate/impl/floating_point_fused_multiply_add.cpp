@@ -51,7 +51,7 @@ void FFMA(TranslatorVisitor& v, u64 insn, const IR::F32& src_b, const IR::F32& s
 } // Anonymous namespace
 
 void TranslatorVisitor::FFMA_reg(u64 insn) {
-    FFMA(*this, insn, GetRegFloat20(insn), GetRegFloat39(insn));
+    FFMA(*this, insn, GetFloatReg20(insn), GetFloatReg39(insn));
 }
 
 void TranslatorVisitor::FFMA_rc(u64) {
@@ -59,7 +59,7 @@ void TranslatorVisitor::FFMA_rc(u64) {
 }
 
 void TranslatorVisitor::FFMA_cr(u64 insn) {
-    FFMA(*this, insn, GetFloatCbuf(insn), GetRegFloat39(insn));
+    FFMA(*this, insn, GetFloatCbuf(insn), GetFloatReg39(insn));
 }
 
 void TranslatorVisitor::FFMA_imm(u64) {

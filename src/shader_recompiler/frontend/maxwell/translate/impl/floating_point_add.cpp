@@ -53,7 +53,7 @@ void FADD(TranslatorVisitor& v, u64 insn, const IR::F32& src_b) {
 } // Anonymous namespace
 
 void TranslatorVisitor::FADD_reg(u64 insn) {
-    FADD(*this, insn, GetRegFloat20(insn));
+    FADD(*this, insn, GetFloatReg20(insn));
 }
 
 void TranslatorVisitor::FADD_cbuf(u64 insn) {
