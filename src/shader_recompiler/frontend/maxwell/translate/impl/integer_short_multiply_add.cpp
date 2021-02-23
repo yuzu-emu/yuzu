@@ -58,7 +58,7 @@ void XMAD(TranslatorVisitor& v, u64 insn, const IR::U32& src_b, const IR::U32& s
         case SelectMode::CHI:
             return ExtractHalf(v, src_c, Half::H1, false);
         case SelectMode::CBCC:
-            return v.ir.IAdd(v.ir.ShiftLeftLogical(src_b, v.ir.Imm32(16)), src_b);
+            return v.ir.IAdd(v.ir.ShiftLeftLogical(src_b, v.ir.Imm32(16)), src_c);
         case SelectMode::CSFU:
             throw NotImplementedException("XMAD CSFU");
         }
@@ -78,16 +78,44 @@ void XMAD(TranslatorVisitor& v, u64 insn, const IR::U32& src_b, const IR::U32& s
 }
 } // Anonymous namespace
 
-void TranslatorVisitor::XMAD_reg(u64) {
-    throw NotImplementedException("XMAD (reg)");
+void TranslatorVisitor::XMAD_reg(u64 insn) {
+    union {
+        u64 raw;
+        BitField<35, 1, Half> half_b;
+        BitField<36, 1, u64> psl;
+        BitField<37, 1, u64> mrg;
+        BitField<38, 1, u64> x;
+        BitField<50, 3, SelectMode> select_mode;
+    } const xmad{insn};
+
+    XMAD(*this, insn, GetReg20(insn), GetReg39(insn), xmad.select_mode, xmad.half_b, xmad.psl != 0,
+         xmad.mrg != 0, xmad.x != 0);
 }
 
-void TranslatorVisitor::XMAD_rc(u64) {
-    throw NotImplementedException("XMAD (rc)");
+void TranslatorVisitor::XMAD_rc(u64 insn) {
+    union {
+        u64 raw;
+        BitField<50, 2, SelectMode> select_mode;
+        BitField<52, 1, Half> half_b;
+        BitField<54, 1, u64> x;
+    } const xmad{insn};
+
+    XMAD(*this, insn, GetReg39(insn), GetCbuf(insn), xmad.select_mode, xmad.half_b, false, false,
+         xmad.x != 0);
 }
 
-void TranslatorVisitor::XMAD_cr(u64) {
-    throw NotImplementedException("XMAD (cr)");
+void TranslatorVisitor::XMAD_cr(u64 insn) {
+    union {
+        u64 raw;
+        BitField<50, 2, SelectMode> select_mode;
+        BitField<52, 1, Half> half_b;
+        BitField<54, 1, u64> x;
+        BitField<55, 1, u64> psl;
+        BitField<56, 1, u64> mrg;
+    } const xmad{insn};
+
+    XMAD(*this, insn, GetCbuf(insn), GetReg39(insn), xmad.select_mode, xmad.half_b, xmad.psl != 0,
+         xmad.mrg != 0, xmad.x != 0);
 }
 
 void TranslatorVisitor::XMAD_imm(u64 insn) {
@@ -97,14 +125,11 @@ void TranslatorVisitor::XMAD_imm(u64 insn) {
         BitField<36, 1, u64> psl;
         BitField<37, 1, u64> mrg;
         BitField<38, 1, u64> x;
-        BitField<39, 8, IR::Reg> src_c;
         BitField<50, 3, SelectMode> select_mode;
     } const xmad{insn};
 
-    const IR::U32 src_b{ir.Imm32(static_cast<u32>(xmad.src_b))};
-    const IR::U32 src_c{X(xmad.src_c)};
-    XMAD(*this, insn, src_b, src_c, xmad.select_mode, Half::H0, xmad.psl != 0, xmad.mrg != 0,
-         xmad.x != 0);
+    XMAD(*this, insn, ir.Imm32(static_cast<u32>(xmad.src_b)), GetReg39(insn), xmad.select_mode,
+         Half::H0, xmad.psl != 0, xmad.mrg != 0, xmad.x != 0);
 }
 
 } // namespace Shader::Maxwell
