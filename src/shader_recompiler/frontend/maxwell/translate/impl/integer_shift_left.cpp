@@ -50,7 +50,7 @@ void SHL(TranslatorVisitor& v, u64 insn, const IR::U32& unsafe_shift) {
         //
         const IR::U1 is_safe{v.ir.ILessThan(unsafe_shift, v.ir.Imm32(32), false)};
         const IR::U32 unsafe_result{v.ir.ShiftLeftLogical(base, unsafe_shift)};
-        result = v.ir.Select(is_safe, unsafe_result, v.ir.Imm32(0));
+        result = IR::U32{v.ir.Select(is_safe, unsafe_result, v.ir.Imm32(0))};
     }
     v.X(shl.dest_reg, result);
 }

@@ -100,52 +100,40 @@ Id EmitFPNeg64(EmitContext& ctx, Id value) {
     return ctx.OpFNegate(ctx.F64[1], value);
 }
 
-void EmitFPRecip32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPSin(EmitContext& ctx, Id value) {
+    return ctx.OpSin(ctx.F32[1], value);
 }
 
-void EmitFPRecip64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPCos(EmitContext& ctx, Id value) {
+    return ctx.OpCos(ctx.F32[1], value);
 }
 
-void EmitFPRecipSqrt32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPExp2(EmitContext& ctx, Id value) {
+    return ctx.OpExp2(ctx.F32[1], value);
 }
 
-void EmitFPRecipSqrt64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPLog2(EmitContext& ctx, Id value) {
+    return ctx.OpLog2(ctx.F32[1], value);
 }
 
-void EmitFPSqrt(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPRecip32(EmitContext& ctx, Id value) {
+    return ctx.OpFDiv(ctx.F32[1], ctx.Constant(ctx.F32[1], 1.0f), value);
 }
 
-void EmitFPSin(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPRecip64(EmitContext& ctx, Id value) {
+    return ctx.OpFDiv(ctx.F64[1], ctx.Constant(ctx.F64[1], 1.0f), value);
 }
 
-void EmitFPSinNotReduced(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPRecipSqrt32(EmitContext& ctx, Id value) {
+    return ctx.OpInverseSqrt(ctx.F32[1], value);
 }
 
-void EmitFPExp2(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPRecipSqrt64(EmitContext& ctx, Id value) {
+    return ctx.OpInverseSqrt(ctx.F64[1], value);
 }
 
-void EmitFPExp2NotReduced(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitFPCos(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitFPCosNotReduced(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitFPLog2(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPSqrt(EmitContext& ctx, Id value) {
+    return ctx.OpSqrt(ctx.F32[1], value);
 }
 
 Id EmitFPSaturate16(EmitContext& ctx, Id value) {
@@ -212,6 +200,150 @@ Id EmitFPTrunc32(EmitContext& ctx, Id value) {
 
 Id EmitFPTrunc64(EmitContext& ctx, Id value) {
     return ctx.OpTrunc(ctx.F64[1], value);
+}
+
+Id EmitFPOrdEqual16(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdEqual32(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdEqual64(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordEqual16(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordEqual32(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordEqual64(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdNotEqual16(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdNotEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdNotEqual32(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdNotEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdNotEqual64(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdNotEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordNotEqual16(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordNotEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordNotEqual32(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordNotEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordNotEqual64(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordNotEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdLessThan16(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdLessThan(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdLessThan32(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdLessThan(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdLessThan64(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdLessThan(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordLessThan16(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordLessThan(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordLessThan32(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordLessThan(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordLessThan64(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordLessThan(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdGreaterThan16(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdGreaterThan(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdGreaterThan32(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdGreaterThan(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdGreaterThan64(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdGreaterThan(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordGreaterThan16(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordGreaterThan(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordGreaterThan32(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordGreaterThan(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordGreaterThan64(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordGreaterThan(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdLessThanEqual16(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdLessThanEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdLessThanEqual32(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdLessThanEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdLessThanEqual64(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdLessThanEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordLessThanEqual16(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordLessThanEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordLessThanEqual32(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordLessThanEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordLessThanEqual64(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordLessThanEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdGreaterThanEqual16(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdGreaterThanEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdGreaterThanEqual32(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdGreaterThanEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPOrdGreaterThanEqual64(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFOrdGreaterThanEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordGreaterThanEqual16(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordGreaterThanEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordGreaterThanEqual32(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordGreaterThanEqual(ctx.U1, lhs, rhs);
+}
+
+Id EmitFPUnordGreaterThanEqual64(EmitContext& ctx, Id lhs, Id rhs) {
+    return ctx.OpFUnordGreaterThanEqual(ctx.U1, lhs, rhs);
 }
 
 } // namespace Shader::Backend::SPIRV

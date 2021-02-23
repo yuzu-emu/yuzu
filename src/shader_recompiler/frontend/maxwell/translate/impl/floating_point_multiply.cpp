@@ -55,9 +55,6 @@ void FMUL(TranslatorVisitor& v, u64 insn, const IR::F32& src_b, FmzMode fmz_mode
     if (cc) {
         throw NotImplementedException("FMUL CC");
     }
-    if (sat) {
-        throw NotImplementedException("FMUL SAT");
-    }
     IR::F32 op_a{v.F(fmul.src_a)};
     if (scale != Scale::None) {
         if (fmz_mode != FmzMode::FTZ || fp_rounding != FpRounding::RN) {
@@ -71,7 +68,20 @@ void FMUL(TranslatorVisitor& v, u64 insn, const IR::F32& src_b, FmzMode fmz_mode
         .rounding{CastFpRounding(fp_rounding)},
         .fmz_mode{CastFmzMode(fmz_mode)},
     };
-    v.F(fmul.dest_reg, v.ir.FPMul(op_a, op_b, fp_control));
+    IR::F32 value{v.ir.FPMul(op_a, op_b, fp_control)};
+    if (fmz_mode == FmzMode::FMZ && !sat) {
+        // Do not implement FMZ if SAT is enabled, as it does the logic for us.
+        // On D3D9 mode, anything * 0 is zero, even NAN and infinity
+        const IR::F32 zero{v.ir.Imm32(0.0f)};
+        const IR::U1 zero_a{v.ir.FPEqual(op_a, zero)};
+        const IR::U1 zero_b{v.ir.FPEqual(op_b, zero)};
+        const IR::U1 any_zero{v.ir.LogicalOr(zero_a, zero_b)};
+        value = IR::F32{v.ir.Select(any_zero, zero, value)};
+    }
+    if (sat) {
+        value = v.ir.FPSaturate(value);
+    }
+    v.F(fmul.dest_reg, value);
 }
 
 void FMUL(TranslatorVisitor& v, u64 insn, const IR::F32& src_b) {
@@ -83,27 +93,33 @@ void FMUL(TranslatorVisitor& v, u64 insn, const IR::F32& src_b) {
         BitField<47, 1, u64> cc;
         BitField<48, 1, u64> neg_b;
         BitField<50, 1, u64> sat;
-    } fmul{insn};
-
+    } const fmul{insn};
     FMUL(v, insn, src_b, fmul.fmz, fmul.fp_rounding, fmul.scale, fmul.sat != 0, fmul.cc != 0,
          fmul.neg_b != 0);
 }
 } // Anonymous namespace
 
 void TranslatorVisitor::FMUL_reg(u64 insn) {
-    return FMUL(*this, insn, GetRegFloat20(insn));
+    return FMUL(*this, insn, GetFloatReg20(insn));
 }
 
-void TranslatorVisitor::FMUL_cbuf(u64) {
-    throw NotImplementedException("FMUL (cbuf)");
+void TranslatorVisitor::FMUL_cbuf(u64 insn) {
+    return FMUL(*this, insn, GetFloatCbuf(insn));
 }
 
-void TranslatorVisitor::FMUL_imm(u64) {
-    throw NotImplementedException("FMUL (imm)");
+void TranslatorVisitor::FMUL_imm(u64 insn) {
+    return FMUL(*this, insn, GetFloatImm20(insn));
 }
 
-void TranslatorVisitor::FMUL32I(u64) {
-    throw NotImplementedException("FMUL32I");
+void TranslatorVisitor::FMUL32I(u64 insn) {
+    union {
+        u64 raw;
+        BitField<52, 1, u64> cc;
+        BitField<53, 2, FmzMode> fmz;
+        BitField<55, 1, u64> sat;
+    } const fmul32i{insn};
+    FMUL(*this, insn, GetFloatImm32(insn), fmul32i.fmz, FpRounding::RN, Scale::None,
+         fmul32i.sat != 0, fmul32i.cc != 0, false);
 }
 
 } // namespace Shader::Maxwell

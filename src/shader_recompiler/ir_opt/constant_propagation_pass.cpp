@@ -330,7 +330,7 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
         return FoldBitCast<u32, f32>(inst, IR::Opcode::BitCastF32U32);
     case IR::Opcode::IAdd64:
         return FoldAdd<u64>(block, inst);
-    case IR::Opcode::Select32:
+    case IR::Opcode::SelectU32:
         return FoldSelect<u32>(inst);
     case IR::Opcode::LogicalAnd:
         return FoldLogicalAnd(inst);

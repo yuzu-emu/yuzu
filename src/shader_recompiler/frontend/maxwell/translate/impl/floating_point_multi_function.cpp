@@ -10,7 +10,7 @@
 
 namespace Shader::Maxwell {
 namespace {
-enum class Operation {
+enum class Operation : u64 {
     Cos = 0,
     Sin = 1,
     Ex2 = 2,    // Base 2 exponent
@@ -39,11 +39,11 @@ void TranslatorVisitor::MUFU(u64 insn) {
     IR::F32 value{[&]() -> IR::F32 {
         switch (mufu.operation) {
         case Operation::Cos:
-            return ir.FPCosNotReduced(op_a);
+            return ir.FPCos(op_a);
         case Operation::Sin:
-            return ir.FPSinNotReduced(op_a);
+            return ir.FPSin(op_a);
         case Operation::Ex2:
-            return ir.FPExp2NotReduced(op_a);
+            return ir.FPExp2(op_a);
         case Operation::Lg2:
             return ir.FPLog2(op_a);
         case Operation::Rcp:
