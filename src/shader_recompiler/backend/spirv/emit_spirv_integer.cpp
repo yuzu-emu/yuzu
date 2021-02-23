@@ -90,12 +90,12 @@ Id EmitBitwiseXor32(EmitContext& ctx, Id a, Id b) {
     return ctx.OpBitwiseXor(ctx.U32[1], a, b);
 }
 
-void EmitBitFieldInsert(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitBitFieldInsert(EmitContext& ctx, Id base, Id insert, Id offset, Id count) {
+    return ctx.OpBitFieldInsert(ctx.U32[1], base, insert, offset, count);
 }
 
-void EmitBitFieldSExtract(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitBitFieldSExtract(EmitContext& ctx, Id base, Id offset, Id count) {
+    return ctx.OpBitFieldSExtract(ctx.U32[1], base, offset, count);
 }
 
 Id EmitBitFieldUExtract(EmitContext& ctx, Id base, Id offset, Id count) {

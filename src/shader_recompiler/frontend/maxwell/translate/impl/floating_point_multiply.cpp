@@ -94,6 +94,7 @@ void FMUL(TranslatorVisitor& v, u64 insn, const IR::F32& src_b) {
         BitField<48, 1, u64> neg_b;
         BitField<50, 1, u64> sat;
     } const fmul{insn};
+
     FMUL(v, insn, src_b, fmul.fmz, fmul.fp_rounding, fmul.scale, fmul.sat != 0, fmul.cc != 0,
          fmul.neg_b != 0);
 }
@@ -118,6 +119,7 @@ void TranslatorVisitor::FMUL32I(u64 insn) {
         BitField<53, 2, FmzMode> fmz;
         BitField<55, 1, u64> sat;
     } const fmul32i{insn};
+
     FMUL(*this, insn, GetFloatImm32(insn), fmul32i.fmz, FpRounding::RN, Scale::None,
          fmul32i.sat != 0, fmul32i.cc != 0, false);
 }
