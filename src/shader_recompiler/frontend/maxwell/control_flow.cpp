@@ -322,12 +322,13 @@ CFG::AnalysisState CFG::AnalyzeInst(Block* block, FunctionId function_id, Locati
         return AnalysisState::Continue;
     }
     const IR::Condition cond{static_cast<IR::Pred>(pred.index), pred.negated};
-    AnalyzeCondInst(block, function_id, pc, EndClass::Branch, cond);
+    AnalyzeCondInst(block, function_id, pc, EndClass::Branch, cond, true);
     return AnalysisState::Branch;
 }
 
 void CFG::AnalyzeCondInst(Block* block, FunctionId function_id, Location pc,
-                          EndClass insn_end_class, IR::Condition cond) {
+                          EndClass insn_end_class, IR::Condition cond,
+                          bool visit_conditional_inst) {
     if (block->begin != pc) {
         // If the block doesn't start in the conditional instruction
         // mark it as a label to visit it later
@@ -354,7 +355,7 @@ void CFG::AnalyzeCondInst(Block* block, FunctionId function_id, Location pc,
     // Impersonate the visited block with a virtual block
     *block = std::move(virtual_block);
     // Set the end properties of the conditional instruction
-    conditional_block->end = pc + 1;
+    conditional_block->end = visit_conditional_inst ? (pc + 1) : pc;
     conditional_block->end_class = insn_end_class;
     // Add a label to the instruction after the conditional instruction
     Block* const endif_block{AddLabel(conditional_block, block->stack, pc + 1, function_id)};
@@ -423,7 +424,7 @@ CFG::AnalysisState CFG::AnalyzeEXIT(Block* block, FunctionId function_id, Locati
             throw NotImplementedException("Conditional EXIT with PEXIT token");
         }
         const IR::Condition cond{flow_test, static_cast<IR::Pred>(pred.index), pred.negated};
-        AnalyzeCondInst(block, function_id, pc, EndClass::Exit, cond);
+        AnalyzeCondInst(block, function_id, pc, EndClass::Exit, cond, false);
         return AnalysisState::Branch;
     }
     if (const std::optional<Location> exit_pc{block->stack.Peek(Token::PEXIT)}) {
