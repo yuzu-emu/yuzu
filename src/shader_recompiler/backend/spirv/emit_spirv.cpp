@@ -163,6 +163,31 @@ void SetupDenormControl(const Profile& profile, const IR::Program& program, Emit
         }
     }
 }
+
+Id PhiArgDef(EmitContext& ctx, IR::Inst* inst, size_t index) {
+    // Phi nodes can have forward declarations, if an argument is not defined provide a forward
+    // declaration of it. Invoke will take care of giving it the right definition when it's
+    // actually defined.
+    const IR::Value arg{inst->Arg(index)};
+    if (arg.IsImmediate()) {
+        // Let the context handle immediate definitions, as it already knows how
+        return ctx.Def(arg);
+    }
+    IR::Inst* const arg_inst{arg.Inst()};
+    if (const Id def{arg_inst->Definition<Id>()}; Sirit::ValidId(def)) {
+        // Return the current definition if it exists
+        return def;
+    }
+    if (arg_inst == inst) {
+        // This is a self referencing phi node
+        // Self-referencing definition will be set by the caller, so just grab the current id
+        return ctx.CurrentId();
+    }
+    // If it hasn't been defined and it's not a self reference, get a forward declaration
+    const Id def{ctx.ForwardDeclarationId()};
+    arg_inst->SetDefinition<Id>(def);
+    return def;
+}
 } // Anonymous namespace
 
 std::vector<u32> EmitSPIRV(const Profile& profile, Environment& env, IR::Program& program) {
@@ -205,33 +230,8 @@ Id EmitPhi(EmitContext& ctx, IR::Inst* inst) {
     boost::container::small_vector<Id, 32> operands;
     operands.reserve(num_args * 2);
     for (size_t index = 0; index < num_args; ++index) {
-        // Phi nodes can have forward declarations, if an argument is not defined provide a forward
-        // declaration of it. Invoke will take care of giving it the right definition when it's
-        // actually defined.
-        const IR::Value arg{inst->Arg(index)};
-        Id def{};
-        if (arg.IsImmediate()) {
-            // Let the context handle immediate definitions, as it already knows how
-            def = ctx.Def(arg);
-        } else {
-            IR::Inst* const arg_inst{arg.Inst()};
-            def = arg_inst->Definition<Id>();
-            if (!Sirit::ValidId(def)) {
-                if (arg_inst == inst) {
-                    // This is a self referencing phi node
-                    def = ctx.CurrentId();
-                    // Self-referencing definition will be set by the caller
-                } else {
-                    // If it hasn't been defined and it's not a self reference,
-                    // get a forward declaration
-                    def = ctx.ForwardDeclarationId();
-                    arg_inst->SetDefinition<Id>(def);
-                }
-            }
-        }
-        IR::Block* const phi_block{inst->PhiBlock(index)};
-        operands.push_back(def);
-        operands.push_back(phi_block->Definition<Id>());
+        operands.push_back(PhiArgDef(ctx, inst, index));
+        operands.push_back(inst->PhiBlock(index)->Definition<Id>());
     }
     const Id result_type{TypeId(ctx, inst->Arg(0).Type())};
     return ctx.OpPhi(result_type, std::span(operands.data(), operands.size()));
