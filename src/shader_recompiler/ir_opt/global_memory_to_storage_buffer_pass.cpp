@@ -43,6 +43,8 @@ using StorageBufferSet =
     boost::container::flat_set<StorageBufferAddr, std::less<StorageBufferAddr>,
                                boost::container::small_vector<StorageBufferAddr, 16>>;
 using StorageInstVector = boost::container::small_vector<StorageInst, 24>;
+using VisitedBlocks = boost::container::flat_set<IR::Block*, std::less<IR::Block*>,
+                                                 boost::container::small_vector<IR::Block*, 4>>;
 
 /// Returns true when the instruction is a global memory instruction
 bool IsGlobalMemory(const IR::Inst& inst) {
@@ -194,7 +196,8 @@ std::optional<LowAddrInfo> TrackLowAddress(IR::Inst* inst) {
 }
 
 /// Recursively tries to track the storage buffer address used by a global memory instruction
-std::optional<StorageBufferAddr> Track(const IR::Value& value, const Bias* bias) {
+std::optional<StorageBufferAddr> Track(IR::Block* block, const IR::Value& value, const Bias* bias,
+                                       VisitedBlocks& visited) {
     if (value.IsImmediate()) {
         // Immediates can't be a storage buffer
         return std::nullopt;
@@ -223,8 +226,24 @@ std::optional<StorageBufferAddr> Track(const IR::Value& value, const Bias* bias)
     }
     // Reversed loops are more likely to find the right result
     for (size_t arg = inst->NumArgs(); arg--;) {
-        if (const std::optional storage_buffer{Track(inst->Arg(arg), bias)}) {
-            return *storage_buffer;
+        if (inst->Opcode() == IR::Opcode::Phi) {
+            // If we are going through a phi node, mark the current block as visited
+            visited.insert(block);
+            // and skip already visited blocks to avoid looping forever
+            IR::Block* const phi_block{inst->PhiBlock(arg)};
+            if (visited.contains(phi_block)) {
+                // Already visited, skip
+                continue;
+            }
+            const std::optional storage_buffer{Track(phi_block, inst->Arg(arg), bias, visited)};
+            if (storage_buffer) {
+                return *storage_buffer;
+            }
+        } else {
+            const std::optional storage_buffer{Track(block, inst->Arg(arg), bias, visited)};
+            if (storage_buffer) {
+                return *storage_buffer;
+            }
         }
     }
     return std::nullopt;
@@ -248,10 +267,12 @@ void CollectStorageBuffers(IR::Block& block, IR::Inst& inst, StorageBufferSet& s
     }
     // First try to find storage buffers in the NVN address
     const IR::U32 low_addr{low_addr_info->value};
-    std::optional<StorageBufferAddr> storage_buffer{Track(low_addr, &nvn_bias)};
+    VisitedBlocks visited_blocks;
+    std::optional storage_buffer{Track(&block, low_addr, &nvn_bias, visited_blocks)};
     if (!storage_buffer) {
         // If it fails, track without a bias
-        storage_buffer = Track(low_addr, nullptr);
+        visited_blocks.clear();
+        storage_buffer = Track(&block, low_addr, nullptr, visited_blocks);
         if (!storage_buffer) {
             // If that also failed, drop the global memory usage
             DiscardGlobalMemory(block, inst);
