@@ -209,7 +209,7 @@ public:
     void P2R_cbuf(u64 insn);
     void P2R_imm(u64 insn);
     void PBK();
-    void PCNT(u64 insn);
+    void PCNT();
     void PEXIT(u64 insn);
     void PIXLD(u64 insn);
     void PLONGJMP(u64 insn);

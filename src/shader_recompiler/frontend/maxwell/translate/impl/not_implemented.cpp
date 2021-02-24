@@ -637,8 +637,8 @@ void TranslatorVisitor::PBK() {
     // PBK is a no-op
 }
 
-void TranslatorVisitor::PCNT(u64) {
-    ThrowNotImplemented(Opcode::PCNT);
+void TranslatorVisitor::PCNT() {
+    // PCNT is a no-op
 }
 
 void TranslatorVisitor::PEXIT(u64) {

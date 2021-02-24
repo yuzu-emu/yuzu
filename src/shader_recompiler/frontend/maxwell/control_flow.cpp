@@ -354,7 +354,7 @@ void CFG::AnalyzeCondInst(Block* block, FunctionId function_id, Location pc,
     // Impersonate the visited block with a virtual block
     *block = std::move(virtual_block);
     // Set the end properties of the conditional instruction
-    conditional_block->end = pc;
+    conditional_block->end = pc + 1;
     conditional_block->end_class = insn_end_class;
     // Add a label to the instruction after the conditional instruction
     Block* const endif_block{AddLabel(conditional_block, block->stack, pc + 1, function_id)};
