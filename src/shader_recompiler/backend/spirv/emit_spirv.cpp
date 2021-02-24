@@ -217,9 +217,16 @@ Id EmitPhi(EmitContext& ctx, IR::Inst* inst) {
             IR::Inst* const arg_inst{arg.Inst()};
             def = arg_inst->Definition<Id>();
             if (!Sirit::ValidId(def)) {
-                // If it hasn't been defined, get a forward declaration
-                def = ctx.ForwardDeclarationId();
-                arg_inst->SetDefinition<Id>(def);
+                if (arg_inst == inst) {
+                    // This is a self referencing phi node
+                    def = ctx.CurrentId();
+                    // Self-referencing definition will be set by the caller
+                } else {
+                    // If it hasn't been defined and it's not a self reference,
+                    // get a forward declaration
+                    def = ctx.ForwardDeclarationId();
+                    arg_inst->SetDefinition<Id>(def);
+                }
             }
         }
         IR::Block* const phi_block{inst->PhiBlock(index)};
