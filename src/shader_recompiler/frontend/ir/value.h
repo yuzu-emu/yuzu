@@ -33,6 +33,7 @@ public:
     explicit Value(f64 value) noexcept;
 
     [[nodiscard]] bool IsIdentity() const noexcept;
+    [[nodiscard]] bool IsPhi() const noexcept;
     [[nodiscard]] bool IsEmpty() const noexcept;
     [[nodiscard]] bool IsImmediate() const noexcept;
     [[nodiscard]] bool IsLabel() const noexcept;

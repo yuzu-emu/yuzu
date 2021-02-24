@@ -134,18 +134,27 @@ void IREmitter::SetOFlag(const U1& value) {
     Inst(Opcode::SetOFlag, value);
 }
 
-U1 IREmitter::Condition(IR::Condition cond) {
-    if (cond == IR::Condition{true}) {
-        return Imm1(true);
-    } else if (cond == IR::Condition{false}) {
-        return Imm1(false);
+static U1 GetFlowTest(IREmitter& ir, FlowTest flow_test) {
+    switch (flow_test) {
+    case FlowTest::T:
+        return ir.Imm1(true);
+    case FlowTest::F:
+        return ir.Imm1(false);
+    case FlowTest::EQ:
+        // TODO: Test this
+        return ir.GetZFlag();
+    case FlowTest::NE:
+        // TODO: Test this
+        return ir.LogicalNot(ir.GetZFlag());
+    default:
+        throw NotImplementedException("Flow test {}", flow_test);
     }
+}
+
+U1 IREmitter::Condition(IR::Condition cond) {
     const FlowTest flow_test{cond.FlowTest()};
     const auto [pred, is_negated]{cond.Pred()};
-    if (flow_test == FlowTest::T) {
-        return GetPred(pred, is_negated);
-    }
-    throw NotImplementedException("Condition {}", cond);
+    return LogicalAnd(GetPred(pred, is_negated), GetFlowTest(*this, flow_test));
 }
 
 F32 IREmitter::GetAttribute(IR::Attribute attribute) {

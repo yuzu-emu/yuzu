@@ -329,7 +329,6 @@ private:
         if (!sibling) {
             throw LogicError("Not siblings");
         }
-
         // goto_stmt and label_stmt are guaranteed to be siblings, eliminate
         if (std::next(goto_stmt) == label_stmt) {
             // Simply eliminate the goto if the label is next to it
@@ -351,9 +350,14 @@ private:
         const std::unordered_map labels_map{BuildLabels(blocks)};
         Tree& root{root_stmt.children};
         auto insert_point{root.begin()};
+        // Skip all goto variables zero-initialization
+        std::advance(insert_point, labels_map.size());
+
         for (Block* const block : blocks) {
-            ++insert_point; // Skip label
-            ++insert_point; // Skip set variable
+            // Skip label
+            ++insert_point;
+            // Skip set variable
+            ++insert_point;
             root.insert(insert_point, *pool.Create(block, &root_stmt));
 
             if (block->IsTerminationBlock()) {
@@ -391,6 +395,7 @@ private:
             labels_map.emplace(block, root.insert(root.end(), *label));
             Statement* const false_stmt{pool.Create(Identity{}, Condition{false})};
             root.push_back(*pool.Create(SetVariable{}, label_id, false_stmt, &root_stmt));
+            root.push_front(*pool.Create(SetVariable{}, label_id, false_stmt, &root_stmt));
             ++label_id;
         }
         return labels_map;
@@ -457,10 +462,10 @@ private:
         }
         body.erase(goto_stmt);
 
-        // Update nested if condition
         switch (label_nested_stmt->type) {
         case StatementType::If:
-            label_nested_stmt->cond = pool.Create(Or{}, neg_var, label_nested_stmt->cond);
+            // Update nested if condition
+            label_nested_stmt->cond = pool.Create(Or{}, variable, label_nested_stmt->cond);
             break;
         case StatementType::Loop:
             break;

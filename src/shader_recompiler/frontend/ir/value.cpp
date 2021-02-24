@@ -36,6 +36,10 @@ bool Value::IsIdentity() const noexcept {
     return type == Type::Opaque && inst->Opcode() == Opcode::Identity;
 }
 
+bool Value::IsPhi() const noexcept {
+    return type == Type::Opaque && inst->Opcode() == Opcode::Phi;
+}
+
 bool Value::IsEmpty() const noexcept {
     return type == Type::Void;
 }
@@ -52,7 +56,7 @@ bool Value::IsLabel() const noexcept {
 }
 
 IR::Type Value::Type() const noexcept {
-    if (IsIdentity()) {
+    if (IsIdentity() || IsPhi()) {
         return inst->Arg(0).Type();
     }
     if (type == Type::Opaque) {
