@@ -757,18 +757,6 @@ void TranslatorVisitor::SHFL(u64) {
     ThrowNotImplemented(Opcode::SHFL);
 }
 
-void TranslatorVisitor::SHR_reg(u64) {
-    ThrowNotImplemented(Opcode::SHR_reg);
-}
-
-void TranslatorVisitor::SHR_cbuf(u64) {
-    ThrowNotImplemented(Opcode::SHR_cbuf);
-}
-
-void TranslatorVisitor::SHR_imm(u64) {
-    ThrowNotImplemented(Opcode::SHR_imm);
-}
-
 void TranslatorVisitor::SSY() {
     // SSY is a no-op
 }
