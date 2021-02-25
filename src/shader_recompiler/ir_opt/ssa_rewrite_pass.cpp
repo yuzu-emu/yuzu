@@ -109,11 +109,13 @@ IR::Opcode UndefOpcode(const FlagTag&) noexcept {
 
 class Pass {
 public:
-    void WriteVariable(auto variable, IR::Block* block, const IR::Value& value) {
+    template <typename Type>
+    void WriteVariable(Type variable, IR::Block* block, const IR::Value& value) {
         current_def[variable].insert_or_assign(block, value);
     }
 
-    IR::Value ReadVariable(auto variable, IR::Block* block) {
+    template <typename Type>
+    IR::Value ReadVariable(Type variable, IR::Block* block) {
         const ValueMap& def{current_def[variable]};
         if (const auto it{def.find(block)}; it != def.end()) {
             return it->second;
@@ -132,7 +134,8 @@ public:
     }
 
 private:
-    IR::Value ReadVariableRecursive(auto variable, IR::Block* block) {
+    template <typename Type>
+    IR::Value ReadVariableRecursive(Type variable, IR::Block* block) {
         IR::Value val;
         if (!sealed_blocks.contains(block)) {
             // Incomplete CFG
@@ -154,7 +157,8 @@ private:
         return val;
     }
 
-    IR::Value AddPhiOperands(auto variable, IR::Inst& phi, IR::Block* block) {
+    template <typename Type>
+    IR::Value AddPhiOperands(Type variable, IR::Inst& phi, IR::Block* block) {
         for (IR::Block* const imm_pred : block->ImmediatePredecessors()) {
             phi.AddPhiOperand(imm_pred, ReadVariable(variable, imm_pred));
         }

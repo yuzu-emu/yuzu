@@ -729,18 +729,6 @@ void TranslatorVisitor::SAM(u64) {
     ThrowNotImplemented(Opcode::SAM);
 }
 
-void TranslatorVisitor::SEL_reg(u64) {
-    ThrowNotImplemented(Opcode::SEL_reg);
-}
-
-void TranslatorVisitor::SEL_cbuf(u64) {
-    ThrowNotImplemented(Opcode::SEL_cbuf);
-}
-
-void TranslatorVisitor::SEL_imm(u64) {
-    ThrowNotImplemented(Opcode::SEL_imm);
-}
-
 void TranslatorVisitor::SETCRSPTR(u64) {
     ThrowNotImplemented(Opcode::SETCRSPTR);
 }

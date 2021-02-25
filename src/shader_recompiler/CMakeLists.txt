@@ -79,6 +79,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/move_register.cpp
     frontend/maxwell/translate/impl/move_special_register.cpp
     frontend/maxwell/translate/impl/not_implemented.cpp
+    frontend/maxwell/translate/impl/select_source_with_predicate.cpp
     frontend/maxwell/translate/translate.cpp
     frontend/maxwell/translate/translate.h
     ir_opt/collect_shader_info_pass.cpp
