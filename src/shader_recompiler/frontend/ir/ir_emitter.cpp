@@ -804,6 +804,10 @@ U32 IREmitter::BitFieldExtract(const U32& base, const U32& offset, const U32& co
                      count);
 }
 
+U32 IREmitter::BitReverse(const U32& value) {
+    return Inst<U32>(Opcode::BitReverse32, value);
+}
+
 U1 IREmitter::ILessThan(const U32& lhs, const U32& rhs, bool is_signed) {
     return Inst<U1>(is_signed ? Opcode::SLessThan : Opcode::ULessThan, lhs, rhs);
 }

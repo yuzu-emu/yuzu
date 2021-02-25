@@ -70,12 +70,12 @@ Id EmitShiftLeftLogical32(EmitContext& ctx, Id base, Id shift) {
     return ctx.OpShiftLeftLogical(ctx.U32[1], base, shift);
 }
 
-void EmitShiftRightLogical32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitShiftRightLogical32(EmitContext& ctx, Id a, Id b) {
+    return ctx.OpShiftRightLogical(ctx.U32[1], a, b);
 }
 
-void EmitShiftRightArithmetic32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitShiftRightArithmetic32(EmitContext& ctx, Id a, Id b) {
+    return ctx.OpShiftRightArithmetic(ctx.U32[1], a, b);
 }
 
 Id EmitBitwiseAnd32(EmitContext& ctx, Id a, Id b) {
@@ -100,6 +100,10 @@ Id EmitBitFieldSExtract(EmitContext& ctx, Id base, Id offset, Id count) {
 
 Id EmitBitFieldUExtract(EmitContext& ctx, Id base, Id offset, Id count) {
     return ctx.OpBitFieldUExtract(ctx.U32[1], base, offset, count);
+}
+
+Id EmitBitReverse32(EmitContext& ctx, Id value) {
+    return ctx.OpBitReverse(ctx.U32[1], value);
 }
 
 Id EmitSLessThan(EmitContext& ctx, Id lhs, Id rhs) {
