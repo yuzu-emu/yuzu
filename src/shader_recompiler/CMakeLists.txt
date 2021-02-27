@@ -60,6 +60,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/program.cpp
     frontend/maxwell/program.h
     frontend/maxwell/translate/impl/bitfield_extract.cpp
+    frontend/maxwell/translate/impl/bitfield_insert.cpp
     frontend/maxwell/translate/impl/common_encoding.h
     frontend/maxwell/translate/impl/floating_point_add.cpp
     frontend/maxwell/translate/impl/floating_point_conversion_integer.cpp
