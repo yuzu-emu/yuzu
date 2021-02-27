@@ -228,6 +228,8 @@ Id EmitBitFieldInsert(EmitContext& ctx, Id base, Id insert, Id offset, Id count)
 Id EmitBitFieldSExtract(EmitContext& ctx, Id base, Id offset, Id count);
 Id EmitBitFieldUExtract(EmitContext& ctx, Id base, Id offset, Id count);
 Id EmitBitReverse32(EmitContext& ctx, Id value);
+Id EmitBitCount32(EmitContext& ctx, Id value);
+Id EmitBitwiseNot32(EmitContext& ctx, Id a);
 Id EmitSLessThan(EmitContext& ctx, Id lhs, Id rhs);
 Id EmitULessThan(EmitContext& ctx, Id lhs, Id rhs);
 Id EmitIEqual(EmitContext& ctx, Id lhs, Id rhs);

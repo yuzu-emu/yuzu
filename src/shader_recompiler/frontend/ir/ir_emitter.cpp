@@ -808,6 +808,14 @@ U32 IREmitter::BitReverse(const U32& value) {
     return Inst<U32>(Opcode::BitReverse32, value);
 }
 
+U32 IREmitter::BitCount(const U32& value) {
+    return Inst<U32>(Opcode::BitCount32, value);
+}
+
+U32 IREmitter::BitwiseNot(const U32& a) {
+    return Inst<U32>(Opcode::BitwiseNot32, a);
+}
+
 U1 IREmitter::ILessThan(const U32& lhs, const U32& rhs, bool is_signed) {
     return Inst<U1>(is_signed ? Opcode::SLessThan : Opcode::ULessThan, lhs, rhs);
 }
