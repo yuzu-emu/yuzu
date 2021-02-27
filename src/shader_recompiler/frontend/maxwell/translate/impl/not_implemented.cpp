@@ -49,22 +49,6 @@ void TranslatorVisitor::BAR(u64) {
     ThrowNotImplemented(Opcode::BAR);
 }
 
-void TranslatorVisitor::BFI_reg(u64) {
-    ThrowNotImplemented(Opcode::BFI_reg);
-}
-
-void TranslatorVisitor::BFI_rc(u64) {
-    ThrowNotImplemented(Opcode::BFI_rc);
-}
-
-void TranslatorVisitor::BFI_cr(u64) {
-    ThrowNotImplemented(Opcode::BFI_cr);
-}
-
-void TranslatorVisitor::BFI_imm(u64) {
-    ThrowNotImplemented(Opcode::BFI_imm);
-}
-
 void TranslatorVisitor::BPT(u64) {
     ThrowNotImplemented(Opcode::BPT);
 }
