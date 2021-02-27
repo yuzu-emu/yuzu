@@ -232,6 +232,8 @@ OPCODE(BitFieldInsert,                                      U32,            U32,
 OPCODE(BitFieldSExtract,                                    U32,            U32,            U32,            U32,                            )
 OPCODE(BitFieldUExtract,                                    U32,            U32,            U32,            U32,                            )
 OPCODE(BitReverse32,                                        U32,            U32,                                                            )
+OPCODE(BitCount32,                                          U32,            U32,                                                            )
+OPCODE(BitwiseNot32,                                        U32,            U32,                                                            )
 
 OPCODE(SLessThan,                                           U1,             U32,            U32,                                            )
 OPCODE(ULessThan,                                           U1,             U32,            U32,                                            )

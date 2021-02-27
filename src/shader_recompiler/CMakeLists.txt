@@ -69,6 +69,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/impl.cpp
     frontend/maxwell/translate/impl/impl.h
     frontend/maxwell/translate/impl/integer_add.cpp
+    frontend/maxwell/translate/impl/integer_popcount.cpp
     frontend/maxwell/translate/impl/integer_scaled_add.cpp
     frontend/maxwell/translate/impl/integer_set_predicate.cpp
     frontend/maxwell/translate/impl/integer_shift_left.cpp

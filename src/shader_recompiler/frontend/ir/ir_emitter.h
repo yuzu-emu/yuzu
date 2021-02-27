@@ -160,6 +160,8 @@ public:
     [[nodiscard]] U32 BitFieldExtract(const U32& base, const U32& offset, const U32& count,
                                       bool is_signed);
     [[nodiscard]] U32 BitReverse(const U32& value);
+    [[nodiscard]] U32 BitCount(const U32& value);
+    [[nodiscard]] U32 BitwiseNot(const U32& a);
 
     [[nodiscard]] U1 ILessThan(const U32& lhs, const U32& rhs, bool is_signed);
     [[nodiscard]] U1 IEqual(const U32& lhs, const U32& rhs);

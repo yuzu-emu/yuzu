@@ -106,6 +106,14 @@ Id EmitBitReverse32(EmitContext& ctx, Id value) {
     return ctx.OpBitReverse(ctx.U32[1], value);
 }
 
+Id EmitBitCount32(EmitContext& ctx, Id value) {
+    return ctx.OpBitCount(ctx.U32[1], value);
+}
+
+Id EmitBitwiseNot32(EmitContext& ctx, Id a) {
+    return ctx.OpNot(ctx.U32[1], a);
+}
+
 Id EmitSLessThan(EmitContext& ctx, Id lhs, Id rhs) {
     return ctx.OpSLessThan(ctx.U1, lhs, rhs);
 }

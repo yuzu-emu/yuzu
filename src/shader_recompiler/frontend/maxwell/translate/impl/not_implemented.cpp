@@ -653,18 +653,6 @@ void TranslatorVisitor::PLONGJMP(u64) {
     ThrowNotImplemented(Opcode::PLONGJMP);
 }
 
-void TranslatorVisitor::POPC_reg(u64) {
-    ThrowNotImplemented(Opcode::POPC_reg);
-}
-
-void TranslatorVisitor::POPC_cbuf(u64) {
-    ThrowNotImplemented(Opcode::POPC_cbuf);
-}
-
-void TranslatorVisitor::POPC_imm(u64) {
-    ThrowNotImplemented(Opcode::POPC_imm);
-}
-
 void TranslatorVisitor::PRET(u64) {
     ThrowNotImplemented(Opcode::PRET);
 }
