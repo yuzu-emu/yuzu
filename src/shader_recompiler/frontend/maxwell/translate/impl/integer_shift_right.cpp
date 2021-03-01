@@ -16,7 +16,7 @@ void SHR(TranslatorVisitor& v, u64 insn, const IR::U32& shift) {
         BitField<39, 1, u64> is_wrapped;
         BitField<40, 1, u64> brev;
         BitField<43, 1, u64> xmode;
-        BitField<48, 1, u64> is_arithmetic;
+        BitField<48, 1, u64> is_signed;
     } const shr{insn};
 
     if (shr.xmode != 0) {
@@ -29,7 +29,7 @@ void SHR(TranslatorVisitor& v, u64 insn, const IR::U32& shift) {
     }
     IR::U32 result;
     const IR::U32 safe_shift = shr.is_wrapped == 0 ? shift : v.ir.BitwiseAnd(shift, v.ir.Imm32(31));
-    if (shr.is_arithmetic == 1) {
+    if (shr.is_signed == 1) {
         result = IR::U32{v.ir.ShiftRightArithmetic(base, safe_shift)};
     } else {
         result = IR::U32{v.ir.ShiftRightLogical(base, safe_shift)};

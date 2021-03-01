@@ -13,13 +13,13 @@ void SEL(TranslatorVisitor& v, u64 insn, const IR::U32& src) {
     union {
         u64 raw;
         BitField<0, 8, IR::Reg> dest_reg;
-        BitField<8, 8, IR::Reg> op_a;
+        BitField<8, 8, IR::Reg> src_reg;
         BitField<39, 3, IR::Pred> pred;
         BitField<42, 1, u64> neg_pred;
     } const sel{insn};
 
     const IR::U1 pred = v.ir.GetPred(sel.pred);
-    IR::U32 op_a{v.X(sel.op_a)};
+    IR::U32 op_a{v.X(sel.src_reg)};
     IR::U32 op_b{src};
     if (sel.neg_pred != 0) {
         std::swap(op_a, op_b);
