@@ -457,18 +457,6 @@ void TranslatorVisitor::ISBERD(u64) {
     ThrowNotImplemented(Opcode::ISBERD);
 }
 
-void TranslatorVisitor::ISET_reg(u64) {
-    ThrowNotImplemented(Opcode::ISET_reg);
-}
-
-void TranslatorVisitor::ISET_cbuf(u64) {
-    ThrowNotImplemented(Opcode::ISET_cbuf);
-}
-
-void TranslatorVisitor::ISET_imm(u64) {
-    ThrowNotImplemented(Opcode::ISET_imm);
-}
-
 void TranslatorVisitor::JCAL(u64) {
     ThrowNotImplemented(Opcode::JCAL);
 }

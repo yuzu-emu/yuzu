@@ -23,7 +23,7 @@ void IMNMX(TranslatorVisitor& v, u64 insn, const IR::U32& op_b) {
         throw NotImplementedException("IMNMX.MODE");
     }
 
-    IR::U1 pred{v.ir.GetPred(imnmx.pred)};
+    const IR::U1 pred{v.ir.GetPred(imnmx.pred)};
     const IR::U32 op_a{v.X(imnmx.src_reg)};
     IR::U32 min;
     IR::U32 max;
