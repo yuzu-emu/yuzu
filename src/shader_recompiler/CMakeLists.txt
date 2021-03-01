@@ -62,6 +62,8 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/bitfield_extract.cpp
     frontend/maxwell/translate/impl/bitfield_insert.cpp
     frontend/maxwell/translate/impl/common_encoding.h
+    frontend/maxwell/translate/impl/common_funcs.cpp
+    frontend/maxwell/translate/impl/common_funcs.h
     frontend/maxwell/translate/impl/floating_point_add.cpp
     frontend/maxwell/translate/impl/floating_point_conversion_integer.cpp
     frontend/maxwell/translate/impl/floating_point_fused_multiply_add.cpp
@@ -72,6 +74,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/impl.h
     frontend/maxwell/translate/impl/integer_add.cpp
     frontend/maxwell/translate/impl/integer_compare.cpp
+    frontend/maxwell/translate/impl/integer_compare_and_set.cpp
     frontend/maxwell/translate/impl/integer_minimum_maximum.cpp
     frontend/maxwell/translate/impl/integer_popcount.cpp
     frontend/maxwell/translate/impl/integer_scaled_add.cpp

@@ -2,12 +2,31 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#pragma once
+
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
 #include "shader_recompiler/frontend/maxwell/instruction.h"
 
 namespace Shader::Maxwell {
+
+enum class ComparisonOp : u64 {
+    False,
+    LessThan,
+    Equal,
+    LessThanEqual,
+    GreaterThan,
+    NotEqual,
+    GreaterThanEqual,
+    True,
+};
+
+enum class BooleanOp : u64 {
+    And,
+    Or,
+    Xor,
+};
 
 class TranslatorVisitor {
 public:
