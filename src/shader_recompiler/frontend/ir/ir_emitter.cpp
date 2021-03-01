@@ -816,6 +816,22 @@ U32 IREmitter::BitwiseNot(const U32& a) {
     return Inst<U32>(Opcode::BitwiseNot32, a);
 }
 
+U32 IREmitter::SMin(const U32& a, const U32& b) {
+    return Inst<U32>(Opcode::SMin32, a, b);
+}
+
+U32 IREmitter::UMin(const U32& a, const U32& b) {
+    return Inst<U32>(Opcode::UMin32, a, b);
+}
+
+U32 IREmitter::SMax(const U32& a, const U32& b) {
+    return Inst<U32>(Opcode::SMax32, a, b);
+}
+
+U32 IREmitter::UMax(const U32& a, const U32& b) {
+    return Inst<U32>(Opcode::UMax32, a, b);
+}
+
 U1 IREmitter::ILessThan(const U32& lhs, const U32& rhs, bool is_signed) {
     return Inst<U1>(is_signed ? Opcode::SLessThan : Opcode::ULessThan, lhs, rhs);
 }
