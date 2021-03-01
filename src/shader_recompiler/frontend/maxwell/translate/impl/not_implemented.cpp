@@ -453,18 +453,6 @@ void TranslatorVisitor::IMADSP_imm(u64) {
     ThrowNotImplemented(Opcode::IMADSP_imm);
 }
 
-void TranslatorVisitor::IMNMX_reg(u64) {
-    ThrowNotImplemented(Opcode::IMNMX_reg);
-}
-
-void TranslatorVisitor::IMNMX_cbuf(u64) {
-    ThrowNotImplemented(Opcode::IMNMX_cbuf);
-}
-
-void TranslatorVisitor::IMNMX_imm(u64) {
-    ThrowNotImplemented(Opcode::IMNMX_imm);
-}
-
 void TranslatorVisitor::IMUL_reg(u64) {
     ThrowNotImplemented(Opcode::IMUL_reg);
 }
