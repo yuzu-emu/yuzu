@@ -217,18 +217,6 @@ void TranslatorVisitor::FCMP_imm(u64) {
     ThrowNotImplemented(Opcode::FCMP_imm);
 }
 
-void TranslatorVisitor::FLO_reg(u64) {
-    ThrowNotImplemented(Opcode::FLO_reg);
-}
-
-void TranslatorVisitor::FLO_cbuf(u64) {
-    ThrowNotImplemented(Opcode::FLO_cbuf);
-}
-
-void TranslatorVisitor::FLO_imm(u64) {
-    ThrowNotImplemented(Opcode::FLO_imm);
-}
-
 void TranslatorVisitor::FMNMX_reg(u64) {
     ThrowNotImplemented(Opcode::FMNMX_reg);
 }

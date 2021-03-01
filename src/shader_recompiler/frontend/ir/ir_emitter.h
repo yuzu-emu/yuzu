@@ -161,8 +161,10 @@ public:
                                       bool is_signed);
     [[nodiscard]] U32 BitReverse(const U32& value);
     [[nodiscard]] U32 BitCount(const U32& value);
-    [[nodiscard]] U32 BitwiseNot(const U32& a);
+    [[nodiscard]] U32 BitwiseNot(const U32& value);
 
+    [[nodiscard]] U32 FindSMsb(const U32& value);
+    [[nodiscard]] U32 FindUMsb(const U32& value);
     [[nodiscard]] U32 SMin(const U32& a, const U32& b);
     [[nodiscard]] U32 UMin(const U32& a, const U32& b);
     [[nodiscard]] U32 SMax(const U32& a, const U32& b);

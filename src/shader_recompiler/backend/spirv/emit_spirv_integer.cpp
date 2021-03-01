@@ -110,8 +110,16 @@ Id EmitBitCount32(EmitContext& ctx, Id value) {
     return ctx.OpBitCount(ctx.U32[1], value);
 }
 
-Id EmitBitwiseNot32(EmitContext& ctx, Id a) {
-    return ctx.OpNot(ctx.U32[1], a);
+Id EmitBitwiseNot32(EmitContext& ctx, Id value) {
+    return ctx.OpNot(ctx.U32[1], value);
+}
+
+Id EmitFindSMsb32(EmitContext& ctx, Id value) {
+    return ctx.OpFindSMsb(ctx.U32[1], value);
+}
+
+Id EmitFindUMsb32(EmitContext& ctx, Id value) {
+    return ctx.OpFindUMsb(ctx.U32[1], value);
 }
 
 Id EmitSMin32(EmitContext& ctx, Id a, Id b) {

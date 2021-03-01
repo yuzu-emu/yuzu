@@ -812,8 +812,16 @@ U32 IREmitter::BitCount(const U32& value) {
     return Inst<U32>(Opcode::BitCount32, value);
 }
 
-U32 IREmitter::BitwiseNot(const U32& a) {
-    return Inst<U32>(Opcode::BitwiseNot32, a);
+U32 IREmitter::BitwiseNot(const U32& value) {
+    return Inst<U32>(Opcode::BitwiseNot32, value);
+}
+
+U32 IREmitter::FindSMsb(const U32& value) {
+    return Inst<U32>(Opcode::FindSMsb32, value);
+}
+
+U32 IREmitter::FindUMsb(const U32& value) {
+    return Inst<U32>(Opcode::FindUMsb32, value);
 }
 
 U32 IREmitter::SMin(const U32& a, const U32& b) {
