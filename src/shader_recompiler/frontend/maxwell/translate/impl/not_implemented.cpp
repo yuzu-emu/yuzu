@@ -389,22 +389,6 @@ void TranslatorVisitor::IADD3_imm(u64) {
     ThrowNotImplemented(Opcode::IADD3_imm);
 }
 
-void TranslatorVisitor::ICMP_reg(u64) {
-    ThrowNotImplemented(Opcode::ICMP_reg);
-}
-
-void TranslatorVisitor::ICMP_rc(u64) {
-    ThrowNotImplemented(Opcode::ICMP_rc);
-}
-
-void TranslatorVisitor::ICMP_cr(u64) {
-    ThrowNotImplemented(Opcode::ICMP_cr);
-}
-
-void TranslatorVisitor::ICMP_imm(u64) {
-    ThrowNotImplemented(Opcode::ICMP_imm);
-}
-
 void TranslatorVisitor::IDE(u64) {
     ThrowNotImplemented(Opcode::IDE);
 }
