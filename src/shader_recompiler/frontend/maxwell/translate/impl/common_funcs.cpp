@@ -5,42 +5,42 @@
 #include "shader_recompiler/frontend/maxwell/translate/impl/common_funcs.h"
 
 namespace Shader::Maxwell {
-[[nodiscard]] IR::U1 IntegerCompare(TranslatorVisitor& v, const IR::U32& operand_1,
-                                    const IR::U32& operand_2, ComparisonOp compare_op,
+[[nodiscard]] IR::U1 IntegerCompare(IR::IREmitter& ir, const IR::U32& operand_1,
+                                    const IR::U32& operand_2, CompareOp compare_op,
                                     bool is_signed) {
     switch (compare_op) {
-    case ComparisonOp::False:
-        return v.ir.Imm1(false);
-    case ComparisonOp::LessThan:
-        return v.ir.ILessThan(operand_1, operand_2, is_signed);
-    case ComparisonOp::Equal:
-        return v.ir.IEqual(operand_1, operand_2);
-    case ComparisonOp::LessThanEqual:
-        return v.ir.ILessThanEqual(operand_1, operand_2, is_signed);
-    case ComparisonOp::GreaterThan:
-        return v.ir.IGreaterThan(operand_1, operand_2, is_signed);
-    case ComparisonOp::NotEqual:
-        return v.ir.INotEqual(operand_1, operand_2);
-    case ComparisonOp::GreaterThanEqual:
-        return v.ir.IGreaterThanEqual(operand_1, operand_2, is_signed);
-    case ComparisonOp::True:
-        return v.ir.Imm1(true);
+    case CompareOp::False:
+        return ir.Imm1(false);
+    case CompareOp::LessThan:
+        return ir.ILessThan(operand_1, operand_2, is_signed);
+    case CompareOp::Equal:
+        return ir.IEqual(operand_1, operand_2);
+    case CompareOp::LessThanEqual:
+        return ir.ILessThanEqual(operand_1, operand_2, is_signed);
+    case CompareOp::GreaterThan:
+        return ir.IGreaterThan(operand_1, operand_2, is_signed);
+    case CompareOp::NotEqual:
+        return ir.INotEqual(operand_1, operand_2);
+    case CompareOp::GreaterThanEqual:
+        return ir.IGreaterThanEqual(operand_1, operand_2, is_signed);
+    case CompareOp::True:
+        return ir.Imm1(true);
     default:
-        throw NotImplementedException("CMP");
+        throw NotImplementedException("Invalid compare op {}", compare_op);
     }
 }
 
-[[nodiscard]] IR::U1 PredicateCombine(TranslatorVisitor& v, const IR::U1& predicate_1,
+[[nodiscard]] IR::U1 PredicateCombine(IR::IREmitter& ir, const IR::U1& predicate_1,
                                       const IR::U1& predicate_2, BooleanOp bop) {
     switch (bop) {
-    case BooleanOp::And:
-        return v.ir.LogicalAnd(predicate_1, predicate_2);
-    case BooleanOp::Or:
-        return v.ir.LogicalOr(predicate_1, predicate_2);
-    case BooleanOp::Xor:
-        return v.ir.LogicalXor(predicate_1, predicate_2);
+    case BooleanOp::AND:
+        return ir.LogicalAnd(predicate_1, predicate_2);
+    case BooleanOp::OR:
+        return ir.LogicalOr(predicate_1, predicate_2);
+    case BooleanOp::XOR:
+        return ir.LogicalXor(predicate_1, predicate_2);
     default:
-        throw NotImplementedException("BOP");
+        throw NotImplementedException("Invalid bop {}", bop);
     }
 }
 } // namespace Shader::Maxwell
