@@ -593,10 +593,6 @@ void TranslatorVisitor::PRMT_imm(u64) {
     ThrowNotImplemented(Opcode::PRMT_imm);
 }
 
-void TranslatorVisitor::PSET(u64) {
-    ThrowNotImplemented(Opcode::PSET);
-}
-
 void TranslatorVisitor::PSETP(u64) {
     ThrowNotImplemented(Opcode::PSETP);
 }

@@ -11,7 +11,7 @@
 
 namespace Shader::Maxwell {
 
-enum class ComparisonOp : u64 {
+enum class CompareOp : u64 {
     False,
     LessThan,
     Equal,
@@ -23,9 +23,9 @@ enum class ComparisonOp : u64 {
 };
 
 enum class BooleanOp : u64 {
-    And,
-    Or,
-    Xor,
+    AND,
+    OR,
+    XOR,
 };
 
 class TranslatorVisitor {

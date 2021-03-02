@@ -20,7 +20,7 @@ void ISET(TranslatorVisitor& v, u64 insn, const IR::U32& src_a) {
         BitField<44, 1, u64> bf;
         BitField<45, 2, BooleanOp> bop;
         BitField<48, 1, u64> is_signed;
-        BitField<49, 3, ComparisonOp> compare_op;
+        BitField<49, 3, CompareOp> compare_op;
     } const iset{insn};
 
     if (iset.x != 0) {
@@ -33,8 +33,8 @@ void ISET(TranslatorVisitor& v, u64 insn, const IR::U32& src_a) {
     if (iset.neg_pred != 0) {
         pred = v.ir.LogicalNot(pred);
     }
-    const IR::U1 cmp_result{IntegerCompare(v, src_reg, src_a, iset.compare_op, is_signed)};
-    const IR::U1 bop_result{PredicateCombine(v, cmp_result, pred, iset.bop)};
+    const IR::U1 cmp_result{IntegerCompare(v.ir, src_reg, src_a, iset.compare_op, is_signed)};
+    const IR::U1 bop_result{PredicateCombine(v.ir, cmp_result, pred, iset.bop)};
 
     const IR::U32 one_mask{v.ir.Imm32(-1)};
     const IR::U32 fp_one{v.ir.Imm32(0x3f800000)};
