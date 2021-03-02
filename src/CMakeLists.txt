@@ -37,7 +37,6 @@ if (MSVC)
         /Zo
         /permissive-
         /EHsc
-        /std:c++latest
         /volatile:iso
         /Zc:externConstexpr
         /Zc:inline
