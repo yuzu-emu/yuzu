@@ -28,6 +28,13 @@ enum class BooleanOp : u64 {
     XOR,
 };
 
+enum class PredicateOp : u64 {
+    False,
+    True,
+    Zero,
+    NonZero,
+};
+
 class TranslatorVisitor {
 public:
     explicit TranslatorVisitor(Environment& env_, IR::Block& block) : env{env_}, ir(block) {}

@@ -5,9 +5,8 @@
 #include "shader_recompiler/frontend/maxwell/translate/impl/common_funcs.h"
 
 namespace Shader::Maxwell {
-[[nodiscard]] IR::U1 IntegerCompare(IR::IREmitter& ir, const IR::U32& operand_1,
-                                    const IR::U32& operand_2, CompareOp compare_op,
-                                    bool is_signed) {
+IR::U1 IntegerCompare(IR::IREmitter& ir, const IR::U32& operand_1, const IR::U32& operand_2,
+                      CompareOp compare_op, bool is_signed) {
     switch (compare_op) {
     case CompareOp::False:
         return ir.Imm1(false);
@@ -30,8 +29,8 @@ namespace Shader::Maxwell {
     }
 }
 
-[[nodiscard]] IR::U1 PredicateCombine(IR::IREmitter& ir, const IR::U1& predicate_1,
-                                      const IR::U1& predicate_2, BooleanOp bop) {
+IR::U1 PredicateCombine(IR::IREmitter& ir, const IR::U1& predicate_1, const IR::U1& predicate_2,
+                        BooleanOp bop) {
     switch (bop) {
     case BooleanOp::AND:
         return ir.LogicalAnd(predicate_1, predicate_2);
@@ -43,4 +42,20 @@ namespace Shader::Maxwell {
         throw NotImplementedException("Invalid bop {}", bop);
     }
 }
+
+IR::U1 PredicateOperation(IR::IREmitter& ir, const IR::U32& result, PredicateOp op) {
+    switch (op) {
+    case PredicateOp::False:
+        return ir.Imm1(false);
+    case PredicateOp::True:
+        return ir.Imm1(true);
+    case PredicateOp::Zero:
+        return ir.IEqual(result, ir.Imm32(0));
+    case PredicateOp::NonZero:
+        return ir.INotEqual(result, ir.Imm32(0));
+    default:
+        throw NotImplementedException("Invalid Predicate operation {}", op);
+    }
+}
+
 } // namespace Shader::Maxwell
