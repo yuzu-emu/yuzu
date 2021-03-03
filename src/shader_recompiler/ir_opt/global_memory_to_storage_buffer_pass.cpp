@@ -298,7 +298,7 @@ IR::U32 StorageOffset(IR::Block& block, IR::Inst& inst, StorageBufferAddr buffer
             offset = ir.IAdd(offset, ir.Imm32(low_addr->imm_offset));
         }
     } else {
-        offset = ir.ConvertU(32, IR::U64{inst.Arg(0)});
+        offset = ir.UConvert(32, IR::U64{inst.Arg(0)});
     }
     // Subtract the least significant 32 bits from the guest offset. The result is the storage
     // buffer offset in bytes.

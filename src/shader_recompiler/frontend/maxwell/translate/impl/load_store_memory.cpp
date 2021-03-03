@@ -59,7 +59,7 @@ IR::U64 Address(TranslatorVisitor& v, u64 insn) {
     const IR::U64 address{[&]() -> IR::U64 {
         if (mem.e == 0) {
             // LDG/STG without .E uses a 32-bit pointer, zero-extend it
-            return v.ir.ConvertU(64, v.X(mem.addr_reg));
+            return v.ir.UConvert(64, v.X(mem.addr_reg));
         }
         if (!IR::IsAligned(mem.addr_reg, 2)) {
             throw NotImplementedException("Unaligned address register");

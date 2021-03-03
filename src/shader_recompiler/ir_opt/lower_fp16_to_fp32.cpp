@@ -44,6 +44,12 @@ IR::Opcode Replace(IR::Opcode op) {
         return IR::Opcode::CompositeExtractF32x3;
     case IR::Opcode::CompositeExtractF16x4:
         return IR::Opcode::CompositeExtractF32x4;
+    case IR::Opcode::CompositeInsertF16x2:
+        return IR::Opcode::CompositeInsertF32x2;
+    case IR::Opcode::CompositeInsertF16x3:
+        return IR::Opcode::CompositeInsertF32x3;
+    case IR::Opcode::CompositeInsertF16x4:
+        return IR::Opcode::CompositeInsertF32x4;
     case IR::Opcode::ConvertS16F16:
         return IR::Opcode::ConvertS16F32;
     case IR::Opcode::ConvertS32F16:
@@ -60,6 +66,10 @@ IR::Opcode Replace(IR::Opcode op) {
         return IR::Opcode::PackHalf2x16;
     case IR::Opcode::UnpackFloat2x16:
         return IR::Opcode::UnpackHalf2x16;
+    case IR::Opcode::ConvertF32F16:
+        return IR::Opcode::Identity;
+    case IR::Opcode::ConvertF16F32:
+        return IR::Opcode::Identity;
     default:
         return op;
     }

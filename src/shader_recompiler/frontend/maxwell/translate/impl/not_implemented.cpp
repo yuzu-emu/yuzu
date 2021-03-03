@@ -265,22 +265,6 @@ void TranslatorVisitor::GETLMEMBASE(u64) {
     ThrowNotImplemented(Opcode::GETLMEMBASE);
 }
 
-void TranslatorVisitor::HADD2_reg(u64) {
-    ThrowNotImplemented(Opcode::HADD2_reg);
-}
-
-void TranslatorVisitor::HADD2_cbuf(u64) {
-    ThrowNotImplemented(Opcode::HADD2_cbuf);
-}
-
-void TranslatorVisitor::HADD2_imm(u64) {
-    ThrowNotImplemented(Opcode::HADD2_imm);
-}
-
-void TranslatorVisitor::HADD2_32I(u64) {
-    ThrowNotImplemented(Opcode::HADD2_32I);
-}
-
 void TranslatorVisitor::HFMA2_reg(u64) {
     ThrowNotImplemented(Opcode::HFMA2_reg);
 }
