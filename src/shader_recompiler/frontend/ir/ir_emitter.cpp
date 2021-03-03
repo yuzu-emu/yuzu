@@ -334,12 +334,12 @@ Value IREmitter::CompositeConstruct(const Value& e1, const Value& e2, const Valu
 }
 
 Value IREmitter::CompositeExtract(const Value& vector, size_t element) {
-    const auto read = [&](Opcode opcode, size_t limit) -> Value {
+    const auto read{[&](Opcode opcode, size_t limit) -> Value {
         if (element >= limit) {
             throw InvalidArgument("Out of bounds element {}", element);
         }
         return Inst(opcode, vector, Value{static_cast<u32>(element)});
-    };
+    }};
     switch (vector.Type()) {
     case Type::U32x2:
         return read(Opcode::CompositeExtractU32x2, 2);
@@ -365,6 +365,43 @@ Value IREmitter::CompositeExtract(const Value& vector, size_t element) {
         return read(Opcode::CompositeExtractF64x3, 3);
     case Type::F64x4:
         return read(Opcode::CompositeExtractF64x4, 4);
+    default:
+        ThrowInvalidType(vector.Type());
+    }
+}
+
+Value IREmitter::CompositeInsert(const Value& vector, const Value& object, size_t element) {
+    const auto insert{[&](Opcode opcode, size_t limit) {
+        if (element >= limit) {
+            throw InvalidArgument("Out of bounds element {}", element);
+        }
+        return Inst(opcode, vector, object, Value{static_cast<u32>(element)});
+    }};
+    switch (vector.Type()) {
+    case Type::U32x2:
+        return insert(Opcode::CompositeInsertU32x2, 2);
+    case Type::U32x3:
+        return insert(Opcode::CompositeInsertU32x3, 3);
+    case Type::U32x4:
+        return insert(Opcode::CompositeInsertU32x4, 4);
+    case Type::F16x2:
+        return insert(Opcode::CompositeInsertF16x2, 2);
+    case Type::F16x3:
+        return insert(Opcode::CompositeInsertF16x3, 3);
+    case Type::F16x4:
+        return insert(Opcode::CompositeInsertF16x4, 4);
+    case Type::F32x2:
+        return insert(Opcode::CompositeInsertF32x2, 2);
+    case Type::F32x3:
+        return insert(Opcode::CompositeInsertF32x3, 3);
+    case Type::F32x4:
+        return insert(Opcode::CompositeInsertF32x4, 4);
+    case Type::F64x2:
+        return insert(Opcode::CompositeInsertF64x2, 2);
+    case Type::F64x3:
+        return insert(Opcode::CompositeInsertF64x3, 3);
+    case Type::F64x4:
+        return insert(Opcode::CompositeInsertF64x4, 4);
     default:
         ThrowInvalidType(vector.Type());
     }
@@ -433,7 +470,7 @@ U32 IREmitter::PackFloat2x16(const Value& vector) {
 }
 
 Value IREmitter::UnpackFloat2x16(const U32& value) {
-    return Inst<Value>(Opcode::UnpackFloat2x16, value);
+    return Inst(Opcode::UnpackFloat2x16, value);
 }
 
 F64 IREmitter::PackDouble2x32(const Value& vector) {
@@ -968,7 +1005,7 @@ U32U64 IREmitter::ConvertFToI(size_t bitsize, bool is_signed, const F16F32F64& v
     }
 }
 
-U32U64 IREmitter::ConvertU(size_t result_bitsize, const U32U64& value) {
+U32U64 IREmitter::UConvert(size_t result_bitsize, const U32U64& value) {
     switch (result_bitsize) {
     case 32:
         switch (value.Type()) {
@@ -991,6 +1028,51 @@ U32U64 IREmitter::ConvertU(size_t result_bitsize, const U32U64& value) {
         default:
             break;
         }
+    }
+    throw NotImplementedException("Conversion from {} to {} bits", value.Type(), result_bitsize);
+}
+
+F16F32F64 IREmitter::FPConvert(size_t result_bitsize, const F16F32F64& value) {
+    switch (result_bitsize) {
+    case 16:
+        switch (value.Type()) {
+        case Type::F16:
+            // Nothing to do
+            return value;
+        case Type::F32:
+            return Inst<F16>(Opcode::ConvertF16F32, value);
+        case Type::F64:
+            throw LogicError("Illegal conversion from F64 to F16");
+        default:
+            break;
+        }
+        break;
+    case 32:
+        switch (value.Type()) {
+        case Type::F16:
+            return Inst<F32>(Opcode::ConvertF32F16, value);
+        case Type::F32:
+            // Nothing to do
+            return value;
+        case Type::F64:
+            return Inst<F64>(Opcode::ConvertF32F64, value);
+        default:
+            break;
+        }
+        break;
+    case 64:
+        switch (value.Type()) {
+        case Type::F16:
+            throw LogicError("Illegal conversion from F16 to F64");
+        case Type::F32:
+            // Nothing to do
+            return value;
+        case Type::F64:
+            return Inst<F64>(Opcode::ConvertF32F64, value);
+        default:
+            break;
+        }
+        break;
     }
     throw NotImplementedException("Conversion from {} to {} bits", value.Type(), result_bitsize);
 }

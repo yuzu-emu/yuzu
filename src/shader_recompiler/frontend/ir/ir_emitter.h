@@ -97,6 +97,7 @@ public:
     [[nodiscard]] Value CompositeConstruct(const Value& e1, const Value& e2, const Value& e3,
                                            const Value& e4);
     [[nodiscard]] Value CompositeExtract(const Value& vector, size_t element);
+    [[nodiscard]] Value CompositeInsert(const Value& vector, const Value& object, size_t element);
 
     [[nodiscard]] Value Select(const U1& condition, const Value& true_value,
                                const Value& false_value);
@@ -186,7 +187,8 @@ public:
     [[nodiscard]] U32U64 ConvertFToU(size_t bitsize, const F16F32F64& value);
     [[nodiscard]] U32U64 ConvertFToI(size_t bitsize, bool is_signed, const F16F32F64& value);
 
-    [[nodiscard]] U32U64 ConvertU(size_t result_bitsize, const U32U64& value);
+    [[nodiscard]] U32U64 UConvert(size_t result_bitsize, const U32U64& value);
+    [[nodiscard]] F16F32F64 FPConvert(size_t result_bitsize, const F16F32F64& value);
 
 private:
     IR::Block::iterator insertion_point;
