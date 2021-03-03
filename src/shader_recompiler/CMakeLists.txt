@@ -86,6 +86,8 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/integer_short_multiply_add.cpp
     frontend/maxwell/translate/impl/load_store_attribute.cpp
     frontend/maxwell/translate/impl/load_store_memory.cpp
+    frontend/maxwell/translate/impl/logic_operation.cpp
+    frontend/maxwell/translate/impl/logic_operation_three_input.cpp
     frontend/maxwell/translate/impl/move_predicate_to_register.cpp
     frontend/maxwell/translate/impl/move_register.cpp
     frontend/maxwell/translate/impl/move_special_register.cpp

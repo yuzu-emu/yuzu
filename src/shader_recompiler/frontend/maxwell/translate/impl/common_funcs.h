@@ -13,4 +13,6 @@ namespace Shader::Maxwell {
 
 [[nodiscard]] IR::U1 PredicateCombine(IR::IREmitter& ir, const IR::U1& predicate_1,
                                       const IR::U1& predicate_2, BooleanOp bop);
+
+[[nodiscard]] IR::U1 PredicateOperation(IR::IREmitter& ir, const IR::U32& result, PredicateOp op);
 } // namespace Shader::Maxwell

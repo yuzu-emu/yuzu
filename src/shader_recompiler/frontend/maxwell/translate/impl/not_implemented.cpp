@@ -493,30 +493,6 @@ void TranslatorVisitor::LONGJMP(u64) {
     ThrowNotImplemented(Opcode::LONGJMP);
 }
 
-void TranslatorVisitor::LOP_reg(u64) {
-    ThrowNotImplemented(Opcode::LOP_reg);
-}
-
-void TranslatorVisitor::LOP_cbuf(u64) {
-    ThrowNotImplemented(Opcode::LOP_cbuf);
-}
-
-void TranslatorVisitor::LOP_imm(u64) {
-    ThrowNotImplemented(Opcode::LOP_imm);
-}
-
-void TranslatorVisitor::LOP3_reg(u64) {
-    ThrowNotImplemented(Opcode::LOP3_reg);
-}
-
-void TranslatorVisitor::LOP3_cbuf(u64) {
-    ThrowNotImplemented(Opcode::LOP3_cbuf);
-}
-
-void TranslatorVisitor::LOP3_imm(u64) {
-    ThrowNotImplemented(Opcode::LOP3_imm);
-}
-
 void TranslatorVisitor::LOP32I(u64) {
     ThrowNotImplemented(Opcode::LOP32I);
 }
