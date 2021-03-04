@@ -337,18 +337,6 @@ void TranslatorVisitor::I2F_imm(u64) {
     ThrowNotImplemented(Opcode::I2F_imm);
 }
 
-void TranslatorVisitor::I2I_reg(u64) {
-    ThrowNotImplemented(Opcode::I2I_reg);
-}
-
-void TranslatorVisitor::I2I_cbuf(u64) {
-    ThrowNotImplemented(Opcode::I2I_cbuf);
-}
-
-void TranslatorVisitor::I2I_imm(u64) {
-    ThrowNotImplemented(Opcode::I2I_imm);
-}
-
 void TranslatorVisitor::IDE(u64) {
     ThrowNotImplemented(Opcode::IDE);
 }
