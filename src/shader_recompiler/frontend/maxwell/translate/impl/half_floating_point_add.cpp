@@ -107,54 +107,52 @@ void HADD2(TranslatorVisitor& v, u64 insn, Merge merge, bool ftz, bool sat, bool
     }
     v.X(hadd2.dest_reg, MergeResult(v.ir, hadd2.dest_reg, lhs, rhs, merge));
 }
+
+void HADD2(TranslatorVisitor& v, u64 insn, bool sat, bool abs_b, bool neg_b, Swizzle swizzle_b,
+           const IR::U32& src_b) {
+    union {
+        u64 raw;
+        BitField<49, 2, Merge> merge;
+        BitField<39, 1, u64> ftz;
+        BitField<43, 1, u64> neg_a;
+        BitField<44, 1, u64> abs_a;
+        BitField<47, 2, Swizzle> swizzle_a;
+    } const hadd2{insn};
+
+    HADD2(v, insn, hadd2.merge, hadd2.ftz != 0, sat, hadd2.abs_a != 0, hadd2.neg_a != 0,
+          hadd2.swizzle_a, abs_b, neg_b, swizzle_b, src_b);
+}
 } // Anonymous namespace
 
 void TranslatorVisitor::HADD2_reg(u64 insn) {
     union {
         u64 raw;
-        BitField<49, 2, Merge> merge;
-        BitField<39, 1, u64> ftz;
         BitField<32, 1, u64> sat;
-        BitField<43, 1, u64> neg_a;
-        BitField<44, 1, u64> abs_a;
-        BitField<47, 2, Swizzle> swizzle_a;
         BitField<31, 1, u64> neg_b;
         BitField<30, 1, u64> abs_b;
         BitField<28, 2, Swizzle> swizzle_b;
     } const hadd2{insn};
 
-    HADD2(*this, insn, hadd2.merge, hadd2.ftz != 0, hadd2.sat != 0, hadd2.abs_a != 0,
-          hadd2.neg_a != 0, hadd2.swizzle_a, hadd2.abs_b != 0, hadd2.neg_b != 0, hadd2.swizzle_b,
+    HADD2(*this, insn, hadd2.sat != 0, hadd2.abs_b != 0, hadd2.neg_b != 0, hadd2.swizzle_b,
           GetReg20(insn));
 }
 
 void TranslatorVisitor::HADD2_cbuf(u64 insn) {
     union {
         u64 raw;
-        BitField<49, 2, Merge> merge;
-        BitField<39, 1, u64> ftz;
         BitField<52, 1, u64> sat;
-        BitField<43, 1, u64> neg_a;
-        BitField<44, 1, u64> abs_a;
-        BitField<47, 2, Swizzle> swizzle_a;
         BitField<56, 1, u64> neg_b;
         BitField<54, 1, u64> abs_b;
     } const hadd2{insn};
 
-    HADD2(*this, insn, hadd2.merge, hadd2.ftz != 0, hadd2.sat != 0, hadd2.abs_a != 0,
-          hadd2.neg_a != 0, hadd2.swizzle_a, hadd2.abs_b != 0, hadd2.neg_b != 0, Swizzle::F32,
+    HADD2(*this, insn, hadd2.sat != 0, hadd2.abs_b != 0, hadd2.neg_b != 0, Swizzle::F32,
           GetCbuf(insn));
 }
 
 void TranslatorVisitor::HADD2_imm(u64 insn) {
     union {
         u64 raw;
-        BitField<49, 2, Merge> merge;
-        BitField<39, 1, u64> ftz;
         BitField<52, 1, u64> sat;
-        BitField<43, 1, u64> neg_a;
-        BitField<44, 1, u64> abs_a;
-        BitField<47, 2, Swizzle> swizzle_a;
         BitField<56, 1, u64> neg_high;
         BitField<30, 9, u64> high;
         BitField<29, 1, u64> neg_low;
@@ -163,8 +161,7 @@ void TranslatorVisitor::HADD2_imm(u64 insn) {
 
     const u32 imm{static_cast<u32>(hadd2.low << 6) | ((hadd2.neg_low != 0 ? 1 : 0) << 15) |
                   static_cast<u32>(hadd2.high << 22) | ((hadd2.neg_high != 0 ? 1 : 0) << 31)};
-    HADD2(*this, insn, hadd2.merge, hadd2.ftz != 0, hadd2.sat != 0, hadd2.abs_a != 0,
-          hadd2.neg_a != 0, hadd2.swizzle_a, false, false, Swizzle::H1_H0, ir.Imm32(imm));
+    HADD2(*this, insn, hadd2.sat != 0, false, false, Swizzle::H1_H0, ir.Imm32(imm));
 }
 
 void TranslatorVisitor::HADD2_32I(u64 insn) {
