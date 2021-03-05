@@ -62,6 +62,10 @@ Id EmitINeg32(EmitContext& ctx, Id value) {
     return ctx.OpSNegate(ctx.U32[1], value);
 }
 
+Id EmitINeg64(EmitContext& ctx, Id value) {
+    return ctx.OpSNegate(ctx.U64, value);
+}
+
 Id EmitIAbs32(EmitContext& ctx, Id value) {
     return ctx.OpSAbs(ctx.U32[1], value);
 }
@@ -72,6 +76,10 @@ Id EmitShiftLeftLogical32(EmitContext& ctx, Id base, Id shift) {
 
 Id EmitShiftRightLogical32(EmitContext& ctx, Id a, Id b) {
     return ctx.OpShiftRightLogical(ctx.U32[1], a, b);
+}
+
+Id EmitShiftRightLogical64(EmitContext& ctx, Id a, Id b) {
+    return ctx.OpShiftRightLogical(ctx.U64, a, b);
 }
 
 Id EmitShiftRightArithmetic32(EmitContext& ctx, Id a, Id b) {

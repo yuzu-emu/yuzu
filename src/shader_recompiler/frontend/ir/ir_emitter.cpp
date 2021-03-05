@@ -798,8 +798,15 @@ U32 IREmitter::IMul(const U32& a, const U32& b) {
     return Inst<U32>(Opcode::IMul32, a, b);
 }
 
-U32 IREmitter::INeg(const U32& value) {
-    return Inst<U32>(Opcode::INeg32, value);
+U32U64 IREmitter::INeg(const U32U64& value) {
+    switch (value.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::INeg32, value);
+    case Type::U64:
+        return Inst<U64>(Opcode::INeg64, value);
+    default:
+        ThrowInvalidType(value.Type());
+    }
 }
 
 U32 IREmitter::IAbs(const U32& value) {
@@ -810,8 +817,15 @@ U32 IREmitter::ShiftLeftLogical(const U32& base, const U32& shift) {
     return Inst<U32>(Opcode::ShiftLeftLogical32, base, shift);
 }
 
-U32 IREmitter::ShiftRightLogical(const U32& base, const U32& shift) {
-    return Inst<U32>(Opcode::ShiftRightLogical32, base, shift);
+U32U64 IREmitter::ShiftRightLogical(const U32U64& base, const U32& shift) {
+    switch (base.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::ShiftRightLogical32, base, shift);
+    case Type::U64:
+        return Inst<U64>(Opcode::ShiftRightLogical64, base, shift);
+    default:
+        ThrowInvalidType(base.Type());
+    }
 }
 
 U32 IREmitter::ShiftRightArithmetic(const U32& base, const U32& shift) {

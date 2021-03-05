@@ -437,26 +437,6 @@ void TranslatorVisitor::LDS(u64) {
     ThrowNotImplemented(Opcode::LDS);
 }
 
-void TranslatorVisitor::LEA_hi_reg(u64) {
-    ThrowNotImplemented(Opcode::LEA_hi_reg);
-}
-
-void TranslatorVisitor::LEA_hi_cbuf(u64) {
-    ThrowNotImplemented(Opcode::LEA_hi_cbuf);
-}
-
-void TranslatorVisitor::LEA_lo_reg(u64) {
-    ThrowNotImplemented(Opcode::LEA_lo_reg);
-}
-
-void TranslatorVisitor::LEA_lo_cbuf(u64) {
-    ThrowNotImplemented(Opcode::LEA_lo_cbuf);
-}
-
-void TranslatorVisitor::LEA_lo_imm(u64) {
-    ThrowNotImplemented(Opcode::LEA_lo_imm);
-}
-
 void TranslatorVisitor::LEPC(u64) {
     ThrowNotImplemented(Opcode::LEPC);
 }
