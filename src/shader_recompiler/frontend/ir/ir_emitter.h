@@ -150,9 +150,9 @@ public:
     [[nodiscard]] U32 IMul(const U32& a, const U32& b);
     [[nodiscard]] U32U64 INeg(const U32U64& value);
     [[nodiscard]] U32 IAbs(const U32& value);
-    [[nodiscard]] U32 ShiftLeftLogical(const U32& base, const U32& shift);
+    [[nodiscard]] U32U64 ShiftLeftLogical(const U32U64& base, const U32& shift);
     [[nodiscard]] U32U64 ShiftRightLogical(const U32U64& base, const U32& shift);
-    [[nodiscard]] U32 ShiftRightArithmetic(const U32& base, const U32& shift);
+    [[nodiscard]] U32U64 ShiftRightArithmetic(const U32U64& base, const U32& shift);
     [[nodiscard]] U32 BitwiseAnd(const U32& a, const U32& b);
     [[nodiscard]] U32 BitwiseOr(const U32& a, const U32& b);
     [[nodiscard]] U32 BitwiseXor(const U32& a, const U32& b);

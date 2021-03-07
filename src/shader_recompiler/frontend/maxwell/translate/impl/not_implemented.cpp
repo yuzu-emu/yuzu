@@ -553,22 +553,6 @@ void TranslatorVisitor::SETLMEMBASE(u64) {
     ThrowNotImplemented(Opcode::SETLMEMBASE);
 }
 
-void TranslatorVisitor::SHF_l_reg(u64) {
-    ThrowNotImplemented(Opcode::SHF_l_reg);
-}
-
-void TranslatorVisitor::SHF_l_imm(u64) {
-    ThrowNotImplemented(Opcode::SHF_l_imm);
-}
-
-void TranslatorVisitor::SHF_r_reg(u64) {
-    ThrowNotImplemented(Opcode::SHF_r_reg);
-}
-
-void TranslatorVisitor::SHF_r_imm(u64) {
-    ThrowNotImplemented(Opcode::SHF_r_imm);
-}
-
 void TranslatorVisitor::SHFL(u64) {
     ThrowNotImplemented(Opcode::SHFL);
 }

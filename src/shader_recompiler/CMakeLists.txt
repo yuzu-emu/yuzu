@@ -78,6 +78,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/integer_add_three_input.cpp
     frontend/maxwell/translate/impl/integer_compare.cpp
     frontend/maxwell/translate/impl/integer_compare_and_set.cpp
+    frontend/maxwell/translate/impl/integer_funnel_shift.cpp
     frontend/maxwell/translate/impl/integer_minimum_maximum.cpp
     frontend/maxwell/translate/impl/integer_popcount.cpp
     frontend/maxwell/translate/impl/integer_scaled_add.cpp

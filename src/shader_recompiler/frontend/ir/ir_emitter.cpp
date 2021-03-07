@@ -813,8 +813,15 @@ U32 IREmitter::IAbs(const U32& value) {
     return Inst<U32>(Opcode::IAbs32, value);
 }
 
-U32 IREmitter::ShiftLeftLogical(const U32& base, const U32& shift) {
-    return Inst<U32>(Opcode::ShiftLeftLogical32, base, shift);
+U32U64 IREmitter::ShiftLeftLogical(const U32U64& base, const U32& shift) {
+    switch (base.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::ShiftLeftLogical32, base, shift);
+    case Type::U64:
+        return Inst<U64>(Opcode::ShiftLeftLogical64, base, shift);
+    default:
+        ThrowInvalidType(base.Type());
+    }
 }
 
 U32U64 IREmitter::ShiftRightLogical(const U32U64& base, const U32& shift) {
@@ -828,8 +835,15 @@ U32U64 IREmitter::ShiftRightLogical(const U32U64& base, const U32& shift) {
     }
 }
 
-U32 IREmitter::ShiftRightArithmetic(const U32& base, const U32& shift) {
-    return Inst<U32>(Opcode::ShiftRightArithmetic32, base, shift);
+U32U64 IREmitter::ShiftRightArithmetic(const U32U64& base, const U32& shift) {
+    switch (base.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::ShiftRightArithmetic32, base, shift);
+    case Type::U64:
+        return Inst<U64>(Opcode::ShiftRightArithmetic64, base, shift);
+    default:
+        ThrowInvalidType(base.Type());
+    }
 }
 
 U32 IREmitter::BitwiseAnd(const U32& a, const U32& b) {
