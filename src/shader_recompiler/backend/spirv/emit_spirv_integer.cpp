@@ -74,16 +74,24 @@ Id EmitShiftLeftLogical32(EmitContext& ctx, Id base, Id shift) {
     return ctx.OpShiftLeftLogical(ctx.U32[1], base, shift);
 }
 
-Id EmitShiftRightLogical32(EmitContext& ctx, Id a, Id b) {
-    return ctx.OpShiftRightLogical(ctx.U32[1], a, b);
+Id EmitShiftLeftLogical64(EmitContext& ctx, Id base, Id shift) {
+    return ctx.OpShiftLeftLogical(ctx.U64, base, shift);
 }
 
-Id EmitShiftRightLogical64(EmitContext& ctx, Id a, Id b) {
-    return ctx.OpShiftRightLogical(ctx.U64, a, b);
+Id EmitShiftRightLogical32(EmitContext& ctx, Id base, Id shift) {
+    return ctx.OpShiftRightLogical(ctx.U32[1], base, shift);
 }
 
-Id EmitShiftRightArithmetic32(EmitContext& ctx, Id a, Id b) {
-    return ctx.OpShiftRightArithmetic(ctx.U32[1], a, b);
+Id EmitShiftRightLogical64(EmitContext& ctx, Id base, Id shift) {
+    return ctx.OpShiftRightLogical(ctx.U64, base, shift);
+}
+
+Id EmitShiftRightArithmetic32(EmitContext& ctx, Id base, Id shift) {
+    return ctx.OpShiftRightArithmetic(ctx.U32[1], base, shift);
+}
+
+Id EmitShiftRightArithmetic64(EmitContext& ctx, Id base, Id shift) {
+    return ctx.OpShiftRightArithmetic(ctx.U64, base, shift);
 }
 
 Id EmitBitwiseAnd32(EmitContext& ctx, Id a, Id b) {
