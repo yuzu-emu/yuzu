@@ -91,6 +91,7 @@ public:
     [[nodiscard]] U1 GetSignFromOp(const Value& op);
     [[nodiscard]] U1 GetCarryFromOp(const Value& op);
     [[nodiscard]] U1 GetOverflowFromOp(const Value& op);
+    [[nodiscard]] U1 GetSparseFromOp(const Value& op);
 
     [[nodiscard]] Value CompositeConstruct(const Value& e1, const Value& e2);
     [[nodiscard]] Value CompositeConstruct(const Value& e1, const Value& e2, const Value& e3);
@@ -159,7 +160,7 @@ public:
     [[nodiscard]] U32 BitFieldInsert(const U32& base, const U32& insert, const U32& offset,
                                      const U32& count);
     [[nodiscard]] U32 BitFieldExtract(const U32& base, const U32& offset, const U32& count,
-                                      bool is_signed);
+                                      bool is_signed = false);
     [[nodiscard]] U32 BitReverse(const U32& value);
     [[nodiscard]] U32 BitCount(const U32& value);
     [[nodiscard]] U32 BitwiseNot(const U32& value);
@@ -186,9 +187,27 @@ public:
     [[nodiscard]] U32U64 ConvertFToS(size_t bitsize, const F16F32F64& value);
     [[nodiscard]] U32U64 ConvertFToU(size_t bitsize, const F16F32F64& value);
     [[nodiscard]] U32U64 ConvertFToI(size_t bitsize, bool is_signed, const F16F32F64& value);
+    [[nodiscard]] F16F32F64 ConvertSToF(size_t bitsize, const U32U64& value);
+    [[nodiscard]] F16F32F64 ConvertUToF(size_t bitsize, const U32U64& value);
+    [[nodiscard]] F16F32F64 ConvertIToF(size_t bitsize, bool is_signed, const U32U64& value);
 
     [[nodiscard]] U32U64 UConvert(size_t result_bitsize, const U32U64& value);
     [[nodiscard]] F16F32F64 FPConvert(size_t result_bitsize, const F16F32F64& value);
+
+    [[nodiscard]] Value ImageSampleImplicitLod(const Value& handle, const Value& coords,
+                                               const F32& bias, const Value& offset,
+                                               const F32& lod_clamp, TextureInstInfo info);
+    [[nodiscard]] Value ImageSampleExplicitLod(const Value& handle, const Value& coords,
+                                               const F32& lod, const Value& offset,
+                                               const F32& lod_clamp, TextureInstInfo info);
+    [[nodiscard]] F32 ImageSampleDrefImplicitLod(const Value& handle, const Value& coords,
+                                                 const F32& dref, const F32& bias,
+                                                 const Value& offset, const F32& lod_clamp,
+                                                 TextureInstInfo info);
+    [[nodiscard]] F32 ImageSampleDrefExplicitLod(const Value& handle, const Value& coords,
+                                                 const F32& dref, const F32& lod,
+                                                 const Value& offset, const F32& lod_clamp,
+                                                 TextureInstInfo info);
 
 private:
     IR::Block::iterator insertion_point;

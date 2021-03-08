@@ -82,6 +82,25 @@ void VisitUsages(Info& info, IR::Inst& inst) {
             throw NotImplementedException("Constant buffer with non-immediate index");
         }
         break;
+    case IR::Opcode::BindlessImageSampleImplicitLod:
+    case IR::Opcode::BindlessImageSampleExplicitLod:
+    case IR::Opcode::BindlessImageSampleDrefImplicitLod:
+    case IR::Opcode::BindlessImageSampleDrefExplicitLod:
+    case IR::Opcode::BoundImageSampleImplicitLod:
+    case IR::Opcode::BoundImageSampleExplicitLod:
+    case IR::Opcode::BoundImageSampleDrefImplicitLod:
+    case IR::Opcode::BoundImageSampleDrefExplicitLod:
+    case IR::Opcode::ImageSampleImplicitLod:
+    case IR::Opcode::ImageSampleExplicitLod:
+    case IR::Opcode::ImageSampleDrefImplicitLod:
+    case IR::Opcode::ImageSampleDrefExplicitLod: {
+        const TextureType type{inst.Flags<IR::TextureInstInfo>().type};
+        info.uses_sampled_1d |= type == TextureType::Color1D || type == TextureType::ColorArray1D ||
+                                type == TextureType::Shadow1D || type == TextureType::ShadowArray1D;
+        info.uses_sparse_residency |=
+            inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp) != nullptr;
+        break;
+    }
     default:
         break;
     }

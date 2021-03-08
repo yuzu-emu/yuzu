@@ -10,26 +10,27 @@
 #include "shader_recompiler/frontend/ir/type.h"
 
 namespace Shader::IR {
-
-static void CheckPseudoInstruction(IR::Inst* inst, IR::Opcode opcode) {
+namespace {
+void CheckPseudoInstruction(IR::Inst* inst, IR::Opcode opcode) {
     if (inst && inst->Opcode() != opcode) {
         throw LogicError("Invalid pseudo-instruction");
     }
 }
 
-static void SetPseudoInstruction(IR::Inst*& dest_inst, IR::Inst* pseudo_inst) {
+void SetPseudoInstruction(IR::Inst*& dest_inst, IR::Inst* pseudo_inst) {
     if (dest_inst) {
         throw LogicError("Only one of each type of pseudo-op allowed");
     }
     dest_inst = pseudo_inst;
 }
 
-static void RemovePseudoInstruction(IR::Inst*& inst, IR::Opcode expected_opcode) {
+void RemovePseudoInstruction(IR::Inst*& inst, IR::Opcode expected_opcode) {
     if (inst->Opcode() != expected_opcode) {
         throw LogicError("Undoing use of invalid pseudo-op");
     }
     inst = nullptr;
 }
+} // Anonymous namespace
 
 Inst::Inst(IR::Opcode op_, u32 flags_) noexcept : op{op_}, flags{flags_} {
     if (op == Opcode::Phi) {
@@ -82,6 +83,7 @@ bool Inst::IsPseudoInstruction() const noexcept {
     case Opcode::GetSignFromOp:
     case Opcode::GetCarryFromOp:
     case Opcode::GetOverflowFromOp:
+    case Opcode::GetSparseFromOp:
         return true;
     default:
         return false;
@@ -96,25 +98,26 @@ bool Inst::AreAllArgsImmediates() const {
                        [](const IR::Value& value) { return value.IsImmediate(); });
 }
 
-bool Inst::HasAssociatedPseudoOperation() const noexcept {
-    return zero_inst || sign_inst || carry_inst || overflow_inst;
-}
-
 Inst* Inst::GetAssociatedPseudoOperation(IR::Opcode opcode) {
-    // This is faster than doing a search through the block.
+    if (!associated_insts) {
+        return nullptr;
+    }
     switch (opcode) {
     case Opcode::GetZeroFromOp:
-        CheckPseudoInstruction(zero_inst, Opcode::GetZeroFromOp);
-        return zero_inst;
+        CheckPseudoInstruction(associated_insts->zero_inst, Opcode::GetZeroFromOp);
+        return associated_insts->zero_inst;
     case Opcode::GetSignFromOp:
-        CheckPseudoInstruction(sign_inst, Opcode::GetSignFromOp);
-        return sign_inst;
+        CheckPseudoInstruction(associated_insts->sign_inst, Opcode::GetSignFromOp);
+        return associated_insts->sign_inst;
     case Opcode::GetCarryFromOp:
-        CheckPseudoInstruction(carry_inst, Opcode::GetCarryFromOp);
-        return carry_inst;
+        CheckPseudoInstruction(associated_insts->carry_inst, Opcode::GetCarryFromOp);
+        return associated_insts->carry_inst;
     case Opcode::GetOverflowFromOp:
-        CheckPseudoInstruction(overflow_inst, Opcode::GetOverflowFromOp);
-        return overflow_inst;
+        CheckPseudoInstruction(associated_insts->overflow_inst, Opcode::GetOverflowFromOp);
+        return associated_insts->overflow_inst;
+    case Opcode::GetSparseFromOp:
+        CheckPseudoInstruction(associated_insts->sparse_inst, Opcode::GetSparseFromOp);
+        return associated_insts->sparse_inst;
     default:
         throw InvalidArgument("{} is not a pseudo-instruction", opcode);
     }
@@ -220,22 +223,37 @@ void Inst::ReplaceOpcode(IR::Opcode opcode) {
     op = opcode;
 }
 
+void AllocAssociatedInsts(std::unique_ptr<AssociatedInsts>& associated_insts) {
+    if (!associated_insts) {
+        associated_insts = std::make_unique<AssociatedInsts>();
+    }
+}
+
 void Inst::Use(const Value& value) {
     Inst* const inst{value.Inst()};
     ++inst->use_count;
 
+    std::unique_ptr<AssociatedInsts>& assoc_inst{inst->associated_insts};
     switch (op) {
     case Opcode::GetZeroFromOp:
-        SetPseudoInstruction(inst->zero_inst, this);
+        AllocAssociatedInsts(assoc_inst);
+        SetPseudoInstruction(assoc_inst->zero_inst, this);
         break;
     case Opcode::GetSignFromOp:
-        SetPseudoInstruction(inst->sign_inst, this);
+        AllocAssociatedInsts(assoc_inst);
+        SetPseudoInstruction(assoc_inst->sign_inst, this);
         break;
     case Opcode::GetCarryFromOp:
-        SetPseudoInstruction(inst->carry_inst, this);
+        AllocAssociatedInsts(assoc_inst);
+        SetPseudoInstruction(assoc_inst->carry_inst, this);
         break;
     case Opcode::GetOverflowFromOp:
-        SetPseudoInstruction(inst->overflow_inst, this);
+        AllocAssociatedInsts(assoc_inst);
+        SetPseudoInstruction(assoc_inst->overflow_inst, this);
+        break;
+    case Opcode::GetSparseFromOp:
+        AllocAssociatedInsts(assoc_inst);
+        SetPseudoInstruction(assoc_inst->sparse_inst, this);
         break;
     default:
         break;
@@ -246,18 +264,23 @@ void Inst::UndoUse(const Value& value) {
     Inst* const inst{value.Inst()};
     --inst->use_count;
 
+    std::unique_ptr<AssociatedInsts>& assoc_inst{inst->associated_insts};
     switch (op) {
     case Opcode::GetZeroFromOp:
-        RemovePseudoInstruction(inst->zero_inst, Opcode::GetZeroFromOp);
+        AllocAssociatedInsts(assoc_inst);
+        RemovePseudoInstruction(assoc_inst->zero_inst, Opcode::GetZeroFromOp);
         break;
     case Opcode::GetSignFromOp:
-        RemovePseudoInstruction(inst->sign_inst, Opcode::GetSignFromOp);
+        AllocAssociatedInsts(assoc_inst);
+        RemovePseudoInstruction(assoc_inst->sign_inst, Opcode::GetSignFromOp);
         break;
     case Opcode::GetCarryFromOp:
-        RemovePseudoInstruction(inst->carry_inst, Opcode::GetCarryFromOp);
+        AllocAssociatedInsts(assoc_inst);
+        RemovePseudoInstruction(assoc_inst->carry_inst, Opcode::GetCarryFromOp);
         break;
     case Opcode::GetOverflowFromOp:
-        RemovePseudoInstruction(inst->overflow_inst, Opcode::GetOverflowFromOp);
+        AllocAssociatedInsts(assoc_inst);
+        RemovePseudoInstruction(assoc_inst->overflow_inst, Opcode::GetOverflowFromOp);
         break;
     default:
         break;

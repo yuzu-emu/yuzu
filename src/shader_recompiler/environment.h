@@ -12,6 +12,8 @@ public:
 
     [[nodiscard]] virtual u64 ReadInstruction(u32 address) = 0;
 
+    [[nodiscard]] virtual u32 TextureBoundBuffer() = 0;
+
     [[nodiscard]] virtual std::array<u32, 3> WorkgroupSize() = 0;
 };
 

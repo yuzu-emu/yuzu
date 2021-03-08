@@ -226,6 +226,7 @@ std::optional<StorageBufferAddr> Track(IR::Block* block, const IR::Value& value,
     }
     // Reversed loops are more likely to find the right result
     for (size_t arg = inst->NumArgs(); arg--;) {
+        IR::Block* inst_block{block};
         if (inst->Opcode() == IR::Opcode::Phi) {
             // If we are going through a phi node, mark the current block as visited
             visited.insert(block);
@@ -235,15 +236,11 @@ std::optional<StorageBufferAddr> Track(IR::Block* block, const IR::Value& value,
                 // Already visited, skip
                 continue;
             }
-            const std::optional storage_buffer{Track(phi_block, inst->Arg(arg), bias, visited)};
-            if (storage_buffer) {
-                return *storage_buffer;
-            }
-        } else {
-            const std::optional storage_buffer{Track(block, inst->Arg(arg), bias, visited)};
-            if (storage_buffer) {
-                return *storage_buffer;
-            }
+            inst_block = phi_block;
+        }
+        const std::optional storage_buffer{Track(inst_block, inst->Arg(arg), bias, visited)};
+        if (storage_buffer) {
+            return *storage_buffer;
         }
     }
     return std::nullopt;

@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include "common/bit_field.h"
 #include "common/common_types.h"
+#include "shader_recompiler/shader_info.h"
 
 namespace Shader::IR {
 
@@ -29,5 +31,13 @@ struct FpControl {
     FmzMode fmz_mode{FmzMode::DontCare};
 };
 static_assert(sizeof(FpControl) <= sizeof(u32));
+
+union TextureInstInfo {
+    u32 raw;
+    BitField<0, 8, TextureType> type;
+    BitField<8, 1, u32> has_bias;
+    BitField<16, 1, u32> has_lod_clamp;
+};
+static_assert(sizeof(TextureInstInfo) <= sizeof(u32));
 
 } // namespace Shader::IR

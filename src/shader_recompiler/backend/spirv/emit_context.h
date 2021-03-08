@@ -29,6 +29,11 @@ private:
     std::array<Id, 4> defs{};
 };
 
+struct TextureDefinition {
+    Id id;
+    Id type;
+};
+
 class EmitContext final : public Sirit::Module {
 public:
     explicit EmitContext(const Profile& profile, IR::Program& program);
@@ -56,6 +61,7 @@ public:
 
     std::array<Id, Info::MAX_CBUFS> cbufs{};
     std::array<Id, Info::MAX_SSBOS> ssbos{};
+    std::vector<TextureDefinition> textures;
 
     Id workgroup_id{};
     Id local_invocation_id{};
@@ -66,6 +72,7 @@ private:
     void DefineSpecialVariables(const Info& info);
     void DefineConstantBuffers(const Info& info, u32& binding);
     void DefineStorageBuffers(const Info& info, u32& binding);
+    void DefineTextures(const Info& info, u32& binding);
     void DefineLabels(IR::Program& program);
 };
 

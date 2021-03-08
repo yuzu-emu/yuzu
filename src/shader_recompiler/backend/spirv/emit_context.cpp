@@ -12,6 +12,43 @@
 #include "shader_recompiler/backend/spirv/emit_context.h"
 
 namespace Shader::Backend::SPIRV {
+namespace {
+Id ImageType(EmitContext& ctx, const TextureDescriptor& desc) {
+    const spv::ImageFormat format{spv::ImageFormat::Unknown};
+    const Id type{ctx.F32[1]};
+    switch (desc.type) {
+    case TextureType::Color1D:
+        return ctx.TypeImage(type, spv::Dim::Dim1D, false, false, false, 1, format);
+    case TextureType::ColorArray1D:
+        return ctx.TypeImage(type, spv::Dim::Dim1D, false, true, false, 1, format);
+    case TextureType::Color2D:
+        return ctx.TypeImage(type, spv::Dim::Dim2D, false, false, false, 1, format);
+    case TextureType::ColorArray2D:
+        return ctx.TypeImage(type, spv::Dim::Dim2D, false, true, false, 1, format);
+    case TextureType::Color3D:
+        return ctx.TypeImage(type, spv::Dim::Dim3D, false, false, false, 1, format);
+    case TextureType::ColorCube:
+        return ctx.TypeImage(type, spv::Dim::Cube, false, false, false, 1, format);
+    case TextureType::ColorArrayCube:
+        return ctx.TypeImage(type, spv::Dim::Cube, false, true, false, 1, format);
+    case TextureType::Shadow1D:
+        return ctx.TypeImage(type, spv::Dim::Dim1D, true, false, false, 1, format);
+    case TextureType::ShadowArray1D:
+        return ctx.TypeImage(type, spv::Dim::Dim1D, true, true, false, 1, format);
+    case TextureType::Shadow2D:
+        return ctx.TypeImage(type, spv::Dim::Dim2D, true, false, false, 1, format);
+    case TextureType::ShadowArray2D:
+        return ctx.TypeImage(type, spv::Dim::Dim2D, true, true, false, 1, format);
+    case TextureType::Shadow3D:
+        return ctx.TypeImage(type, spv::Dim::Dim3D, true, false, false, 1, format);
+    case TextureType::ShadowCube:
+        return ctx.TypeImage(type, spv::Dim::Cube, true, false, false, 1, format);
+    case TextureType::ShadowArrayCube:
+        return ctx.TypeImage(type, spv::Dim::Cube, false, true, false, 1, format);
+    }
+    throw InvalidArgument("Invalid texture type {}", desc.type);
+}
+} // Anonymous namespace
 
 void VectorTypes::Define(Sirit::Module& sirit_ctx, Id base_type, std::string_view name) {
     defs[0] = sirit_ctx.Name(base_type, name);
@@ -35,6 +72,7 @@ EmitContext::EmitContext(const Profile& profile_, IR::Program& program)
     u32 binding{};
     DefineConstantBuffers(program.info, binding);
     DefineStorageBuffers(program.info, binding);
+    DefineTextures(program.info, binding);
 
     DefineLabels(program);
 }
@@ -46,6 +84,10 @@ Id EmitContext::Def(const IR::Value& value) {
         return value.Inst()->Definition<Id>();
     }
     switch (value.Type()) {
+    case IR::Type::Void:
+        // Void instructions are used for optional arguments (e.g. texture offsets)
+        // They are not meant to be used in the SPIR-V module
+        return Id{};
     case IR::Type::U1:
         return value.U1() ? true_value : false_value;
     case IR::Type::U32:
@@ -122,7 +164,7 @@ void EmitContext::DefineConstantBuffers(const Info& info, u32& binding) {
     uniform_u32 = TypePointer(spv::StorageClass::Uniform, U32[1]);
 
     u32 index{};
-    for (const Info::ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
+    for (const ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
         const Id id{AddGlobalVariable(uniform_type, spv::StorageClass::Uniform)};
         Decorate(id, spv::Decoration::Binding, binding);
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
@@ -152,13 +194,36 @@ void EmitContext::DefineStorageBuffers(const Info& info, u32& binding) {
     storage_u32 = TypePointer(spv::StorageClass::StorageBuffer, U32[1]);
 
     u32 index{};
-    for (const Info::StorageBufferDescriptor& desc : info.storage_buffers_descriptors) {
+    for (const StorageBufferDescriptor& desc : info.storage_buffers_descriptors) {
         const Id id{AddGlobalVariable(storage_type, spv::StorageClass::StorageBuffer)};
         Decorate(id, spv::Decoration::Binding, binding);
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
         Name(id, fmt::format("ssbo{}", index));
         std::fill_n(ssbos.data() + index, desc.count, id);
         index += desc.count;
+        binding += desc.count;
+    }
+}
+
+void EmitContext::DefineTextures(const Info& info, u32& binding) {
+    textures.reserve(info.texture_descriptors.size());
+    for (const TextureDescriptor& desc : info.texture_descriptors) {
+        if (desc.count != 1) {
+            throw NotImplementedException("Array of textures");
+        }
+        const Id type{TypeSampledImage(ImageType(*this, desc))};
+        const Id pointer_type{TypePointer(spv::StorageClass::UniformConstant, type)};
+        const Id id{AddGlobalVariable(pointer_type, spv::StorageClass::UniformConstant)};
+        Decorate(id, spv::Decoration::Binding, binding);
+        Decorate(id, spv::Decoration::DescriptorSet, 0U);
+        Name(id, fmt::format("tex{}_{:02x}", desc.cbuf_index, desc.cbuf_offset));
+        for (u32 index = 0; index < desc.count; ++index) {
+            // TODO: Pass count info
+            textures.push_back(TextureDefinition{
+                .id{id},
+                .type{type},
+            });
+        }
         binding += desc.count;
     }
 }

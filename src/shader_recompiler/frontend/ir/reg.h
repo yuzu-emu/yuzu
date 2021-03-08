@@ -293,6 +293,17 @@ constexpr size_t NUM_REGS = 256;
     return reg + (-num);
 }
 
+[[nodiscard]] constexpr Reg operator++(Reg& reg) {
+    reg = reg + 1;
+    return reg;
+}
+
+[[nodiscard]] constexpr Reg operator++(Reg& reg, int) {
+    const Reg copy{reg};
+    reg = reg + 1;
+    return copy;
+}
+
 [[nodiscard]] constexpr size_t RegIndex(Reg reg) noexcept {
     return static_cast<size_t>(reg);
 }

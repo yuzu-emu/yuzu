@@ -241,9 +241,10 @@ void RasterizerVulkan::DispatchCompute() {
     if (!pipeline) {
         return;
     }
-    std::scoped_lock lock{buffer_cache.mutex};
+    std::scoped_lock lock{texture_cache.mutex, buffer_cache.mutex};
     update_descriptor_queue.Acquire();
     pipeline->ConfigureBufferCache(buffer_cache);
+    pipeline->ConfigureTextureCache(kepler_compute, gpu_memory, texture_cache);
     const VkDescriptorSet descriptor_set{pipeline->UpdateDescriptorSet()};
 
     const auto& qmd{kepler_compute.launch_description};

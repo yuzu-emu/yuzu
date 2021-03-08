@@ -7,10 +7,23 @@
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::IR {
-
-[[noreturn]] static void ThrowInvalidType(Type type) {
+namespace {
+[[noreturn]] void ThrowInvalidType(Type type) {
     throw InvalidArgument("Invalid type {}", type);
 }
+
+Value MakeLodClampPair(IREmitter& ir, const F32& bias_lod, const F32& lod_clamp) {
+    if (!bias_lod.IsEmpty() && !lod_clamp.IsEmpty()) {
+        return ir.CompositeConstruct(bias_lod, lod_clamp);
+    } else if (!bias_lod.IsEmpty()) {
+        return bias_lod;
+    } else if (!lod_clamp.IsEmpty()) {
+        return lod_clamp;
+    } else {
+        return Value{};
+    }
+}
+} // Anonymous namespace
 
 U1 IREmitter::Imm1(bool value) const {
     return U1{Value{value}};
@@ -259,6 +272,10 @@ U1 IREmitter::GetCarryFromOp(const Value& op) {
 
 U1 IREmitter::GetOverflowFromOp(const Value& op) {
     return Inst<U1>(Opcode::GetOverflowFromOp, op);
+}
+
+U1 IREmitter::GetSparseFromOp(const Value& op) {
+    return Inst<U1>(Opcode::GetSparseFromOp, op);
 }
 
 F16F32F64 IREmitter::FPAdd(const F16F32F64& a, const F16F32F64& b, FpControl control) {
@@ -1035,6 +1052,82 @@ U32U64 IREmitter::ConvertFToI(size_t bitsize, bool is_signed, const F16F32F64& v
     }
 }
 
+F16F32F64 IREmitter::ConvertSToF(size_t bitsize, const U32U64& value) {
+    switch (bitsize) {
+    case 16:
+        switch (value.Type()) {
+        case Type::U32:
+            return Inst<F16>(Opcode::ConvertF16S32, value);
+        case Type::U64:
+            return Inst<F16>(Opcode::ConvertF16S64, value);
+        default:
+            ThrowInvalidType(value.Type());
+        }
+    case 32:
+        switch (value.Type()) {
+        case Type::U32:
+            return Inst<F32>(Opcode::ConvertF32S32, value);
+        case Type::U64:
+            return Inst<F32>(Opcode::ConvertF32S64, value);
+        default:
+            ThrowInvalidType(value.Type());
+        }
+    case 64:
+        switch (value.Type()) {
+        case Type::U32:
+            return Inst<F16>(Opcode::ConvertF64S32, value);
+        case Type::U64:
+            return Inst<F16>(Opcode::ConvertF64S64, value);
+        default:
+            ThrowInvalidType(value.Type());
+        }
+    default:
+        throw InvalidArgument("Invalid destination bitsize {}", bitsize);
+    }
+}
+
+F16F32F64 IREmitter::ConvertUToF(size_t bitsize, const U32U64& value) {
+    switch (bitsize) {
+    case 16:
+        switch (value.Type()) {
+        case Type::U32:
+            return Inst<F16>(Opcode::ConvertF16U32, value);
+        case Type::U64:
+            return Inst<F16>(Opcode::ConvertF16U64, value);
+        default:
+            ThrowInvalidType(value.Type());
+        }
+    case 32:
+        switch (value.Type()) {
+        case Type::U32:
+            return Inst<F32>(Opcode::ConvertF32U32, value);
+        case Type::U64:
+            return Inst<F32>(Opcode::ConvertF32U64, value);
+        default:
+            ThrowInvalidType(value.Type());
+        }
+    case 64:
+        switch (value.Type()) {
+        case Type::U32:
+            return Inst<F16>(Opcode::ConvertF64U32, value);
+        case Type::U64:
+            return Inst<F16>(Opcode::ConvertF64U64, value);
+        default:
+            ThrowInvalidType(value.Type());
+        }
+    default:
+        throw InvalidArgument("Invalid destination bitsize {}", bitsize);
+    }
+}
+
+F16F32F64 IREmitter::ConvertIToF(size_t bitsize, bool is_signed, const U32U64& value) {
+    if (is_signed) {
+        return ConvertSToF(bitsize, value);
+    } else {
+        return ConvertUToF(bitsize, value);
+    }
+}
+
 U32U64 IREmitter::UConvert(size_t result_bitsize, const U32U64& value) {
     switch (result_bitsize) {
     case 32:
@@ -1105,6 +1198,42 @@ F16F32F64 IREmitter::FPConvert(size_t result_bitsize, const F16F32F64& value) {
         break;
     }
     throw NotImplementedException("Conversion from {} to {} bits", value.Type(), result_bitsize);
+}
+
+Value IREmitter::ImageSampleImplicitLod(const Value& handle, const Value& coords, const F32& bias,
+                                        const Value& offset, const F32& lod_clamp,
+                                        TextureInstInfo info) {
+    const Value bias_lc{MakeLodClampPair(*this, bias, lod_clamp)};
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageSampleImplicitLod
+                                         : Opcode::BindlessImageSampleImplicitLod};
+    return Inst(op, Flags{info}, handle, coords, bias_lc, offset);
+}
+
+Value IREmitter::ImageSampleExplicitLod(const Value& handle, const Value& coords, const F32& lod,
+                                        const Value& offset, const F32& lod_clamp,
+                                        TextureInstInfo info) {
+    const Value lod_lc{MakeLodClampPair(*this, lod, lod_clamp)};
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageSampleExplicitLod
+                                         : Opcode::BindlessImageSampleExplicitLod};
+    return Inst(op, Flags{info}, handle, coords, lod_lc, offset);
+}
+
+F32 IREmitter::ImageSampleDrefImplicitLod(const Value& handle, const Value& coords, const F32& dref,
+                                          const F32& bias, const Value& offset,
+                                          const F32& lod_clamp, TextureInstInfo info) {
+    const Value bias_lc{MakeLodClampPair(*this, bias, lod_clamp)};
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageSampleDrefImplicitLod
+                                         : Opcode::BindlessImageSampleDrefImplicitLod};
+    return Inst<F32>(op, Flags{info}, handle, coords, dref, bias_lc, offset);
+}
+
+F32 IREmitter::ImageSampleDrefExplicitLod(const Value& handle, const Value& coords, const F32& dref,
+                                          const F32& lod, const Value& offset, const F32& lod_clamp,
+                                          TextureInstInfo info) {
+    const Value lod_lc{MakeLodClampPair(*this, lod, lod_clamp)};
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageSampleDrefExplicitLod
+                                         : Opcode::BindlessImageSampleDrefExplicitLod};
+    return Inst<F32>(op, Flags{info}, handle, coords, dref, lod_lc, offset);
 }
 
 } // namespace Shader::IR

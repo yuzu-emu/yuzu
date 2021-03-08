@@ -76,6 +76,10 @@ public:
         return gpu_memory.Read<u64>(program_base + address);
     }
 
+    u32 TextureBoundBuffer() override {
+        return kepler_compute.regs.tex_cb_index;
+    }
+
     std::array<u32, 3> WorkgroupSize() override {
         const auto& qmd{kepler_compute.launch_description};
         return {qmd.block_dim_x, qmd.block_dim_y, qmd.block_dim_z};
