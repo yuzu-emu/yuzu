@@ -83,7 +83,8 @@ void EmitWriteStorage32(EmitContext& ctx, const IR::Value& binding, const IR::Va
                         Id value);
 void EmitWriteStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
                         Id value);
-void EmitWriteStorage128(EmitContext& ctx);
+void EmitWriteStorage128(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                         Id value);
 Id EmitCompositeConstructU32x2(EmitContext& ctx, Id e1, Id e2);
 Id EmitCompositeConstructU32x3(EmitContext& ctx, Id e1, Id e2, Id e3);
 Id EmitCompositeConstructU32x4(EmitContext& ctx, Id e1, Id e2, Id e3, Id e4);
@@ -145,6 +146,7 @@ void EmitGetZeroFromOp(EmitContext& ctx);
 void EmitGetSignFromOp(EmitContext& ctx);
 void EmitGetCarryFromOp(EmitContext& ctx);
 void EmitGetOverflowFromOp(EmitContext& ctx);
+void EmitGetSparseFromOp(EmitContext& ctx);
 Id EmitFPAbs16(EmitContext& ctx, Id value);
 Id EmitFPAbs32(EmitContext& ctx, Id value);
 Id EmitFPAbs64(EmitContext& ctx, Id value);
@@ -291,5 +293,33 @@ Id EmitConvertF16F32(EmitContext& ctx, Id value);
 Id EmitConvertF32F16(EmitContext& ctx, Id value);
 Id EmitConvertF32F64(EmitContext& ctx, Id value);
 Id EmitConvertF64F32(EmitContext& ctx, Id value);
+Id EmitConvertF16S32(EmitContext& ctx, Id value);
+Id EmitConvertF16S64(EmitContext& ctx, Id value);
+Id EmitConvertF16U32(EmitContext& ctx, Id value);
+Id EmitConvertF16U64(EmitContext& ctx, Id value);
+Id EmitConvertF32S32(EmitContext& ctx, Id value);
+Id EmitConvertF32S64(EmitContext& ctx, Id value);
+Id EmitConvertF32U32(EmitContext& ctx, Id value);
+Id EmitConvertF32U64(EmitContext& ctx, Id value);
+Id EmitConvertF64S32(EmitContext& ctx, Id value);
+Id EmitConvertF64S64(EmitContext& ctx, Id value);
+Id EmitConvertF64U32(EmitContext& ctx, Id value);
+Id EmitConvertF64U64(EmitContext& ctx, Id value);
+Id EmitBindlessImageSampleImplicitLod(EmitContext&);
+Id EmitBindlessImageSampleExplicitLod(EmitContext&);
+Id EmitBindlessImageSampleDrefImplicitLod(EmitContext&);
+Id EmitBindlessImageSampleDrefExplicitLod(EmitContext&);
+Id EmitBoundImageSampleImplicitLod(EmitContext&);
+Id EmitBoundImageSampleExplicitLod(EmitContext&);
+Id EmitBoundImageSampleDrefImplicitLod(EmitContext&);
+Id EmitBoundImageSampleDrefExplicitLod(EmitContext&);
+Id EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                              Id bias_lc, Id offset);
+Id EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                              Id lod_lc, Id offset);
+Id EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+                                  Id coords, Id dref, Id bias_lc, Id offset);
+Id EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+                                  Id coords, Id dref, Id lod_lc, Id offset);
 
 } // namespace Shader::Backend::SPIRV

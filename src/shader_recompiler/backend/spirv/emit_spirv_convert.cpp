@@ -102,4 +102,52 @@ Id EmitConvertF64F32(EmitContext& ctx, Id value) {
     return ctx.OpFConvert(ctx.F64[1], value);
 }
 
+Id EmitConvertF16S32(EmitContext& ctx, Id value) {
+    return ctx.OpConvertSToF(ctx.F16[1], value);
+}
+
+Id EmitConvertF16S64(EmitContext& ctx, Id value) {
+    return ctx.OpConvertSToF(ctx.F16[1], value);
+}
+
+Id EmitConvertF16U32(EmitContext& ctx, Id value) {
+    return ctx.OpConvertUToF(ctx.F16[1], value);
+}
+
+Id EmitConvertF16U64(EmitContext& ctx, Id value) {
+    return ctx.OpConvertUToF(ctx.F16[1], value);
+}
+
+Id EmitConvertF32S32(EmitContext& ctx, Id value) {
+    return ctx.OpConvertSToF(ctx.F32[1], value);
+}
+
+Id EmitConvertF32S64(EmitContext& ctx, Id value) {
+    return ctx.OpConvertSToF(ctx.F32[1], value);
+}
+
+Id EmitConvertF32U32(EmitContext& ctx, Id value) {
+    return ctx.OpConvertUToF(ctx.F32[1], value);
+}
+
+Id EmitConvertF32U64(EmitContext& ctx, Id value) {
+    return ctx.OpConvertUToF(ctx.F32[1], value);
+}
+
+Id EmitConvertF64S32(EmitContext& ctx, Id value) {
+    return ctx.OpConvertSToF(ctx.F64[1], value);
+}
+
+Id EmitConvertF64S64(EmitContext& ctx, Id value) {
+    return ctx.OpConvertSToF(ctx.F64[1], value);
+}
+
+Id EmitConvertF64U32(EmitContext& ctx, Id value) {
+    return ctx.OpConvertUToF(ctx.F64[1], value);
+}
+
+Id EmitConvertF64U64(EmitContext& ctx, Id value) {
+    return ctx.OpConvertUToF(ctx.F64[1], value);
+}
+
 } // namespace Shader::Backend::SPIRV

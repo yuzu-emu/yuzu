@@ -9,6 +9,7 @@ add_library(shader_recompiler STATIC
     backend/spirv/emit_spirv_control_flow.cpp
     backend/spirv/emit_spirv_convert.cpp
     backend/spirv/emit_spirv_floating_point.cpp
+    backend/spirv/emit_spirv_image.cpp
     backend/spirv/emit_spirv_integer.cpp
     backend/spirv/emit_spirv_logical.cpp
     backend/spirv/emit_spirv_memory.cpp
@@ -100,6 +101,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/predicate_set_predicate.cpp
     frontend/maxwell/translate/impl/predicate_set_register.cpp
     frontend/maxwell/translate/impl/select_source_with_predicate.cpp
+    frontend/maxwell/translate/impl/texture_sample.cpp
     frontend/maxwell/translate/translate.cpp
     frontend/maxwell/translate/translate.h
     ir_opt/collect_shader_info_pass.cpp
@@ -110,6 +112,7 @@ add_library(shader_recompiler STATIC
     ir_opt/lower_fp16_to_fp32.cpp
     ir_opt/passes.h
     ir_opt/ssa_rewrite_pass.cpp
+    ir_opt/texture_pass.cpp
     ir_opt/verification_pass.cpp
     object_pool.h
     profile.h

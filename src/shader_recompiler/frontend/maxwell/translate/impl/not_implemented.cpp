@@ -585,14 +585,6 @@ void TranslatorVisitor::SYNC(u64) {
     ThrowNotImplemented(Opcode::SYNC);
 }
 
-void TranslatorVisitor::TEX(u64) {
-    ThrowNotImplemented(Opcode::TEX);
-}
-
-void TranslatorVisitor::TEX_b(u64) {
-    ThrowNotImplemented(Opcode::TEX_b);
-}
-
 void TranslatorVisitor::TEXS(u64) {
     ThrowNotImplemented(Opcode::TEXS);
 }

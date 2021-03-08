@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "common/common_types.h"
-#include "environment.h"
+#include "shader_recompiler/environment.h"
 
 namespace Shader {
 
@@ -13,6 +13,8 @@ public:
     ~FileEnvironment() override;
 
     u64 ReadInstruction(u32 offset) override;
+
+    u32 TextureBoundBuffer() override;
 
     std::array<u32, 3> WorkgroupSize() override;
 

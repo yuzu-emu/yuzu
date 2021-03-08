@@ -154,8 +154,22 @@ void EmitWriteStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Va
     ctx.OpStore(high_pointer, ctx.OpCompositeExtract(ctx.U32[1], value, 1U));
 }
 
-void EmitWriteStorage128(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+void EmitWriteStorage128(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                         Id value) {
+    if (!binding.IsImmediate()) {
+        throw NotImplementedException("Dynamic storage buffer indexing");
+    }
+    // TODO: Support reinterpreting bindings, guaranteed to be aligned
+    const Id ssbo{ctx.ssbos[binding.U32()]};
+    const Id base_index{StorageIndex(ctx, offset, sizeof(u32))};
+    for (u32 element = 0; element < 4; ++element) {
+        Id index = base_index;
+        if (element > 0) {
+            index = ctx.OpIAdd(ctx.U32[1], base_index, ctx.Constant(ctx.U32[1], element));
+        }
+        const Id pointer{ctx.OpAccessChain(ctx.storage_u32, ssbo, ctx.u32_zero_value, index)};
+        ctx.OpStore(pointer, ctx.OpCompositeExtract(ctx.U32[1], value, element));
+    }
 }
 
 } // namespace Shader::Backend::SPIRV

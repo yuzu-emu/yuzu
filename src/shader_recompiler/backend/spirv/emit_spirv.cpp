@@ -221,6 +221,14 @@ std::vector<u32> EmitSPIRV(const Profile& profile, Environment& env, IR::Program
                          workgroup_size[2]);
 
     SetupDenormControl(profile, program, ctx, func);
+    if (info.uses_sampled_1d) {
+        ctx.AddCapability(spv::Capability::Sampled1D);
+    }
+    if (info.uses_sparse_residency) {
+        ctx.AddCapability(spv::Capability::SparseResidency);
+    }
+    // TODO: Track this usage
+    ctx.AddCapability(spv::Capability::ImageGatherExtended);
 
     return ctx.Assemble();
 }
@@ -256,6 +264,10 @@ void EmitGetCarryFromOp(EmitContext&) {
 }
 
 void EmitGetOverflowFromOp(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitGetSparseFromOp(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
 

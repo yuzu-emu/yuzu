@@ -75,6 +75,7 @@ private:
         f64 imm_f64;
     };
 };
+static_assert(std::is_trivially_copyable_v<Value>);
 
 template <IR::Type type_>
 class TypedValue : public Value {

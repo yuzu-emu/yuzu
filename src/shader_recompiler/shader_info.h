@@ -8,24 +8,50 @@
 
 #include "common/common_types.h"
 
+#include <boost/container/small_vector.hpp>
 #include <boost/container/static_vector.hpp>
 
 namespace Shader {
 
+enum class TextureType : u32 {
+    Color1D,
+    ColorArray1D,
+    Color2D,
+    ColorArray2D,
+    Color3D,
+    ColorCube,
+    ColorArrayCube,
+    Shadow1D,
+    ShadowArray1D,
+    Shadow2D,
+    ShadowArray2D,
+    Shadow3D,
+    ShadowCube,
+    ShadowArrayCube,
+};
+
+struct TextureDescriptor {
+    TextureType type;
+    u32 cbuf_index;
+    u32 cbuf_offset;
+    u32 count;
+};
+using TextureDescriptors = boost::container::small_vector<TextureDescriptor, 12>;
+
+struct ConstantBufferDescriptor {
+    u32 index;
+    u32 count;
+};
+
+struct StorageBufferDescriptor {
+    u32 cbuf_index;
+    u32 cbuf_offset;
+    u32 count;
+};
+
 struct Info {
     static constexpr size_t MAX_CBUFS{18};
     static constexpr size_t MAX_SSBOS{16};
-
-    struct ConstantBufferDescriptor {
-        u32 index;
-        u32 count;
-    };
-
-    struct StorageBufferDescriptor {
-        u32 cbuf_index;
-        u32 cbuf_offset;
-        u32 count;
-    };
 
     bool uses_workgroup_id{};
     bool uses_local_invocation_id{};
@@ -35,12 +61,16 @@ struct Info {
     bool uses_fp16_denorms_preserve{};
     bool uses_fp32_denorms_flush{};
     bool uses_fp32_denorms_preserve{};
+    bool uses_image_1d{};
+    bool uses_sampled_1d{};
+    bool uses_sparse_residency{};
 
     u32 constant_buffer_mask{};
 
     boost::container::static_vector<ConstantBufferDescriptor, MAX_CBUFS>
         constant_buffer_descriptors;
     boost::container::static_vector<StorageBufferDescriptor, MAX_SSBOS> storage_buffers_descriptors;
+    TextureDescriptors texture_descriptors;
 };
 
 } // namespace Shader

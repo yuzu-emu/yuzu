@@ -62,6 +62,7 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
         Optimization::SsaRewritePass(function.post_order_blocks);
     }
     Optimization::GlobalMemoryToStorageBufferPass(program);
+    Optimization::TexturePass(env, program);
     for (IR::Function& function : functions) {
         Optimization::PostOrderInvoke(Optimization::ConstantPropagationPass, function);
         Optimization::PostOrderInvoke(Optimization::DeadCodeEliminationPass, function);

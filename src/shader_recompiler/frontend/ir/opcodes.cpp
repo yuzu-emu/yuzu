@@ -14,7 +14,7 @@ namespace {
 struct OpcodeMeta {
     std::string_view name;
     Type type;
-    std::array<Type, 4> arg_types;
+    std::array<Type, 5> arg_types;
 };
 
 using enum Type;

@@ -22,7 +22,7 @@ namespace Shader::IR {
 
 class Block;
 
-constexpr size_t MAX_ARG_COUNT = 4;
+struct AssociatedInsts;
 
 class Inst : public boost::intrusive::list_base_hook<> {
 public:
@@ -50,6 +50,11 @@ public:
         return op;
     }
 
+    /// Determines if there is a pseudo-operation associated with this instruction.
+    [[nodiscard]] bool HasAssociatedPseudoOperation() const noexcept {
+        return associated_insts != nullptr;
+    }
+
     /// Determines whether or not this instruction may have side effects.
     [[nodiscard]] bool MayHaveSideEffects() const noexcept;
 
@@ -60,8 +65,6 @@ public:
     /// Determines if all arguments of this instruction are immediates.
     [[nodiscard]] bool AreAllArgsImmediates() const;
 
-    /// Determines if there is a pseudo-operation associated with this instruction.
-    [[nodiscard]] bool HasAssociatedPseudoOperation() const noexcept;
     /// Gets a pseudo-operation associated with this instruction
     [[nodiscard]] Inst* GetAssociatedPseudoOperation(IR::Opcode opcode);
 
@@ -122,14 +125,21 @@ private:
     u32 definition{};
     union {
         NonTriviallyDummy dummy{};
-        std::array<Value, MAX_ARG_COUNT> args;
         std::vector<std::pair<Block*, Value>> phi_args;
+        std::array<Value, 5> args;
     };
-    Inst* zero_inst{};
+    std::unique_ptr<AssociatedInsts> associated_insts;
+};
+static_assert(sizeof(Inst) <= 128, "Inst size unintentionally increased");
+
+struct AssociatedInsts {
+    union {
+        Inst* sparse_inst;
+        Inst* zero_inst{};
+    };
     Inst* sign_inst{};
     Inst* carry_inst{};
     Inst* overflow_inst{};
 };
-static_assert(sizeof(Inst) <= 128, "Inst size unintentionally increased its size");
 
 } // namespace Shader::IR

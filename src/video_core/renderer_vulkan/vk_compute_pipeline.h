@@ -6,9 +6,11 @@
 
 #include "common/common_types.h"
 #include "shader_recompiler/shader_info.h"
+#include "video_core/memory_manager.h"
 #include "video_core/renderer_vulkan/vk_buffer_cache.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
 #include "video_core/renderer_vulkan/vk_pipeline.h"
+#include "video_core/renderer_vulkan/vk_texture_cache.h"
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
@@ -30,6 +32,8 @@ public:
     ComputePipeline(const ComputePipeline&) = delete;
 
     void ConfigureBufferCache(BufferCache& buffer_cache);
+    void ConfigureTextureCache(Tegra::Engines::KeplerCompute& kepler_compute,
+                               Tegra::MemoryManager& gpu_memory, TextureCache& texture_cache);
 
     [[nodiscard]] VkDescriptorSet UpdateDescriptorSet();
 
