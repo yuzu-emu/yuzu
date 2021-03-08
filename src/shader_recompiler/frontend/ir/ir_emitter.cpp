@@ -412,6 +412,8 @@ Value IREmitter::Select(const U1& condition, const Value& true_value, const Valu
         throw InvalidArgument("Mismatching types {} and {}", true_value.Type(), false_value.Type());
     }
     switch (true_value.Type()) {
+    case Type::U1:
+        return Inst(Opcode::SelectU1, condition, true_value, false_value);
     case Type::U8:
         return Inst(Opcode::SelectU8, condition, true_value, false_value);
     case Type::U16:

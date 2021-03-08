@@ -94,6 +94,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/logic_operation_three_input.cpp
     frontend/maxwell/translate/impl/move_predicate_to_register.cpp
     frontend/maxwell/translate/impl/move_register.cpp
+    frontend/maxwell/translate/impl/move_register_to_predicate.cpp
     frontend/maxwell/translate/impl/move_special_register.cpp
     frontend/maxwell/translate/impl/not_implemented.cpp
     frontend/maxwell/translate/impl/predicate_set_predicate.cpp

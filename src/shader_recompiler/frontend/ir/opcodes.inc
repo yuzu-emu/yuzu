@@ -115,6 +115,7 @@ OPCODE(CompositeInsertF64x3,                                F64x3,          F64x
 OPCODE(CompositeInsertF64x4,                                F64x4,          F64x4,          F64,            U32,                            )
 
 // Select operations
+OPCODE(SelectU1,                                            U1,             U1,             U1,             U1,                             )
 OPCODE(SelectU8,                                            U8,             U1,             U8,             U8,                             )
 OPCODE(SelectU16,                                           U16,            U1,             U16,            U16,                            )
 OPCODE(SelectU32,                                           U32,            U1,             U32,            U32,                            )

@@ -114,8 +114,13 @@ Id EmitBitFieldSExtract(EmitContext& ctx, Id base, Id offset, Id count) {
     return ctx.OpBitFieldSExtract(ctx.U32[1], base, offset, count);
 }
 
-Id EmitBitFieldUExtract(EmitContext& ctx, Id base, Id offset, Id count) {
-    return ctx.OpBitFieldUExtract(ctx.U32[1], base, offset, count);
+Id EmitBitFieldUExtract(EmitContext& ctx, IR::Inst* inst, Id base, Id offset, Id count) {
+    const Id result{ctx.OpBitFieldUExtract(ctx.U32[1], base, offset, count)};
+    if (IR::Inst* const zero{inst->GetAssociatedPseudoOperation(IR::Opcode::GetZeroFromOp)}) {
+        zero->SetDefinition(ctx.OpIEqual(ctx.U1, result, ctx.u32_zero_value));
+        zero->Invalidate();
+    }
+    return result;
 }
 
 Id EmitBitReverse32(EmitContext& ctx, Id value) {
