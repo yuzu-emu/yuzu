@@ -513,18 +513,6 @@ void TranslatorVisitor::R2B(u64) {
     ThrowNotImplemented(Opcode::R2B);
 }
 
-void TranslatorVisitor::R2P_reg(u64) {
-    ThrowNotImplemented(Opcode::R2P_reg);
-}
-
-void TranslatorVisitor::R2P_cbuf(u64) {
-    ThrowNotImplemented(Opcode::R2P_cbuf);
-}
-
-void TranslatorVisitor::R2P_imm(u64) {
-    ThrowNotImplemented(Opcode::R2P_imm);
-}
-
 void TranslatorVisitor::RAM(u64) {
     ThrowNotImplemented(Opcode::RAM);
 }
