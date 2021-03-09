@@ -78,7 +78,7 @@ std::optional<ConstBufferAddr> Track(IR::Block* block, const IR::Value& value,
         return std::nullopt;
     }
     const IR::Inst* const inst{value.InstRecursive()};
-    if (inst->Opcode() == IR::Opcode::GetCbuf) {
+    if (inst->Opcode() == IR::Opcode::GetCbufU32) {
         const IR::Value index{inst->Arg(0)};
         const IR::Value offset{inst->Arg(1)};
         if (!index.IsImmediate()) {

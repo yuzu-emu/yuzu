@@ -104,15 +104,23 @@ void EmitContext::DefineCommonTypes(const Info& info) {
 
     U1 = Name(TypeBool(), "u1");
 
-    // TODO: Conditionally define these
-    AddCapability(spv::Capability::Int16);
-    AddCapability(spv::Capability::Int64);
-    U16 = Name(TypeInt(16, false), "u16");
-    U64 = Name(TypeInt(64, false), "u64");
-
     F32.Define(*this, TypeFloat(32), "f32");
     U32.Define(*this, TypeInt(32, false), "u32");
 
+    if (info.uses_int8) {
+        AddCapability(spv::Capability::Int8);
+        U8 = Name(TypeInt(8, false), "u8");
+        S8 = Name(TypeInt(8, true), "s8");
+    }
+    if (info.uses_int16) {
+        AddCapability(spv::Capability::Int16);
+        U16 = Name(TypeInt(16, false), "u16");
+        S16 = Name(TypeInt(16, true), "s16");
+    }
+    if (info.uses_int64) {
+        AddCapability(spv::Capability::Int64);
+        U64 = Name(TypeInt(64, false), "u64");
+    }
     if (info.uses_fp16) {
         AddCapability(spv::Capability::Float16);
         F16.Define(*this, TypeFloat(16), "f16");
@@ -151,26 +159,51 @@ void EmitContext::DefineConstantBuffers(const Info& info, u32& binding) {
     if (info.constant_buffer_descriptors.empty()) {
         return;
     }
-    const Id array_type{TypeArray(U32[1], Constant(U32[1], 4096))};
-    Decorate(array_type, spv::Decoration::ArrayStride, 4U);
+    if (True(info.used_constant_buffer_types & IR::Type::U8)) {
+        DefineConstantBuffers(info, &UniformDefinitions::U8, binding, U8, 'u', sizeof(u8));
+        DefineConstantBuffers(info, &UniformDefinitions::S8, binding, S8, 's', sizeof(s8));
+    }
+    if (True(info.used_constant_buffer_types & IR::Type::U16)) {
+        DefineConstantBuffers(info, &UniformDefinitions::U16, binding, U16, 'u', sizeof(u16));
+        DefineConstantBuffers(info, &UniformDefinitions::S16, binding, S16, 's', sizeof(s16));
+    }
+    if (True(info.used_constant_buffer_types & IR::Type::U32)) {
+        DefineConstantBuffers(info, &UniformDefinitions::U32, binding, U32[1], 'u', sizeof(u32));
+    }
+    if (True(info.used_constant_buffer_types & IR::Type::F32)) {
+        DefineConstantBuffers(info, &UniformDefinitions::F32, binding, F32[1], 'f', sizeof(f32));
+    }
+    if (True(info.used_constant_buffer_types & IR::Type::U64)) {
+        DefineConstantBuffers(info, &UniformDefinitions::U64, binding, U64, 'u', sizeof(u64));
+    }
+    for (const ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
+        binding += desc.count;
+    }
+}
+
+void EmitContext::DefineConstantBuffers(const Info& info, Id UniformDefinitions::*member_type,
+                                        u32 binding, Id type, char type_char, u32 element_size) {
+    const Id array_type{TypeArray(type, Constant(U32[1], 65536U / element_size))};
+    Decorate(array_type, spv::Decoration::ArrayStride, element_size);
 
     const Id struct_type{TypeStruct(array_type)};
-    Name(struct_type, "cbuf_block");
+    Name(struct_type, fmt::format("cbuf_block_{}{}", type_char, element_size * CHAR_BIT));
     Decorate(struct_type, spv::Decoration::Block);
     MemberName(struct_type, 0, "data");
     MemberDecorate(struct_type, 0, spv::Decoration::Offset, 0U);
 
-    const Id uniform_type{TypePointer(spv::StorageClass::Uniform, struct_type)};
-    uniform_u32 = TypePointer(spv::StorageClass::Uniform, U32[1]);
+    const Id struct_pointer_type{TypePointer(spv::StorageClass::Uniform, struct_type)};
+    const Id uniform_type{TypePointer(spv::StorageClass::Uniform, type)};
+    uniform_types.*member_type = uniform_type;
 
-    u32 index{};
     for (const ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
-        const Id id{AddGlobalVariable(uniform_type, spv::StorageClass::Uniform)};
+        const Id id{AddGlobalVariable(struct_pointer_type, spv::StorageClass::Uniform)};
         Decorate(id, spv::Decoration::Binding, binding);
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
         Name(id, fmt::format("c{}", desc.index));
-        std::fill_n(cbufs.data() + desc.index, desc.count, id);
-        index += desc.count;
+        for (size_t i = 0; i < desc.count; ++i) {
+            cbufs[desc.index + i].*member_type = id;
+        }
         binding += desc.count;
     }
 }

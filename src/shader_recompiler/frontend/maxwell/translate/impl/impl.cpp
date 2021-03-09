@@ -56,25 +56,32 @@ IR::F32 TranslatorVisitor::GetFloatReg39(u64 insn) {
     return ir.BitCast<IR::F32>(GetReg39(insn));
 }
 
-IR::U32 TranslatorVisitor::GetCbuf(u64 insn) {
+static std::pair<IR::U32, IR::U32> CbufAddr(u64 insn) {
     union {
         u64 raw;
         BitField<20, 14, s64> offset;
         BitField<34, 5, u64> binding;
     } const cbuf{insn};
+
     if (cbuf.binding >= 18) {
         throw NotImplementedException("Out of bounds constant buffer binding {}", cbuf.binding);
     }
     if (cbuf.offset >= 0x10'000 || cbuf.offset < 0) {
         throw NotImplementedException("Out of bounds constant buffer offset {}", cbuf.offset);
     }
-    const IR::U32 binding{ir.Imm32(static_cast<u32>(cbuf.binding))};
-    const IR::U32 byte_offset{ir.Imm32(static_cast<u32>(cbuf.offset) * 4)};
+    const IR::Value binding{static_cast<u32>(cbuf.binding)};
+    const IR::Value byte_offset{static_cast<u32>(cbuf.offset) * 4};
+    return {IR::U32{binding}, IR::U32{byte_offset}};
+}
+
+IR::U32 TranslatorVisitor::GetCbuf(u64 insn) {
+    const auto[binding, byte_offset]{CbufAddr(insn)};
     return ir.GetCbuf(binding, byte_offset);
 }
 
 IR::F32 TranslatorVisitor::GetFloatCbuf(u64 insn) {
-    return ir.BitCast<IR::F32>(GetCbuf(insn));
+    const auto[binding, byte_offset]{CbufAddr(insn)};
+    return ir.GetFloatCbuf(binding, byte_offset);
 }
 
 IR::U32 TranslatorVisitor::GetImm20(u64 insn) {
@@ -83,6 +90,7 @@ IR::U32 TranslatorVisitor::GetImm20(u64 insn) {
         BitField<20, 19, u64> value;
         BitField<56, 1, u64> is_negative;
     } const imm{insn};
+
     if (imm.is_negative != 0) {
         const s64 raw{static_cast<s64>(imm.value)};
         return ir.Imm32(static_cast<s32>(-(1LL << 19) + raw));
