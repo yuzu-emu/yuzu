@@ -7,6 +7,7 @@
 #include <array>
 
 #include "common/common_types.h"
+#include "shader_recompiler/frontend/ir/type.h"
 
 #include <boost/container/small_vector.hpp>
 #include <boost/container/static_vector.hpp>
@@ -61,9 +62,14 @@ struct Info {
     bool uses_fp16_denorms_preserve{};
     bool uses_fp32_denorms_flush{};
     bool uses_fp32_denorms_preserve{};
+    bool uses_int8{};
+    bool uses_int16{};
+    bool uses_int64{};
     bool uses_image_1d{};
     bool uses_sampled_1d{};
     bool uses_sparse_residency{};
+
+    IR::Type used_constant_buffer_types{};
 
     u32 constant_buffer_mask{};
 

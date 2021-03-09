@@ -10,8 +10,8 @@
 #include <sirit/sirit.h>
 
 #include "shader_recompiler/frontend/ir/program.h"
-#include "shader_recompiler/shader_info.h"
 #include "shader_recompiler/profile.h"
+#include "shader_recompiler/shader_info.h"
 
 namespace Shader::Backend::SPIRV {
 
@@ -34,6 +34,16 @@ struct TextureDefinition {
     Id type;
 };
 
+struct UniformDefinitions {
+    Id U8{};
+    Id S8{};
+    Id U16{};
+    Id S16{};
+    Id U32{};
+    Id F32{};
+    Id U64{};
+};
+
 class EmitContext final : public Sirit::Module {
 public:
     explicit EmitContext(const Profile& profile, IR::Program& program);
@@ -45,7 +55,10 @@ public:
 
     Id void_id{};
     Id U1{};
+    Id U8{};
+    Id S8{};
     Id U16{};
+    Id S16{};
     Id U64{};
     VectorTypes F32;
     VectorTypes U32;
@@ -56,10 +69,11 @@ public:
     Id false_value{};
     Id u32_zero_value{};
 
-    Id uniform_u32{};
+    UniformDefinitions uniform_types;
+
     Id storage_u32{};
 
-    std::array<Id, Info::MAX_CBUFS> cbufs{};
+    std::array<UniformDefinitions, Info::MAX_CBUFS> cbufs{};
     std::array<Id, Info::MAX_SSBOS> ssbos{};
     std::vector<TextureDefinition> textures;
 
@@ -71,6 +85,8 @@ private:
     void DefineCommonConstants();
     void DefineSpecialVariables(const Info& info);
     void DefineConstantBuffers(const Info& info, u32& binding);
+    void DefineConstantBuffers(const Info& info, Id UniformDefinitions::*member_type, u32 binding,
+                               Id type, char type_char, u32 element_size);
     void DefineStorageBuffers(const Info& info, u32& binding);
     void DefineTextures(const Info& info, u32& binding);
     void DefineLabels(IR::Program& program);

@@ -425,10 +425,6 @@ void TranslatorVisitor::LD(u64) {
     ThrowNotImplemented(Opcode::LD);
 }
 
-void TranslatorVisitor::LDC(u64) {
-    ThrowNotImplemented(Opcode::LDC);
-}
-
 void TranslatorVisitor::LDL(u64) {
     ThrowNotImplemented(Opcode::LDL);
 }

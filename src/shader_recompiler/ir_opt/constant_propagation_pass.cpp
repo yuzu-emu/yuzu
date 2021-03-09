@@ -193,7 +193,7 @@ void FoldISub32(IR::Inst& inst) {
     // ISub32 is generally used to subtract two constant buffers, compare and replace this with
     // zero if they equal.
     const auto equal_cbuf{[](IR::Inst* a, IR::Inst* b) {
-        return a->Opcode() == IR::Opcode::GetCbuf && b->Opcode() == IR::Opcode::GetCbuf &&
+        return a->Opcode() == IR::Opcode::GetCbufU32 && b->Opcode() == IR::Opcode::GetCbufU32 &&
                a->Arg(0) == b->Arg(0) && a->Arg(1) == b->Arg(1);
     }};
     IR::Inst* op_a{inst.Arg(0).InstRecursive()};
@@ -207,7 +207,7 @@ void FoldISub32(IR::Inst& inst) {
         // Canonicalize local variables to simplify the following logic
         std::swap(op_a, op_b);
     }
-    if (op_b->Opcode() != IR::Opcode::GetCbuf) {
+    if (op_b->Opcode() != IR::Opcode::GetCbufU32) {
         return;
     }
     IR::Inst* const inst_cbuf{op_b};
@@ -277,7 +277,7 @@ void FoldLogicalNot(IR::Inst& inst) {
     }
 }
 
-template <typename Dest, typename Source>
+template <IR::Opcode op, typename Dest, typename Source>
 void FoldBitCast(IR::Inst& inst, IR::Opcode reverse) {
     const IR::Value value{inst.Arg(0)};
     if (value.IsImmediate()) {
@@ -285,8 +285,18 @@ void FoldBitCast(IR::Inst& inst, IR::Opcode reverse) {
         return;
     }
     IR::Inst* const arg_inst{value.InstRecursive()};
-    if (value.InstRecursive()->Opcode() == reverse) {
+    if (arg_inst->Opcode() == reverse) {
         inst.ReplaceUsesWith(arg_inst->Arg(0));
+        return;
+    }
+    if constexpr (op == IR::Opcode::BitCastF32U32) {
+        if (arg_inst->Opcode() == IR::Opcode::GetCbufU32) {
+            // Replace the bitcast with a typed constant buffer read
+            inst.ReplaceOpcode(IR::Opcode::GetCbufF32);
+            inst.SetArg(0, arg_inst->Arg(0));
+            inst.SetArg(1, arg_inst->Arg(1));
+            return;
+        }
     }
 }
 
@@ -325,9 +335,9 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
     case IR::Opcode::ISub32:
         return FoldISub32(inst);
     case IR::Opcode::BitCastF32U32:
-        return FoldBitCast<f32, u32>(inst, IR::Opcode::BitCastU32F32);
+        return FoldBitCast<IR::Opcode::BitCastF32U32, f32, u32>(inst, IR::Opcode::BitCastU32F32);
     case IR::Opcode::BitCastU32F32:
-        return FoldBitCast<u32, f32>(inst, IR::Opcode::BitCastF32U32);
+        return FoldBitCast<IR::Opcode::BitCastU32F32, u32, f32>(inst, IR::Opcode::BitCastF32U32);
     case IR::Opcode::IAdd64:
         return FoldAdd<u64>(block, inst);
     case IR::Opcode::SelectU32:

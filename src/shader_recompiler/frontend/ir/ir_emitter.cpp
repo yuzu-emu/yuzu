@@ -112,7 +112,27 @@ void IREmitter::SetPred(IR::Pred pred, const U1& value) {
 }
 
 U32 IREmitter::GetCbuf(const U32& binding, const U32& byte_offset) {
-    return Inst<U32>(Opcode::GetCbuf, binding, byte_offset);
+    return Inst<U32>(Opcode::GetCbufU32, binding, byte_offset);
+}
+
+UAny IREmitter::GetCbuf(const U32& binding, const U32& byte_offset, size_t bitsize,
+                        bool is_signed) {
+    switch (bitsize) {
+    case 8:
+        return Inst<U32>(is_signed ? Opcode::GetCbufS8 : Opcode::GetCbufU8, binding, byte_offset);
+    case 16:
+        return Inst<U32>(is_signed ? Opcode::GetCbufS16 : Opcode::GetCbufU16, binding, byte_offset);
+    case 32:
+        return Inst<U32>(Opcode::GetCbufU32, binding, byte_offset);
+    case 64:
+        return Inst<U64>(Opcode::GetCbufU64, binding, byte_offset);
+    default:
+        throw InvalidArgument("Invalid bit size {}", bitsize);
+    }
+}
+
+F32 IREmitter::GetFloatCbuf(const U32& binding, const U32& byte_offset) {
+    return Inst<F32>(Opcode::GetCbufF32, binding, byte_offset);
 }
 
 U1 IREmitter::GetZFlag() {

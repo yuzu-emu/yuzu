@@ -25,18 +25,13 @@ void AddConstantBufferDescriptor(Info& info, u32 index, u32 count) {
 
 void VisitUsages(Info& info, IR::Inst& inst) {
     switch (inst.Opcode()) {
-    case IR::Opcode::WorkgroupId:
-        info.uses_workgroup_id = true;
-        break;
-    case IR::Opcode::LocalInvocationId:
-        info.uses_local_invocation_id = true;
-        break;
     case IR::Opcode::CompositeConstructF16x2:
     case IR::Opcode::CompositeConstructF16x3:
     case IR::Opcode::CompositeConstructF16x4:
     case IR::Opcode::CompositeExtractF16x2:
     case IR::Opcode::CompositeExtractF16x3:
     case IR::Opcode::CompositeExtractF16x4:
+    case IR::Opcode::SelectF16:
     case IR::Opcode::BitCastU16F16:
     case IR::Opcode::BitCastF16U16:
     case IR::Opcode::PackFloat2x16:
@@ -75,13 +70,139 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::FPTrunc64:
         info.uses_fp64 = true;
         break;
-    case IR::Opcode::GetCbuf:
+    default:
+        break;
+    }
+    switch (inst.Opcode()) {
+    case IR::Opcode::GetCbufU8:
+    case IR::Opcode::GetCbufS8:
+    case IR::Opcode::UndefU8:
+    case IR::Opcode::LoadGlobalU8:
+    case IR::Opcode::LoadGlobalS8:
+    case IR::Opcode::WriteGlobalU8:
+    case IR::Opcode::WriteGlobalS8:
+    case IR::Opcode::LoadStorageU8:
+    case IR::Opcode::LoadStorageS8:
+    case IR::Opcode::WriteStorageU8:
+    case IR::Opcode::WriteStorageS8:
+    case IR::Opcode::SelectU8:
+        info.uses_int8 = true;
+        break;
+    default:
+        break;
+    }
+    switch (inst.Opcode()) {
+    case IR::Opcode::GetCbufU16:
+    case IR::Opcode::GetCbufS16:
+    case IR::Opcode::UndefU16:
+    case IR::Opcode::LoadGlobalU16:
+    case IR::Opcode::LoadGlobalS16:
+    case IR::Opcode::WriteGlobalU16:
+    case IR::Opcode::WriteGlobalS16:
+    case IR::Opcode::LoadStorageU16:
+    case IR::Opcode::LoadStorageS16:
+    case IR::Opcode::WriteStorageU16:
+    case IR::Opcode::WriteStorageS16:
+    case IR::Opcode::SelectU16:
+    case IR::Opcode::BitCastU16F16:
+    case IR::Opcode::BitCastF16U16:
+    case IR::Opcode::ConvertS16F16:
+    case IR::Opcode::ConvertS16F32:
+    case IR::Opcode::ConvertS16F64:
+    case IR::Opcode::ConvertU16F16:
+    case IR::Opcode::ConvertU16F32:
+    case IR::Opcode::ConvertU16F64:
+        info.uses_int16 = true;
+        break;
+    default:
+        break;
+    }
+    switch (inst.Opcode()) {
+    case IR::Opcode::GetCbufU64:
+    case IR::Opcode::UndefU64:
+    case IR::Opcode::LoadGlobalU8:
+    case IR::Opcode::LoadGlobalS8:
+    case IR::Opcode::LoadGlobalU16:
+    case IR::Opcode::LoadGlobalS16:
+    case IR::Opcode::LoadGlobal32:
+    case IR::Opcode::LoadGlobal64:
+    case IR::Opcode::LoadGlobal128:
+    case IR::Opcode::WriteGlobalU8:
+    case IR::Opcode::WriteGlobalS8:
+    case IR::Opcode::WriteGlobalU16:
+    case IR::Opcode::WriteGlobalS16:
+    case IR::Opcode::WriteGlobal32:
+    case IR::Opcode::WriteGlobal64:
+    case IR::Opcode::WriteGlobal128:
+    case IR::Opcode::SelectU64:
+    case IR::Opcode::BitCastU64F64:
+    case IR::Opcode::BitCastF64U64:
+    case IR::Opcode::PackUint2x32:
+    case IR::Opcode::UnpackUint2x32:
+    case IR::Opcode::IAdd64:
+    case IR::Opcode::ISub64:
+    case IR::Opcode::INeg64:
+    case IR::Opcode::ShiftLeftLogical64:
+    case IR::Opcode::ShiftRightLogical64:
+    case IR::Opcode::ShiftRightArithmetic64:
+    case IR::Opcode::ConvertS64F16:
+    case IR::Opcode::ConvertS64F32:
+    case IR::Opcode::ConvertS64F64:
+    case IR::Opcode::ConvertU64F16:
+    case IR::Opcode::ConvertU64F32:
+    case IR::Opcode::ConvertU64F64:
+    case IR::Opcode::ConvertU64U32:
+    case IR::Opcode::ConvertU32U64:
+    case IR::Opcode::ConvertF16U64:
+    case IR::Opcode::ConvertF32U64:
+    case IR::Opcode::ConvertF64U64:
+        info.uses_int64 = true;
+        break;
+    default:
+        break;
+    }
+    switch (inst.Opcode()) {
+    case IR::Opcode::WorkgroupId:
+        info.uses_workgroup_id = true;
+        break;
+    case IR::Opcode::LocalInvocationId:
+        info.uses_local_invocation_id = true;
+        break;
+    case IR::Opcode::GetCbufU8:
+    case IR::Opcode::GetCbufS8:
+    case IR::Opcode::GetCbufU16:
+    case IR::Opcode::GetCbufS16:
+    case IR::Opcode::GetCbufU32:
+    case IR::Opcode::GetCbufF32:
+    case IR::Opcode::GetCbufU64: {
         if (const IR::Value index{inst.Arg(0)}; index.IsImmediate()) {
             AddConstantBufferDescriptor(info, index.U32(), 1);
         } else {
             throw NotImplementedException("Constant buffer with non-immediate index");
         }
+        switch (inst.Opcode()) {
+        case IR::Opcode::GetCbufU8:
+        case IR::Opcode::GetCbufS8:
+            info.used_constant_buffer_types |= IR::Type::U8;
+            break;
+        case IR::Opcode::GetCbufU16:
+        case IR::Opcode::GetCbufS16:
+            info.used_constant_buffer_types |= IR::Type::U16;
+            break;
+        case IR::Opcode::GetCbufU32:
+            info.used_constant_buffer_types |= IR::Type::U32;
+            break;
+        case IR::Opcode::GetCbufF32:
+            info.used_constant_buffer_types |= IR::Type::F32;
+            break;
+        case IR::Opcode::GetCbufU64:
+            info.used_constant_buffer_types |= IR::Type::U64;
+            break;
+        default:
+            break;
+        }
         break;
+    }
     case IR::Opcode::BindlessImageSampleImplicitLod:
     case IR::Opcode::BindlessImageSampleExplicitLod:
     case IR::Opcode::BindlessImageSampleDrefImplicitLod:
