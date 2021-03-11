@@ -697,93 +697,107 @@ F16F32F64 IREmitter::FPTrunc(const F16F32F64& value, FpControl control) {
     }
 }
 
-U1 IREmitter::FPEqual(const F16F32F64& lhs, const F16F32F64& rhs, bool ordered) {
+U1 IREmitter::FPEqual(const F16F32F64& lhs, const F16F32F64& rhs, FpControl control, bool ordered) {
     if (lhs.Type() != rhs.Type()) {
         throw InvalidArgument("Mismatching types {} and {}", lhs.Type(), rhs.Type());
     }
     switch (lhs.Type()) {
     case Type::F16:
-        return Inst<U1>(ordered ? Opcode::FPOrdEqual16 : Opcode::FPUnordEqual16, lhs, rhs);
+        return Inst<U1>(ordered ? Opcode::FPOrdEqual16 : Opcode::FPUnordEqual16, Flags{control},
+                        lhs, rhs);
     case Type::F32:
-        return Inst<U1>(ordered ? Opcode::FPOrdEqual32 : Opcode::FPUnordEqual32, lhs, rhs);
+        return Inst<U1>(ordered ? Opcode::FPOrdEqual32 : Opcode::FPUnordEqual32, Flags{control},
+                        lhs, rhs);
     case Type::F64:
-        return Inst<U1>(ordered ? Opcode::FPOrdEqual64 : Opcode::FPUnordEqual64, lhs, rhs);
+        return Inst<U1>(ordered ? Opcode::FPOrdEqual64 : Opcode::FPUnordEqual64, Flags{control},
+                        lhs, rhs);
     default:
         ThrowInvalidType(lhs.Type());
     }
 }
 
-U1 IREmitter::FPNotEqual(const F16F32F64& lhs, const F16F32F64& rhs, bool ordered) {
+U1 IREmitter::FPNotEqual(const F16F32F64& lhs, const F16F32F64& rhs, FpControl control,
+                         bool ordered) {
     if (lhs.Type() != rhs.Type()) {
         throw InvalidArgument("Mismatching types {} and {}", lhs.Type(), rhs.Type());
     }
     switch (lhs.Type()) {
     case Type::F16:
-        return Inst<U1>(ordered ? Opcode::FPOrdNotEqual16 : Opcode::FPUnordNotEqual16, lhs, rhs);
+        return Inst<U1>(ordered ? Opcode::FPOrdNotEqual16 : Opcode::FPUnordNotEqual16,
+                        Flags{control}, lhs, rhs);
     case Type::F32:
-        return Inst<U1>(ordered ? Opcode::FPOrdNotEqual32 : Opcode::FPUnordNotEqual32, lhs, rhs);
+        return Inst<U1>(ordered ? Opcode::FPOrdNotEqual32 : Opcode::FPUnordNotEqual32,
+                        Flags{control}, lhs, rhs);
     case Type::F64:
-        return Inst<U1>(ordered ? Opcode::FPOrdNotEqual64 : Opcode::FPUnordNotEqual64, lhs, rhs);
+        return Inst<U1>(ordered ? Opcode::FPOrdNotEqual64 : Opcode::FPUnordNotEqual64,
+                        Flags{control}, lhs, rhs);
     default:
         ThrowInvalidType(lhs.Type());
     }
 }
 
-U1 IREmitter::FPLessThan(const F16F32F64& lhs, const F16F32F64& rhs, bool ordered) {
+U1 IREmitter::FPLessThan(const F16F32F64& lhs, const F16F32F64& rhs, FpControl control,
+                         bool ordered) {
     if (lhs.Type() != rhs.Type()) {
         throw InvalidArgument("Mismatching types {} and {}", lhs.Type(), rhs.Type());
     }
     switch (lhs.Type()) {
     case Type::F16:
-        return Inst<U1>(ordered ? Opcode::FPOrdLessThan16 : Opcode::FPUnordLessThan16, lhs, rhs);
+        return Inst<U1>(ordered ? Opcode::FPOrdLessThan16 : Opcode::FPUnordLessThan16,
+                        Flags{control}, lhs, rhs);
     case Type::F32:
-        return Inst<U1>(ordered ? Opcode::FPOrdLessThan32 : Opcode::FPUnordLessThan32, lhs, rhs);
+        return Inst<U1>(ordered ? Opcode::FPOrdLessThan32 : Opcode::FPUnordLessThan32,
+                        Flags{control}, lhs, rhs);
     case Type::F64:
-        return Inst<U1>(ordered ? Opcode::FPOrdLessThan64 : Opcode::FPUnordLessThan64, lhs, rhs);
+        return Inst<U1>(ordered ? Opcode::FPOrdLessThan64 : Opcode::FPUnordLessThan64,
+                        Flags{control}, lhs, rhs);
     default:
         ThrowInvalidType(lhs.Type());
     }
 }
 
-U1 IREmitter::FPGreaterThan(const F16F32F64& lhs, const F16F32F64& rhs, bool ordered) {
+U1 IREmitter::FPGreaterThan(const F16F32F64& lhs, const F16F32F64& rhs, FpControl control,
+                            bool ordered) {
     if (lhs.Type() != rhs.Type()) {
         throw InvalidArgument("Mismatching types {} and {}", lhs.Type(), rhs.Type());
     }
     switch (lhs.Type()) {
     case Type::F16:
-        return Inst<U1>(ordered ? Opcode::FPOrdGreaterThan16 : Opcode::FPUnordGreaterThan16, lhs,
-                        rhs);
+        return Inst<U1>(ordered ? Opcode::FPOrdGreaterThan16 : Opcode::FPUnordGreaterThan16,
+                        Flags{control}, lhs, rhs);
     case Type::F32:
-        return Inst<U1>(ordered ? Opcode::FPOrdGreaterThan32 : Opcode::FPUnordGreaterThan32, lhs,
-                        rhs);
+        return Inst<U1>(ordered ? Opcode::FPOrdGreaterThan32 : Opcode::FPUnordGreaterThan32,
+                        Flags{control}, lhs, rhs);
     case Type::F64:
-        return Inst<U1>(ordered ? Opcode::FPOrdGreaterThan64 : Opcode::FPUnordGreaterThan64, lhs,
-                        rhs);
+        return Inst<U1>(ordered ? Opcode::FPOrdGreaterThan64 : Opcode::FPUnordGreaterThan64,
+                        Flags{control}, lhs, rhs);
     default:
         ThrowInvalidType(lhs.Type());
     }
 }
 
-U1 IREmitter::FPLessThanEqual(const F16F32F64& lhs, const F16F32F64& rhs, bool ordered) {
+U1 IREmitter::FPLessThanEqual(const F16F32F64& lhs, const F16F32F64& rhs, FpControl control,
+                              bool ordered) {
     if (lhs.Type() != rhs.Type()) {
         throw InvalidArgument("Mismatching types {} and {}", lhs.Type(), rhs.Type());
     }
     switch (lhs.Type()) {
     case Type::F16:
         return Inst<U1>(ordered ? Opcode::FPOrdLessThanEqual16 : Opcode::FPUnordLessThanEqual16,
-                        lhs, rhs);
+                        Flags{control}, lhs, rhs);
     case Type::F32:
         return Inst<U1>(ordered ? Opcode::FPOrdLessThanEqual32 : Opcode::FPUnordLessThanEqual32,
-                        lhs, rhs);
+                        Flags{control}, lhs, rhs);
     case Type::F64:
         return Inst<U1>(ordered ? Opcode::FPOrdLessThanEqual64 : Opcode::FPUnordLessThanEqual64,
-                        lhs, rhs);
+                        Flags{control}, lhs, rhs);
     default:
         ThrowInvalidType(lhs.Type());
     }
 }
 
-U1 IREmitter::FPGreaterThanEqual(const F16F32F64& lhs, const F16F32F64& rhs, bool ordered) {
+U1 IREmitter::FPGreaterThanEqual(const F16F32F64& lhs, const F16F32F64& rhs, FpControl control,
+                                 bool ordered) {
     if (lhs.Type() != rhs.Type()) {
         throw InvalidArgument("Mismatching types {} and {}", lhs.Type(), rhs.Type());
     }
@@ -791,18 +805,30 @@ U1 IREmitter::FPGreaterThanEqual(const F16F32F64& lhs, const F16F32F64& rhs, boo
     case Type::F16:
         return Inst<U1>(ordered ? Opcode::FPOrdGreaterThanEqual16
                                 : Opcode::FPUnordGreaterThanEqual16,
-                        lhs, rhs);
+                        Flags{control}, lhs, rhs);
     case Type::F32:
         return Inst<U1>(ordered ? Opcode::FPOrdGreaterThanEqual32
                                 : Opcode::FPUnordGreaterThanEqual32,
-                        lhs, rhs);
+                        Flags{control}, lhs, rhs);
     case Type::F64:
         return Inst<U1>(ordered ? Opcode::FPOrdGreaterThanEqual64
                                 : Opcode::FPUnordGreaterThanEqual64,
-                        lhs, rhs);
+                        Flags{control}, lhs, rhs);
     default:
         ThrowInvalidType(lhs.Type());
     }
+}
+
+U1 IREmitter::FPIsNan(const F32& value) {
+    return Inst<U1>(Opcode::FPIsNan32, value);
+}
+
+U1 IREmitter::FPOrdered(const F32& lhs, const F32& rhs) {
+    return LogicalAnd(LogicalNot(FPIsNan(lhs)), LogicalNot(FPIsNan(rhs)));
+}
+
+U1 IREmitter::FPUnordered(const F32& lhs, const F32& rhs) {
+    return LogicalOr(FPIsNan(lhs), FPIsNan(rhs));
 }
 
 U32U64 IREmitter::IAdd(const U32U64& a, const U32U64& b) {

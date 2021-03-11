@@ -140,14 +140,21 @@ public:
     [[nodiscard]] F16F32F64 FPCeil(const F16F32F64& value, FpControl control = {});
     [[nodiscard]] F16F32F64 FPTrunc(const F16F32F64& value, FpControl control = {});
 
-    [[nodiscard]] U1 FPEqual(const F16F32F64& lhs, const F16F32F64& rhs, bool ordered = true);
-    [[nodiscard]] U1 FPNotEqual(const F16F32F64& lhs, const F16F32F64& rhs, bool ordered = true);
-    [[nodiscard]] U1 FPLessThan(const F16F32F64& lhs, const F16F32F64& rhs, bool ordered = true);
-    [[nodiscard]] U1 FPGreaterThan(const F16F32F64& lhs, const F16F32F64& rhs, bool ordered = true);
+    [[nodiscard]] U1 FPEqual(const F16F32F64& lhs, const F16F32F64& rhs, FpControl control = {},
+                             bool ordered = true);
+    [[nodiscard]] U1 FPNotEqual(const F16F32F64& lhs, const F16F32F64& rhs, FpControl control = {},
+                                bool ordered = true);
+    [[nodiscard]] U1 FPLessThan(const F16F32F64& lhs, const F16F32F64& rhs, FpControl control = {},
+                                bool ordered = true);
+    [[nodiscard]] U1 FPGreaterThan(const F16F32F64& lhs, const F16F32F64& rhs,
+                                   FpControl control = {}, bool ordered = true);
     [[nodiscard]] U1 FPLessThanEqual(const F16F32F64& lhs, const F16F32F64& rhs,
-                                     bool ordered = true);
+                                     FpControl control = {}, bool ordered = true);
     [[nodiscard]] U1 FPGreaterThanEqual(const F16F32F64& lhs, const F16F32F64& rhs,
-                                        bool ordered = true);
+                                        FpControl control = {}, bool ordered = true);
+    [[nodiscard]] U1 FPIsNan(const F32& value);
+    [[nodiscard]] U1 FPOrdered(const F32& lhs, const F32& rhs);
+    [[nodiscard]] U1 FPUnordered(const F32& lhs, const F32& rhs);
 
     [[nodiscard]] U32U64 IAdd(const U32U64& a, const U32U64& b);
     [[nodiscard]] U32U64 ISub(const U32U64& a, const U32U64& b);

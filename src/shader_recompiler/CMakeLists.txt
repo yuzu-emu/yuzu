@@ -67,6 +67,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/common_funcs.h
     frontend/maxwell/translate/impl/find_leading_one.cpp
     frontend/maxwell/translate/impl/floating_point_add.cpp
+    frontend/maxwell/translate/impl/floating_point_compare.cpp
     frontend/maxwell/translate/impl/floating_point_conversion_integer.cpp
     frontend/maxwell/translate/impl/floating_point_fused_multiply_add.cpp
     frontend/maxwell/translate/impl/floating_point_multi_function.cpp
