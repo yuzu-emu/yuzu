@@ -256,7 +256,19 @@ void VisitFpModifiers(Info& info, IR::Inst& inst) {
     case IR::Opcode::FPRoundEven32:
     case IR::Opcode::FPFloor32:
     case IR::Opcode::FPCeil32:
-    case IR::Opcode::FPTrunc32: {
+    case IR::Opcode::FPTrunc32:
+    case IR::Opcode::FPOrdEqual32:
+    case IR::Opcode::FPUnordEqual32:
+    case IR::Opcode::FPOrdNotEqual32:
+    case IR::Opcode::FPUnordNotEqual32:
+    case IR::Opcode::FPOrdLessThan32:
+    case IR::Opcode::FPUnordLessThan32:
+    case IR::Opcode::FPOrdGreaterThan32:
+    case IR::Opcode::FPUnordGreaterThan32:
+    case IR::Opcode::FPOrdLessThanEqual32:
+    case IR::Opcode::FPUnordLessThanEqual32:
+    case IR::Opcode::FPOrdGreaterThanEqual32:
+    case IR::Opcode::FPUnordGreaterThanEqual32: {
         const auto control{inst.Flags<IR::FpControl>()};
         switch (control.fmz_mode) {
         case IR::FmzMode::DontCare:

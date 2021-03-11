@@ -346,4 +346,8 @@ Id EmitFPUnordGreaterThanEqual64(EmitContext& ctx, Id lhs, Id rhs) {
     return ctx.OpFUnordGreaterThanEqual(ctx.U1, lhs, rhs);
 }
 
+Id EmitFPIsNan32(EmitContext& ctx, Id value) {
+    return ctx.OpIsNan(ctx.U1, value);
+}
+
 } // namespace Shader::Backend::SPIRV
