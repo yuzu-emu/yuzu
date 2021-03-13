@@ -197,7 +197,6 @@ OPCODE(FPTrunc16,                                           F16,            F16,
 OPCODE(FPTrunc32,                                           F32,            F32,                                                                            )
 OPCODE(FPTrunc64,                                           F64,            F64,                                                                            )
 
-<<<<<<< HEAD
 OPCODE(FPOrdEqual16,                                        U1,             F16,            F16,                                                            )
 OPCODE(FPOrdEqual32,                                        U1,             F32,            F32,                                                            )
 OPCODE(FPOrdEqual64,                                        U1,             F64,            F64,                                                            )
