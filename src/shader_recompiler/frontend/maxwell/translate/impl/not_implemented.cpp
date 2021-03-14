@@ -65,8 +65,8 @@ void TranslatorVisitor::BRX(u64) {
     ThrowNotImplemented(Opcode::BRX);
 }
 
-void TranslatorVisitor::CAL(u64) {
-    ThrowNotImplemented(Opcode::CAL);
+void TranslatorVisitor::CAL() {
+    // CAL is a no-op
 }
 
 void TranslatorVisitor::CCTL(u64) {

@@ -62,7 +62,7 @@ public:
     void BRA(u64 insn);
     void BRK(u64 insn);
     void BRX(u64 insn);
-    void CAL(u64 insn);
+    void CAL();
     void CCTL(u64 insn);
     void CCTLL(u64 insn);
     void CONT(u64 insn);

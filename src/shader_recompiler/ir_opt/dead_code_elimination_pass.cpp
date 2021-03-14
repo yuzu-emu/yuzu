@@ -10,12 +10,14 @@
 
 namespace Shader::Optimization {
 
-void DeadCodeEliminationPass(IR::Block& block) {
+void DeadCodeEliminationPass(IR::Program& program) {
     // We iterate over the instructions in reverse order.
     // This is because removing an instruction reduces the number of uses for earlier instructions.
-    for (IR::Inst& inst : block | std::views::reverse) {
-        if (!inst.HasUses() && !inst.MayHaveSideEffects()) {
-            inst.Invalidate();
+    for (IR::Block* const block : program.post_order_blocks) {
+        for (IR::Inst& inst : block->Instructions() | std::views::reverse) {
+            if (!inst.HasUses() && !inst.MayHaveSideEffects()) {
+                inst.Invalidate();
+            }
         }
     }
 }

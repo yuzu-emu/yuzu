@@ -9,7 +9,8 @@
 
 #include <fmt/format.h>
 
-#include "shader_recompiler/frontend/ir/function.h"
+#include "shader_recompiler/frontend/ir/basic_block.h"
+#include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/program.h"
 
 namespace Shader::IR {
@@ -19,18 +20,13 @@ std::string DumpProgram(const Program& program) {
     std::map<const IR::Inst*, size_t> inst_to_index;
     std::map<const IR::Block*, size_t> block_to_index;
 
-    for (const IR::Function& function : program.functions) {
-        for (const IR::Block* const block : function.blocks) {
-            block_to_index.emplace(block, index);
-            ++index;
-        }
+    for (const IR::Block* const block : program.blocks) {
+        block_to_index.emplace(block, index);
+        ++index;
     }
     std::string ret;
-    for (const IR::Function& function : program.functions) {
-        ret += fmt::format("Function\n");
-        for (const auto& block : function.blocks) {
-            ret += IR::DumpBlock(*block, block_to_index, inst_to_index, index) + '\n';
-        }
+    for (const auto& block : program.blocks) {
+        ret += IR::DumpBlock(*block, block_to_index, inst_to_index, index) + '\n';
     }
     return ret;
 }

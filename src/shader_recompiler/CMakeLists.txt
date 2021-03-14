@@ -27,8 +27,6 @@ add_library(shader_recompiler STATIC
     frontend/ir/condition.h
     frontend/ir/flow_test.cpp
     frontend/ir/flow_test.h
-    frontend/ir/function.cpp
-    frontend/ir/function.h
     frontend/ir/ir_emitter.cpp
     frontend/ir/ir_emitter.h
     frontend/ir/microinstruction.cpp
@@ -43,8 +41,6 @@ add_library(shader_recompiler STATIC
     frontend/ir/program.cpp
     frontend/ir/program.h
     frontend/ir/reg.h
-    frontend/ir/structured_control_flow.cpp
-    frontend/ir/structured_control_flow.h
     frontend/ir/type.cpp
     frontend/ir/type.h
     frontend/ir/value.cpp
@@ -60,6 +56,8 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/opcodes.h
     frontend/maxwell/program.cpp
     frontend/maxwell/program.h
+    frontend/maxwell/structured_control_flow.cpp
+    frontend/maxwell/structured_control_flow.h
     frontend/maxwell/translate/impl/bitfield_extract.cpp
     frontend/maxwell/translate/impl/bitfield_insert.cpp
     frontend/maxwell/translate/impl/common_encoding.h

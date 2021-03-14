@@ -77,11 +77,9 @@ IR::Opcode Replace(IR::Opcode op) {
 } // Anonymous namespace
 
 void LowerFp16ToFp32(IR::Program& program) {
-    for (IR::Function& function : program.functions) {
-        for (IR::Block* const block : function.blocks) {
-            for (IR::Inst& inst : block->Instructions()) {
-                inst.ReplaceOpcode(Replace(inst.Opcode()));
-            }
+    for (IR::Block* const block : program.blocks) {
+        for (IR::Inst& inst : block->Instructions()) {
+            inst.ReplaceOpcode(Replace(inst.Opcode()));
         }
     }
 }

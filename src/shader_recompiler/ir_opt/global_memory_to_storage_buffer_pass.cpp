@@ -351,14 +351,12 @@ void GlobalMemoryToStorageBufferPass(IR::Program& program) {
     StorageBufferSet storage_buffers;
     StorageInstVector to_replace;
 
-    for (IR::Function& function : program.functions) {
-        for (IR::Block* const block : function.post_order_blocks) {
-            for (IR::Inst& inst : block->Instructions()) {
-                if (!IsGlobalMemory(inst)) {
-                    continue;
-                }
-                CollectStorageBuffers(*block, inst, storage_buffers, to_replace);
+    for (IR::Block* const block : program.post_order_blocks) {
+        for (IR::Inst& inst : block->Instructions()) {
+            if (!IsGlobalMemory(inst)) {
+                continue;
             }
+            CollectStorageBuffers(*block, inst, storage_buffers, to_replace);
         }
     }
     Info& info{program.info};

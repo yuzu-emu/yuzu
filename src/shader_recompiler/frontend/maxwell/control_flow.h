@@ -20,16 +20,13 @@
 #include "shader_recompiler/frontend/maxwell/opcodes.h"
 #include "shader_recompiler/object_pool.h"
 
-namespace Shader::IR {
-class Block;
-}
-
 namespace Shader::Maxwell::Flow {
 
 using FunctionId = size_t;
 
 enum class EndClass {
     Branch,
+    Call,
     Exit,
     Return,
 };
@@ -75,9 +72,14 @@ struct Block : boost::intrusive::set_base_hook<
     EndClass end_class;
     Stack stack;
     IR::Condition cond;
-    Block* branch_true;
-    Block* branch_false;
-    IR::Block* ir;
+    union {
+        Block* branch_true;
+        FunctionId function_call;
+    };
+    union {
+        Block* branch_false;
+        Block* return_block;
+    };
 };
 
 struct Label {
@@ -87,7 +89,7 @@ struct Label {
 };
 
 struct Function {
-    Function(Location start_address);
+    explicit Function(ObjectPool<Block>& block_pool, Location start_address);
 
     Location entrypoint;
     boost::container::small_vector<Label, 16> labels;
@@ -137,7 +139,6 @@ private:
     void AnalyzeBRA(Block* block, FunctionId function_id, Location pc, Instruction inst,
                     bool is_absolute);
     void AnalyzeBRX(Block* block, Location pc, Instruction inst, bool is_absolute);
-    void AnalyzeCAL(Location pc, Instruction inst, bool is_absolute);
     AnalysisState AnalyzeEXIT(Block* block, FunctionId function_id, Location pc, Instruction inst);
 
     /// Return the branch target block id
