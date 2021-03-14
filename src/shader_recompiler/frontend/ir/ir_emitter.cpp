@@ -831,6 +831,34 @@ U1 IREmitter::FPUnordered(const F32& lhs, const F32& rhs) {
     return LogicalOr(FPIsNan(lhs), FPIsNan(rhs));
 }
 
+F32F64 IREmitter::FPMax(const F32F64& lhs, const F32F64& rhs, FpControl control) {
+    if (lhs.Type() != rhs.Type()) {
+        throw InvalidArgument("Mismatching types {} and {}", lhs.Type(), rhs.Type());
+    }
+    switch (lhs.Type()) {
+    case Type::F32:
+        return Inst<F32>(Opcode::FPMax32, Flags{control}, lhs, rhs);
+    case Type::F64:
+        return Inst<F64>(Opcode::FPMax64, Flags{control}, lhs, rhs);
+    default:
+        ThrowInvalidType(lhs.Type());
+    }
+}
+
+F32F64 IREmitter::FPMin(const F32F64& lhs, const F32F64& rhs, FpControl control) {
+    if (lhs.Type() != rhs.Type()) {
+        throw InvalidArgument("Mismatching types {} and {}", lhs.Type(), rhs.Type());
+    }
+    switch (lhs.Type()) {
+    case Type::F32:
+        return Inst<F32>(Opcode::FPMin32, Flags{control}, lhs, rhs);
+    case Type::F64:
+        return Inst<F64>(Opcode::FPMin64, Flags{control}, lhs, rhs);
+    default:
+        ThrowInvalidType(lhs.Type());
+    }
+}
+
 U32U64 IREmitter::IAdd(const U32U64& a, const U32U64& b) {
     if (a.Type() != b.Type()) {
         throw InvalidArgument("Mismatching types {} and {}", a.Type(), b.Type());

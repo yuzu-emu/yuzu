@@ -201,18 +201,6 @@ void TranslatorVisitor::FCHK_imm(u64) {
     ThrowNotImplemented(Opcode::FCHK_imm);
 }
 
-void TranslatorVisitor::FMNMX_reg(u64) {
-    ThrowNotImplemented(Opcode::FMNMX_reg);
-}
-
-void TranslatorVisitor::FMNMX_cbuf(u64) {
-    ThrowNotImplemented(Opcode::FMNMX_cbuf);
-}
-
-void TranslatorVisitor::FMNMX_imm(u64) {
-    ThrowNotImplemented(Opcode::FMNMX_imm);
-}
-
 void TranslatorVisitor::FSET_reg(u64) {
     ThrowNotImplemented(Opcode::FSET_reg);
 }

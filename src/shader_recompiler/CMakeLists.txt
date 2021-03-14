@@ -70,6 +70,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/floating_point_compare.cpp
     frontend/maxwell/translate/impl/floating_point_conversion_integer.cpp
     frontend/maxwell/translate/impl/floating_point_fused_multiply_add.cpp
+    frontend/maxwell/translate/impl/floating_point_min_max.cpp
     frontend/maxwell/translate/impl/floating_point_multi_function.cpp
     frontend/maxwell/translate/impl/floating_point_multiply.cpp
     frontend/maxwell/translate/impl/floating_point_range_reduction.cpp
