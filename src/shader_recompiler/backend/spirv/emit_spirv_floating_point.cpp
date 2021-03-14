@@ -60,20 +60,20 @@ Id EmitFPFma64(EmitContext& ctx, IR::Inst* inst, Id a, Id b, Id c) {
     return Decorate(ctx, inst, ctx.OpFma(ctx.F64[1], a, b, c));
 }
 
-void EmitFPMax32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPMax32(EmitContext& ctx, Id a, Id b) {
+    return ctx.OpFMax(ctx.F32[1], a, b);
 }
 
-void EmitFPMax64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPMax64(EmitContext& ctx, Id a, Id b) {
+    return ctx.OpFMax(ctx.F64[1], a, b);
 }
 
-void EmitFPMin32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPMin32(EmitContext& ctx, Id a, Id b) {
+    return ctx.OpFMin(ctx.F32[1], a, b);
 }
 
-void EmitFPMin64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitFPMin64(EmitContext& ctx, Id a, Id b) {
+    return ctx.OpFMin(ctx.F64[1], a, b);
 }
 
 Id EmitFPMul16(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {

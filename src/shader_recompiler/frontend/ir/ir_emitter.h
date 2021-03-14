@@ -155,6 +155,8 @@ public:
     [[nodiscard]] U1 FPIsNan(const F32& value);
     [[nodiscard]] U1 FPOrdered(const F32& lhs, const F32& rhs);
     [[nodiscard]] U1 FPUnordered(const F32& lhs, const F32& rhs);
+    [[nodiscard]] F32F64 FPMax(const F32F64& lhs, const F32F64& rhs, FpControl control = {});
+    [[nodiscard]] F32F64 FPMin(const F32F64& lhs, const F32F64& rhs, FpControl control = {});
 
     [[nodiscard]] U32U64 IAdd(const U32U64& a, const U32U64& b);
     [[nodiscard]] U32U64 ISub(const U32U64& a, const U32U64& b);
