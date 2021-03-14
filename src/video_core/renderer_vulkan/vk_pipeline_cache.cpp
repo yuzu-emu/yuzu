@@ -193,6 +193,10 @@ ComputePipeline PipelineCache::CreateComputePipeline(ShaderInfo* shader_info) {
         .support_fp32_denorm_preserve = float_control.shaderDenormPreserveFloat32 != VK_FALSE,
         .support_fp16_denorm_flush = float_control.shaderDenormFlushToZeroFloat16 != VK_FALSE,
         .support_fp32_denorm_flush = float_control.shaderDenormFlushToZeroFloat32 != VK_FALSE,
+        .support_fp16_signed_zero_nan_preserve =
+            float_control.shaderSignedZeroInfNanPreserveFloat16 != VK_FALSE,
+        .support_fp32_signed_zero_nan_preserve =
+            float_control.shaderSignedZeroInfNanPreserveFloat32 != VK_FALSE,
         .has_broken_spirv_clamp = true, // TODO: is_intel
     };
     const auto [info, code]{Shader::RecompileSPIRV(profile, env, qmd.program_start)};

@@ -124,6 +124,12 @@ void SetupDenormControl(const Profile& profile, const IR::Program& program, Emit
     }
     ctx.AddExtension("SPV_KHR_float_controls");
 
+    if (info.uses_fp16 && profile.support_fp16_signed_zero_nan_preserve) {
+        ctx.AddExecutionMode(main_func, spv::ExecutionMode::SignedZeroInfNanPreserve);
+    }
+    if (profile.support_fp32_signed_zero_nan_preserve) {
+        ctx.AddExecutionMode(main_func, spv::ExecutionMode::SignedZeroInfNanPreserve);
+    }
     if (info.uses_fp32_denorms_flush && info.uses_fp32_denorms_preserve) {
         // LOG_ERROR(HW_GPU, "Fp32 denorm flush and preserve on the same shader");
     } else if (info.uses_fp32_denorms_flush) {
