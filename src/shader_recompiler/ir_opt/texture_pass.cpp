@@ -164,14 +164,12 @@ private:
 
 void TexturePass(Environment& env, IR::Program& program) {
     TextureInstVector to_replace;
-    for (IR::Function& function : program.functions) {
-        for (IR::Block* const block : function.post_order_blocks) {
-            for (IR::Inst& inst : block->Instructions()) {
-                if (!IsTextureInstruction(inst)) {
-                    continue;
-                }
-                to_replace.push_back(MakeInst(env, block, inst));
+    for (IR::Block* const block : program.post_order_blocks) {
+        for (IR::Inst& inst : block->Instructions()) {
+            if (!IsTextureInstruction(inst)) {
+                continue;
             }
+            to_replace.push_back(MakeInst(env, block, inst));
         }
     }
     // Sort instructions to visit textures by constant buffer index, then by offset

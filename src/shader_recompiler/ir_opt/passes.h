@@ -8,26 +8,18 @@
 
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
-#include "shader_recompiler/frontend/ir/function.h"
 #include "shader_recompiler/frontend/ir/program.h"
 
 namespace Shader::Optimization {
 
-template <typename Func>
-void PostOrderInvoke(Func&& func, IR::Function& function) {
-    for (const auto& block : function.post_order_blocks) {
-        func(*block);
-    }
-}
-
 void CollectShaderInfoPass(IR::Program& program);
-void ConstantPropagationPass(IR::Block& block);
-void DeadCodeEliminationPass(IR::Block& block);
+void ConstantPropagationPass(IR::Program& program);
+void DeadCodeEliminationPass(IR::Program& program);
 void GlobalMemoryToStorageBufferPass(IR::Program& program);
-void IdentityRemovalPass(IR::Function& function);
+void IdentityRemovalPass(IR::Program& program);
 void LowerFp16ToFp32(IR::Program& program);
-void SsaRewritePass(std::span<IR::Block* const> post_order_blocks);
+void SsaRewritePass(IR::Program& program);
 void TexturePass(Environment& env, IR::Program& program);
-void VerificationPass(const IR::Function& function);
+void VerificationPass(const IR::Program& program);
 
 } // namespace Shader::Optimization

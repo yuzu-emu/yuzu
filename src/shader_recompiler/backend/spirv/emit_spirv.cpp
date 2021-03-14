@@ -10,7 +10,6 @@
 
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
-#include "shader_recompiler/frontend/ir/function.h"
 #include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/program.h"
 
@@ -199,18 +198,14 @@ Id PhiArgDef(EmitContext& ctx, IR::Inst* inst, size_t index) {
 std::vector<u32> EmitSPIRV(const Profile& profile, Environment& env, IR::Program& program) {
     EmitContext ctx{profile, program};
     const Id void_function{ctx.TypeFunction(ctx.void_id)};
-    // FIXME: Forward declare functions (needs sirit support)
-    Id func{};
-    for (IR::Function& function : program.functions) {
-        func = ctx.OpFunction(ctx.void_id, spv::FunctionControlMask::MaskNone, void_function);
-        for (IR::Block* const block : function.blocks) {
-            ctx.AddLabel(block->Definition<Id>());
-            for (IR::Inst& inst : block->Instructions()) {
-                EmitInst(ctx, &inst);
-            }
+    const Id func{ctx.OpFunction(ctx.void_id, spv::FunctionControlMask::MaskNone, void_function)};
+    for (IR::Block* const block : program.blocks) {
+        ctx.AddLabel(block->Definition<Id>());
+        for (IR::Inst& inst : block->Instructions()) {
+            EmitInst(ctx, &inst);
         }
-        ctx.OpFunctionEnd();
     }
+    ctx.OpFunctionEnd();
     boost::container::small_vector<Id, 32> interfaces;
     const Info& info{program.info};
     if (info.uses_workgroup_id) {

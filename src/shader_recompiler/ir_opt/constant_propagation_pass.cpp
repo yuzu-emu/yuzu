@@ -371,9 +371,11 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
 }
 } // Anonymous namespace
 
-void ConstantPropagationPass(IR::Block& block) {
-    for (IR::Inst& inst : block) {
-        ConstantPropagation(block, inst);
+void ConstantPropagationPass(IR::Program& program) {
+    for (IR::Block* const block : program.post_order_blocks) {
+        for (IR::Inst& inst : block->Instructions()) {
+            ConstantPropagation(*block, inst);
+        }
     }
 }
 

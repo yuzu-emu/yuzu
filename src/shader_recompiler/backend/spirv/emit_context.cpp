@@ -262,10 +262,8 @@ void EmitContext::DefineTextures(const Info& info, u32& binding) {
 }
 
 void EmitContext::DefineLabels(IR::Program& program) {
-    for (const IR::Function& function : program.functions) {
-        for (IR::Block* const block : function.blocks) {
-            block->SetDefinition(OpLabel());
-        }
+    for (IR::Block* const block : program.blocks) {
+        block->SetDefinition(OpLabel());
     }
 }
 

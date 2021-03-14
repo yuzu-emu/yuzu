@@ -8,67 +8,44 @@
 
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/post_order.h"
-#include "shader_recompiler/frontend/ir/structured_control_flow.h"
 #include "shader_recompiler/frontend/maxwell/program.h"
+#include "shader_recompiler/frontend/maxwell/structured_control_flow.h"
 #include "shader_recompiler/frontend/maxwell/translate/translate.h"
 #include "shader_recompiler/ir_opt/passes.h"
 
 namespace Shader::Maxwell {
-namespace {
-IR::BlockList TranslateCode(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
-                            Environment& env, Flow::Function& cfg_function) {
-    const size_t num_blocks{cfg_function.blocks.size()};
-    std::vector<IR::Block*> blocks(cfg_function.blocks.size());
-    std::ranges::for_each(cfg_function.blocks, [&, i = size_t{0}](auto& cfg_block) mutable {
-        const u32 begin{cfg_block.begin.Offset()};
-        const u32 end{cfg_block.end.Offset()};
-        blocks[i] = block_pool.Create(inst_pool, begin, end);
-        cfg_block.ir = blocks[i];
-        ++i;
+
+static void RemoveUnreachableBlocks(IR::Program& program) {
+    // Some blocks might be unreachable if a function call exists unconditionally
+    // If this happens the number of blocks and post order blocks will mismatch
+    if (program.blocks.size() == program.post_order_blocks.size()) {
+        return;
+    }
+    const IR::BlockList& post_order{program.post_order_blocks};
+    std::erase_if(program.blocks, [&](IR::Block* block) {
+        return std::ranges::find(post_order, block) == post_order.end();
     });
-    std::ranges::for_each(cfg_function.blocks, [&, i = size_t{0}](auto& cfg_block) mutable {
-        IR::Block* const block{blocks[i]};
-        ++i;
-        if (cfg_block.end_class != Flow::EndClass::Branch) {
-            block->SetReturn();
-        } else if (cfg_block.cond == IR::Condition{true}) {
-            block->SetBranch(cfg_block.branch_true->ir);
-        } else if (cfg_block.cond == IR::Condition{false}) {
-            block->SetBranch(cfg_block.branch_false->ir);
-        } else {
-            block->SetBranches(cfg_block.cond, cfg_block.branch_true->ir,
-                               cfg_block.branch_false->ir);
-        }
-    });
-    return IR::VisitAST(inst_pool, block_pool, blocks,
-                        [&](IR::Block* block) { Translate(env, block); });
 }
-} // Anonymous namespace
 
 IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
                              Environment& env, Flow::CFG& cfg) {
     IR::Program program;
-    auto& functions{program.functions};
-    functions.reserve(cfg.Functions().size());
-    for (Flow::Function& cfg_function : cfg.Functions()) {
-        functions.push_back(IR::Function{
-            .blocks{TranslateCode(inst_pool, block_pool, env, cfg_function)},
-            .post_order_blocks{},
-        });
-    }
+    program.blocks = VisitAST(inst_pool, block_pool, env, cfg);
+    program.post_order_blocks = PostOrder(program.blocks);
+    RemoveUnreachableBlocks(program);
+
+    // Replace instructions before the SSA rewrite
     Optimization::LowerFp16ToFp32(program);
-    for (IR::Function& function : functions) {
-        function.post_order_blocks = PostOrder(function.blocks);
-        Optimization::SsaRewritePass(function.post_order_blocks);
-    }
+
+    Optimization::SsaRewritePass(program);
+
     Optimization::GlobalMemoryToStorageBufferPass(program);
     Optimization::TexturePass(env, program);
-    for (IR::Function& function : functions) {
-        Optimization::PostOrderInvoke(Optimization::ConstantPropagationPass, function);
-        Optimization::PostOrderInvoke(Optimization::DeadCodeEliminationPass, function);
-        Optimization::IdentityRemovalPass(function);
-        Optimization::VerificationPass(function);
-    }
+
+    Optimization::ConstantPropagationPass(program);
+    Optimization::DeadCodeEliminationPass(program);
+    Optimization::IdentityRemovalPass(program);
+    Optimization::VerificationPass(program);
     Optimization::CollectShaderInfoPass(program);
     return program;
 }

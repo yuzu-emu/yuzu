@@ -23,7 +23,6 @@
 #include <boost/container/flat_set.hpp>
 
 #include "shader_recompiler/frontend/ir/basic_block.h"
-#include "shader_recompiler/frontend/ir/function.h"
 #include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/opcodes.h"
 #include "shader_recompiler/frontend/ir/pred.h"
@@ -262,9 +261,9 @@ void VisitBlock(Pass& pass, IR::Block* block) {
 }
 } // Anonymous namespace
 
-void SsaRewritePass(std::span<IR::Block* const> post_order_blocks) {
+void SsaRewritePass(IR::Program& program) {
     Pass pass;
-    for (IR::Block* const block : post_order_blocks | std::views::reverse) {
+    for (IR::Block* const block : program.post_order_blocks | std::views::reverse) {
         VisitBlock(pass, block);
     }
 }

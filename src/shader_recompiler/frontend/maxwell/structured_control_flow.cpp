@@ -14,11 +14,14 @@
 
 #include <boost/intrusive/list.hpp>
 
+#include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
+#include "shader_recompiler/frontend/maxwell/structured_control_flow.h"
+#include "shader_recompiler/frontend/maxwell/translate/translate.h"
 #include "shader_recompiler/object_pool.h"
 
-namespace Shader::IR {
+namespace Shader::Maxwell {
 namespace {
 struct Statement;
 
@@ -79,7 +82,7 @@ struct Variable {};
 #pragma warning(disable : 26495) // Always initialize a member variable, expected in Statement
 #endif
 struct Statement : ListBaseHook {
-    Statement(Block* code_, Statement* up_) : code{code_}, up{up_}, type{StatementType::Code} {}
+    Statement(IR::Block* code_, Statement* up_) : code{code_}, up{up_}, type{StatementType::Code} {}
     Statement(Goto, Statement* cond_, Node label_, Statement* up_)
         : label{label_}, cond{cond_}, up{up_}, type{StatementType::Goto} {}
     Statement(Label, u32 id_, Statement* up_) : id{id_}, up{up_}, type{StatementType::Label} {}
@@ -91,7 +94,7 @@ struct Statement : ListBaseHook {
         : cond{cond_}, up{up_}, type{StatementType::Break} {}
     Statement(Return) : type{StatementType::Return} {}
     Statement(FunctionTag) : children{}, type{StatementType::Function} {}
-    Statement(Identity, Condition cond_) : guest_cond{cond_}, type{StatementType::Identity} {}
+    Statement(Identity, IR::Condition cond_) : guest_cond{cond_}, type{StatementType::Identity} {}
     Statement(Not, Statement* op_) : op{op_}, type{StatementType::Not} {}
     Statement(Or, Statement* op_a_, Statement* op_b_)
         : op_a{op_a_}, op_b{op_b_}, type{StatementType::Or} {}
@@ -106,10 +109,10 @@ struct Statement : ListBaseHook {
     }
 
     union {
-        Block* code;
+        IR::Block* code;
         Node label;
         Tree children;
-        Condition guest_cond;
+        IR::Condition guest_cond;
         Statement* op;
         Statement* op_a;
     };
@@ -269,9 +272,10 @@ bool SearchNode(const Tree& tree, ConstNode stmt, size_t& offset) {
 
 class GotoPass {
 public:
-    explicit GotoPass(std::span<Block* const> blocks, ObjectPool<Statement>& stmt_pool)
-        : pool{stmt_pool} {
-        std::vector gotos{BuildUnorderedTreeGetGotos(blocks)};
+    explicit GotoPass(Flow::CFG& cfg, ObjectPool<IR::Inst>& inst_pool_,
+                      ObjectPool<IR::Block>& block_pool_, ObjectPool<Statement>& stmt_pool)
+        : inst_pool{inst_pool_}, block_pool{block_pool_}, pool{stmt_pool} {
+        std::vector gotos{BuildTree(cfg)};
         for (const Node& goto_stmt : gotos | std::views::reverse) {
             RemoveGoto(goto_stmt);
         }
@@ -316,18 +320,20 @@ private:
             }
         }
         // TODO: Remove this
-        Node it{goto_stmt};
-        bool sibling{false};
-        do {
-            sibling |= it == label_stmt;
-            --it;
-        } while (it != goto_stmt->up->children.begin());
-        while (it != goto_stmt->up->children.end()) {
-            sibling |= it == label_stmt;
-            ++it;
-        }
-        if (!sibling) {
-            throw LogicError("Not siblings");
+        {
+            Node it{goto_stmt};
+            bool sibling{false};
+            do {
+                sibling |= it == label_stmt;
+                --it;
+            } while (it != goto_stmt->up->children.begin());
+            while (it != goto_stmt->up->children.end()) {
+                sibling |= it == label_stmt;
+                ++it;
+            }
+            if (!sibling) {
+                throw LogicError("Not siblings");
+            }
         }
         // goto_stmt and label_stmt are guaranteed to be siblings, eliminate
         if (std::next(goto_stmt) == label_stmt) {
@@ -342,63 +348,84 @@ private:
         }
     }
 
-    std::vector<Node> BuildUnorderedTreeGetGotos(std::span<Block* const> blocks) {
-        // Assume all blocks have two branches
+    std::vector<Node> BuildTree(Flow::CFG& cfg) {
+        u32 label_id{0};
         std::vector<Node> gotos;
-        gotos.reserve(blocks.size() * 2);
-
-        const std::unordered_map labels_map{BuildLabels(blocks)};
-        Tree& root{root_stmt.children};
-        auto insert_point{root.begin()};
-        // Skip all goto variables zero-initialization
-        std::advance(insert_point, labels_map.size());
-
-        for (Block* const block : blocks) {
-            // Skip label
-            ++insert_point;
-            // Skip set variable
-            ++insert_point;
-            root.insert(insert_point, *pool.Create(block, &root_stmt));
-
-            if (block->IsTerminationBlock()) {
-                root.insert(insert_point, *pool.Create(Return{}));
-                continue;
-            }
-            const Condition cond{block->BranchCondition()};
-            Statement* const true_cond{pool.Create(Identity{}, Condition{true})};
-            if (cond == Condition{true} || cond == Condition{false}) {
-                const bool is_true{cond == Condition{true}};
-                const Block* const branch{is_true ? block->TrueBranch() : block->FalseBranch()};
-                const Node label{labels_map.at(branch)};
-                Statement* const goto_stmt{pool.Create(Goto{}, true_cond, label, &root_stmt)};
-                gotos.push_back(root.insert(insert_point, *goto_stmt));
-            } else {
-                Statement* const ident_cond{pool.Create(Identity{}, cond)};
-                const Node true_label{labels_map.at(block->TrueBranch())};
-                const Node false_label{labels_map.at(block->FalseBranch())};
-                Statement* goto_true{pool.Create(Goto{}, ident_cond, true_label, &root_stmt)};
-                Statement* goto_false{pool.Create(Goto{}, true_cond, false_label, &root_stmt)};
-                gotos.push_back(root.insert(insert_point, *goto_true));
-                gotos.push_back(root.insert(insert_point, *goto_false));
-            }
-        }
+        Flow::Function& first_function{cfg.Functions().front()};
+        BuildTree(cfg, first_function, label_id, gotos, root_stmt.children.end(), std::nullopt);
         return gotos;
     }
 
-    std::unordered_map<const Block*, Node> BuildLabels(std::span<Block* const> blocks) {
-        // TODO: Consider storing labels intrusively inside the block
-        std::unordered_map<const Block*, Node> labels_map;
+    void BuildTree(Flow::CFG& cfg, Flow::Function& function, u32& label_id,
+                   std::vector<Node>& gotos, Node function_insert_point,
+                   std::optional<Node> return_label) {
+        Statement* const false_stmt{pool.Create(Identity{}, IR::Condition{false})};
         Tree& root{root_stmt.children};
-        u32 label_id{0};
-        for (const Block* const block : blocks) {
+        std::unordered_map<Flow::Block*, Node> local_labels;
+        local_labels.reserve(function.blocks.size());
+
+        for (Flow::Block& block : function.blocks) {
             Statement* const label{pool.Create(Label{}, label_id, &root_stmt)};
-            labels_map.emplace(block, root.insert(root.end(), *label));
-            Statement* const false_stmt{pool.Create(Identity{}, Condition{false})};
-            root.push_back(*pool.Create(SetVariable{}, label_id, false_stmt, &root_stmt));
-            root.push_front(*pool.Create(SetVariable{}, label_id, false_stmt, &root_stmt));
+            const Node label_it{root.insert(function_insert_point, *label)};
+            local_labels.emplace(&block, label_it);
             ++label_id;
         }
-        return labels_map;
+        for (Flow::Block& block : function.blocks) {
+            const Node label{local_labels.at(&block)};
+            // Insertion point
+            const Node ip{std::next(label)};
+
+            // Reset goto variables before the first block and after its respective label
+            const auto make_reset_variable{[&]() -> Statement& {
+                return *pool.Create(SetVariable{}, label->id, false_stmt, &root_stmt);
+            }};
+            root.push_front(make_reset_variable());
+            root.insert(ip, make_reset_variable());
+
+            const u32 begin_offset{block.begin.Offset()};
+            const u32 end_offset{block.end.Offset()};
+            IR::Block* const ir_block{block_pool.Create(inst_pool, begin_offset, end_offset)};
+            root.insert(ip, *pool.Create(ir_block, &root_stmt));
+
+            switch (block.end_class) {
+            case Flow::EndClass::Branch: {
+                Statement* const always_cond{pool.Create(Identity{}, IR::Condition{true})};
+                if (block.cond == IR::Condition{true}) {
+                    const Node true_label{local_labels.at(block.branch_true)};
+                    gotos.push_back(
+                        root.insert(ip, *pool.Create(Goto{}, always_cond, true_label, &root_stmt)));
+                } else if (block.cond == IR::Condition{false}) {
+                    const Node false_label{local_labels.at(block.branch_false)};
+                    gotos.push_back(root.insert(
+                        ip, *pool.Create(Goto{}, always_cond, false_label, &root_stmt)));
+                } else {
+                    const Node true_label{local_labels.at(block.branch_true)};
+                    const Node false_label{local_labels.at(block.branch_false)};
+                    Statement* const true_cond{pool.Create(Identity{}, block.cond)};
+                    gotos.push_back(
+                        root.insert(ip, *pool.Create(Goto{}, true_cond, true_label, &root_stmt)));
+                    gotos.push_back(root.insert(
+                        ip, *pool.Create(Goto{}, always_cond, false_label, &root_stmt)));
+                }
+                break;
+            }
+            case Flow::EndClass::Call: {
+                Flow::Function& call{cfg.Functions()[block.function_call]};
+                const Node call_return_label{local_labels.at(block.return_block)};
+                BuildTree(cfg, call, label_id, gotos, ip, call_return_label);
+                break;
+            }
+            case Flow::EndClass::Exit:
+                root.insert(ip, *pool.Create(Return{}));
+                break;
+            case Flow::EndClass::Return: {
+                Statement* const always_cond{pool.Create(Identity{}, block.cond)};
+                auto goto_stmt{pool.Create(Goto{}, always_cond, return_label.value(), &root_stmt)};
+                gotos.push_back(root.insert(ip, *goto_stmt));
+                break;
+            }
+            }
+        }
     }
 
     void UpdateTreeUp(Statement* tree) {
@@ -556,11 +583,13 @@ private:
         return offset;
     }
 
+    ObjectPool<IR::Inst>& inst_pool;
+    ObjectPool<IR::Block>& block_pool;
     ObjectPool<Statement>& pool;
     Statement root_stmt{FunctionTag{}};
 };
 
-Block* TryFindForwardBlock(const Statement& stmt) {
+IR::Block* TryFindForwardBlock(const Statement& stmt) {
     const Tree& tree{stmt.up->children};
     const ConstNode end{tree.cend()};
     ConstNode forward_node{std::next(Tree::s_iterator_to(stmt))};
@@ -573,12 +602,12 @@ Block* TryFindForwardBlock(const Statement& stmt) {
     return nullptr;
 }
 
-[[nodiscard]] U1 VisitExpr(IREmitter& ir, const Statement& stmt) {
+[[nodiscard]] IR::U1 VisitExpr(IR::IREmitter& ir, const Statement& stmt) {
     switch (stmt.type) {
     case StatementType::Identity:
         return ir.Condition(stmt.guest_cond);
     case StatementType::Not:
-        return ir.LogicalNot(U1{VisitExpr(ir, *stmt.op)});
+        return ir.LogicalNot(IR::U1{VisitExpr(ir, *stmt.op)});
     case StatementType::Or:
         return ir.LogicalOr(VisitExpr(ir, *stmt.op_a), VisitExpr(ir, *stmt.op_b));
     case StatementType::Variable:
@@ -590,18 +619,18 @@ Block* TryFindForwardBlock(const Statement& stmt) {
 
 class TranslatePass {
 public:
-    TranslatePass(ObjectPool<Inst>& inst_pool_, ObjectPool<Block>& block_pool_,
-                  ObjectPool<Statement>& stmt_pool_, Statement& root_stmt,
-                  const std::function<void(IR::Block*)>& func_, BlockList& block_list_)
-        : stmt_pool{stmt_pool_}, inst_pool{inst_pool_}, block_pool{block_pool_}, func{func_},
+    TranslatePass(ObjectPool<IR::Inst>& inst_pool_, ObjectPool<IR::Block>& block_pool_,
+                  ObjectPool<Statement>& stmt_pool_, Environment& env_, Statement& root_stmt,
+                  IR::BlockList& block_list_)
+        : stmt_pool{stmt_pool_}, inst_pool{inst_pool_}, block_pool{block_pool_}, env{env_},
           block_list{block_list_} {
         Visit(root_stmt, nullptr, nullptr);
     }
 
 private:
-    void Visit(Statement& parent, Block* continue_block, Block* break_block) {
+    void Visit(Statement& parent, IR::Block* continue_block, IR::Block* break_block) {
         Tree& tree{parent.children};
-        Block* current_block{nullptr};
+        IR::Block* current_block{nullptr};
 
         for (auto it = tree.begin(); it != tree.end(); ++it) {
             Statement& stmt{*it};
@@ -611,11 +640,10 @@ private:
                 break;
             case StatementType::Code: {
                 if (current_block && current_block != stmt.code) {
-                    IREmitter ir{*current_block};
-                    ir.Branch(stmt.code);
+                    IR::IREmitter{*current_block}.Branch(stmt.code);
                 }
                 current_block = stmt.code;
-                func(stmt.code);
+                Translate(env, stmt.code);
                 block_list.push_back(stmt.code);
                 break;
             }
@@ -623,7 +651,7 @@ private:
                 if (!current_block) {
                     current_block = MergeBlock(parent, stmt);
                 }
-                IREmitter ir{*current_block};
+                IR::IREmitter ir{*current_block};
                 ir.SetGotoVariable(stmt.id, VisitExpr(ir, *stmt.op));
                 break;
             }
@@ -632,16 +660,16 @@ private:
                     current_block = block_pool.Create(inst_pool);
                     block_list.push_back(current_block);
                 }
-                Block* const merge_block{MergeBlock(parent, stmt)};
+                IR::Block* const merge_block{MergeBlock(parent, stmt)};
 
                 // Visit children
                 const size_t first_block_index{block_list.size()};
                 Visit(stmt, merge_block, break_block);
 
                 // Implement if header block
-                Block* const first_if_block{block_list.at(first_block_index)};
-                IREmitter ir{*current_block};
-                const U1 cond{VisitExpr(ir, *stmt.cond)};
+                IR::Block* const first_if_block{block_list.at(first_block_index)};
+                IR::IREmitter ir{*current_block};
+                const IR::U1 cond{VisitExpr(ir, *stmt.cond)};
                 ir.SelectionMerge(merge_block);
                 ir.BranchConditional(cond, first_if_block, merge_block);
 
@@ -649,14 +677,14 @@ private:
                 break;
             }
             case StatementType::Loop: {
-                Block* const loop_header_block{block_pool.Create(inst_pool)};
+                IR::Block* const loop_header_block{block_pool.Create(inst_pool)};
                 if (current_block) {
-                    IREmitter{*current_block}.Branch(loop_header_block);
+                    IR::IREmitter{*current_block}.Branch(loop_header_block);
                 }
                 block_list.push_back(loop_header_block);
 
-                Block* const new_continue_block{block_pool.Create(inst_pool)};
-                Block* const merge_block{MergeBlock(parent, stmt)};
+                IR::Block* const new_continue_block{block_pool.Create(inst_pool)};
+                IR::Block* const merge_block{MergeBlock(parent, stmt)};
 
                 // Visit children
                 const size_t first_block_index{block_list.size()};
@@ -666,14 +694,14 @@ private:
                 block_list.push_back(new_continue_block);
 
                 // Implement loop header block
-                Block* const first_loop_block{block_list.at(first_block_index)};
-                IREmitter ir{*loop_header_block};
+                IR::Block* const first_loop_block{block_list.at(first_block_index)};
+                IR::IREmitter ir{*loop_header_block};
                 ir.LoopMerge(merge_block, new_continue_block);
                 ir.Branch(first_loop_block);
 
                 // Implement continue block
-                IREmitter continue_ir{*new_continue_block};
-                const U1 continue_cond{VisitExpr(continue_ir, *stmt.cond)};
+                IR::IREmitter continue_ir{*new_continue_block};
+                const IR::U1 continue_cond{VisitExpr(continue_ir, *stmt.cond)};
                 continue_ir.BranchConditional(continue_cond, ir.block, merge_block);
 
                 current_block = merge_block;
@@ -684,9 +712,9 @@ private:
                     current_block = block_pool.Create(inst_pool);
                     block_list.push_back(current_block);
                 }
-                Block* const skip_block{MergeBlock(parent, stmt)};
+                IR::Block* const skip_block{MergeBlock(parent, stmt)};
 
-                IREmitter ir{*current_block};
+                IR::IREmitter ir{*current_block};
                 ir.BranchConditional(VisitExpr(ir, *stmt.cond), break_block, skip_block);
 
                 current_block = skip_block;
@@ -697,7 +725,7 @@ private:
                     current_block = block_pool.Create(inst_pool);
                     block_list.push_back(current_block);
                 }
-                IREmitter{*current_block}.Return();
+                IR::IREmitter{*current_block}.Return();
                 current_block = nullptr;
                 break;
             }
@@ -706,39 +734,37 @@ private:
             }
         }
         if (current_block && continue_block) {
-            IREmitter ir{*current_block};
-            ir.Branch(continue_block);
+            IR::IREmitter{*current_block}.Branch(continue_block);
         }
     }
 
-    Block* MergeBlock(Statement& parent, Statement& stmt) {
-        if (Block* const block{TryFindForwardBlock(stmt)}) {
+    IR::Block* MergeBlock(Statement& parent, Statement& stmt) {
+        if (IR::Block* const block{TryFindForwardBlock(stmt)}) {
             return block;
         }
         // Create a merge block we can visit later
-        Block* const block{block_pool.Create(inst_pool)};
+        IR::Block* const block{block_pool.Create(inst_pool)};
         Statement* const merge_stmt{stmt_pool.Create(block, &parent)};
         parent.children.insert(std::next(Tree::s_iterator_to(stmt)), *merge_stmt);
         return block;
     }
 
     ObjectPool<Statement>& stmt_pool;
-    ObjectPool<Inst>& inst_pool;
-    ObjectPool<Block>& block_pool;
-    const std::function<void(IR::Block*)>& func;
-    BlockList& block_list;
+    ObjectPool<IR::Inst>& inst_pool;
+    ObjectPool<IR::Block>& block_pool;
+    Environment& env;
+    IR::BlockList& block_list;
 };
 } // Anonymous namespace
 
-BlockList VisitAST(ObjectPool<Inst>& inst_pool, ObjectPool<Block>& block_pool,
-                   std::span<Block* const> unordered_blocks,
-                   const std::function<void(Block*)>& func) {
+IR::BlockList VisitAST(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
+                       Environment& env, Flow::CFG& cfg) {
     ObjectPool<Statement> stmt_pool{64};
-    GotoPass goto_pass{unordered_blocks, stmt_pool};
-    BlockList block_list;
-    TranslatePass translate_pass{inst_pool, block_pool, stmt_pool, goto_pass.RootStatement(),
-                                 func,      block_list};
+    GotoPass goto_pass{cfg, inst_pool, block_pool, stmt_pool};
+    Statement& root{goto_pass.RootStatement()};
+    IR::BlockList block_list;
+    TranslatePass{inst_pool, block_pool, stmt_pool, env, root, block_list};
     return block_list;
 }
 
-} // namespace Shader::IR
+} // namespace Shader::Maxwell

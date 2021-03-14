@@ -9,14 +9,16 @@
 
 #include <boost/intrusive/list.hpp>
 
+#include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/microinstruction.h"
+#include "shader_recompiler/frontend/maxwell/control_flow.h"
 #include "shader_recompiler/object_pool.h"
 
-namespace Shader::IR {
+namespace Shader::Maxwell {
 
-[[nodiscard]] BlockList VisitAST(ObjectPool<Inst>& inst_pool, ObjectPool<Block>& block_pool,
-                                 std::span<Block* const> unordered_blocks,
-                                 const std::function<void(Block*)>& func);
+[[nodiscard]] IR::BlockList VisitAST(ObjectPool<IR::Inst>& inst_pool,
+                                     ObjectPool<IR::Block>& block_pool, Environment& env,
+                                     Flow::CFG& cfg);
 
-} // namespace Shader::IR
+} // namespace Shader::Maxwell

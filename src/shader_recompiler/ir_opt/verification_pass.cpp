@@ -11,8 +11,8 @@
 
 namespace Shader::Optimization {
 
-static void ValidateTypes(const IR::Function& function) {
-    for (const auto& block : function.blocks) {
+static void ValidateTypes(const IR::Program& program) {
+    for (const auto& block : program.blocks) {
         for (const IR::Inst& inst : *block) {
             if (inst.Opcode() == IR::Opcode::Phi) {
                 // Skip validation on phi nodes
@@ -30,9 +30,9 @@ static void ValidateTypes(const IR::Function& function) {
     }
 }
 
-static void ValidateUses(const IR::Function& function) {
+static void ValidateUses(const IR::Program& program) {
     std::map<IR::Inst*, int> actual_uses;
-    for (const auto& block : function.blocks) {
+    for (const auto& block : program.blocks) {
         for (const IR::Inst& inst : *block) {
             const size_t num_args{inst.NumArgs()};
             for (size_t i = 0; i < num_args; ++i) {
@@ -45,14 +45,14 @@ static void ValidateUses(const IR::Function& function) {
     }
     for (const auto [inst, uses] : actual_uses) {
         if (inst->UseCount() != uses) {
-            throw LogicError("Invalid uses in block:" /*, IR::DumpFunction(function)*/);
+            throw LogicError("Invalid uses in block: {}", IR::DumpProgram(program));
         }
     }
 }
 
-void VerificationPass(const IR::Function& function) {
-    ValidateTypes(function);
-    ValidateUses(function);
+void VerificationPass(const IR::Program& program) {
+    ValidateTypes(program);
+    ValidateUses(program);
 }
 
 } // namespace Shader::Optimization
