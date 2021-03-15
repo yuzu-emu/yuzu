@@ -36,7 +36,8 @@ union TextureInstInfo {
     u32 raw;
     BitField<0, 8, TextureType> type;
     BitField<8, 1, u32> has_bias;
-    BitField<16, 1, u32> has_lod_clamp;
+    BitField<9, 1, u32> has_lod_clamp;
+    BitField<10, 1, u32> relaxed_precision;
 };
 static_assert(sizeof(TextureInstInfo) <= sizeof(u32));
 

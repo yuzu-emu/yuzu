@@ -57,18 +57,27 @@ Id Texture(EmitContext& ctx, const IR::Value& index) {
     throw NotImplementedException("Indirect texture sample");
 }
 
+Id Decorate(EmitContext& ctx, IR::Inst* inst, Id sample) {
+    const auto info{inst->Flags<IR::TextureInstInfo>()};
+    if (info.relaxed_precision != 0) {
+        ctx.Decorate(sample, spv::Decoration::RelaxedPrecision);
+    }
+    return sample;
+}
+
 template <typename MethodPtrType, typename... Args>
 Id Emit(MethodPtrType sparse_ptr, MethodPtrType non_sparse_ptr, EmitContext& ctx, IR::Inst* inst,
         Id result_type, Args&&... args) {
     IR::Inst* const sparse{inst->GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
     if (!sparse) {
-        return (ctx.*non_sparse_ptr)(result_type, std::forward<Args>(args)...);
+        return Decorate(ctx, inst, (ctx.*non_sparse_ptr)(result_type, std::forward<Args>(args)...));
     }
     const Id struct_type{ctx.TypeStruct(ctx.U32[1], result_type)};
     const Id sample{(ctx.*sparse_ptr)(struct_type, std::forward<Args>(args)...)};
     const Id resident_code{ctx.OpCompositeExtract(ctx.U32[1], sample, 0U)};
     sparse->SetDefinition(ctx.OpImageSparseTexelsResident(ctx.U1, resident_code));
     sparse->Invalidate();
+    Decorate(ctx, inst, sample);
     return ctx.OpCompositeExtract(result_type, sample, 1U);
 }
 } // Anonymous namespace

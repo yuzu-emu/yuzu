@@ -115,6 +115,9 @@ public:
     [[nodiscard]] U32 PackFloat2x16(const Value& vector);
     [[nodiscard]] Value UnpackFloat2x16(const U32& value);
 
+    [[nodiscard]] U32 PackHalf2x16(const Value& vector);
+    [[nodiscard]] Value UnpackHalf2x16(const U32& value);
+
     [[nodiscard]] F64 PackDouble2x32(const Value& vector);
     [[nodiscard]] Value UnpackDouble2x32(const F64& value);
 

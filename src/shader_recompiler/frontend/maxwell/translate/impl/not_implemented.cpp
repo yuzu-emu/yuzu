@@ -553,10 +553,6 @@ void TranslatorVisitor::SYNC(u64) {
     ThrowNotImplemented(Opcode::SYNC);
 }
 
-void TranslatorVisitor::TEXS(u64) {
-    ThrowNotImplemented(Opcode::TEXS);
-}
-
 void TranslatorVisitor::TLD(u64) {
     ThrowNotImplemented(Opcode::TLD);
 }
