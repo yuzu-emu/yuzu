@@ -201,30 +201,6 @@ void TranslatorVisitor::FCHK_imm(u64) {
     ThrowNotImplemented(Opcode::FCHK_imm);
 }
 
-void TranslatorVisitor::FSET_reg(u64) {
-    ThrowNotImplemented(Opcode::FSET_reg);
-}
-
-void TranslatorVisitor::FSET_cbuf(u64) {
-    ThrowNotImplemented(Opcode::FSET_cbuf);
-}
-
-void TranslatorVisitor::FSET_imm(u64) {
-    ThrowNotImplemented(Opcode::FSET_imm);
-}
-
-void TranslatorVisitor::FSETP_reg(u64) {
-    ThrowNotImplemented(Opcode::FSETP_reg);
-}
-
-void TranslatorVisitor::FSETP_cbuf(u64) {
-    ThrowNotImplemented(Opcode::FSETP_cbuf);
-}
-
-void TranslatorVisitor::FSETP_imm(u64) {
-    ThrowNotImplemented(Opcode::FSETP_imm);
-}
-
 void TranslatorVisitor::FSWZADD(u64) {
     ThrowNotImplemented(Opcode::FSWZADD);
 }
