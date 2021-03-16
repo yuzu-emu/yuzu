@@ -66,12 +66,14 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/find_leading_one.cpp
     frontend/maxwell/translate/impl/floating_point_add.cpp
     frontend/maxwell/translate/impl/floating_point_compare.cpp
+    frontend/maxwell/translate/impl/floating_point_compare_and_set.cpp
     frontend/maxwell/translate/impl/floating_point_conversion_integer.cpp
     frontend/maxwell/translate/impl/floating_point_fused_multiply_add.cpp
     frontend/maxwell/translate/impl/floating_point_min_max.cpp
     frontend/maxwell/translate/impl/floating_point_multi_function.cpp
     frontend/maxwell/translate/impl/floating_point_multiply.cpp
     frontend/maxwell/translate/impl/floating_point_range_reduction.cpp
+    frontend/maxwell/translate/impl/floating_point_set_predicate.cpp
     frontend/maxwell/translate/impl/half_floating_point_add.cpp
     frontend/maxwell/translate/impl/impl.cpp
     frontend/maxwell/translate/impl/impl.h

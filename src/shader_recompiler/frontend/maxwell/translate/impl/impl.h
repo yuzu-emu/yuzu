@@ -35,6 +35,25 @@ enum class PredicateOp : u64 {
     NonZero,
 };
 
+enum class FPCompareOp : u64 {
+    F,
+    LT,
+    EQ,
+    LE,
+    GT,
+    NE,
+    GE,
+    NUM,
+    Nan,
+    LTU,
+    EQU,
+    LEU,
+    GTU,
+    NEU,
+    GEU,
+    T,
+};
+
 class TranslatorVisitor {
 public:
     explicit TranslatorVisitor(Environment& env_, IR::Block& block) : env{env_}, ir(block) {}

@@ -15,4 +15,10 @@ namespace Shader::Maxwell {
                                       const IR::U1& predicate_2, BooleanOp bop);
 
 [[nodiscard]] IR::U1 PredicateOperation(IR::IREmitter& ir, const IR::U32& result, PredicateOp op);
+
+[[nodiscard]] bool IsCompareOpOrdered(FPCompareOp op);
+
+[[nodiscard]] IR::U1 FloatingPointCompare(IR::IREmitter& ir, const IR::F32& operand_1,
+                                          const IR::F32& operand_2, FPCompareOp compare_op,
+                                          IR::FpControl control = {});
 } // namespace Shader::Maxwell
