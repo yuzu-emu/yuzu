@@ -85,14 +85,6 @@ void TranslatorVisitor::CS2R(u64) {
     ThrowNotImplemented(Opcode::CS2R);
 }
 
-void TranslatorVisitor::CSET(u64) {
-    ThrowNotImplemented(Opcode::CSET);
-}
-
-void TranslatorVisitor::CSETP(u64) {
-    ThrowNotImplemented(Opcode::CSETP);
-}
-
 void TranslatorVisitor::DADD_reg(u64) {
     ThrowNotImplemented(Opcode::DADD_reg);
 }

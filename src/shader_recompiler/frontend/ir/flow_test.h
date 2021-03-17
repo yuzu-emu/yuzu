@@ -5,12 +5,13 @@
 #pragma once
 
 #include <string>
-
 #include <fmt/format.h>
+
+#include "common/common_types.h"
 
 namespace Shader::IR {
 
-enum class FlowTest {
+enum class FlowTest : u64 {
     F,
     LT,
     EQ,

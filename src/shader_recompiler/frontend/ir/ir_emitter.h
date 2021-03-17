@@ -62,6 +62,7 @@ public:
     void SetOFlag(const U1& value);
 
     [[nodiscard]] U1 Condition(IR::Condition cond);
+    [[nodiscard]] U1 GetFlowTestResult(FlowTest test);
 
     [[nodiscard]] F32 GetAttribute(IR::Attribute attribute);
     void SetAttribute(IR::Attribute attribute, const F32& value);
