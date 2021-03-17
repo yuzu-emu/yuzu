@@ -181,8 +181,16 @@ private:
         }
         if (same.IsEmpty()) {
             // The phi is unreachable or in the start block
-            const auto first_not_phi{std::ranges::find_if_not(block->Instructions(), IsPhi)};
+            // First remove the phi node from the block, it will be reinserted
+            IR::Block::InstructionList& list{block->Instructions()};
+            list.erase(IR::Block::InstructionList::s_iterator_to(phi));
+
+            // Insert an undef instruction after all phi nodes (to keep phi instructions on top)
+            const auto first_not_phi{std::ranges::find_if_not(list, IsPhi)};
             same = IR::Value{&*block->PrependNewInst(first_not_phi, undef_opcode)};
+
+            // Insert the phi node after the undef opcode, this will be replaced with an identity
+            list.insert(first_not_phi, phi);
         }
         // Reroute all uses of phi to same and remove phi
         phi.ReplaceUsesWith(same);
