@@ -169,16 +169,62 @@ void IREmitter::SetOFlag(const U1& value) {
 
 static U1 GetFlowTest(IREmitter& ir, FlowTest flow_test) {
     switch (flow_test) {
-    case FlowTest::T:
-        return ir.Imm1(true);
     case FlowTest::F:
         return ir.Imm1(false);
+    case FlowTest::LT:
+        return ir.LogicalXor(ir.LogicalAnd(ir.GetSFlag(), ir.LogicalNot(ir.GetZFlag())),
+                             ir.GetOFlag());
     case FlowTest::EQ:
-        // TODO: Test this
-        return ir.GetZFlag();
+        return ir.LogicalAnd(ir.LogicalNot(ir.GetSFlag()), ir.GetZFlag());
+    case FlowTest::LE:
+        return ir.LogicalXor(ir.GetSFlag(), ir.LogicalOr(ir.GetZFlag(), ir.GetOFlag()));
+    case FlowTest::GT:
+        return ir.LogicalAnd(ir.LogicalXor(ir.LogicalNot(ir.GetSFlag()), ir.GetOFlag()),
+                             ir.LogicalNot(ir.GetZFlag()));
     case FlowTest::NE:
-        // TODO: Test this
         return ir.LogicalNot(ir.GetZFlag());
+    case FlowTest::GE:
+        return ir.LogicalNot(ir.LogicalXor(ir.GetSFlag(), ir.GetOFlag()));
+    case FlowTest::NUM:
+        return ir.LogicalOr(ir.LogicalNot(ir.GetSFlag()), ir.LogicalNot(ir.GetZFlag()));
+    case FlowTest::NaN:
+        return ir.LogicalAnd(ir.GetSFlag(), ir.GetZFlag());
+    case FlowTest::LTU:
+        return ir.LogicalXor(ir.GetSFlag(), ir.GetOFlag());
+    case FlowTest::EQU:
+        return ir.GetZFlag();
+    case FlowTest::LEU:
+        return ir.LogicalOr(ir.LogicalXor(ir.GetSFlag(), ir.GetOFlag()), ir.GetZFlag());
+    case FlowTest::GTU:
+        return ir.LogicalXor(ir.LogicalNot(ir.GetSFlag()),
+                             ir.LogicalOr(ir.GetZFlag(), ir.GetOFlag()));
+    case FlowTest::NEU:
+        return ir.LogicalOr(ir.GetSFlag(), ir.LogicalNot(ir.GetZFlag()));
+    case FlowTest::GEU:
+        return ir.LogicalXor(ir.LogicalOr(ir.LogicalNot(ir.GetSFlag()), ir.GetZFlag()),
+                             ir.GetOFlag());
+    case FlowTest::T:
+        return ir.Imm1(true);
+    case FlowTest::OFF:
+        return ir.LogicalNot(ir.GetOFlag());
+    case FlowTest::LO:
+        return ir.LogicalNot(ir.GetCFlag());
+    case FlowTest::SFF:
+        return ir.LogicalNot(ir.GetSFlag());
+    case FlowTest::LS:
+        return ir.LogicalOr(ir.GetZFlag(), ir.LogicalNot(ir.GetCFlag()));
+    case FlowTest::HI:
+        return ir.LogicalAnd(ir.GetCFlag(), ir.LogicalNot(ir.GetZFlag()));
+    case FlowTest::SFT:
+        return ir.GetSFlag();
+    case FlowTest::HS:
+        return ir.GetCFlag();
+    case FlowTest::OFT:
+        return ir.GetOFlag();
+    case FlowTest::RLE:
+        return ir.LogicalOr(ir.GetSFlag(), ir.GetZFlag());
+    case FlowTest::RGT:
+        return ir.LogicalAnd(ir.LogicalNot(ir.GetSFlag()), ir.LogicalNot(ir.GetZFlag()));
     default:
         throw NotImplementedException("Flow test {}", flow_test);
     }
@@ -188,6 +234,10 @@ U1 IREmitter::Condition(IR::Condition cond) {
     const FlowTest flow_test{cond.FlowTest()};
     const auto [pred, is_negated]{cond.Pred()};
     return LogicalAnd(GetPred(pred, is_negated), GetFlowTest(*this, flow_test));
+}
+
+U1 IREmitter::GetFlowTestResult(FlowTest test) {
+    return GetFlowTest(*this, test);
 }
 
 F32 IREmitter::GetAttribute(IR::Attribute attribute) {
