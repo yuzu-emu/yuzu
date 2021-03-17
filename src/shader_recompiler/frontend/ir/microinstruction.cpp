@@ -182,7 +182,7 @@ void Inst::AddPhiOperand(Block* predecessor, const Value& value) {
 
 void Inst::Invalidate() {
     ClearArgs();
-    op = Opcode::Void;
+    ReplaceOpcode(Opcode::Void);
 }
 
 void Inst::ClearArgs() {
@@ -206,20 +206,22 @@ void Inst::ClearArgs() {
 
 void Inst::ReplaceUsesWith(Value replacement) {
     Invalidate();
-
-    op = Opcode::Identity;
-
+    ReplaceOpcode(Opcode::Identity);
     if (!replacement.IsImmediate()) {
         Use(replacement);
     }
-    if (op == Opcode::Phi) {
-        phi_args[0].second = replacement;
-    } else {
-        args[0] = replacement;
-    }
+    args[0] = replacement;
 }
 
 void Inst::ReplaceOpcode(IR::Opcode opcode) {
+    if (opcode == IR::Opcode::Phi) {
+        throw LogicError("Cannot transition into Phi");
+    }
+    if (op == Opcode::Phi) {
+        // Transition out of phi arguments into non-phi
+        std::destroy_at(&phi_args);
+        std::construct_at(&args);
+    }
     op = opcode;
 }
 
