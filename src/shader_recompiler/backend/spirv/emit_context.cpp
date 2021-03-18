@@ -94,6 +94,8 @@ Id EmitContext::Def(const IR::Value& value) {
         return Constant(U32[1], value.U32());
     case IR::Type::F32:
         return Constant(F32[1], value.F32());
+    case IR::Type::F64:
+        return Constant(F64[1], value.F64());
     default:
         throw NotImplementedException("Immediate type {}", value.Type());
     }

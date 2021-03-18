@@ -85,18 +85,6 @@ void TranslatorVisitor::CS2R(u64) {
     ThrowNotImplemented(Opcode::CS2R);
 }
 
-void TranslatorVisitor::DADD_reg(u64) {
-    ThrowNotImplemented(Opcode::DADD_reg);
-}
-
-void TranslatorVisitor::DADD_cbuf(u64) {
-    ThrowNotImplemented(Opcode::DADD_cbuf);
-}
-
-void TranslatorVisitor::DADD_imm(u64) {
-    ThrowNotImplemented(Opcode::DADD_imm);
-}
-
 void TranslatorVisitor::DEPBAR() {
     // DEPBAR is a no-op
 }

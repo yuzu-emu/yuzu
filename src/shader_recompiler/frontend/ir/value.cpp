@@ -153,6 +153,14 @@ u64 Value::U64() const {
     return imm_u64;
 }
 
+f64 Value::F64() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).F64();
+    }
+    ValidateAccess(Type::F64);
+    return imm_f64;
+}
+
 bool Value::operator==(const Value& other) const {
     if (type != other.type) {
         return false;
