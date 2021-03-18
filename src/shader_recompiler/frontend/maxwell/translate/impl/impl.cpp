@@ -7,6 +7,15 @@
 #include "shader_recompiler/frontend/maxwell/translate/impl/impl.h"
 
 namespace Shader::Maxwell {
+namespace {
+[[nodiscard]] IR::U32 CbufLowerBits(IR::IREmitter& ir, bool unaligned, const IR::U32& binding,
+                                    u32 offset) {
+    if (unaligned) {
+        return ir.Imm32(0);
+    }
+    return ir.GetCbuf(binding, IR::U32{IR::Value{offset}});
+}
+} // Anonymous namespace
 
 IR::U32 TranslatorVisitor::X(IR::Reg reg) {
     return ir.GetReg(reg);
@@ -56,6 +65,18 @@ IR::F32 TranslatorVisitor::GetFloatReg39(u64 insn) {
     return ir.BitCast<IR::F32>(GetReg39(insn));
 }
 
+IR::F64 TranslatorVisitor::GetDoubleReg20(u64 insn) {
+    union {
+        u64 raw;
+        BitField<20, 8, IR::Reg> src;
+    } const index{insn};
+    const IR::Reg reg{index.src};
+    if (!IR::IsAligned(reg, 2)) {
+        throw NotImplementedException("Unaligned source register {}", reg);
+    }
+    return ir.PackDouble2x32(ir.CompositeConstruct(X(reg), X(reg + 1)));
+}
+
 static std::pair<IR::U32, IR::U32> CbufAddr(u64 insn) {
     union {
         u64 raw;
@@ -75,13 +96,29 @@ static std::pair<IR::U32, IR::U32> CbufAddr(u64 insn) {
 }
 
 IR::U32 TranslatorVisitor::GetCbuf(u64 insn) {
-    const auto[binding, byte_offset]{CbufAddr(insn)};
+    const auto [binding, byte_offset]{CbufAddr(insn)};
     return ir.GetCbuf(binding, byte_offset);
 }
 
 IR::F32 TranslatorVisitor::GetFloatCbuf(u64 insn) {
-    const auto[binding, byte_offset]{CbufAddr(insn)};
+    const auto [binding, byte_offset]{CbufAddr(insn)};
     return ir.GetFloatCbuf(binding, byte_offset);
+}
+
+IR::F64 TranslatorVisitor::GetDoubleCbuf(u64 insn) {
+    union {
+        u64 raw;
+        BitField<20, 1, u64> unaligned;
+    } const cbuf{insn};
+
+    const auto [binding, offset_value]{CbufAddr(insn)};
+    const bool unaligned{cbuf.unaligned != 0};
+    const u32 offset{offset_value.U32()};
+    const IR::Value addr{unaligned ? offset | 4 : (offset & ~7) | 4};
+
+    const IR::U32 value{ir.GetCbuf(binding, IR::U32{addr})};
+    const IR::U32 lower_bits{CbufLowerBits(ir, unaligned, binding, offset)};
+    return ir.PackDouble2x32(ir.CompositeConstruct(lower_bits, value));
 }
 
 IR::U32 TranslatorVisitor::GetImm20(u64 insn) {
@@ -108,6 +145,17 @@ IR::F32 TranslatorVisitor::GetFloatImm20(u64 insn) {
     const u32 sign_bit{imm.is_negative != 0 ? (1ULL << 31) : 0};
     const u32 value{static_cast<u32>(imm.value) << 12};
     return ir.Imm32(Common::BitCast<f32>(value | sign_bit));
+}
+
+IR::F64 TranslatorVisitor::GetDoubleImm20(u64 insn) {
+    union {
+        u64 raw;
+        BitField<20, 19, u64> value;
+        BitField<56, 1, u64> is_negative;
+    } const imm{insn};
+    const u64 sign_bit{imm.is_negative != 0 ? (1ULL << 63) : 0};
+    const u64 value{imm.value << 44};
+    return ir.Imm64(Common::BitCast<f64>(value | sign_bit));
 }
 
 IR::U32 TranslatorVisitor::GetImm32(u64 insn) {

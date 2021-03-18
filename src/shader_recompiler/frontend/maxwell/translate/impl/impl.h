@@ -351,12 +351,15 @@ public:
     [[nodiscard]] IR::U32 GetReg39(u64 insn);
     [[nodiscard]] IR::F32 GetFloatReg20(u64 insn);
     [[nodiscard]] IR::F32 GetFloatReg39(u64 insn);
+    [[nodiscard]] IR::F64 GetDoubleReg20(u64 insn);
 
     [[nodiscard]] IR::U32 GetCbuf(u64 insn);
     [[nodiscard]] IR::F32 GetFloatCbuf(u64 insn);
+    [[nodiscard]] IR::F64 GetDoubleCbuf(u64 insn);
 
     [[nodiscard]] IR::U32 GetImm20(u64 insn);
     [[nodiscard]] IR::F32 GetFloatImm20(u64 insn);
+    [[nodiscard]] IR::F64 GetDoubleImm20(u64 insn);
 
     [[nodiscard]] IR::U32 GetImm32(u64 insn);
     [[nodiscard]] IR::F32 GetFloatImm32(u64 insn);
