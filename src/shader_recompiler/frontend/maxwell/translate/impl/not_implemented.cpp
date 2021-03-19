@@ -357,10 +357,6 @@ void TranslatorVisitor::LONGJMP(u64) {
     ThrowNotImplemented(Opcode::LONGJMP);
 }
 
-void TranslatorVisitor::LOP32I(u64) {
-    ThrowNotImplemented(Opcode::LOP32I);
-}
-
 void TranslatorVisitor::MEMBAR(u64) {
     ThrowNotImplemented(Opcode::MEMBAR);
 }
