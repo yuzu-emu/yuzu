@@ -141,15 +141,18 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
       blit_image(device, scheduler, state_tracker, descriptor_pool),
       astc_decoder_pass(device, scheduler, descriptor_pool, staging_pool, update_descriptor_queue,
                         memory_allocator),
-      texture_cache_runtime{device,       scheduler,  memory_allocator,
-                            staging_pool, blit_image, astc_decoder_pass},
+      render_pass_cache(device), texture_cache_runtime{device,           scheduler,
+                                                       memory_allocator, staging_pool,
+                                                       blit_image,       astc_decoder_pass,
+                                                       render_pass_cache},
       texture_cache(texture_cache_runtime, *this, maxwell3d, kepler_compute, gpu_memory),
       buffer_cache_runtime(device, memory_allocator, scheduler, staging_pool,
                            update_descriptor_queue, descriptor_pool),
       buffer_cache(*this, maxwell3d, kepler_compute, gpu_memory, cpu_memory_, buffer_cache_runtime),
       pipeline_cache(*this, gpu, maxwell3d, kepler_compute, gpu_memory, device, scheduler,
-                     descriptor_pool, update_descriptor_queue),
-      query_cache{*this, maxwell3d, gpu_memory, device, scheduler}, accelerate_dma{buffer_cache},
+                     descriptor_pool, update_descriptor_queue, render_pass_cache, buffer_cache,
+                     texture_cache),
+      query_cache{*this, maxwell3d, gpu_memory, device, scheduler}, accelerate_dma{ buffer_cache },
       fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache, device, scheduler),
       wfi_event(device.GetLogical().CreateEvent()) {
     scheduler.SetQueryCache(query_cache);
@@ -158,7 +161,39 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
 RasterizerVulkan::~RasterizerVulkan() = default;
 
 void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
-    UNREACHABLE_MSG("Rendering not implemented {} {}", is_indexed, is_instanced);
+    MICROPROFILE_SCOPE(Vulkan_Drawing);
+
+    SCOPE_EXIT({ gpu.TickWork(); });
+    FlushWork();
+
+    query_cache.UpdateCounters();
+
+    GraphicsPipeline* const pipeline{pipeline_cache.CurrentGraphicsPipeline()};
+    if (!pipeline) {
+        return;
+    }
+    update_descriptor_queue.Acquire();
+    std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+    pipeline->Configure(is_indexed);
+
+    BeginTransformFeedback();
+
+    scheduler.RequestRenderpass(texture_cache.GetFramebuffer());
+    UpdateDynamicStates();
+
+    const auto& regs{maxwell3d.regs};
+    const u32 num_instances{maxwell3d.mme_draw.instance_count};
+    const DrawParams draw_params{MakeDrawParams(regs, num_instances, is_instanced, is_indexed)};
+    scheduler.Record([draw_params](vk::CommandBuffer cmdbuf) {
+        if (draw_params.is_indexed) {
+            cmdbuf.DrawIndexed(draw_params.num_vertices, draw_params.num_instances, 0,
+                               draw_params.base_vertex, draw_params.base_instance);
+        } else {
+            cmdbuf.Draw(draw_params.num_vertices, draw_params.num_instances,
+                        draw_params.base_vertex, draw_params.base_instance);
+        }
+    });
+    EndTransformFeedback();
 }
 
 void RasterizerVulkan::Clear() {
@@ -487,13 +522,11 @@ void RasterizerVulkan::FlushWork() {
     if ((++draw_counter & 7) != 7) {
         return;
     }
-
     if (draw_counter < DRAWS_TO_DISPATCH) {
         // Send recorded tasks to the worker thread
         scheduler.DispatchWork();
         return;
     }
-
     // Otherwise (every certain number of draws) flush execution.
     // This submits commands to the Vulkan driver.
     scheduler.Flush();

@@ -18,6 +18,7 @@
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
+#include "video_core/renderer_vulkan/vk_render_pass_cache.h"
 #include "video_core/vulkan_common/vulkan_device.h"
 #include "video_core/vulkan_common/vulkan_memory_allocator.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
@@ -34,19 +35,6 @@ using VideoCommon::SubresourceRange;
 using VideoCore::Surface::IsPixelFormatASTC;
 
 namespace {
-
-constexpr std::array ATTACHMENT_REFERENCES{
-    VkAttachmentReference{0, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{1, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{2, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{3, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{4, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{5, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{6, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{7, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{8, VK_IMAGE_LAYOUT_GENERAL},
-};
-
 constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     if (color == std::array<float, 4>{0, 0, 0, 0}) {
         return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
@@ -224,23 +212,6 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     default:
         return VK_IMAGE_ASPECT_COLOR_BIT;
     }
-}
-
-[[nodiscard]] VkAttachmentDescription AttachmentDescription(const Device& device,
-                                                            const ImageView* image_view) {
-    using MaxwellToVK::SurfaceFormat;
-    const PixelFormat pixel_format = image_view->format;
-    return VkAttachmentDescription{
-        .flags = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT,
-        .format = SurfaceFormat(device, FormatType::Optimal, true, pixel_format).format,
-        .samples = image_view->Samples(),
-        .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .initialLayout = VK_IMAGE_LAYOUT_GENERAL,
-        .finalLayout = VK_IMAGE_LAYOUT_GENERAL,
-    };
 }
 
 [[nodiscard]] VkComponentSwizzle ComponentSwizzle(SwizzleSource swizzle) {
@@ -1146,7 +1117,6 @@ Sampler::Sampler(TextureCacheRuntime& runtime, const Tegra::Texture::TSCEntry& t
 
 Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM_RT> color_buffers,
                          ImageView* depth_buffer, const VideoCommon::RenderTargets& key) {
-    std::vector<VkAttachmentDescription> descriptions;
     std::vector<VkImageView> attachments;
     RenderPassKey renderpass_key{};
     s32 num_layers = 1;
@@ -1157,7 +1127,6 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
             renderpass_key.color_formats[index] = PixelFormat::Invalid;
             continue;
         }
-        descriptions.push_back(AttachmentDescription(runtime.device, color_buffer));
         attachments.push_back(color_buffer->RenderTarget());
         renderpass_key.color_formats[index] = color_buffer->format;
         num_layers = std::max(num_layers, color_buffer->range.extent.layers);
@@ -1167,10 +1136,7 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
         ++num_images;
     }
     const size_t num_colors = attachments.size();
-    const VkAttachmentReference* depth_attachment =
-        depth_buffer ? &ATTACHMENT_REFERENCES[num_colors] : nullptr;
     if (depth_buffer) {
-        descriptions.push_back(AttachmentDescription(runtime.device, depth_buffer));
         attachments.push_back(depth_buffer->RenderTarget());
         renderpass_key.depth_format = depth_buffer->format;
         num_layers = std::max(num_layers, depth_buffer->range.extent.layers);
@@ -1183,40 +1149,14 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
     }
     renderpass_key.samples = samples;
 
-    const auto& device = runtime.device.GetLogical();
-    const auto [cache_pair, is_new] = runtime.renderpass_cache.try_emplace(renderpass_key);
-    if (is_new) {
-        const VkSubpassDescription subpass{
-            .flags = 0,
-            .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-            .inputAttachmentCount = 0,
-            .pInputAttachments = nullptr,
-            .colorAttachmentCount = static_cast<u32>(num_colors),
-            .pColorAttachments = num_colors != 0 ? ATTACHMENT_REFERENCES.data() : nullptr,
-            .pResolveAttachments = nullptr,
-            .pDepthStencilAttachment = depth_attachment,
-            .preserveAttachmentCount = 0,
-            .pPreserveAttachments = nullptr,
-        };
-        cache_pair->second = device.CreateRenderPass(VkRenderPassCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .attachmentCount = static_cast<u32>(descriptions.size()),
-            .pAttachments = descriptions.data(),
-            .subpassCount = 1,
-            .pSubpasses = &subpass,
-            .dependencyCount = 0,
-            .pDependencies = nullptr,
-        });
-    }
-    renderpass = *cache_pair->second;
+    renderpass = runtime.render_pass_cache.Get(renderpass_key);
+
     render_area = VkExtent2D{
         .width = key.size.width,
         .height = key.size.height,
     };
     num_color_buffers = static_cast<u32>(num_colors);
-    framebuffer = device.CreateFramebuffer(VkFramebufferCreateInfo{
+    framebuffer = runtime.device.GetLogical().CreateFramebuffer({
         .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,

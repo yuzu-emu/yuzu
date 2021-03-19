@@ -65,6 +65,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/common_funcs.h
     frontend/maxwell/translate/impl/condition_code_set.cpp
     frontend/maxwell/translate/impl/double_add.cpp
+    frontend/maxwell/translate/impl/exit_program.cpp
     frontend/maxwell/translate/impl/find_leading_one.cpp
     frontend/maxwell/translate/impl/floating_point_add.cpp
     frontend/maxwell/translate/impl/floating_point_compare.cpp
@@ -121,9 +122,8 @@ add_library(shader_recompiler STATIC
     ir_opt/texture_pass.cpp
     ir_opt/verification_pass.cpp
     object_pool.h
+    program_header.h
     profile.h
-    recompiler.cpp
-    recompiler.h
     shader_info.h
 )
 

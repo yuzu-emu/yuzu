@@ -23,6 +23,7 @@
 #include "video_core/renderer_vulkan/vk_fence_manager.h"
 #include "video_core/renderer_vulkan/vk_pipeline_cache.h"
 #include "video_core/renderer_vulkan/vk_query_cache.h"
+#include "video_core/renderer_vulkan/vk_render_pass_cache.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
@@ -146,6 +147,7 @@ private:
     VKUpdateDescriptorQueue update_descriptor_queue;
     BlitImageHelper blit_image;
     ASTCDecoderPass astc_decoder_pass;
+    RenderPassCache render_pass_cache;
 
     TextureCacheRuntime texture_cache_runtime;
     TextureCache texture_cache;

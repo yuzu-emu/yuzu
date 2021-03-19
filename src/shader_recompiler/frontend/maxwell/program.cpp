@@ -32,6 +32,7 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
     IR::Program program;
     program.blocks = VisitAST(inst_pool, block_pool, env, cfg);
     program.post_order_blocks = PostOrder(program.blocks);
+    program.stage = env.ShaderStage();
     RemoveUnreachableBlocks(program);
 
     // Replace instructions before the SSA rewrite

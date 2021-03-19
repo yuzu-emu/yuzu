@@ -169,7 +169,7 @@ private:
         const size_t num_args{phi.NumArgs()};
         for (size_t arg_index = 0; arg_index < num_args; ++arg_index) {
             const IR::Value& op{phi.Arg(arg_index)};
-            if (op == same || op == IR::Value{&phi}) {
+            if (op.Resolve() == same.Resolve() || op == IR::Value{&phi}) {
                 // Unique value or self-reference
                 continue;
             }

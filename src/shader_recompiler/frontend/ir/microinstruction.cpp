@@ -55,8 +55,11 @@ bool Inst::MayHaveSideEffects() const noexcept {
     case Opcode::LoopMerge:
     case Opcode::SelectionMerge:
     case Opcode::Return:
+    case Opcode::DemoteToHelperInvocation:
     case Opcode::SetAttribute:
     case Opcode::SetAttributeIndexed:
+    case Opcode::SetFragColor:
+    case Opcode::SetFragDepth:
     case Opcode::WriteGlobalU8:
     case Opcode::WriteGlobalS8:
     case Opcode::WriteGlobalU16:

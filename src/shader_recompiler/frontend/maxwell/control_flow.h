@@ -29,6 +29,7 @@ enum class EndClass {
     Call,
     Exit,
     Return,
+    Kill,
 };
 
 enum class Token {
@@ -130,7 +131,7 @@ private:
     AnalysisState AnalyzeInst(Block* block, FunctionId function_id, Location pc);
 
     void AnalyzeCondInst(Block* block, FunctionId function_id, Location pc, EndClass insn_end_class,
-                         IR::Condition cond, bool visit_conditional_inst);
+                         IR::Condition cond);
 
     /// Return true when the branch instruction is confirmed to be a branch
     bool AnalyzeBranch(Block* block, FunctionId function_id, Location pc, Instruction inst,

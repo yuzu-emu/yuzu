@@ -104,6 +104,7 @@ bool HasFlowTest(Opcode opcode) {
     case Opcode::EXIT:
     case Opcode::JMP:
     case Opcode::JMX:
+    case Opcode::KIL:
     case Opcode::BRK:
     case Opcode::CONT:
     case Opcode::LONGJMP:
@@ -287,6 +288,13 @@ CFG::AnalysisState CFG::AnalyzeInst(Block* block, FunctionId function_id, Locati
         block->end = pc;
         return AnalysisState::Branch;
     }
+    case Opcode::KIL: {
+        const Predicate pred{inst.Pred()};
+        const auto ir_pred{static_cast<IR::Pred>(pred.index)};
+        const IR::Condition cond{inst.branch.flow_test, ir_pred, pred.negated};
+        AnalyzeCondInst(block, function_id, pc, EndClass::Kill, cond);
+        return AnalysisState::Branch;
+    }
     case Opcode::PBK:
     case Opcode::PCNT:
     case Opcode::PEXIT:
@@ -324,13 +332,12 @@ CFG::AnalysisState CFG::AnalyzeInst(Block* block, FunctionId function_id, Locati
         return AnalysisState::Continue;
     }
     const IR::Condition cond{static_cast<IR::Pred>(pred.index), pred.negated};
-    AnalyzeCondInst(block, function_id, pc, EndClass::Branch, cond, true);
+    AnalyzeCondInst(block, function_id, pc, EndClass::Branch, cond);
     return AnalysisState::Branch;
 }
 
 void CFG::AnalyzeCondInst(Block* block, FunctionId function_id, Location pc,
-                          EndClass insn_end_class, IR::Condition cond,
-                          bool visit_conditional_inst) {
+                          EndClass insn_end_class, IR::Condition cond) {
     if (block->begin != pc) {
         // If the block doesn't start in the conditional instruction
         // mark it as a label to visit it later
@@ -356,14 +363,16 @@ void CFG::AnalyzeCondInst(Block* block, FunctionId function_id, Location pc,
     // Impersonate the visited block with a virtual block
     *block = std::move(virtual_block);
     // Set the end properties of the conditional instruction
-    conditional_block->end = visit_conditional_inst ? (pc + 1) : pc;
+    conditional_block->end = pc + 1;
     conditional_block->end_class = insn_end_class;
     // Add a label to the instruction after the conditional instruction
     Block* const endif_block{AddLabel(conditional_block, block->stack, pc + 1, function_id)};
     // Branch to the next instruction from the virtual block
     block->branch_false = endif_block;
-    // And branch to it from the conditional instruction if it is a branch
-    if (insn_end_class == EndClass::Branch) {
+    // And branch to it from the conditional instruction if it is a branch or a kill instruction
+    // Kill instructions are considered a branch because they demote to a helper invocation and
+    // execution may continue.
+    if (insn_end_class == EndClass::Branch || insn_end_class == EndClass::Kill) {
         conditional_block->cond = IR::Condition{true};
         conditional_block->branch_true = endif_block;
         conditional_block->branch_false = nullptr;
@@ -415,7 +424,7 @@ CFG::AnalysisState CFG::AnalyzeEXIT(Block* block, FunctionId function_id, Locati
             throw NotImplementedException("Conditional EXIT with PEXIT token");
         }
         const IR::Condition cond{flow_test, static_cast<IR::Pred>(pred.index), pred.negated};
-        AnalyzeCondInst(block, function_id, pc, EndClass::Exit, cond, false);
+        AnalyzeCondInst(block, function_id, pc, EndClass::Exit, cond);
         return AnalysisState::Branch;
     }
     if (const std::optional<Location> exit_pc{block->stack.Peek(Token::PEXIT)}) {
@@ -425,7 +434,7 @@ CFG::AnalysisState CFG::AnalyzeEXIT(Block* block, FunctionId function_id, Locati
         block->branch_false = nullptr;
         return AnalysisState::Branch;
     }
-    block->end = pc;
+    block->end = pc + 1;
     block->end_class = EndClass::Exit;
     return AnalysisState::Branch;
 }
@@ -502,6 +511,12 @@ std::string CFG::Dot() const {
             case EndClass::Return:
                 dot += fmt::format("\t\t{}->N{};\n", name, node_uid);
                 dot += fmt::format("\t\tN{} [label=\"Return\"][shape=square][style=stripped];\n",
+                                   node_uid);
+                ++node_uid;
+                break;
+            case EndClass::Kill:
+                dot += fmt::format("\t\t{}->N{};\n", name, node_uid);
+                dot += fmt::format("\t\tN{} [label=\"Kill\"][shape=square][style=stripped];\n",
                                    node_uid);
                 ++node_uid;
                 break;

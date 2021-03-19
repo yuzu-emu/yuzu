@@ -224,7 +224,7 @@ enum class Attribute : u64 {
 
 [[nodiscard]] bool IsGeneric(Attribute attribute) noexcept;
 
-[[nodiscard]] int GenericAttributeIndex(Attribute attribute);
+[[nodiscard]] u32 GenericAttributeIndex(Attribute attribute);
 
 [[nodiscard]] std::string NameOf(Attribute attribute);
 

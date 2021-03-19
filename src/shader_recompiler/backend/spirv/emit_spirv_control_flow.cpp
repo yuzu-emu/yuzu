@@ -6,26 +6,29 @@
 
 namespace Shader::Backend::SPIRV {
 
-void EmitBranch(EmitContext& ctx, IR::Block* label) {
-    ctx.OpBranch(label->Definition<Id>());
+void EmitBranch(EmitContext& ctx, Id label) {
+    ctx.OpBranch(label);
 }
 
-void EmitBranchConditional(EmitContext& ctx, Id condition, IR::Block* true_label,
-                           IR::Block* false_label) {
-    ctx.OpBranchConditional(condition, true_label->Definition<Id>(), false_label->Definition<Id>());
+void EmitBranchConditional(EmitContext& ctx, Id condition, Id true_label, Id false_label) {
+    ctx.OpBranchConditional(condition, true_label, false_label);
 }
 
-void EmitLoopMerge(EmitContext& ctx, IR::Block* merge_label, IR::Block* continue_label) {
-    ctx.OpLoopMerge(merge_label->Definition<Id>(), continue_label->Definition<Id>(),
-                    spv::LoopControlMask::MaskNone);
+void EmitLoopMerge(EmitContext& ctx, Id merge_label, Id continue_label) {
+    ctx.OpLoopMerge(merge_label, continue_label, spv::LoopControlMask::MaskNone);
 }
 
-void EmitSelectionMerge(EmitContext& ctx, IR::Block* merge_label) {
-    ctx.OpSelectionMerge(merge_label->Definition<Id>(), spv::SelectionControlMask::MaskNone);
+void EmitSelectionMerge(EmitContext& ctx, Id merge_label) {
+    ctx.OpSelectionMerge(merge_label, spv::SelectionControlMask::MaskNone);
 }
 
 void EmitReturn(EmitContext& ctx) {
     ctx.OpReturn();
+}
+
+void EmitDemoteToHelperInvocation(EmitContext& ctx, Id continue_label) {
+    ctx.OpDemoteToHelperInvocationEXT();
+    ctx.OpBranch(continue_label);
 }
 
 } // namespace Shader::Backend::SPIRV

@@ -46,7 +46,7 @@ struct UniformDefinitions {
 
 class EmitContext final : public Sirit::Module {
 public:
-    explicit EmitContext(const Profile& profile, IR::Program& program);
+    explicit EmitContext(const Profile& profile, IR::Program& program, u32& binding);
     ~EmitContext();
 
     [[nodiscard]] Id Def(const IR::Value& value);
@@ -71,6 +71,9 @@ public:
 
     UniformDefinitions uniform_types;
 
+    Id input_f32{};
+    Id output_f32{};
+
     Id storage_u32{};
 
     std::array<UniformDefinitions, Info::MAX_CBUFS> cbufs{};
@@ -80,10 +83,21 @@ public:
     Id workgroup_id{};
     Id local_invocation_id{};
 
+    Id input_position{};
+    std::array<Id, 32> input_generics{};
+
+    Id output_position{};
+    std::array<Id, 32> output_generics{};
+
+    std::array<Id, 8> frag_color{};
+    Id frag_depth {};
+
+    std::vector<Id> interfaces;
+
 private:
     void DefineCommonTypes(const Info& info);
     void DefineCommonConstants();
-    void DefineSpecialVariables(const Info& info);
+    void DefineInterfaces(const Info& info, Stage stage);
     void DefineConstantBuffers(const Info& info, u32& binding);
     void DefineConstantBuffers(const Info& info, Id UniformDefinitions::*member_type, u32 binding,
                                Id type, char type_char, u32 element_size);

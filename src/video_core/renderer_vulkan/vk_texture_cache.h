@@ -26,34 +26,9 @@ class Device;
 class Image;
 class ImageView;
 class Framebuffer;
+class RenderPassCache;
 class StagingBufferPool;
 class VKScheduler;
-
-struct RenderPassKey {
-    constexpr auto operator<=>(const RenderPassKey&) const noexcept = default;
-
-    std::array<PixelFormat, NUM_RT> color_formats;
-    PixelFormat depth_format;
-    VkSampleCountFlagBits samples;
-};
-
-} // namespace Vulkan
-
-namespace std {
-template <>
-struct hash<Vulkan::RenderPassKey> {
-    [[nodiscard]] constexpr size_t operator()(const Vulkan::RenderPassKey& key) const noexcept {
-        size_t value = static_cast<size_t>(key.depth_format) << 48;
-        value ^= static_cast<size_t>(key.samples) << 52;
-        for (size_t i = 0; i < key.color_formats.size(); ++i) {
-            value ^= static_cast<size_t>(key.color_formats[i]) << (i * 6);
-        }
-        return value;
-    }
-};
-} // namespace std
-
-namespace Vulkan {
 
 struct TextureCacheRuntime {
     const Device& device;
@@ -62,7 +37,7 @@ struct TextureCacheRuntime {
     StagingBufferPool& staging_buffer_pool;
     BlitImageHelper& blit_image_helper;
     ASTCDecoderPass& astc_decoder_pass;
-    std::unordered_map<RenderPassKey, vk::RenderPass> renderpass_cache{};
+    RenderPassCache& render_pass_cache;
 
     void Finish();
 

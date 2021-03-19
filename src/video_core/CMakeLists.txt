@@ -100,6 +100,7 @@ add_library(video_core STATIC
     renderer_vulkan/fixed_pipeline_state.h
     renderer_vulkan/maxwell_to_vk.cpp
     renderer_vulkan/maxwell_to_vk.h
+    renderer_vulkan/pipeline_helper.h
     renderer_vulkan/renderer_vulkan.h
     renderer_vulkan/renderer_vulkan.cpp
     renderer_vulkan/vk_blit_screen.cpp
@@ -116,15 +117,18 @@ add_library(video_core STATIC
     renderer_vulkan/vk_descriptor_pool.h
     renderer_vulkan/vk_fence_manager.cpp
     renderer_vulkan/vk_fence_manager.h
+    renderer_vulkan/vk_graphics_pipeline.cpp
+    renderer_vulkan/vk_graphics_pipeline.h
     renderer_vulkan/vk_master_semaphore.cpp
     renderer_vulkan/vk_master_semaphore.h
     renderer_vulkan/vk_pipeline_cache.cpp
     renderer_vulkan/vk_pipeline_cache.h
-    renderer_vulkan/vk_pipeline.h
     renderer_vulkan/vk_query_cache.cpp
     renderer_vulkan/vk_query_cache.h
     renderer_vulkan/vk_rasterizer.cpp
     renderer_vulkan/vk_rasterizer.h
+    renderer_vulkan/vk_render_pass_cache.cpp
+    renderer_vulkan/vk_render_pass_cache.h
     renderer_vulkan/vk_resource_pool.cpp
     renderer_vulkan/vk_resource_pool.h
     renderer_vulkan/vk_scheduler.cpp

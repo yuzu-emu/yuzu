@@ -56,6 +56,15 @@ struct Info {
 
     bool uses_workgroup_id{};
     bool uses_local_invocation_id{};
+
+    std::array<bool, 32> loads_generics{};
+    bool loads_position{};
+
+    std::array<bool, 8> stores_frag_color{};
+    bool stores_frag_depth{};
+    std::array<bool, 32> stores_generics{};
+    bool stores_position{};
+
     bool uses_fp16{};
     bool uses_fp64{};
     bool uses_fp16_denorms_flush{};
@@ -68,6 +77,7 @@ struct Info {
     bool uses_image_1d{};
     bool uses_sampled_1d{};
     bool uses_sparse_residency{};
+    bool uses_demote_to_helper_invocation{};
 
     IR::Type used_constant_buffer_types{};
 

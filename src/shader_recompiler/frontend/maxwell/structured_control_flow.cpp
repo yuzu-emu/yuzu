@@ -45,6 +45,7 @@ enum class StatementType {
     Loop,
     Break,
     Return,
+    Kill,
     Function,
     Identity,
     Not,
@@ -70,6 +71,7 @@ struct If {};
 struct Loop {};
 struct Break {};
 struct Return {};
+struct Kill {};
 struct FunctionTag {};
 struct Identity {};
 struct Not {};
@@ -93,6 +95,7 @@ struct Statement : ListBaseHook {
     Statement(Break, Statement* cond_, Statement* up_)
         : cond{cond_}, up{up_}, type{StatementType::Break} {}
     Statement(Return) : type{StatementType::Return} {}
+    Statement(Kill) : type{StatementType::Kill} {}
     Statement(FunctionTag) : children{}, type{StatementType::Function} {}
     Statement(Identity, IR::Condition cond_) : guest_cond{cond_}, type{StatementType::Identity} {}
     Statement(Not, Statement* op_) : op{op_}, type{StatementType::Not} {}
@@ -173,6 +176,9 @@ std::string DumpTree(const Tree& tree, u32 indentation = 0) {
             break;
         case StatementType::Return:
             ret += fmt::format("{}    return;\n", indent);
+            break;
+        case StatementType::Kill:
+            ret += fmt::format("{}    kill;\n", indent);
             break;
         case StatementType::SetVariable:
             ret += fmt::format("{}    goto_L{} = {};\n", indent, stmt->id, DumpExpr(stmt->op));
@@ -424,6 +430,9 @@ private:
                 gotos.push_back(root.insert(ip, *goto_stmt));
                 break;
             }
+            case Flow::EndClass::Kill:
+                root.insert(ip, *pool.Create(Kill{}));
+                break;
             }
         }
     }
@@ -726,6 +735,15 @@ private:
                     block_list.push_back(current_block);
                 }
                 IR::IREmitter{*current_block}.Return();
+                current_block = nullptr;
+                break;
+            }
+            case StatementType::Kill: {
+                if (!current_block) {
+                    current_block = block_pool.Create(inst_pool);
+                    block_list.push_back(current_block);
+                }
+                IR::IREmitter{*current_block}.DemoteToHelperInvocation(continue_block);
                 current_block = nullptr;
                 break;
             }

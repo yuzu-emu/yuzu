@@ -82,6 +82,12 @@ void IREmitter::Return() {
     Inst(Opcode::Return);
 }
 
+void IREmitter::DemoteToHelperInvocation(Block* continue_label) {
+    block->SetBranch(continue_label);
+    continue_label->AddImmediatePredecessor(block);
+    Inst(Opcode::DemoteToHelperInvocation, continue_label);
+}
+
 U32 IREmitter::GetReg(IR::Reg reg) {
     return Inst<U32>(Opcode::GetRegister, reg);
 }
@@ -246,6 +252,14 @@ F32 IREmitter::GetAttribute(IR::Attribute attribute) {
 
 void IREmitter::SetAttribute(IR::Attribute attribute, const F32& value) {
     Inst(Opcode::SetAttribute, attribute, value);
+}
+
+void IREmitter::SetFragColor(u32 index, u32 component, const F32& value) {
+    Inst(Opcode::SetFragColor, Imm32(index), Imm32(component), value);
+}
+
+void IREmitter::SetFragDepth(const F32& value) {
+    Inst(Opcode::SetFragDepth, value);
 }
 
 U32 IREmitter::WorkgroupIdX() {
