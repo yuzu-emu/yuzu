@@ -108,7 +108,7 @@ public:
     void DSETP_reg(u64 insn);
     void DSETP_cbuf(u64 insn);
     void DSETP_imm(u64 insn);
-    void EXIT(u64 insn);
+    void EXIT();
     void F2F_reg(u64 insn);
     void F2F_cbuf(u64 insn);
     void F2F_imm(u64 insn);
@@ -220,7 +220,7 @@ public:
     void JCAL(u64 insn);
     void JMP(u64 insn);
     void JMX(u64 insn);
-    void KIL(u64 insn);
+    void KIL();
     void LD(u64 insn);
     void LDC(u64 insn);
     void LDG(u64 insn);

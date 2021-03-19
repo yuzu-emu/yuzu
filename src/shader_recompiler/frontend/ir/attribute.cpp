@@ -13,7 +13,7 @@ bool IsGeneric(Attribute attribute) noexcept {
     return attribute >= Attribute::Generic0X && attribute <= Attribute::Generic31X;
 }
 
-int GenericAttributeIndex(Attribute attribute) {
+u32 GenericAttributeIndex(Attribute attribute) {
     if (!IsGeneric(attribute)) {
         throw InvalidArgument("Attribute is not generic {}", attribute);
     }

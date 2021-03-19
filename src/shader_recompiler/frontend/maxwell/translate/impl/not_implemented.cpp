@@ -17,14 +17,6 @@ void TranslatorVisitor::AL2P(u64) {
     ThrowNotImplemented(Opcode::AL2P);
 }
 
-void TranslatorVisitor::ALD(u64) {
-    ThrowNotImplemented(Opcode::ALD);
-}
-
-void TranslatorVisitor::AST(u64) {
-    ThrowNotImplemented(Opcode::AST);
-}
-
 void TranslatorVisitor::ATOM_cas(u64) {
     ThrowNotImplemented(Opcode::ATOM_cas);
 }
@@ -151,10 +143,6 @@ void TranslatorVisitor::DSETP_cbuf(u64) {
 
 void TranslatorVisitor::DSETP_imm(u64) {
     ThrowNotImplemented(Opcode::DSETP_imm);
-}
-
-void TranslatorVisitor::EXIT(u64) {
-    throw LogicError("Visting EXIT instruction");
 }
 
 void TranslatorVisitor::F2F_reg(u64) {
@@ -345,8 +333,8 @@ void TranslatorVisitor::JMX(u64) {
     ThrowNotImplemented(Opcode::JMX);
 }
 
-void TranslatorVisitor::KIL(u64) {
-    ThrowNotImplemented(Opcode::KIL);
+void TranslatorVisitor::KIL() {
+    // KIL is a no-op
 }
 
 void TranslatorVisitor::LD(u64) {

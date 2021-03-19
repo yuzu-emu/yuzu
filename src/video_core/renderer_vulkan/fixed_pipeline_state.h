@@ -60,7 +60,7 @@ struct FixedPipelineState {
 
         void Refresh(const Maxwell& regs, size_t index);
 
-        constexpr std::array<bool, 4> Mask() const noexcept {
+        std::array<bool, 4> Mask() const noexcept {
             return {mask_r != 0, mask_g != 0, mask_b != 0, mask_a != 0};
         }
 
@@ -97,11 +97,11 @@ struct FixedPipelineState {
         BitField<20, 3, u32> type;
         BitField<23, 6, u32> size;
 
-        constexpr Maxwell::VertexAttribute::Type Type() const noexcept {
+        Maxwell::VertexAttribute::Type Type() const noexcept {
             return static_cast<Maxwell::VertexAttribute::Type>(type.Value());
         }
 
-        constexpr Maxwell::VertexAttribute::Size Size() const noexcept {
+        Maxwell::VertexAttribute::Size Size() const noexcept {
             return static_cast<Maxwell::VertexAttribute::Size>(size.Value());
         }
     };
@@ -187,7 +187,10 @@ struct FixedPipelineState {
         u32 raw2;
         BitField<0, 3, u32> alpha_test_func;
         BitField<3, 1, u32> early_z;
+        BitField<4, 1, u32> depth_enabled;
+        BitField<5, 5, u32> depth_format;
     };
+    std::array<u8, Maxwell::NumRenderTargets> color_formats;
 
     u32 alpha_test_ref;
     u32 point_size;

@@ -72,6 +72,10 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
         regs.alpha_test_enabled != 0 ? regs.alpha_test_func : Maxwell::ComparisonOp::Always;
     alpha_test_func.Assign(PackComparisonOp(test_func));
     early_z.Assign(regs.force_early_fragment_tests != 0 ? 1 : 0);
+    depth_enabled.Assign(regs.zeta_enable != 0 ? 1 : 0);
+    depth_format.Assign(static_cast<u32>(regs.zeta.format));
+    std::ranges::transform(regs.rt, color_formats.begin(),
+                           [](const auto& rt) { return static_cast<u8>(rt.format); });
 
     alpha_test_ref = Common::BitCast<u32>(regs.alpha_test_ref);
     point_size = Common::BitCast<u32>(regs.point_size);

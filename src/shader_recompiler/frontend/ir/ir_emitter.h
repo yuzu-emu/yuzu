@@ -36,6 +36,7 @@ public:
     void LoopMerge(Block* merge_block, Block* continue_target);
     void SelectionMerge(Block* merge_block);
     void Return();
+    void DemoteToHelperInvocation(Block* continue_label);
 
     [[nodiscard]] U32 GetReg(IR::Reg reg);
     void SetReg(IR::Reg reg, const U32& value);
@@ -66,6 +67,9 @@ public:
 
     [[nodiscard]] F32 GetAttribute(IR::Attribute attribute);
     void SetAttribute(IR::Attribute attribute, const F32& value);
+
+    void SetFragColor(u32 index, u32 component, const F32& value);
+    void SetFragDepth(const F32& value);
 
     [[nodiscard]] U32 WorkgroupIdX();
     [[nodiscard]] U32 WorkgroupIdY();

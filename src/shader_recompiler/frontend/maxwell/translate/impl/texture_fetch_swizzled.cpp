@@ -70,7 +70,7 @@ IR::F32 ReadArray(TranslatorVisitor& v, const IR::U32& value) {
 
 IR::Value Sample(TranslatorVisitor& v, u64 insn) {
     const Encoding texs{insn};
-    const IR::U32 handle{v.ir.Imm32(static_cast<u32>(texs.cbuf_offset))};
+    const IR::U32 handle{v.ir.Imm32(static_cast<u32>(texs.cbuf_offset * 4))};
     const IR::F32 zero{v.ir.Imm32(0.0f)};
     const IR::Reg reg_a{texs.src_reg_a};
     const IR::Reg reg_b{texs.src_reg_b};

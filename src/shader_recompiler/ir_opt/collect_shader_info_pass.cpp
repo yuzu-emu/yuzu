@@ -17,10 +17,47 @@ void AddConstantBufferDescriptor(Info& info, u32 index, u32 count) {
         return;
     }
     info.constant_buffer_mask |= 1U << index;
-    info.constant_buffer_descriptors.push_back({
-        .index{index},
-        .count{1},
-    });
+
+    auto& cbufs{info.constant_buffer_descriptors};
+    cbufs.insert(std::ranges::lower_bound(cbufs, index, {}, &ConstantBufferDescriptor::index),
+                 ConstantBufferDescriptor{
+                     .index{index},
+                     .count{1},
+                 });
+}
+
+void GetAttribute(Info& info, IR::Attribute attribute) {
+    if (IR::IsGeneric(attribute)) {
+        info.loads_generics.at(IR::GenericAttributeIndex(attribute)) = true;
+        return;
+    }
+    switch (attribute) {
+    case IR::Attribute::PositionX:
+    case IR::Attribute::PositionY:
+    case IR::Attribute::PositionZ:
+    case IR::Attribute::PositionW:
+        info.loads_position = true;
+        break;
+    default:
+        throw NotImplementedException("Get attribute {}", attribute);
+    }
+}
+
+void SetAttribute(Info& info, IR::Attribute attribute) {
+    if (IR::IsGeneric(attribute)) {
+        info.stores_generics.at(IR::GenericAttributeIndex(attribute)) = true;
+        return;
+    }
+    switch (attribute) {
+    case IR::Attribute::PositionX:
+    case IR::Attribute::PositionY:
+    case IR::Attribute::PositionZ:
+    case IR::Attribute::PositionW:
+        info.stores_position = true;
+        break;
+    default:
+        throw NotImplementedException("Set attribute {}", attribute);
+    }
 }
 
 void VisitUsages(Info& info, IR::Inst& inst) {
@@ -162,6 +199,21 @@ void VisitUsages(Info& info, IR::Inst& inst) {
         break;
     }
     switch (inst.Opcode()) {
+    case IR::Opcode::DemoteToHelperInvocation:
+        info.uses_demote_to_helper_invocation = true;
+        break;
+    case IR::Opcode::GetAttribute:
+        GetAttribute(info, inst.Arg(0).Attribute());
+        break;
+    case IR::Opcode::SetAttribute:
+        SetAttribute(info, inst.Arg(0).Attribute());
+        break;
+    case IR::Opcode::SetFragColor:
+        info.stores_frag_color[inst.Arg(0).U32()] = true;
+        break;
+    case IR::Opcode::SetFragDepth:
+        info.stores_frag_depth = true;
+        break;
     case IR::Opcode::WorkgroupId:
         info.uses_workgroup_id = true;
         break;

@@ -9,7 +9,6 @@
 #include "video_core/memory_manager.h"
 #include "video_core/renderer_vulkan/vk_buffer_cache.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
-#include "video_core/renderer_vulkan/vk_pipeline.h"
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
@@ -18,7 +17,7 @@ namespace Vulkan {
 
 class Device;
 
-class ComputePipeline : public Pipeline {
+class ComputePipeline {
 public:
     explicit ComputePipeline() = default;
     explicit ComputePipeline(const Device& device, VKDescriptorPool& descriptor_pool,

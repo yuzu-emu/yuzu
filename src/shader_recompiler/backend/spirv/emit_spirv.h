@@ -16,18 +16,18 @@
 namespace Shader::Backend::SPIRV {
 
 [[nodiscard]] std::vector<u32> EmitSPIRV(const Profile& profile, Environment& env,
-                                         IR::Program& program);
+                                         IR::Program& program, u32& binding);
 
 // Microinstruction emitters
 Id EmitPhi(EmitContext& ctx, IR::Inst* inst);
 void EmitVoid(EmitContext& ctx);
 Id EmitIdentity(EmitContext& ctx, const IR::Value& value);
-void EmitBranch(EmitContext& ctx, IR::Block* label);
-void EmitBranchConditional(EmitContext& ctx, Id condition, IR::Block* true_label,
-                           IR::Block* false_label);
-void EmitLoopMerge(EmitContext& ctx, IR::Block* merge_label, IR::Block* continue_label);
-void EmitSelectionMerge(EmitContext& ctx, IR::Block* merge_label);
+void EmitBranch(EmitContext& ctx, Id label);
+void EmitBranchConditional(EmitContext& ctx, Id condition, Id true_label, Id false_label);
+void EmitLoopMerge(EmitContext& ctx, Id merge_label, Id continue_label);
+void EmitSelectionMerge(EmitContext& ctx, Id merge_label);
 void EmitReturn(EmitContext& ctx);
+void EmitDemoteToHelperInvocation(EmitContext& ctx, Id continue_label);
 void EmitGetRegister(EmitContext& ctx);
 void EmitSetRegister(EmitContext& ctx);
 void EmitGetPred(EmitContext& ctx);
@@ -41,10 +41,12 @@ Id EmitGetCbufS16(EmitContext& ctx, const IR::Value& binding, const IR::Value& o
 Id EmitGetCbufU32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 Id EmitGetCbufF32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 Id EmitGetCbufU64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
-void EmitGetAttribute(EmitContext& ctx);
-void EmitSetAttribute(EmitContext& ctx);
+Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr);
+void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value);
 void EmitGetAttributeIndexed(EmitContext& ctx);
 void EmitSetAttributeIndexed(EmitContext& ctx);
+void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, Id value);
+void EmitSetFragDepth(EmitContext& ctx, Id value);
 void EmitGetZFlag(EmitContext& ctx);
 void EmitGetSFlag(EmitContext& ctx);
 void EmitGetCFlag(EmitContext& ctx);

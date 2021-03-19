@@ -5,6 +5,43 @@
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 
 namespace Shader::Backend::SPIRV {
+namespace {
+Id InputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
+    const u32 element{static_cast<u32>(attr) % 4};
+    const auto element_id{[&] { return ctx.Constant(ctx.U32[1], element); }};
+    if (IR::IsGeneric(attr)) {
+        const u32 index{IR::GenericAttributeIndex(attr)};
+        return ctx.OpAccessChain(ctx.input_f32, ctx.input_generics.at(index), element_id());
+    }
+    switch (attr) {
+    case IR::Attribute::PositionX:
+    case IR::Attribute::PositionY:
+    case IR::Attribute::PositionZ:
+    case IR::Attribute::PositionW:
+        return ctx.OpAccessChain(ctx.input_f32, ctx.input_position, element_id());
+    default:
+        throw NotImplementedException("Read attribute {}", attr);
+    }
+}
+
+Id OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
+    const u32 element{static_cast<u32>(attr) % 4};
+    const auto element_id{[&] { return ctx.Constant(ctx.U32[1], element); }};
+    if (IR::IsGeneric(attr)) {
+        const u32 index{IR::GenericAttributeIndex(attr)};
+        return ctx.OpAccessChain(ctx.output_f32, ctx.output_generics.at(index), element_id());
+    }
+    switch (attr) {
+    case IR::Attribute::PositionX:
+    case IR::Attribute::PositionY:
+    case IR::Attribute::PositionZ:
+    case IR::Attribute::PositionW:
+        return ctx.OpAccessChain(ctx.output_f32, ctx.output_position, element_id());
+    default:
+        throw NotImplementedException("Read attribute {}", attr);
+    }
+}
+} // Anonymous namespace
 
 void EmitGetRegister(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
@@ -87,12 +124,12 @@ Id EmitGetCbufU64(EmitContext& ctx, const IR::Value& binding, const IR::Value& o
     return GetCbuf(ctx, ctx.U64, &UniformDefinitions::U64, sizeof(u64), binding, offset);
 }
 
-void EmitGetAttribute(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr) {
+    return ctx.OpLoad(ctx.F32[1], InputAttrPointer(ctx, attr));
 }
 
-void EmitSetAttribute(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value) {
+    ctx.OpStore(OutputAttrPointer(ctx, attr), value);
 }
 
 void EmitGetAttributeIndexed(EmitContext&) {
@@ -101,6 +138,16 @@ void EmitGetAttributeIndexed(EmitContext&) {
 
 void EmitSetAttributeIndexed(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
+}
+
+void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, Id value) {
+    const Id component_id{ctx.Constant(ctx.U32[1], component)};
+    const Id pointer{ctx.OpAccessChain(ctx.output_f32, ctx.frag_color.at(index), component_id)};
+    ctx.OpStore(pointer, value);
+}
+
+void EmitSetFragDepth(EmitContext& ctx, Id value) {
+    ctx.OpStore(ctx.frag_depth, value);
 }
 
 void EmitGetZFlag(EmitContext&) {

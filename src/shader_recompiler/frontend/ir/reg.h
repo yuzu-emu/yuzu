@@ -293,12 +293,12 @@ constexpr size_t NUM_REGS = 256;
     return reg + (-num);
 }
 
-[[nodiscard]] constexpr Reg operator++(Reg& reg) {
+constexpr Reg operator++(Reg& reg) {
     reg = reg + 1;
     return reg;
 }
 
-[[nodiscard]] constexpr Reg operator++(Reg& reg, int) {
+constexpr Reg operator++(Reg& reg, int) {
     const Reg copy{reg};
     reg = reg + 1;
     return copy;

@@ -49,6 +49,7 @@ constexpr std::array REQUIRED_EXTENSIONS{
     VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME,
     VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
     VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
+    VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME,
 #ifdef _WIN32
     VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
 #endif
@@ -311,6 +312,13 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         .hostQueryReset = true,
     };
     SetNext(next, host_query_reset);
+
+    VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT demote{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT,
+        .pNext = nullptr,
+        .shaderDemoteToHelperInvocation = true,
+    };
+    SetNext(next, demote);
 
     VkPhysicalDeviceFloat16Int8FeaturesKHR float16_int8;
     if (is_float16_supported) {
@@ -597,8 +605,14 @@ void Device::CheckSuitability(bool requires_swapchain) const {
             throw vk::Exception(VK_ERROR_FEATURE_NOT_PRESENT);
         }
     }
+    VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT demote{};
+    demote.sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT;
+    demote.pNext = nullptr;
+
     VkPhysicalDeviceRobustness2FeaturesEXT robustness2{};
     robustness2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+    robustness2.pNext = &demote;
 
     VkPhysicalDeviceFeatures2KHR features2{};
     features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -625,6 +639,7 @@ void Device::CheckSuitability(bool requires_swapchain) const {
         std::make_pair(features.shaderImageGatherExtended, "shaderImageGatherExtended"),
         std::make_pair(features.shaderStorageImageWriteWithoutFormat,
                        "shaderStorageImageWriteWithoutFormat"),
+        std::make_pair(demote.shaderDemoteToHelperInvocation, "shaderDemoteToHelperInvocation"),
         std::make_pair(robustness2.robustBufferAccess2, "robustBufferAccess2"),
         std::make_pair(robustness2.robustImageAccess2, "robustImageAccess2"),
         std::make_pair(robustness2.nullDescriptor, "nullDescriptor"),

@@ -10,6 +10,7 @@
 
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/shader_info.h"
+#include "shader_recompiler/stage.h"
 
 namespace Shader::IR {
 
@@ -17,6 +18,7 @@ struct Program {
     BlockList blocks;
     BlockList post_order_blocks;
     Info info;
+    Stage stage{};
 };
 
 [[nodiscard]] std::string DumpProgram(const Program& program);

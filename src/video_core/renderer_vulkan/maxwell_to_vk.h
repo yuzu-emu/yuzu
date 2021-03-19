@@ -71,4 +71,6 @@ VkViewportCoordinateSwizzleNV ViewportSwizzle(Maxwell::ViewportSwizzle swizzle);
 
 VkSamplerReductionMode SamplerReduction(Tegra::Texture::SamplerReduction reduction);
 
+VkSampleCountFlagBits MsaaMode(Tegra::Texture::MsaaMode msaa_mode);
+
 } // namespace Vulkan::MaxwellToVK

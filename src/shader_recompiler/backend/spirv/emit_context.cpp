@@ -62,18 +62,15 @@ void VectorTypes::Define(Sirit::Module& sirit_ctx, Id base_type, std::string_vie
     }
 }
 
-EmitContext::EmitContext(const Profile& profile_, IR::Program& program)
+EmitContext::EmitContext(const Profile& profile_, IR::Program& program, u32& binding)
     : Sirit::Module(0x00010000), profile{profile_} {
     AddCapability(spv::Capability::Shader);
     DefineCommonTypes(program.info);
     DefineCommonConstants();
-    DefineSpecialVariables(program.info);
-
-    u32 binding{};
+    DefineInterfaces(program.info, program.stage);
     DefineConstantBuffers(program.info, binding);
     DefineStorageBuffers(program.info, binding);
     DefineTextures(program.info, binding);
-
     DefineLabels(program);
 }
 
@@ -96,6 +93,8 @@ Id EmitContext::Def(const IR::Value& value) {
         return Constant(F32[1], value.F32());
     case IR::Type::F64:
         return Constant(F64[1], value.F64());
+    case IR::Type::Label:
+        return value.Label()->Definition<Id>();
     default:
         throw NotImplementedException("Immediate type {}", value.Type());
     }
@@ -108,6 +107,9 @@ void EmitContext::DefineCommonTypes(const Info& info) {
 
     F32.Define(*this, TypeFloat(32), "f32");
     U32.Define(*this, TypeInt(32, false), "u32");
+
+    input_f32 = Name(TypePointer(spv::StorageClass::Input, F32[1]), "input_f32");
+    output_f32 = Name(TypePointer(spv::StorageClass::Output, F32[1]), "output_f32");
 
     if (info.uses_int8) {
         AddCapability(spv::Capability::Int8);
@@ -139,21 +141,59 @@ void EmitContext::DefineCommonConstants() {
     u32_zero_value = Constant(U32[1], 0U);
 }
 
-void EmitContext::DefineSpecialVariables(const Info& info) {
-    const auto define{[this](Id type, spv::BuiltIn builtin, spv::StorageClass storage_class) {
-        const Id pointer_type{TypePointer(storage_class, type)};
-        const Id id{AddGlobalVariable(pointer_type, spv::StorageClass::Input)};
-        Decorate(id, spv::Decoration::BuiltIn, builtin);
-        return id;
-    }};
+void EmitContext::DefineInterfaces(const Info& info, Stage stage) {
+    const auto define{
+        [this](Id type, std::optional<spv::BuiltIn> builtin, spv::StorageClass storage_class) {
+            const Id pointer_type{TypePointer(storage_class, type)};
+            const Id id{AddGlobalVariable(pointer_type, storage_class)};
+            if (builtin) {
+                Decorate(id, spv::Decoration::BuiltIn, *builtin);
+            }
+            interfaces.push_back(id);
+            return id;
+        }};
     using namespace std::placeholders;
     const auto define_input{std::bind(define, _1, _2, spv::StorageClass::Input)};
+    const auto define_output{std::bind(define, _1, _2, spv::StorageClass::Output)};
 
     if (info.uses_workgroup_id) {
         workgroup_id = define_input(U32[3], spv::BuiltIn::WorkgroupId);
     }
     if (info.uses_local_invocation_id) {
         local_invocation_id = define_input(U32[3], spv::BuiltIn::LocalInvocationId);
+    }
+    if (info.loads_position) {
+        const bool is_fragment{stage != Stage::Fragment};
+        const spv::BuiltIn built_in{is_fragment ? spv::BuiltIn::Position : spv::BuiltIn::FragCoord};
+        input_position = define_input(F32[4], built_in);
+    }
+    for (size_t i = 0; i < info.loads_generics.size(); ++i) {
+        if (info.loads_generics[i]) {
+            // FIXME: Declare size from input
+            input_generics[i] = define_input(F32[4], std::nullopt);
+            Decorate(input_generics[i], spv::Decoration::Location, static_cast<u32>(i));
+            Name(input_generics[i], fmt::format("in_attr{}", i));
+        }
+    }
+    if (info.stores_position) {
+        output_position = define_output(F32[4], spv::BuiltIn::Position);
+    }
+    for (size_t i = 0; i < info.stores_generics.size(); ++i) {
+        if (info.stores_generics[i]) {
+            output_generics[i] = define_output(F32[4], std::nullopt);
+            Decorate(output_generics[i], spv::Decoration::Location, static_cast<u32>(i));
+            Name(output_generics[i], fmt::format("out_attr{}", i));
+        }
+    }
+    if (stage == Stage::Fragment) {
+        for (size_t i = 0; i < 8; ++i) {
+            if (!info.stores_frag_color[i]) {
+                continue;
+            }
+            frag_color[i] = define_output(F32[4], std::nullopt);
+            Decorate(frag_color[i], spv::Decoration::Location, static_cast<u32>(i));
+            Name(frag_color[i], fmt::format("frag_color{}", i));
+        }
     }
 }
 

@@ -215,7 +215,7 @@ void TranslatorVisitor::TEX(u64 insn) {
         BitField<36, 13, u64> cbuf_offset;
     } const tex{insn};
 
-    Impl(*this, insn, tex.aoffi != 0, tex.blod, tex.lc != 0, static_cast<u32>(tex.cbuf_offset));
+    Impl(*this, insn, tex.aoffi != 0, tex.blod, tex.lc != 0, static_cast<u32>(tex.cbuf_offset * 4));
 }
 
 void TranslatorVisitor::TEX_b(u64 insn) {

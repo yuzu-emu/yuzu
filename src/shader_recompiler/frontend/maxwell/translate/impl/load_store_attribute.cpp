@@ -11,6 +11,13 @@
 
 namespace Shader::Maxwell {
 namespace {
+enum class Size : u64 {
+    B32,
+    B64,
+    B96,
+    B128,
+};
+
 enum class InterpolationMode : u64 {
     Pass,
     Multiply,
@@ -23,7 +30,84 @@ enum class SampleMode : u64 {
     Centroid,
     Offset,
 };
+
+int NumElements(Size size) {
+    switch (size) {
+    case Size::B32:
+        return 1;
+    case Size::B64:
+        return 2;
+    case Size::B96:
+        return 3;
+    case Size::B128:
+        return 4;
+    }
+    throw InvalidArgument("Invalid size {}", size);
+}
 } // Anonymous namespace
+
+void TranslatorVisitor::ALD(u64 insn) {
+    union {
+        u64 raw;
+        BitField<0, 8, IR::Reg> dest_reg;
+        BitField<8, 8, IR::Reg> index_reg;
+        BitField<20, 10, u64> absolute_offset;
+        BitField<20, 11, s64> relative_offset;
+        BitField<39, 8, IR::Reg> stream_reg;
+        BitField<32, 1, u64> o;
+        BitField<31, 1, u64> patch;
+        BitField<47, 2, Size> size;
+    } const ald{insn};
+
+    if (ald.o != 0) {
+        throw NotImplementedException("O");
+    }
+    if (ald.patch != 0) {
+        throw NotImplementedException("P");
+    }
+    if (ald.index_reg != IR::Reg::RZ) {
+        throw NotImplementedException("Indexed");
+    }
+    const u64 offset{ald.absolute_offset.Value()};
+    if (offset % 4 != 0) {
+        throw NotImplementedException("Unaligned absolute offset {}", offset);
+    }
+    const int num_elements{NumElements(ald.size)};
+    for (int element = 0; element < num_elements; ++element) {
+        F(ald.dest_reg + element, ir.GetAttribute(IR::Attribute{offset / 4 + element}));
+    }
+}
+
+void TranslatorVisitor::AST(u64 insn) {
+    union {
+        u64 raw;
+        BitField<0, 8, IR::Reg> src_reg;
+        BitField<8, 8, IR::Reg> index_reg;
+        BitField<20, 10, u64> absolute_offset;
+        BitField<20, 11, s64> relative_offset;
+        BitField<31, 1, u64> patch;
+        BitField<39, 8, IR::Reg> stream_reg;
+        BitField<47, 2, Size> size;
+    } const ast{insn};
+
+    if (ast.patch != 0) {
+        throw NotImplementedException("P");
+    }
+    if (ast.stream_reg != IR::Reg::RZ) {
+        throw NotImplementedException("Stream store");
+    }
+    if (ast.index_reg != IR::Reg::RZ) {
+        throw NotImplementedException("Indexed store");
+    }
+    const u64 offset{ast.absolute_offset.Value()};
+    if (offset % 4 != 0) {
+        throw NotImplementedException("Unaligned absolute offset {}", offset);
+    }
+    const int num_elements{NumElements(ast.size)};
+    for (int element = 0; element < num_elements; ++element) {
+        ir.SetAttribute(IR::Attribute{offset / 4 + element}, F(ast.src_reg + element));
+    }
+}
 
 void TranslatorVisitor::IPA(u64 insn) {
     // IPA is the instruction used to read varyings from a fragment shader.
@@ -51,7 +135,7 @@ void TranslatorVisitor::IPA(u64 insn) {
     // }
     const bool is_indexed{ipa.idx != 0 && ipa.index_reg != IR::Reg::RZ};
     if (is_indexed) {
-        throw NotImplementedException("IPA.IDX");
+        throw NotImplementedException("IDX");
     }
 
     const IR::Attribute attribute{ipa.attribute};
