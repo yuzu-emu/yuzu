@@ -102,12 +102,28 @@ Id EmitConvertF64F32(EmitContext& ctx, Id value) {
     return ctx.OpFConvert(ctx.F64[1], value);
 }
 
+Id EmitConvertF16S8(EmitContext& ctx, Id value) {
+    return ctx.OpConvertSToF(ctx.F16[1], value);
+}
+
+Id EmitConvertF16S16(EmitContext& ctx, Id value) {
+    return ctx.OpConvertSToF(ctx.F16[1], value);
+}
+
 Id EmitConvertF16S32(EmitContext& ctx, Id value) {
     return ctx.OpConvertSToF(ctx.F16[1], value);
 }
 
 Id EmitConvertF16S64(EmitContext& ctx, Id value) {
     return ctx.OpConvertSToF(ctx.F16[1], value);
+}
+
+Id EmitConvertF16U8(EmitContext& ctx, Id value) {
+    return ctx.OpConvertUToF(ctx.F16[1], value);
+}
+
+Id EmitConvertF16U16(EmitContext& ctx, Id value) {
+    return ctx.OpConvertUToF(ctx.F16[1], value);
 }
 
 Id EmitConvertF16U32(EmitContext& ctx, Id value) {
@@ -118,12 +134,28 @@ Id EmitConvertF16U64(EmitContext& ctx, Id value) {
     return ctx.OpConvertUToF(ctx.F16[1], value);
 }
 
+Id EmitConvertF32S8(EmitContext& ctx, Id value) {
+    return ctx.OpConvertSToF(ctx.F32[1], ctx.OpUConvert(ctx.U8, value));
+}
+
+Id EmitConvertF32S16(EmitContext& ctx, Id value) {
+    return ctx.OpConvertSToF(ctx.F32[1], ctx.OpUConvert(ctx.U16, value));
+}
+
 Id EmitConvertF32S32(EmitContext& ctx, Id value) {
     return ctx.OpConvertSToF(ctx.F32[1], value);
 }
 
 Id EmitConvertF32S64(EmitContext& ctx, Id value) {
     return ctx.OpConvertSToF(ctx.F32[1], value);
+}
+
+Id EmitConvertF32U8(EmitContext& ctx, Id value) {
+    return ctx.OpConvertUToF(ctx.F32[1], ctx.OpUConvert(ctx.U8, value));
+}
+
+Id EmitConvertF32U16(EmitContext& ctx, Id value) {
+    return ctx.OpConvertUToF(ctx.F32[1], ctx.OpUConvert(ctx.U16, value));
 }
 
 Id EmitConvertF32U32(EmitContext& ctx, Id value) {
@@ -134,12 +166,28 @@ Id EmitConvertF32U64(EmitContext& ctx, Id value) {
     return ctx.OpConvertUToF(ctx.F32[1], value);
 }
 
+Id EmitConvertF64S8(EmitContext& ctx, Id value) {
+    return ctx.OpConvertSToF(ctx.F64[1], ctx.OpUConvert(ctx.U8, value));
+}
+
+Id EmitConvertF64S16(EmitContext& ctx, Id value) {
+    return ctx.OpConvertSToF(ctx.F64[1], ctx.OpUConvert(ctx.U16, value));
+}
+
 Id EmitConvertF64S32(EmitContext& ctx, Id value) {
     return ctx.OpConvertSToF(ctx.F64[1], value);
 }
 
 Id EmitConvertF64S64(EmitContext& ctx, Id value) {
     return ctx.OpConvertSToF(ctx.F64[1], value);
+}
+
+Id EmitConvertF64U8(EmitContext& ctx, Id value) {
+    return ctx.OpConvertUToF(ctx.F64[1], ctx.OpUConvert(ctx.U8, value));
+}
+
+Id EmitConvertF64U16(EmitContext& ctx, Id value) {
+    return ctx.OpConvertUToF(ctx.F64[1], ctx.OpUConvert(ctx.U16, value));
 }
 
 Id EmitConvertF64U32(EmitContext& ctx, Id value) {

@@ -53,6 +53,10 @@ U64 IREmitter::Imm64(u64 value) const {
     return U64{Value{value}};
 }
 
+U64 IREmitter::Imm64(s64 value) const {
+    return U64{Value{static_cast<u64>(value)}};
+}
+
 F64 IREmitter::Imm64(f64 value) const {
     return F64{Value{value}};
 }
@@ -363,7 +367,7 @@ U1 IREmitter::GetSparseFromOp(const Value& op) {
 }
 
 F16F32F64 IREmitter::FPAdd(const F16F32F64& a, const F16F32F64& b, FpControl control) {
-    if (a.Type() != a.Type()) {
+    if (a.Type() != b.Type()) {
         throw InvalidArgument("Mismatching types {} and {}", a.Type(), b.Type());
     }
     switch (a.Type()) {
@@ -974,8 +978,15 @@ U32U64 IREmitter::INeg(const U32U64& value) {
     }
 }
 
-U32 IREmitter::IAbs(const U32& value) {
-    return Inst<U32>(Opcode::IAbs32, value);
+U32U64 IREmitter::IAbs(const U32U64& value) {
+    switch (value.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::IAbs32, value);
+    case Type::U64:
+        return Inst<U64>(Opcode::IAbs64, value);
+    default:
+        ThrowInvalidType(value.Type());
+    }
 }
 
 U32U64 IREmitter::ShiftLeftLogical(const U32U64& base, const U32& shift) {
@@ -1074,8 +1085,25 @@ U1 IREmitter::ILessThan(const U32& lhs, const U32& rhs, bool is_signed) {
     return Inst<U1>(is_signed ? Opcode::SLessThan : Opcode::ULessThan, lhs, rhs);
 }
 
-U1 IREmitter::IEqual(const U32& lhs, const U32& rhs) {
-    return Inst<U1>(Opcode::IEqual, lhs, rhs);
+U1 IREmitter::IEqual(const U32U64& lhs, const U32U64& rhs) {
+    if (lhs.Type() != rhs.Type()) {
+        throw InvalidArgument("Mismatching types {} and {}", lhs.Type(), rhs.Type());
+    }
+    switch (lhs.Type()) {
+    case Type::U32:
+        return Inst<U1>(Opcode::IEqual, lhs, rhs);
+    case Type::U64: {
+        // Manually compare the unpacked values
+        const Value lhs_vector{UnpackUint2x32(lhs)};
+        const Value rhs_vector{UnpackUint2x32(rhs)};
+        return LogicalAnd(IEqual(IR::U32{CompositeExtract(lhs_vector, 0)},
+                                 IR::U32{CompositeExtract(rhs_vector, 0)}),
+                          IEqual(IR::U32{CompositeExtract(lhs_vector, 1)},
+                                 IR::U32{CompositeExtract(rhs_vector, 1)}));
+    }
+    default:
+        ThrowInvalidType(lhs.Type());
+    }
 }
 
 U1 IREmitter::ILessThanEqual(const U32& lhs, const U32& rhs, bool is_signed) {
@@ -1198,79 +1226,96 @@ U32U64 IREmitter::ConvertFToI(size_t bitsize, bool is_signed, const F16F32F64& v
     }
 }
 
-F16F32F64 IREmitter::ConvertSToF(size_t bitsize, const U32U64& value) {
-    switch (bitsize) {
+F16F32F64 IREmitter::ConvertSToF(size_t dest_bitsize, size_t src_bitsize, const Value& value) {
+    switch (dest_bitsize) {
     case 16:
-        switch (value.Type()) {
-        case Type::U32:
+        switch (src_bitsize) {
+        case 8:
+            return Inst<F16>(Opcode::ConvertF16S8, value);
+        case 16:
+            return Inst<F16>(Opcode::ConvertF16S16, value);
+        case 32:
             return Inst<F16>(Opcode::ConvertF16S32, value);
-        case Type::U64:
+        case 64:
             return Inst<F16>(Opcode::ConvertF16S64, value);
-        default:
-            ThrowInvalidType(value.Type());
         }
+        break;
     case 32:
-        switch (value.Type()) {
-        case Type::U32:
+        switch (src_bitsize) {
+        case 8:
+            return Inst<F32>(Opcode::ConvertF32S8, value);
+        case 16:
+            return Inst<F32>(Opcode::ConvertF32S16, value);
+        case 32:
             return Inst<F32>(Opcode::ConvertF32S32, value);
-        case Type::U64:
+        case 64:
             return Inst<F32>(Opcode::ConvertF32S64, value);
-        default:
-            ThrowInvalidType(value.Type());
         }
+        break;
     case 64:
-        switch (value.Type()) {
-        case Type::U32:
-            return Inst<F16>(Opcode::ConvertF64S32, value);
-        case Type::U64:
-            return Inst<F16>(Opcode::ConvertF64S64, value);
-        default:
-            ThrowInvalidType(value.Type());
+        switch (src_bitsize) {
+        case 8:
+            return Inst<F64>(Opcode::ConvertF64S8, value);
+        case 16:
+            return Inst<F64>(Opcode::ConvertF64S16, value);
+        case 32:
+            return Inst<F64>(Opcode::ConvertF64S32, value);
+        case 64:
+            return Inst<F64>(Opcode::ConvertF64S64, value);
         }
-    default:
-        throw InvalidArgument("Invalid destination bitsize {}", bitsize);
+        break;
     }
+    throw InvalidArgument("Invalid bit size combination dst={} src={}", dest_bitsize, src_bitsize);
 }
 
-F16F32F64 IREmitter::ConvertUToF(size_t bitsize, const U32U64& value) {
-    switch (bitsize) {
+F16F32F64 IREmitter::ConvertUToF(size_t dest_bitsize, size_t src_bitsize, const Value& value) {
+    switch (dest_bitsize) {
     case 16:
-        switch (value.Type()) {
-        case Type::U32:
+        switch (src_bitsize) {
+        case 8:
+            return Inst<F16>(Opcode::ConvertF16U8, value);
+        case 16:
+            return Inst<F16>(Opcode::ConvertF16U16, value);
+        case 32:
             return Inst<F16>(Opcode::ConvertF16U32, value);
-        case Type::U64:
+        case 64:
             return Inst<F16>(Opcode::ConvertF16U64, value);
-        default:
-            ThrowInvalidType(value.Type());
         }
+        break;
     case 32:
-        switch (value.Type()) {
-        case Type::U32:
+        switch (src_bitsize) {
+        case 8:
+            return Inst<F32>(Opcode::ConvertF32U8, value);
+        case 16:
+            return Inst<F32>(Opcode::ConvertF32U16, value);
+        case 32:
             return Inst<F32>(Opcode::ConvertF32U32, value);
-        case Type::U64:
+        case 64:
             return Inst<F32>(Opcode::ConvertF32U64, value);
-        default:
-            ThrowInvalidType(value.Type());
         }
+        break;
     case 64:
-        switch (value.Type()) {
-        case Type::U32:
-            return Inst<F16>(Opcode::ConvertF64U32, value);
-        case Type::U64:
-            return Inst<F16>(Opcode::ConvertF64U64, value);
-        default:
-            ThrowInvalidType(value.Type());
+        switch (src_bitsize) {
+        case 8:
+            return Inst<F64>(Opcode::ConvertF64U8, value);
+        case 16:
+            return Inst<F64>(Opcode::ConvertF64U16, value);
+        case 32:
+            return Inst<F64>(Opcode::ConvertF64U32, value);
+        case 64:
+            return Inst<F64>(Opcode::ConvertF64U64, value);
         }
-    default:
-        throw InvalidArgument("Invalid destination bitsize {}", bitsize);
+        break;
     }
+    throw InvalidArgument("Invalid bit size combination dst={} src={}", dest_bitsize, src_bitsize);
 }
 
-F16F32F64 IREmitter::ConvertIToF(size_t bitsize, bool is_signed, const U32U64& value) {
+F16F32F64 IREmitter::ConvertIToF(size_t dest_bitsize, size_t src_bitsize, bool is_signed,
+                                 const Value& value) {
     if (is_signed) {
-        return ConvertSToF(bitsize, value);
+        return ConvertSToF(dest_bitsize, src_bitsize, value);
     } else {
-        return ConvertUToF(bitsize, value);
+        return ConvertUToF(dest_bitsize, src_bitsize, value);
     }
 }
 

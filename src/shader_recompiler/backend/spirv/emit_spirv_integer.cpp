@@ -70,6 +70,10 @@ Id EmitIAbs32(EmitContext& ctx, Id value) {
     return ctx.OpSAbs(ctx.U32[1], value);
 }
 
+Id EmitIAbs64(EmitContext& ctx, Id value) {
+    return ctx.OpSAbs(ctx.U64, value);
+}
+
 Id EmitShiftLeftLogical32(EmitContext& ctx, Id base, Id shift) {
     return ctx.OpShiftLeftLogical(ctx.U32[1], base, shift);
 }

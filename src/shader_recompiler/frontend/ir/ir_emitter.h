@@ -29,6 +29,7 @@ public:
     [[nodiscard]] U32 Imm32(s32 value) const;
     [[nodiscard]] F32 Imm32(f32 value) const;
     [[nodiscard]] U64 Imm64(u64 value) const;
+    [[nodiscard]] U64 Imm64(s64 value) const;
     [[nodiscard]] F64 Imm64(f64 value) const;
 
     void Branch(Block* label);
@@ -170,7 +171,7 @@ public:
     [[nodiscard]] U32U64 ISub(const U32U64& a, const U32U64& b);
     [[nodiscard]] U32 IMul(const U32& a, const U32& b);
     [[nodiscard]] U32U64 INeg(const U32U64& value);
-    [[nodiscard]] U32 IAbs(const U32& value);
+    [[nodiscard]] U32U64 IAbs(const U32U64& value);
     [[nodiscard]] U32U64 ShiftLeftLogical(const U32U64& base, const U32& shift);
     [[nodiscard]] U32U64 ShiftRightLogical(const U32U64& base, const U32& shift);
     [[nodiscard]] U32U64 ShiftRightArithmetic(const U32U64& base, const U32& shift);
@@ -193,7 +194,7 @@ public:
     [[nodiscard]] U32 UMax(const U32& a, const U32& b);
 
     [[nodiscard]] U1 ILessThan(const U32& lhs, const U32& rhs, bool is_signed);
-    [[nodiscard]] U1 IEqual(const U32& lhs, const U32& rhs);
+    [[nodiscard]] U1 IEqual(const U32U64& lhs, const U32U64& rhs);
     [[nodiscard]] U1 ILessThanEqual(const U32& lhs, const U32& rhs, bool is_signed);
     [[nodiscard]] U1 IGreaterThan(const U32& lhs, const U32& rhs, bool is_signed);
     [[nodiscard]] U1 INotEqual(const U32& lhs, const U32& rhs);
@@ -207,9 +208,12 @@ public:
     [[nodiscard]] U32U64 ConvertFToS(size_t bitsize, const F16F32F64& value);
     [[nodiscard]] U32U64 ConvertFToU(size_t bitsize, const F16F32F64& value);
     [[nodiscard]] U32U64 ConvertFToI(size_t bitsize, bool is_signed, const F16F32F64& value);
-    [[nodiscard]] F16F32F64 ConvertSToF(size_t bitsize, const U32U64& value);
-    [[nodiscard]] F16F32F64 ConvertUToF(size_t bitsize, const U32U64& value);
-    [[nodiscard]] F16F32F64 ConvertIToF(size_t bitsize, bool is_signed, const U32U64& value);
+    [[nodiscard]] F16F32F64 ConvertSToF(size_t dest_bitsize, size_t src_bitsize,
+                                        const Value& value);
+    [[nodiscard]] F16F32F64 ConvertUToF(size_t dest_bitsize, size_t src_bitsize,
+                                        const Value& value);
+    [[nodiscard]] F16F32F64 ConvertIToF(size_t dest_bitsize, size_t src_bitsize, bool is_signed,
+                                        const Value& value);
 
     [[nodiscard]] U32U64 UConvert(size_t result_bitsize, const U32U64& value);
     [[nodiscard]] F16F32F64 FPConvert(size_t result_bitsize, const F16F32F64& value);

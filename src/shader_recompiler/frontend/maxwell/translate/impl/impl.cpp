@@ -121,6 +121,22 @@ IR::F64 TranslatorVisitor::GetDoubleCbuf(u64 insn) {
     return ir.PackDouble2x32(ir.CompositeConstruct(lower_bits, value));
 }
 
+IR::U64 TranslatorVisitor::GetPackedCbuf(u64 insn) {
+    union {
+        u64 raw;
+        BitField<20, 1, u64> unaligned;
+    } const cbuf{insn};
+
+    if (cbuf.unaligned != 0) {
+        throw NotImplementedException("Unaligned packed constant buffer read");
+    }
+    const auto [binding, lower_offset]{CbufAddr(insn)};
+    const IR::U32 upper_offset{ir.Imm32(lower_offset.U32() + 4)};
+    const IR::U32 lower_value{ir.GetCbuf(binding, lower_offset)};
+    const IR::U32 upper_value{ir.GetCbuf(binding, upper_offset)};
+    return ir.PackUint2x32(ir.CompositeConstruct(lower_value, upper_value));
+}
+
 IR::U32 TranslatorVisitor::GetImm20(u64 insn) {
     union {
         u64 raw;
@@ -156,6 +172,11 @@ IR::F64 TranslatorVisitor::GetDoubleImm20(u64 insn) {
     const u64 sign_bit{imm.is_negative != 0 ? (1ULL << 63) : 0};
     const u64 value{imm.value << 44};
     return ir.Imm64(Common::BitCast<f64>(value | sign_bit));
+}
+
+IR::U64 TranslatorVisitor::GetPackedImm20(u64 insn) {
+    const s64 value{GetImm20(insn).U32()};
+    return ir.Imm64(static_cast<u64>(static_cast<s64>(value) << 32));
 }
 
 IR::U32 TranslatorVisitor::GetImm32(u64 insn) {
