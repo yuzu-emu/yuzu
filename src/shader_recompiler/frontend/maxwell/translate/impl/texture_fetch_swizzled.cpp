@@ -65,7 +65,7 @@ IR::Value Composite(TranslatorVisitor& v, Args... regs) {
 }
 
 IR::F32 ReadArray(TranslatorVisitor& v, const IR::U32& value) {
-    return v.ir.ConvertUToF(32, v.ir.BitFieldExtract(value, v.ir.Imm32(0), v.ir.Imm32(16)));
+    return v.ir.ConvertUToF(32, 16, v.ir.BitFieldExtract(value, v.ir.Imm32(0), v.ir.Imm32(16)));
 }
 
 IR::Value Sample(TranslatorVisitor& v, u64 insn) {

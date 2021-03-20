@@ -89,6 +89,8 @@ Id EmitContext::Def(const IR::Value& value) {
         return value.U1() ? true_value : false_value;
     case IR::Type::U32:
         return Constant(U32[1], value.U32());
+    case IR::Type::U64:
+        return Constant(U64, value.U64());
     case IR::Type::F32:
         return Constant(F32[1], value.F32());
     case IR::Type::F64:

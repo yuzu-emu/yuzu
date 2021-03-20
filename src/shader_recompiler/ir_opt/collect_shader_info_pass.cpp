@@ -79,6 +79,14 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::ConvertU16F16:
     case IR::Opcode::ConvertU32F16:
     case IR::Opcode::ConvertU64F16:
+    case IR::Opcode::ConvertF16S8:
+    case IR::Opcode::ConvertF16S16:
+    case IR::Opcode::ConvertF16S32:
+    case IR::Opcode::ConvertF16S64:
+    case IR::Opcode::ConvertF16U8:
+    case IR::Opcode::ConvertF16U16:
+    case IR::Opcode::ConvertF16U32:
+    case IR::Opcode::ConvertF16U64:
     case IR::Opcode::FPAbs16:
     case IR::Opcode::FPAdd16:
     case IR::Opcode::FPCeil16:
@@ -105,6 +113,14 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::FPRoundEven64:
     case IR::Opcode::FPSaturate64:
     case IR::Opcode::FPTrunc64:
+    case IR::Opcode::ConvertF64S8:
+    case IR::Opcode::ConvertF64S16:
+    case IR::Opcode::ConvertF64S32:
+    case IR::Opcode::ConvertF64S64:
+    case IR::Opcode::ConvertF64U8:
+    case IR::Opcode::ConvertF64U16:
+    case IR::Opcode::ConvertF64U32:
+    case IR::Opcode::ConvertF64U64:
         info.uses_fp64 = true;
         break;
     default:
@@ -123,6 +139,12 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::WriteStorageU8:
     case IR::Opcode::WriteStorageS8:
     case IR::Opcode::SelectU8:
+    case IR::Opcode::ConvertF16S8:
+    case IR::Opcode::ConvertF16U8:
+    case IR::Opcode::ConvertF32S8:
+    case IR::Opcode::ConvertF32U8:
+    case IR::Opcode::ConvertF64S8:
+    case IR::Opcode::ConvertF64U8:
         info.uses_int8 = true;
         break;
     default:
@@ -149,6 +171,12 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::ConvertU16F16:
     case IR::Opcode::ConvertU16F32:
     case IR::Opcode::ConvertU16F64:
+    case IR::Opcode::ConvertF16S16:
+    case IR::Opcode::ConvertF16U16:
+    case IR::Opcode::ConvertF32S16:
+    case IR::Opcode::ConvertF32U16:
+    case IR::Opcode::ConvertF64S16:
+    case IR::Opcode::ConvertF64U16:
         info.uses_int16 = true;
         break;
     default:

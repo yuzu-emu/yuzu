@@ -56,7 +56,7 @@ Shader::TextureType GetType(TextureType type, bool dc) {
 }
 
 IR::Value MakeCoords(TranslatorVisitor& v, IR::Reg reg, TextureType type) {
-    const auto read_array{[&]() -> IR::F32 { return v.ir.ConvertUToF(32, v.X(reg)); }};
+    const auto read_array{[&]() -> IR::F32 { return v.ir.ConvertUToF(32, 16, v.X(reg)); }};
     switch (type) {
     case TextureType::_1D:
         return v.F(reg);

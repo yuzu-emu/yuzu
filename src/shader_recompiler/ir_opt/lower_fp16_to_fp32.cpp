@@ -70,6 +70,22 @@ IR::Opcode Replace(IR::Opcode op) {
         return IR::Opcode::Identity;
     case IR::Opcode::ConvertF16F32:
         return IR::Opcode::Identity;
+    case IR::Opcode::ConvertF16S8:
+        return IR::Opcode::ConvertF32S8;
+    case IR::Opcode::ConvertF16S16:
+        return IR::Opcode::ConvertF32S16;
+    case IR::Opcode::ConvertF16S32:
+        return IR::Opcode::ConvertF32S32;
+    case IR::Opcode::ConvertF16S64:
+        return IR::Opcode::ConvertF32S64;
+    case IR::Opcode::ConvertF16U8:
+        return IR::Opcode::ConvertF32U8;
+    case IR::Opcode::ConvertF16U16:
+        return IR::Opcode::ConvertF32U16;
+    case IR::Opcode::ConvertF16U32:
+        return IR::Opcode::ConvertF32U32;
+    case IR::Opcode::ConvertF16U64:
+        return IR::Opcode::ConvertF32U64;
     default:
         return op;
     }

@@ -227,6 +227,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
       update_descriptor_queue{update_descriptor_queue_}, render_pass_cache{render_pass_cache_},
       buffer_cache{buffer_cache_}, texture_cache{texture_cache_} {
     const auto& float_control{device.FloatControlProperties()};
+    const VkDriverIdKHR driver_id{device.GetDriverID()};
     profile = Shader::Profile{
         .unified_descriptor_binding = true,
         .support_float_controls = true,
@@ -242,7 +243,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
             float_control.shaderSignedZeroInfNanPreserveFloat16 != VK_FALSE,
         .support_fp32_signed_zero_nan_preserve =
             float_control.shaderSignedZeroInfNanPreserveFloat32 != VK_FALSE,
-        .has_broken_spirv_clamp = true, // TODO: is_intel
+        .has_broken_spirv_clamp = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS_KHR,
     };
 }
 
