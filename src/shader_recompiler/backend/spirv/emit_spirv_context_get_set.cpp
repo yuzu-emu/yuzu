@@ -19,6 +19,10 @@ Id InputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
     case IR::Attribute::PositionZ:
     case IR::Attribute::PositionW:
         return ctx.OpAccessChain(ctx.input_f32, ctx.input_position, element_id());
+    case IR::Attribute::InstanceId:
+        return ctx.OpLoad(ctx.U32[1], ctx.instance_id);
+    case IR::Attribute::VertexId:
+        return ctx.OpLoad(ctx.U32[1], ctx.vertex_id);
     default:
         throw NotImplementedException("Read attribute {}", attr);
     }
@@ -125,6 +129,18 @@ Id EmitGetCbufU64(EmitContext& ctx, const IR::Value& binding, const IR::Value& o
 }
 
 Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr) {
+    if (!ctx.profile.support_vertex_instance_id) {
+        switch (attr) {
+        case IR::Attribute::InstanceId:
+            return ctx.OpISub(ctx.U32[1], ctx.OpLoad(ctx.U32[1], ctx.instance_index),
+                              ctx.OpLoad(ctx.U32[1], ctx.base_instance));
+        case IR::Attribute::VertexId:
+            return ctx.OpISub(ctx.U32[1], ctx.OpLoad(ctx.U32[1], ctx.vertex_index),
+                              ctx.OpLoad(ctx.U32[1], ctx.base_vertex));
+        default:
+            break;
+        }
+    }
     return ctx.OpLoad(ctx.F32[1], InputAttrPointer(ctx, attr));
 }
 

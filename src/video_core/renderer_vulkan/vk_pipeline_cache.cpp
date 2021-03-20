@@ -230,6 +230,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
     const VkDriverIdKHR driver_id{device.GetDriverID()};
     profile = Shader::Profile{
         .unified_descriptor_binding = true,
+        .support_vertex_instance_id = false,
         .support_float_controls = true,
         .support_separate_denorm_behavior = float_control.denormBehaviorIndependence ==
                                             VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL_KHR,

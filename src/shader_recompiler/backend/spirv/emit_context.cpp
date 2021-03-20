@@ -48,6 +48,25 @@ Id ImageType(EmitContext& ctx, const TextureDescriptor& desc) {
     }
     throw InvalidArgument("Invalid texture type {}", desc.type);
 }
+
+Id DefineVariable(EmitContext& ctx, Id type, std::optional<spv::BuiltIn> builtin,
+                  spv::StorageClass storage_class) {
+    const Id pointer_type{ctx.TypePointer(storage_class, type)};
+    const Id id{ctx.AddGlobalVariable(pointer_type, storage_class)};
+    if (builtin) {
+        ctx.Decorate(id, spv::Decoration::BuiltIn, *builtin);
+    }
+    ctx.interfaces.push_back(id);
+    return id;
+}
+
+Id DefineInput(EmitContext& ctx, Id type, std::optional<spv::BuiltIn> builtin = std::nullopt) {
+    return DefineVariable(ctx, type, builtin, spv::StorageClass::Input);
+}
+
+Id DefineOutput(EmitContext& ctx, Id type, std::optional<spv::BuiltIn> builtin = std::nullopt) {
+    return DefineVariable(ctx, type, builtin, spv::StorageClass::Output);
+}
 } // Anonymous namespace
 
 void VectorTypes::Define(Sirit::Module& sirit_ctx, Id base_type, std::string_view name) {
@@ -144,59 +163,8 @@ void EmitContext::DefineCommonConstants() {
 }
 
 void EmitContext::DefineInterfaces(const Info& info, Stage stage) {
-    const auto define{
-        [this](Id type, std::optional<spv::BuiltIn> builtin, spv::StorageClass storage_class) {
-            const Id pointer_type{TypePointer(storage_class, type)};
-            const Id id{AddGlobalVariable(pointer_type, storage_class)};
-            if (builtin) {
-                Decorate(id, spv::Decoration::BuiltIn, *builtin);
-            }
-            interfaces.push_back(id);
-            return id;
-        }};
-    using namespace std::placeholders;
-    const auto define_input{std::bind(define, _1, _2, spv::StorageClass::Input)};
-    const auto define_output{std::bind(define, _1, _2, spv::StorageClass::Output)};
-
-    if (info.uses_workgroup_id) {
-        workgroup_id = define_input(U32[3], spv::BuiltIn::WorkgroupId);
-    }
-    if (info.uses_local_invocation_id) {
-        local_invocation_id = define_input(U32[3], spv::BuiltIn::LocalInvocationId);
-    }
-    if (info.loads_position) {
-        const bool is_fragment{stage != Stage::Fragment};
-        const spv::BuiltIn built_in{is_fragment ? spv::BuiltIn::Position : spv::BuiltIn::FragCoord};
-        input_position = define_input(F32[4], built_in);
-    }
-    for (size_t i = 0; i < info.loads_generics.size(); ++i) {
-        if (info.loads_generics[i]) {
-            // FIXME: Declare size from input
-            input_generics[i] = define_input(F32[4], std::nullopt);
-            Decorate(input_generics[i], spv::Decoration::Location, static_cast<u32>(i));
-            Name(input_generics[i], fmt::format("in_attr{}", i));
-        }
-    }
-    if (info.stores_position) {
-        output_position = define_output(F32[4], spv::BuiltIn::Position);
-    }
-    for (size_t i = 0; i < info.stores_generics.size(); ++i) {
-        if (info.stores_generics[i]) {
-            output_generics[i] = define_output(F32[4], std::nullopt);
-            Decorate(output_generics[i], spv::Decoration::Location, static_cast<u32>(i));
-            Name(output_generics[i], fmt::format("out_attr{}", i));
-        }
-    }
-    if (stage == Stage::Fragment) {
-        for (size_t i = 0; i < 8; ++i) {
-            if (!info.stores_frag_color[i]) {
-                continue;
-            }
-            frag_color[i] = define_output(F32[4], std::nullopt);
-            Decorate(frag_color[i], spv::Decoration::Location, static_cast<u32>(i));
-            Name(frag_color[i], fmt::format("frag_color{}", i));
-        }
-    }
+    DefineInputs(info, stage);
+    DefineOutputs(info, stage);
 }
 
 void EmitContext::DefineConstantBuffers(const Info& info, u32& binding) {
@@ -221,33 +189,6 @@ void EmitContext::DefineConstantBuffers(const Info& info, u32& binding) {
         DefineConstantBuffers(info, &UniformDefinitions::U64, binding, U64, 'u', sizeof(u64));
     }
     for (const ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
-        binding += desc.count;
-    }
-}
-
-void EmitContext::DefineConstantBuffers(const Info& info, Id UniformDefinitions::*member_type,
-                                        u32 binding, Id type, char type_char, u32 element_size) {
-    const Id array_type{TypeArray(type, Constant(U32[1], 65536U / element_size))};
-    Decorate(array_type, spv::Decoration::ArrayStride, element_size);
-
-    const Id struct_type{TypeStruct(array_type)};
-    Name(struct_type, fmt::format("cbuf_block_{}{}", type_char, element_size * CHAR_BIT));
-    Decorate(struct_type, spv::Decoration::Block);
-    MemberName(struct_type, 0, "data");
-    MemberDecorate(struct_type, 0, spv::Decoration::Offset, 0U);
-
-    const Id struct_pointer_type{TypePointer(spv::StorageClass::Uniform, struct_type)};
-    const Id uniform_type{TypePointer(spv::StorageClass::Uniform, type)};
-    uniform_types.*member_type = uniform_type;
-
-    for (const ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
-        const Id id{AddGlobalVariable(struct_pointer_type, spv::StorageClass::Uniform)};
-        Decorate(id, spv::Decoration::Binding, binding);
-        Decorate(id, spv::Decoration::DescriptorSet, 0U);
-        Name(id, fmt::format("c{}", desc.index));
-        for (size_t i = 0; i < desc.count; ++i) {
-            cbufs[desc.index + i].*member_type = id;
-        }
         binding += desc.count;
     }
 }
@@ -308,6 +249,96 @@ void EmitContext::DefineTextures(const Info& info, u32& binding) {
 void EmitContext::DefineLabels(IR::Program& program) {
     for (IR::Block* const block : program.blocks) {
         block->SetDefinition(OpLabel());
+    }
+}
+
+void EmitContext::DefineInputs(const Info& info, Stage stage) {
+    if (info.uses_workgroup_id) {
+        workgroup_id = DefineInput(*this, U32[3], spv::BuiltIn::WorkgroupId);
+    }
+    if (info.uses_local_invocation_id) {
+        local_invocation_id = DefineInput(*this, U32[3], spv::BuiltIn::LocalInvocationId);
+    }
+    if (info.loads_position) {
+        const bool is_fragment{stage != Stage::Fragment};
+        const spv::BuiltIn built_in{is_fragment ? spv::BuiltIn::Position : spv::BuiltIn::FragCoord};
+        input_position = DefineInput(*this, F32[4], built_in);
+    }
+    if (info.loads_instance_id) {
+        if (profile.support_vertex_instance_id) {
+            instance_id = DefineInput(*this, U32[1], spv::BuiltIn::InstanceId);
+        } else {
+            instance_index = DefineInput(*this, U32[1], spv::BuiltIn::InstanceIndex);
+            base_instance = DefineInput(*this, U32[1], spv::BuiltIn::BaseInstance);
+        }
+    }
+    if (info.loads_vertex_id) {
+        if (profile.support_vertex_instance_id) {
+            vertex_id = DefineInput(*this, U32[1], spv::BuiltIn::VertexId);
+        } else {
+            vertex_index = DefineInput(*this, U32[1], spv::BuiltIn::VertexIndex);
+            base_vertex = DefineInput(*this, U32[1], spv::BuiltIn::BaseVertex);
+        }
+    }
+    for (size_t index = 0; index < info.loads_generics.size(); ++index) {
+        if (!info.loads_generics[index]) {
+            continue;
+        }
+        // FIXME: Declare size from input
+        const Id id{DefineInput(*this, F32[4])};
+        Decorate(id, spv::Decoration::Location, static_cast<u32>(index));
+        Name(id, fmt::format("in_attr{}", index));
+        input_generics[index] = id;
+    }
+}
+
+void EmitContext::DefineConstantBuffers(const Info& info, Id UniformDefinitions::*member_type,
+                                        u32 binding, Id type, char type_char, u32 element_size) {
+    const Id array_type{TypeArray(type, Constant(U32[1], 65536U / element_size))};
+    Decorate(array_type, spv::Decoration::ArrayStride, element_size);
+
+    const Id struct_type{TypeStruct(array_type)};
+    Name(struct_type, fmt::format("cbuf_block_{}{}", type_char, element_size * CHAR_BIT));
+    Decorate(struct_type, spv::Decoration::Block);
+    MemberName(struct_type, 0, "data");
+    MemberDecorate(struct_type, 0, spv::Decoration::Offset, 0U);
+
+    const Id struct_pointer_type{TypePointer(spv::StorageClass::Uniform, struct_type)};
+    const Id uniform_type{TypePointer(spv::StorageClass::Uniform, type)};
+    uniform_types.*member_type = uniform_type;
+
+    for (const ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
+        const Id id{AddGlobalVariable(struct_pointer_type, spv::StorageClass::Uniform)};
+        Decorate(id, spv::Decoration::Binding, binding);
+        Decorate(id, spv::Decoration::DescriptorSet, 0U);
+        Name(id, fmt::format("c{}", desc.index));
+        for (size_t i = 0; i < desc.count; ++i) {
+            cbufs[desc.index + i].*member_type = id;
+        }
+        binding += desc.count;
+    }
+}
+
+void EmitContext::DefineOutputs(const Info& info, Stage stage) {
+    if (info.stores_position) {
+        output_position = DefineOutput(*this, F32[4], spv::BuiltIn::Position);
+    }
+    for (size_t i = 0; i < info.stores_generics.size(); ++i) {
+        if (info.stores_generics[i]) {
+            output_generics[i] = DefineOutput(*this, F32[4]);
+            Decorate(output_generics[i], spv::Decoration::Location, static_cast<u32>(i));
+            Name(output_generics[i], fmt::format("out_attr{}", i));
+        }
+    }
+    if (stage == Stage::Fragment) {
+        for (size_t i = 0; i < 8; ++i) {
+            if (!info.stores_frag_color[i]) {
+                continue;
+            }
+            frag_color[i] = DefineOutput(*this, F32[4]);
+            Decorate(frag_color[i], spv::Decoration::Location, static_cast<u32>(i));
+            Name(frag_color[i], fmt::format("frag_color{}", i));
+        }
     }
 }
 

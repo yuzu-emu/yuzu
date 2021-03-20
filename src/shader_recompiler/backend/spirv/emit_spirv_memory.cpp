@@ -7,8 +7,8 @@
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 
 namespace Shader::Backend::SPIRV {
-
-static Id StorageIndex(EmitContext& ctx, const IR::Value& offset, size_t element_size) {
+namespace {
+Id StorageIndex(EmitContext& ctx, const IR::Value& offset, size_t element_size) {
     if (offset.IsImmediate()) {
         const u32 imm_offset{static_cast<u32>(offset.U32() / element_size)};
         return ctx.Constant(ctx.U32[1], imm_offset);
@@ -21,6 +21,32 @@ static Id StorageIndex(EmitContext& ctx, const IR::Value& offset, size_t element
     const Id shift_id{ctx.Constant(ctx.U32[1], shift)};
     return ctx.OpShiftRightLogical(ctx.U32[1], index, shift_id);
 }
+
+Id EmitLoadStorage(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                   u32 num_components) {
+    // TODO: Support reinterpreting bindings, guaranteed to be aligned
+    if (!binding.IsImmediate()) {
+        throw NotImplementedException("Dynamic storage buffer indexing");
+    }
+    const Id ssbo{ctx.ssbos[binding.U32()]};
+    const Id base_index{StorageIndex(ctx, offset, sizeof(u32))};
+    std::array<Id, 4> components;
+    for (u32 element = 0; element < num_components; ++element) {
+        Id index{base_index};
+        if (element > 0) {
+            index = ctx.OpIAdd(ctx.U32[1], base_index, ctx.Constant(ctx.U32[1], element));
+        }
+        const Id pointer{ctx.OpAccessChain(ctx.storage_u32, ssbo, ctx.u32_zero_value, index)};
+        components[element] = ctx.OpLoad(ctx.U32[1], pointer);
+    }
+    if (num_components == 1) {
+        return components[0];
+    } else {
+        const std::span components_span(components.data(), num_components);
+        return ctx.OpCompositeConstruct(ctx.U32[num_components], components_span);
+    }
+}
+} // Anonymous namespace
 
 void EmitLoadGlobalU8(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
@@ -95,21 +121,15 @@ void EmitLoadStorageS16(EmitContext&) {
 }
 
 Id EmitLoadStorage32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    if (!binding.IsImmediate()) {
-        throw NotImplementedException("Dynamic storage buffer indexing");
-    }
-    const Id ssbo{ctx.ssbos[binding.U32()]};
-    const Id index{StorageIndex(ctx, offset, sizeof(u32))};
-    const Id pointer{ctx.OpAccessChain(ctx.storage_u32, ssbo, ctx.u32_zero_value, index)};
-    return ctx.OpLoad(ctx.U32[1], pointer);
+    return EmitLoadStorage(ctx, binding, offset, 1);
 }
 
-void EmitLoadStorage64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitLoadStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
+    return EmitLoadStorage(ctx, binding, offset, 2);
 }
 
-void EmitLoadStorage128(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitLoadStorage128(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
+    return EmitLoadStorage(ctx, binding, offset, 4);
 }
 
 void EmitWriteStorageU8(EmitContext&) {

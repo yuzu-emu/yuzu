@@ -82,6 +82,12 @@ public:
 
     Id workgroup_id{};
     Id local_invocation_id{};
+    Id instance_id{};
+    Id instance_index{};
+    Id base_instance{};
+    Id vertex_id{};
+    Id vertex_index{};
+    Id base_vertex{};
 
     Id input_position{};
     std::array<Id, 32> input_generics{};
@@ -99,11 +105,15 @@ private:
     void DefineCommonConstants();
     void DefineInterfaces(const Info& info, Stage stage);
     void DefineConstantBuffers(const Info& info, u32& binding);
-    void DefineConstantBuffers(const Info& info, Id UniformDefinitions::*member_type, u32 binding,
-                               Id type, char type_char, u32 element_size);
     void DefineStorageBuffers(const Info& info, u32& binding);
     void DefineTextures(const Info& info, u32& binding);
     void DefineLabels(IR::Program& program);
+
+    void DefineConstantBuffers(const Info& info, Id UniformDefinitions::*member_type, u32 binding,
+                               Id type, char type_char, u32 element_size);
+
+    void DefineInputs(const Info& info, Stage stage);
+    void DefineOutputs(const Info& info, Stage stage);
 };
 
 } // namespace Shader::Backend::SPIRV
