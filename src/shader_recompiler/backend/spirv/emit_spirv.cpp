@@ -113,6 +113,43 @@ Id TypeId(const EmitContext& ctx, IR::Type type) {
     }
 }
 
+Id DefineMain(EmitContext& ctx, IR::Program& program) {
+    const Id void_function{ctx.TypeFunction(ctx.void_id)};
+    const Id main{ctx.OpFunction(ctx.void_id, spv::FunctionControlMask::MaskNone, void_function)};
+    for (IR::Block* const block : program.blocks) {
+        ctx.AddLabel(block->Definition<Id>());
+        for (IR::Inst& inst : block->Instructions()) {
+            EmitInst(ctx, &inst);
+        }
+    }
+    ctx.OpFunctionEnd();
+    return main;
+}
+
+void DefineEntryPoint(Environment& env, EmitContext& ctx, Id main) {
+    const std::span interfaces(ctx.interfaces.data(), ctx.interfaces.size());
+    spv::ExecutionModel execution_model{};
+    switch (env.ShaderStage()) {
+    case Shader::Stage::Compute: {
+        const std::array<u32, 3> workgroup_size{env.WorkgroupSize()};
+        execution_model = spv::ExecutionModel::GLCompute;
+        ctx.AddExecutionMode(main, spv::ExecutionMode::LocalSize, workgroup_size[0],
+                             workgroup_size[1], workgroup_size[2]);
+        break;
+    }
+    case Shader::Stage::VertexB:
+        execution_model = spv::ExecutionModel::Vertex;
+        break;
+    case Shader::Stage::Fragment:
+        execution_model = spv::ExecutionModel::Fragment;
+        ctx.AddExecutionMode(main, spv::ExecutionMode::OriginUpperLeft);
+        break;
+    default:
+        throw NotImplementedException("Stage {}", env.ShaderStage());
+    }
+    ctx.AddEntryPoint(execution_model, main, "main", interfaces);
+}
+
 void SetupDenormControl(const Profile& profile, const IR::Program& program, EmitContext& ctx,
                         Id main_func) {
     if (!profile.support_float_controls) {
@@ -173,6 +210,25 @@ void SetupDenormControl(const Profile& profile, const IR::Program& program, Emit
     }
 }
 
+void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ctx) {
+    if (info.uses_sampled_1d) {
+        ctx.AddCapability(spv::Capability::Sampled1D);
+    }
+    if (info.uses_sparse_residency) {
+        ctx.AddCapability(spv::Capability::SparseResidency);
+    }
+    if (info.uses_demote_to_helper_invocation) {
+        ctx.AddExtension("SPV_EXT_demote_to_helper_invocation");
+        ctx.AddCapability(spv::Capability::DemoteToHelperInvocationEXT);
+    }
+    if (!profile.support_vertex_instance_id && (info.loads_instance_id || info.loads_vertex_id)) {
+        ctx.AddExtension("SPV_KHR_shader_draw_parameters");
+        ctx.AddCapability(spv::Capability::DrawParameters);
+    }
+    // TODO: Track this usage
+    ctx.AddCapability(spv::Capability::ImageGatherExtended);
+}
+
 Id PhiArgDef(EmitContext& ctx, IR::Inst* inst, size_t index) {
     // Phi nodes can have forward declarations, if an argument is not defined provide a forward
     // declaration of it. Invoke will take care of giving it the right definition when it's
@@ -202,53 +258,10 @@ Id PhiArgDef(EmitContext& ctx, IR::Inst* inst, size_t index) {
 std::vector<u32> EmitSPIRV(const Profile& profile, Environment& env, IR::Program& program,
                            u32& binding) {
     EmitContext ctx{profile, program, binding};
-    const Id void_function{ctx.TypeFunction(ctx.void_id)};
-    const Id func{ctx.OpFunction(ctx.void_id, spv::FunctionControlMask::MaskNone, void_function)};
-    for (IR::Block* const block : program.blocks) {
-        ctx.AddLabel(block->Definition<Id>());
-        for (IR::Inst& inst : block->Instructions()) {
-            EmitInst(ctx, &inst);
-        }
-    }
-    ctx.OpFunctionEnd();
-
-    const std::span interfaces(ctx.interfaces.data(), ctx.interfaces.size());
-    spv::ExecutionModel execution_model{};
-    switch (env.ShaderStage()) {
-    case Shader::Stage::Compute: {
-        const std::array<u32, 3> workgroup_size{env.WorkgroupSize()};
-        execution_model = spv::ExecutionModel::GLCompute;
-        ctx.AddExecutionMode(func, spv::ExecutionMode::LocalSize, workgroup_size[0],
-                             workgroup_size[1], workgroup_size[2]);
-        break;
-    }
-    case Shader::Stage::VertexB:
-        execution_model = spv::ExecutionModel::Vertex;
-        break;
-    case Shader::Stage::Fragment:
-        execution_model = spv::ExecutionModel::Fragment;
-        ctx.AddExecutionMode(func, spv::ExecutionMode::OriginUpperLeft);
-        break;
-    default:
-        throw NotImplementedException("Stage {}", env.ShaderStage());
-    }
-    ctx.AddEntryPoint(execution_model, func, "main", interfaces);
-
-    SetupDenormControl(profile, program, ctx, func);
-    const Info& info{program.info};
-    if (info.uses_sampled_1d) {
-        ctx.AddCapability(spv::Capability::Sampled1D);
-    }
-    if (info.uses_sparse_residency) {
-        ctx.AddCapability(spv::Capability::SparseResidency);
-    }
-    if (info.uses_demote_to_helper_invocation) {
-        ctx.AddExtension("SPV_EXT_demote_to_helper_invocation");
-        ctx.AddCapability(spv::Capability::DemoteToHelperInvocationEXT);
-    }
-    // TODO: Track this usage
-    ctx.AddCapability(spv::Capability::ImageGatherExtended);
-
+    const Id main{DefineMain(ctx, program)};
+    DefineEntryPoint(env, ctx, main);
+    SetupDenormControl(profile, program, ctx, main);
+    SetupCapabilities(profile, program.info, ctx);
     return ctx.Assemble();
 }
 

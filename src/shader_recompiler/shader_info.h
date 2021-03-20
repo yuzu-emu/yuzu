@@ -59,6 +59,8 @@ struct Info {
 
     std::array<bool, 32> loads_generics{};
     bool loads_position{};
+    bool loads_instance_id{};
+    bool loads_vertex_id{};
 
     std::array<bool, 8> stores_frag_color{};
     bool stores_frag_depth{};

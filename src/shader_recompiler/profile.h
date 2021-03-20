@@ -8,6 +8,7 @@ namespace Shader {
 
 struct Profile {
     bool unified_descriptor_binding{};
+    bool support_vertex_instance_id{};
     bool support_float_controls{};
     bool support_separate_denorm_behavior{};
     bool support_separate_rounding_mode{};

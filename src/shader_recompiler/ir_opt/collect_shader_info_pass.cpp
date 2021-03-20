@@ -38,6 +38,12 @@ void GetAttribute(Info& info, IR::Attribute attribute) {
     case IR::Attribute::PositionW:
         info.loads_position = true;
         break;
+    case IR::Attribute::InstanceId:
+        info.loads_instance_id = true;
+        break;
+    case IR::Attribute::VertexId:
+        info.loads_vertex_id = true;
+        break;
     default:
         throw NotImplementedException("Get attribute {}", attribute);
     }
