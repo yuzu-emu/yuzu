@@ -57,8 +57,8 @@ void TranslatorVisitor::ISCADD_cbuf(u64) {
     throw NotImplementedException("ISCADD (cbuf)");
 }
 
-void TranslatorVisitor::ISCADD_imm(u64) {
-    throw NotImplementedException("ISCADD (imm)");
+void TranslatorVisitor::ISCADD_imm(u64 insn) {
+    ISCADD(*this, insn, GetImm20(insn));
 }
 
 void TranslatorVisitor::ISCADD32I(u64) {
