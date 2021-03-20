@@ -2,66 +2,10 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include "common/common_types.h"
-#include "shader_recompiler/exception.h"
-#include "shader_recompiler/frontend/maxwell/translate/impl/common_encoding.h"
-#include "shader_recompiler/frontend/maxwell/translate/impl/impl.h"
+#include "shader_recompiler/frontend/maxwell/translate/impl/half_floating_point_helper.h"
 
 namespace Shader::Maxwell {
 namespace {
-enum class Merge : u64 {
-    H1_H0,
-    F32,
-    MRG_H0,
-    MRG_H1,
-};
-
-enum class Swizzle : u64 {
-    H1_H0,
-    F32,
-    H0_H0,
-    H1_H1,
-};
-
-std::pair<IR::F16F32F64, IR::F16F32F64> Extract(IR::IREmitter& ir, IR::U32 value, Swizzle swizzle) {
-    switch (swizzle) {
-    case Swizzle::H1_H0: {
-        const IR::Value vector{ir.UnpackFloat2x16(value)};
-        return {IR::F16{ir.CompositeExtract(vector, 0)}, IR::F16{ir.CompositeExtract(vector, 1)}};
-    }
-    case Swizzle::H0_H0: {
-        const IR::F16 scalar{ir.CompositeExtract(ir.UnpackFloat2x16(value), 0)};
-        return {scalar, scalar};
-    }
-    case Swizzle::H1_H1: {
-        const IR::F16 scalar{ir.CompositeExtract(ir.UnpackFloat2x16(value), 1)};
-        return {scalar, scalar};
-    }
-    case Swizzle::F32: {
-        const IR::F32 scalar{ir.BitCast<IR::F32>(value)};
-        return {scalar, scalar};
-    }
-    }
-    throw InvalidArgument("Invalid swizzle {}", swizzle);
-}
-
-IR::U32 MergeResult(IR::IREmitter& ir, IR::Reg dest, const IR::F16& lhs, const IR::F16& rhs,
-                    Merge merge) {
-    switch (merge) {
-    case Merge::H1_H0:
-        return ir.PackFloat2x16(ir.CompositeConstruct(lhs, rhs));
-    case Merge::F32:
-        return ir.BitCast<IR::U32, IR::F32>(ir.FPConvert(32, lhs));
-    case Merge::MRG_H0:
-    case Merge::MRG_H1: {
-        const IR::Value vector{ir.UnpackFloat2x16(ir.GetReg(dest))};
-        const bool h0{merge == Merge::MRG_H0};
-        const IR::F16& insert{h0 ? lhs : rhs};
-        return ir.PackFloat2x16(ir.CompositeInsert(vector, insert, h0 ? 0 : 1));
-    }
-    }
-    throw InvalidArgument("Invalid merge {}", merge);
-}
 
 void HADD2(TranslatorVisitor& v, u64 insn, Merge merge, bool ftz, bool sat, bool abs_a, bool neg_a,
            Swizzle swizzle_a, bool abs_b, bool neg_b, Swizzle swizzle_b, const IR::U32& src_b) {
@@ -122,7 +66,7 @@ void HADD2(TranslatorVisitor& v, u64 insn, bool sat, bool abs_b, bool neg_b, Swi
     HADD2(v, insn, hadd2.merge, hadd2.ftz != 0, sat, hadd2.abs_a != 0, hadd2.neg_a != 0,
           hadd2.swizzle_a, abs_b, neg_b, swizzle_b, src_b);
 }
-} // Anonymous namespace
+} // namespace
 
 void TranslatorVisitor::HADD2_reg(u64 insn) {
     union {
