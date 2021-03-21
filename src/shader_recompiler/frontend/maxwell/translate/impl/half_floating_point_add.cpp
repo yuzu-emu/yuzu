@@ -6,7 +6,6 @@
 
 namespace Shader::Maxwell {
 namespace {
-
 void HADD2(TranslatorVisitor& v, u64 insn, Merge merge, bool ftz, bool sat, bool abs_a, bool neg_a,
            Swizzle swizzle_a, bool abs_b, bool neg_b, Swizzle swizzle_b, const IR::U32& src_b) {
     union {
@@ -66,7 +65,7 @@ void HADD2(TranslatorVisitor& v, u64 insn, bool sat, bool abs_b, bool neg_b, Swi
     HADD2(v, insn, hadd2.merge, hadd2.ftz != 0, sat, hadd2.abs_a != 0, hadd2.neg_a != 0,
           hadd2.swizzle_a, abs_b, neg_b, swizzle_b, src_b);
 }
-} // namespace
+} // Anonymous namespace
 
 void TranslatorVisitor::HADD2_reg(u64 insn) {
     union {

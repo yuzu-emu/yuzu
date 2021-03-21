@@ -76,6 +76,7 @@ void TranslatorVisitor::HSET2_reg(u64 insn) {
         BitField<35, 4, FPCompareOp> compare_op;
         BitField<28, 2, Swizzle> swizzle_b;
     } const hset2{insn};
+
     HSET2(*this, insn, GetReg20(insn), hset2.bf != 0, hset2.ftz != 0, hset2.neg_b != 0,
           hset2.abs_b != 0, hset2.compare_op, hset2.swizzle_b);
 }

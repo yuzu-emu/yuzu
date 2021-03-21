@@ -161,9 +161,9 @@ public:
                                      FpControl control = {}, bool ordered = true);
     [[nodiscard]] U1 FPGreaterThanEqual(const F16F32F64& lhs, const F16F32F64& rhs,
                                         FpControl control = {}, bool ordered = true);
-    [[nodiscard]] U1 FPIsNan(const F32& value);
-    [[nodiscard]] U1 FPOrdered(const F32& lhs, const F32& rhs);
-    [[nodiscard]] U1 FPUnordered(const F32& lhs, const F32& rhs);
+    [[nodiscard]] U1 FPIsNan(const F16F32F64& value);
+    [[nodiscard]] U1 FPOrdered(const F16F32F64& lhs, const F16F32F64& rhs);
+    [[nodiscard]] U1 FPUnordered(const F16F32F64& lhs, const F16F32F64& rhs);
     [[nodiscard]] F32F64 FPMax(const F32F64& lhs, const F32F64& rhs, FpControl control = {});
     [[nodiscard]] F32F64 FPMin(const F32F64& lhs, const F32F64& rhs, FpControl control = {});
 

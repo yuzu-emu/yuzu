@@ -74,6 +74,8 @@ IR::Opcode Replace(IR::Opcode op) {
         return IR::Opcode::FPOrdGreaterThanEqual32;
     case IR::Opcode::FPUnordGreaterThanEqual16:
         return IR::Opcode::FPUnordGreaterThanEqual32;
+    case IR::Opcode::FPIsNan16:
+        return IR::Opcode::FPIsNan32;
     case IR::Opcode::ConvertS16F16:
         return IR::Opcode::ConvertS16F32;
     case IR::Opcode::ConvertS32F16:
