@@ -81,6 +81,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/half_floating_point_fused_multiply_add.cpp
     frontend/maxwell/translate/impl/half_floating_point_helper.cpp
     frontend/maxwell/translate/impl/half_floating_point_helper.h
+    frontend/maxwell/translate/impl/half_floating_point_multiply.cpp
     frontend/maxwell/translate/impl/impl.cpp
     frontend/maxwell/translate/impl/impl.h
     frontend/maxwell/translate/impl/integer_add.cpp
