@@ -6,7 +6,6 @@
 
 namespace Shader::Maxwell {
 namespace {
-
 void HMUL2(TranslatorVisitor& v, u64 insn, Merge merge, bool sat, bool abs_a, bool neg_a,
            Swizzle swizzle_a, bool abs_b, bool neg_b, Swizzle swizzle_b, const IR::U32& src_b,
            HalfPrecision precision) {
@@ -79,7 +78,7 @@ void HMUL2(TranslatorVisitor& v, u64 insn, bool sat, bool abs_a, bool neg_a, boo
     HMUL2(v, insn, hmul2.merge, sat, abs_a, neg_a, hmul2.swizzle_a, abs_b, neg_b, swizzle_b, src_b,
           hmul2.precision);
 }
-} // namespace
+} // Anonymous namespace
 
 void TranslatorVisitor::HMUL2_reg(u64 insn) {
     union {

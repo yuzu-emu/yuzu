@@ -895,15 +895,30 @@ U1 IREmitter::FPGreaterThanEqual(const F16F32F64& lhs, const F16F32F64& rhs, FpC
     }
 }
 
-U1 IREmitter::FPIsNan(const F32& value) {
-    return Inst<U1>(Opcode::FPIsNan32, value);
+U1 IREmitter::FPIsNan(const F16F32F64& value) {
+    switch (value.Type()) {
+    case Type::F16:
+        return Inst<U1>(Opcode::FPIsNan16, value);
+    case Type::F32:
+        return Inst<U1>(Opcode::FPIsNan32, value);
+    case Type::F64:
+        return Inst<U1>(Opcode::FPIsNan64, value);
+    default:
+        ThrowInvalidType(value.Type());
+    }
 }
 
-U1 IREmitter::FPOrdered(const F32& lhs, const F32& rhs) {
+U1 IREmitter::FPOrdered(const F16F32F64& lhs, const F16F32F64& rhs) {
+    if (lhs.Type() != rhs.Type()) {
+        throw InvalidArgument("Mismatching types {} and {}", lhs.Type(), rhs.Type());
+    }
     return LogicalAnd(LogicalNot(FPIsNan(lhs)), LogicalNot(FPIsNan(rhs)));
 }
 
-U1 IREmitter::FPUnordered(const F32& lhs, const F32& rhs) {
+U1 IREmitter::FPUnordered(const F16F32F64& lhs, const F16F32F64& rhs) {
+    if (lhs.Type() != rhs.Type()) {
+        throw InvalidArgument("Mismatching types {} and {}", lhs.Type(), rhs.Type());
+    }
     return LogicalOr(FPIsNan(lhs), FPIsNan(rhs));
 }
 

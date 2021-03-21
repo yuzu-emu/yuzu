@@ -74,6 +74,9 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::CompositeExtractF16x2:
     case IR::Opcode::CompositeExtractF16x3:
     case IR::Opcode::CompositeExtractF16x4:
+    case IR::Opcode::CompositeInsertF16x2:
+    case IR::Opcode::CompositeInsertF16x3:
+    case IR::Opcode::CompositeInsertF16x4:
     case IR::Opcode::SelectF16:
     case IR::Opcode::BitCastU16F16:
     case IR::Opcode::BitCastF16U16:
@@ -103,6 +106,19 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::FPRoundEven16:
     case IR::Opcode::FPSaturate16:
     case IR::Opcode::FPTrunc16:
+    case IR::Opcode::FPOrdEqual16:
+    case IR::Opcode::FPUnordEqual16:
+    case IR::Opcode::FPOrdNotEqual16:
+    case IR::Opcode::FPUnordNotEqual16:
+    case IR::Opcode::FPOrdLessThan16:
+    case IR::Opcode::FPUnordLessThan16:
+    case IR::Opcode::FPOrdGreaterThan16:
+    case IR::Opcode::FPUnordGreaterThan16:
+    case IR::Opcode::FPOrdLessThanEqual16:
+    case IR::Opcode::FPUnordLessThanEqual16:
+    case IR::Opcode::FPOrdGreaterThanEqual16:
+    case IR::Opcode::FPUnordGreaterThanEqual16:
+    case IR::Opcode::FPIsNan16:
         info.uses_fp16 = true;
         break;
     case IR::Opcode::FPAbs64:

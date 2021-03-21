@@ -6,7 +6,6 @@
 
 namespace Shader::Maxwell {
 namespace {
-
 void HFMA2(TranslatorVisitor& v, u64 insn, Merge merge, Swizzle swizzle_a, bool neg_b, bool neg_c,
            Swizzle swizzle_b, Swizzle swizzle_c, const IR::U32& src_b, const IR::U32& src_c,
            bool sat, HalfPrecision precision) {
@@ -85,8 +84,7 @@ void HFMA2(TranslatorVisitor& v, u64 insn, bool neg_b, bool neg_c, Swizzle swizz
     HFMA2(v, insn, hfma2.merge, hfma2.swizzle_a, neg_b, neg_c, swizzle_b, swizzle_c, src_b, src_c,
           sat, precision);
 }
-
-} // namespace
+} // Anonymous namespace
 
 void TranslatorVisitor::HFMA2_reg(u64 insn) {
     union {
