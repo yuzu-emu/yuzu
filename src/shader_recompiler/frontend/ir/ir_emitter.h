@@ -216,7 +216,8 @@ public:
                                         const Value& value);
 
     [[nodiscard]] U32U64 UConvert(size_t result_bitsize, const U32U64& value);
-    [[nodiscard]] F16F32F64 FPConvert(size_t result_bitsize, const F16F32F64& value);
+    [[nodiscard]] F16F32F64 FPConvert(size_t result_bitsize, const F16F32F64& value,
+                                      FpControl control = {});
 
     [[nodiscard]] Value ImageSampleImplicitLod(const Value& handle, const Value& coords,
                                                const F32& bias, const Value& offset,

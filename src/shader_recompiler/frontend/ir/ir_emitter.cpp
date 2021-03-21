@@ -1361,7 +1361,7 @@ U32U64 IREmitter::UConvert(size_t result_bitsize, const U32U64& value) {
     throw NotImplementedException("Conversion from {} to {} bits", value.Type(), result_bitsize);
 }
 
-F16F32F64 IREmitter::FPConvert(size_t result_bitsize, const F16F32F64& value) {
+F16F32F64 IREmitter::FPConvert(size_t result_bitsize, const F16F32F64& value, FpControl control) {
     switch (result_bitsize) {
     case 16:
         switch (value.Type()) {
@@ -1369,7 +1369,7 @@ F16F32F64 IREmitter::FPConvert(size_t result_bitsize, const F16F32F64& value) {
             // Nothing to do
             return value;
         case Type::F32:
-            return Inst<F16>(Opcode::ConvertF16F32, value);
+            return Inst<F16>(Opcode::ConvertF16F32, Flags{control}, value);
         case Type::F64:
             throw LogicError("Illegal conversion from F64 to F16");
         default:
@@ -1379,12 +1379,12 @@ F16F32F64 IREmitter::FPConvert(size_t result_bitsize, const F16F32F64& value) {
     case 32:
         switch (value.Type()) {
         case Type::F16:
-            return Inst<F32>(Opcode::ConvertF32F16, value);
+            return Inst<F32>(Opcode::ConvertF32F16, Flags{control}, value);
         case Type::F32:
             // Nothing to do
             return value;
         case Type::F64:
-            return Inst<F64>(Opcode::ConvertF32F64, value);
+            return Inst<F32>(Opcode::ConvertF32F64, Flags{control}, value);
         default:
             break;
         }
@@ -1394,10 +1394,10 @@ F16F32F64 IREmitter::FPConvert(size_t result_bitsize, const F16F32F64& value) {
         case Type::F16:
             throw LogicError("Illegal conversion from F16 to F64");
         case Type::F32:
+            return Inst<F64>(Opcode::ConvertF64F32, Flags{control}, value);
+        case Type::F64:
             // Nothing to do
             return value;
-        case Type::F64:
-            return Inst<F64>(Opcode::ConvertF32F64, value);
         default:
             break;
         }

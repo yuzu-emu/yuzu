@@ -404,7 +404,9 @@ void VisitFpModifiers(Info& info, IR::Inst& inst) {
     case IR::Opcode::FPOrdLessThanEqual32:
     case IR::Opcode::FPUnordLessThanEqual32:
     case IR::Opcode::FPOrdGreaterThanEqual32:
-    case IR::Opcode::FPUnordGreaterThanEqual32: {
+    case IR::Opcode::FPUnordGreaterThanEqual32:
+    case IR::Opcode::ConvertF16F32:
+    case IR::Opcode::ConvertF64F32: {
         const auto control{inst.Flags<IR::FpControl>()};
         switch (control.fmz_mode) {
         case IR::FmzMode::DontCare:
