@@ -181,22 +181,6 @@ void TranslatorVisitor::GETLMEMBASE(u64) {
     ThrowNotImplemented(Opcode::GETLMEMBASE);
 }
 
-void TranslatorVisitor::HMUL2_reg(u64) {
-    ThrowNotImplemented(Opcode::HMUL2_reg);
-}
-
-void TranslatorVisitor::HMUL2_cbuf(u64) {
-    ThrowNotImplemented(Opcode::HMUL2_cbuf);
-}
-
-void TranslatorVisitor::HMUL2_imm(u64) {
-    ThrowNotImplemented(Opcode::HMUL2_imm);
-}
-
-void TranslatorVisitor::HMUL2_32I(u64) {
-    ThrowNotImplemented(Opcode::HMUL2_32I);
-}
-
 void TranslatorVisitor::HSET2_reg(u64) {
     ThrowNotImplemented(Opcode::HSET2_reg);
 }
