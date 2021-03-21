@@ -5,6 +5,7 @@
 #include "common/common_types.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/maxwell/translate/impl/common_encoding.h"
+#include "shader_recompiler/frontend/maxwell/translate/impl/common_funcs.h"
 #include "shader_recompiler/frontend/maxwell/translate/impl/impl.h"
 
 namespace Shader::Maxwell {
