@@ -24,7 +24,7 @@ void FMNMX(TranslatorVisitor& v, u64 insn, const IR::F32& src_b) {
 
     const IR::U1 pred{v.ir.GetPred(fmnmx.pred)};
     const IR::F32 op_a{v.ir.FPAbsNeg(v.F(fmnmx.src_a_reg), fmnmx.abs_a != 0, fmnmx.negate_a != 0)};
-    const IR::F32 op_b = v.ir.FPAbsNeg(src_b, fmnmx.abs_b != 0, fmnmx.negate_b != 0);
+    const IR::F32 op_b{v.ir.FPAbsNeg(src_b, fmnmx.abs_b != 0, fmnmx.negate_b != 0)};
 
     const IR::FpControl control{
         .no_contraction{false},

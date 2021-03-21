@@ -152,24 +152,7 @@ void DefineEntryPoint(Environment& env, EmitContext& ctx, Id main) {
 
 void SetupDenormControl(const Profile& profile, const IR::Program& program, EmitContext& ctx,
                         Id main_func) {
-    if (!profile.support_float_controls) {
-        return;
-    }
     const Info& info{program.info};
-    if (!info.uses_fp32_denorms_flush && !info.uses_fp32_denorms_preserve &&
-        !info.uses_fp16_denorms_flush && !info.uses_fp16_denorms_preserve) {
-        return;
-    }
-    ctx.AddExtension("SPV_KHR_float_controls");
-
-    if (info.uses_fp16 && profile.support_fp16_signed_zero_nan_preserve) {
-        ctx.AddCapability(spv::Capability::SignedZeroInfNanPreserve);
-        ctx.AddExecutionMode(main_func, spv::ExecutionMode::SignedZeroInfNanPreserve, 16U);
-    }
-    if (profile.support_fp32_signed_zero_nan_preserve) {
-        ctx.AddCapability(spv::Capability::SignedZeroInfNanPreserve);
-        ctx.AddExecutionMode(main_func, spv::ExecutionMode::SignedZeroInfNanPreserve, 32U);
-    }
     if (info.uses_fp32_denorms_flush && info.uses_fp32_denorms_preserve) {
         // LOG_ERROR(HW_GPU, "Fp32 denorm flush and preserve on the same shader");
     } else if (info.uses_fp32_denorms_flush) {
@@ -207,6 +190,22 @@ void SetupDenormControl(const Profile& profile, const IR::Program& program, Emit
         } else {
             // LOG_WARNING(HW_GPU, "Fp16 denorm preserve used in shader without host support");
         }
+    }
+}
+
+void SetupSignedNanCapabilities(const Profile& profile, const IR::Program& program,
+                                EmitContext& ctx, Id main_func) {
+    if (program.info.uses_fp16 && profile.support_fp16_signed_zero_nan_preserve) {
+        ctx.AddCapability(spv::Capability::SignedZeroInfNanPreserve);
+        ctx.AddExecutionMode(main_func, spv::ExecutionMode::SignedZeroInfNanPreserve, 16U);
+    }
+    if (profile.support_fp32_signed_zero_nan_preserve) {
+        ctx.AddCapability(spv::Capability::SignedZeroInfNanPreserve);
+        ctx.AddExecutionMode(main_func, spv::ExecutionMode::SignedZeroInfNanPreserve, 32U);
+    }
+    if (program.info.uses_fp64 && profile.support_fp64_signed_zero_nan_preserve) {
+        ctx.AddCapability(spv::Capability::SignedZeroInfNanPreserve);
+        ctx.AddExecutionMode(main_func, spv::ExecutionMode::SignedZeroInfNanPreserve, 64U);
     }
 }
 
@@ -260,7 +259,11 @@ std::vector<u32> EmitSPIRV(const Profile& profile, Environment& env, IR::Program
     EmitContext ctx{profile, program, binding};
     const Id main{DefineMain(ctx, program)};
     DefineEntryPoint(env, ctx, main);
-    SetupDenormControl(profile, program, ctx, main);
+    if (profile.support_float_controls) {
+        ctx.AddExtension("SPV_KHR_float_controls");
+        SetupDenormControl(profile, program, ctx, main);
+        SetupSignedNanCapabilities(profile, program, ctx, main);
+    }
     SetupCapabilities(profile, program.info, ctx);
     return ctx.Assemble();
 }

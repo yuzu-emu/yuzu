@@ -131,6 +131,7 @@ OPCODE(SelectU32,                                           U32,            U1, 
 OPCODE(SelectU64,                                           U64,            U1,             U64,            U64,                                            )
 OPCODE(SelectF16,                                           F16,            U1,             F16,            F16,                                            )
 OPCODE(SelectF32,                                           F32,            U1,             F32,            F32,                                            )
+OPCODE(SelectF64,                                           F64,            U1,             F64,            F64,                                            )
 
 // Bitwise conversions
 OPCODE(BitCastU16F16,                                       U16,            F16,                                                                            )

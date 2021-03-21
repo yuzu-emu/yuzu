@@ -65,8 +65,11 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/common_funcs.h
     frontend/maxwell/translate/impl/condition_code_set.cpp
     frontend/maxwell/translate/impl/double_add.cpp
+    frontend/maxwell/translate/impl/double_compare_and_set.cpp
     frontend/maxwell/translate/impl/double_fused_multiply_add.cpp
+    frontend/maxwell/translate/impl/double_min_max.cpp
     frontend/maxwell/translate/impl/double_multiply.cpp
+    frontend/maxwell/translate/impl/double_set_predicate.cpp
     frontend/maxwell/translate/impl/exit_program.cpp
     frontend/maxwell/translate/impl/find_leading_one.cpp
     frontend/maxwell/translate/impl/floating_point_add.cpp

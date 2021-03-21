@@ -18,6 +18,7 @@ struct Profile {
     bool support_fp32_denorm_flush{};
     bool support_fp16_signed_zero_nan_preserve{};
     bool support_fp32_signed_zero_nan_preserve{};
+    bool support_fp64_signed_zero_nan_preserve{};
 
     // FClamp is broken and OpFMax + OpFMin should be used instead
     bool has_broken_spirv_clamp{};
