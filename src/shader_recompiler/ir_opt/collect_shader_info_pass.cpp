@@ -121,6 +121,19 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::FPIsNan16:
         info.uses_fp16 = true;
         break;
+    case IR::Opcode::CompositeConstructF64x2:
+    case IR::Opcode::CompositeConstructF64x3:
+    case IR::Opcode::CompositeConstructF64x4:
+    case IR::Opcode::CompositeExtractF64x2:
+    case IR::Opcode::CompositeExtractF64x3:
+    case IR::Opcode::CompositeExtractF64x4:
+    case IR::Opcode::CompositeInsertF64x2:
+    case IR::Opcode::CompositeInsertF64x3:
+    case IR::Opcode::CompositeInsertF64x4:
+    case IR::Opcode::BitCastU64F64:
+    case IR::Opcode::BitCastF64U64:
+    case IR::Opcode::PackDouble2x32:
+    case IR::Opcode::UnpackDouble2x32:
     case IR::Opcode::FPAbs64:
     case IR::Opcode::FPAdd64:
     case IR::Opcode::FPCeil64:
@@ -135,6 +148,27 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::FPRoundEven64:
     case IR::Opcode::FPSaturate64:
     case IR::Opcode::FPTrunc64:
+    case IR::Opcode::FPOrdEqual64:
+    case IR::Opcode::FPUnordEqual64:
+    case IR::Opcode::FPOrdNotEqual64:
+    case IR::Opcode::FPUnordNotEqual64:
+    case IR::Opcode::FPOrdLessThan64:
+    case IR::Opcode::FPUnordLessThan64:
+    case IR::Opcode::FPOrdGreaterThan64:
+    case IR::Opcode::FPUnordGreaterThan64:
+    case IR::Opcode::FPOrdLessThanEqual64:
+    case IR::Opcode::FPUnordLessThanEqual64:
+    case IR::Opcode::FPOrdGreaterThanEqual64:
+    case IR::Opcode::FPUnordGreaterThanEqual64:
+    case IR::Opcode::FPIsNan64:
+    case IR::Opcode::ConvertS16F64:
+    case IR::Opcode::ConvertS32F64:
+    case IR::Opcode::ConvertS64F64:
+    case IR::Opcode::ConvertU16F64:
+    case IR::Opcode::ConvertU32F64:
+    case IR::Opcode::ConvertU64F64:
+    case IR::Opcode::ConvertF32F64:
+    case IR::Opcode::ConvertF64F32:
     case IR::Opcode::ConvertF64S8:
     case IR::Opcode::ConvertF64S16:
     case IR::Opcode::ConvertF64S32:
