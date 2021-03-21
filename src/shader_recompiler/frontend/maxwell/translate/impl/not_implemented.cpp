@@ -181,26 +181,6 @@ void TranslatorVisitor::GETLMEMBASE(u64) {
     ThrowNotImplemented(Opcode::GETLMEMBASE);
 }
 
-void TranslatorVisitor::HFMA2_reg(u64) {
-    ThrowNotImplemented(Opcode::HFMA2_reg);
-}
-
-void TranslatorVisitor::HFMA2_rc(u64) {
-    ThrowNotImplemented(Opcode::HFMA2_rc);
-}
-
-void TranslatorVisitor::HFMA2_cr(u64) {
-    ThrowNotImplemented(Opcode::HFMA2_cr);
-}
-
-void TranslatorVisitor::HFMA2_imm(u64) {
-    ThrowNotImplemented(Opcode::HFMA2_imm);
-}
-
-void TranslatorVisitor::HFMA2_32I(u64) {
-    ThrowNotImplemented(Opcode::HFMA2_32I);
-}
-
 void TranslatorVisitor::HMUL2_reg(u64) {
     ThrowNotImplemented(Opcode::HMUL2_reg);
 }

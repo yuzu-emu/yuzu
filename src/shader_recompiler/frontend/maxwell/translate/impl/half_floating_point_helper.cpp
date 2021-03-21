@@ -6,6 +6,19 @@
 
 namespace Shader::Maxwell {
 
+IR::FmzMode HalfPrecision2FmzMode(HalfPrecision precision) {
+    switch (precision) {
+    case HalfPrecision::None:
+        return IR::FmzMode::None;
+    case HalfPrecision::FTZ:
+        return IR::FmzMode::FTZ;
+    case HalfPrecision::FMZ:
+        return IR::FmzMode::FMZ;
+    default:
+        return IR::FmzMode::DontCare;
+    }
+}
+
 std::pair<IR::F16F32F64, IR::F16F32F64> Extract(IR::IREmitter& ir, IR::U32 value, Swizzle swizzle) {
     switch (swizzle) {
     case Swizzle::H1_H0: {
