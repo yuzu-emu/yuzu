@@ -117,18 +117,6 @@ void TranslatorVisitor::DSETP_imm(u64) {
     ThrowNotImplemented(Opcode::DSETP_imm);
 }
 
-void TranslatorVisitor::F2F_reg(u64) {
-    ThrowNotImplemented(Opcode::F2F_reg);
-}
-
-void TranslatorVisitor::F2F_cbuf(u64) {
-    ThrowNotImplemented(Opcode::F2F_cbuf);
-}
-
-void TranslatorVisitor::F2F_imm(u64) {
-    ThrowNotImplemented(Opcode::F2F_imm);
-}
-
 void TranslatorVisitor::FCHK_reg(u64) {
     ThrowNotImplemented(Opcode::FCHK_reg);
 }
