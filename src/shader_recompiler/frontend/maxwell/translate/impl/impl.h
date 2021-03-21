@@ -354,6 +354,7 @@ public:
     [[nodiscard]] IR::F32 GetFloatReg20(u64 insn);
     [[nodiscard]] IR::F32 GetFloatReg39(u64 insn);
     [[nodiscard]] IR::F64 GetDoubleReg20(u64 insn);
+    [[nodiscard]] IR::F64 GetDoubleReg39(u64 insn);
 
     [[nodiscard]] IR::U32 GetCbuf(u64 insn);
     [[nodiscard]] IR::F32 GetFloatCbuf(u64 insn);

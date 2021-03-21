@@ -90,6 +90,14 @@ IR::F64 TranslatorVisitor::GetDoubleReg20(u64 insn) {
     return D(reg.index);
 }
 
+IR::F64 TranslatorVisitor::GetDoubleReg39(u64 insn) {
+    union {
+        u64 raw;
+        BitField<39, 8, IR::Reg> index;
+    } const reg{insn};
+    return D(reg.index);
+}
+
 static std::pair<IR::U32, IR::U32> CbufAddr(u64 insn) {
     union {
         u64 raw;
