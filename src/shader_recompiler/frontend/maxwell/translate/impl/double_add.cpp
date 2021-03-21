@@ -30,7 +30,7 @@ void DADD(TranslatorVisitor& v, u64 insn, const IR::F64& src_b) {
     const IR::F64 op_a{v.ir.FPAbsNeg(src_a, dadd.abs_a != 0, dadd.neg_a != 0)};
     const IR::F64 op_b{v.ir.FPAbsNeg(src_b, dadd.abs_b != 0, dadd.neg_b != 0)};
 
-    IR::FpControl control{
+    const IR::FpControl control{
         .no_contraction{true},
         .rounding{CastFpRounding(dadd.fp_rounding)},
         .fmz_mode{IR::FmzMode::None},

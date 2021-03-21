@@ -81,22 +81,6 @@ void TranslatorVisitor::DEPBAR() {
     // DEPBAR is a no-op
 }
 
-void TranslatorVisitor::DFMA_reg(u64) {
-    ThrowNotImplemented(Opcode::DFMA_reg);
-}
-
-void TranslatorVisitor::DFMA_rc(u64) {
-    ThrowNotImplemented(Opcode::DFMA_rc);
-}
-
-void TranslatorVisitor::DFMA_cr(u64) {
-    ThrowNotImplemented(Opcode::DFMA_cr);
-}
-
-void TranslatorVisitor::DFMA_imm(u64) {
-    ThrowNotImplemented(Opcode::DFMA_imm);
-}
-
 void TranslatorVisitor::DMNMX_reg(u64) {
     ThrowNotImplemented(Opcode::DMNMX_reg);
 }
@@ -107,18 +91,6 @@ void TranslatorVisitor::DMNMX_cbuf(u64) {
 
 void TranslatorVisitor::DMNMX_imm(u64) {
     ThrowNotImplemented(Opcode::DMNMX_imm);
-}
-
-void TranslatorVisitor::DMUL_reg(u64) {
-    ThrowNotImplemented(Opcode::DMUL_reg);
-}
-
-void TranslatorVisitor::DMUL_cbuf(u64) {
-    ThrowNotImplemented(Opcode::DMUL_cbuf);
-}
-
-void TranslatorVisitor::DMUL_imm(u64) {
-    ThrowNotImplemented(Opcode::DMUL_imm);
 }
 
 void TranslatorVisitor::DSET_reg(u64) {
