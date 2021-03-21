@@ -342,9 +342,11 @@ public:
 
     [[nodiscard]] IR::U32 X(IR::Reg reg);
     [[nodiscard]] IR::F32 F(IR::Reg reg);
+    [[nodiscard]] IR::F64 D(IR::Reg reg);
 
     void X(IR::Reg dest_reg, const IR::U32& value);
     void F(IR::Reg dest_reg, const IR::F32& value);
+    void D(IR::Reg dest_reg, const IR::F64& value);
 
     [[nodiscard]] IR::U32 GetReg8(u64 insn);
     [[nodiscard]] IR::U32 GetReg20(u64 insn);

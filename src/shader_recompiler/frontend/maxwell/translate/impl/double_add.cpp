@@ -22,19 +22,11 @@ void DADD(TranslatorVisitor& v, u64 insn, const IR::F64& src_b) {
         BitField<48, 1, u64> neg_a;
         BitField<49, 1, u64> abs_b;
     } const dadd{insn};
-
-    if (!IR::IsAligned(dadd.dest_reg, 2)) {
-        throw NotImplementedException("Unaligned destination register {}", dadd.dest_reg.Value());
-    }
-    if (!IR::IsAligned(dadd.src_a_reg, 2)) {
-        throw NotImplementedException("Unaligned destination register {}", dadd.src_a_reg.Value());
-    }
     if (dadd.cc != 0) {
         throw NotImplementedException("DADD CC");
     }
 
-    const IR::Reg reg_a{dadd.src_a_reg};
-    const IR::F64 src_a{v.ir.PackDouble2x32(v.ir.CompositeConstruct(v.X(reg_a), v.X(reg_a + 1)))};
+    const IR::F64 src_a{v.D(dadd.src_a_reg)};
     const IR::F64 op_a{v.ir.FPAbsNeg(src_a, dadd.abs_a != 0, dadd.neg_a != 0)};
     const IR::F64 op_b{v.ir.FPAbsNeg(src_b, dadd.abs_b != 0, dadd.neg_b != 0)};
 
@@ -43,12 +35,8 @@ void DADD(TranslatorVisitor& v, u64 insn, const IR::F64& src_b) {
         .rounding{CastFpRounding(dadd.fp_rounding)},
         .fmz_mode{IR::FmzMode::None},
     };
-    const IR::F64 value{v.ir.FPAdd(op_a, op_b, control)};
-    const IR::Value result{v.ir.UnpackDouble2x32(value)};
 
-    for (int i = 0; i < 2; i++) {
-        v.X(dadd.dest_reg + i, IR::U32{v.ir.CompositeExtract(result, i)});
-    }
+    v.D(dadd.dest_reg, v.ir.FPAdd(op_a, op_b, control));
 }
 } // Anonymous namespace
 
