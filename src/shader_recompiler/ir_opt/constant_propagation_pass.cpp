@@ -229,7 +229,6 @@ void FoldISub32(IR::Inst& inst) {
     }
 }
 
-template <typename T>
 void FoldSelect(IR::Inst& inst) {
     const IR::Value cond{inst.Arg(0)};
     if (cond.IsImmediate()) {
@@ -340,8 +339,15 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
         return FoldBitCast<IR::Opcode::BitCastU32F32, u32, f32>(inst, IR::Opcode::BitCastF32U32);
     case IR::Opcode::IAdd64:
         return FoldAdd<u64>(block, inst);
+    case IR::Opcode::SelectU1:
+    case IR::Opcode::SelectU8:
+    case IR::Opcode::SelectU16:
     case IR::Opcode::SelectU32:
-        return FoldSelect<u32>(inst);
+    case IR::Opcode::SelectU64:
+    case IR::Opcode::SelectF16:
+    case IR::Opcode::SelectF32:
+    case IR::Opcode::SelectF64:
+        return FoldSelect(inst);
     case IR::Opcode::LogicalAnd:
         return FoldLogicalAnd(inst);
     case IR::Opcode::LogicalOr:

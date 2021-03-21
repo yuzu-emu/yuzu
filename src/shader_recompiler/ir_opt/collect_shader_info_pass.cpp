@@ -130,6 +130,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::CompositeInsertF64x2:
     case IR::Opcode::CompositeInsertF64x3:
     case IR::Opcode::CompositeInsertF64x4:
+    case IR::Opcode::SelectF64:
     case IR::Opcode::BitCastU64F64:
     case IR::Opcode::BitCastF64U64:
     case IR::Opcode::PackDouble2x32:

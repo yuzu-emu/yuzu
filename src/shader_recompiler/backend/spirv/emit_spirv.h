@@ -136,6 +136,7 @@ Id EmitSelectU32(EmitContext& ctx, Id cond, Id true_value, Id false_value);
 Id EmitSelectU64(EmitContext& ctx, Id cond, Id true_value, Id false_value);
 Id EmitSelectF16(EmitContext& ctx, Id cond, Id true_value, Id false_value);
 Id EmitSelectF32(EmitContext& ctx, Id cond, Id true_value, Id false_value);
+Id EmitSelectF64(EmitContext& ctx, Id cond, Id true_value, Id false_value);
 void EmitBitCastU16F16(EmitContext& ctx);
 Id EmitBitCastU32F32(EmitContext& ctx, Id value);
 void EmitBitCastU64F64(EmitContext& ctx);
