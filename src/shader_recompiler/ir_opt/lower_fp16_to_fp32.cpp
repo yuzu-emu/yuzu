@@ -50,6 +50,30 @@ IR::Opcode Replace(IR::Opcode op) {
         return IR::Opcode::CompositeInsertF32x3;
     case IR::Opcode::CompositeInsertF16x4:
         return IR::Opcode::CompositeInsertF32x4;
+    case IR::Opcode::FPOrdEqual16:
+        return IR::Opcode::FPOrdEqual32;
+    case IR::Opcode::FPUnordEqual16:
+        return IR::Opcode::FPUnordEqual32;
+    case IR::Opcode::FPOrdNotEqual16:
+        return IR::Opcode::FPOrdNotEqual32;
+    case IR::Opcode::FPUnordNotEqual16:
+        return IR::Opcode::FPUnordNotEqual32;
+    case IR::Opcode::FPOrdLessThan16:
+        return IR::Opcode::FPOrdLessThan32;
+    case IR::Opcode::FPUnordLessThan16:
+        return IR::Opcode::FPUnordLessThan32;
+    case IR::Opcode::FPOrdGreaterThan16:
+        return IR::Opcode::FPOrdGreaterThan32;
+    case IR::Opcode::FPUnordGreaterThan16:
+        return IR::Opcode::FPUnordGreaterThan32;
+    case IR::Opcode::FPOrdLessThanEqual16:
+        return IR::Opcode::FPOrdLessThanEqual32;
+    case IR::Opcode::FPUnordLessThanEqual16:
+        return IR::Opcode::FPUnordLessThanEqual32;
+    case IR::Opcode::FPOrdGreaterThanEqual16:
+        return IR::Opcode::FPOrdGreaterThanEqual32;
+    case IR::Opcode::FPUnordGreaterThanEqual16:
+        return IR::Opcode::FPUnordGreaterThanEqual32;
     case IR::Opcode::ConvertS16F16:
         return IR::Opcode::ConvertS16F32;
     case IR::Opcode::ConvertS32F16:

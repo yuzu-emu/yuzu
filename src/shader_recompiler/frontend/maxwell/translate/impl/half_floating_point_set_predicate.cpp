@@ -24,17 +24,17 @@ void HSETP2(TranslatorVisitor& v, u64 insn, const IR::U32& src_b, bool neg_b, bo
 
     auto [lhs_a, rhs_a]{Extract(v.ir, v.X(hsetp2.src_a_reg), hsetp2.swizzle_a)};
     auto [lhs_b, rhs_b]{Extract(v.ir, src_b, swizzle_b)};
-    // TODO: Implement FP16 FloatingPointCompare
-    // if (lhs_a.Type() != lhs_b.Type()) {
-    if (lhs_a.Type() == IR::Type::F16) {
-        lhs_a = v.ir.FPConvert(32, lhs_a);
-        rhs_a = v.ir.FPConvert(32, rhs_a);
+
+    if (lhs_a.Type() != lhs_b.Type()) {
+        if (lhs_a.Type() == IR::Type::F16) {
+            lhs_a = v.ir.FPConvert(32, lhs_a);
+            rhs_a = v.ir.FPConvert(32, rhs_a);
+        }
+        if (lhs_b.Type() == IR::Type::F16) {
+            lhs_b = v.ir.FPConvert(32, lhs_b);
+            rhs_b = v.ir.FPConvert(32, rhs_b);
+        }
     }
-    if (lhs_b.Type() == IR::Type::F16) {
-        lhs_b = v.ir.FPConvert(32, lhs_b);
-        rhs_b = v.ir.FPConvert(32, rhs_b);
-    }
-    //}
 
     lhs_a = v.ir.FPAbsNeg(lhs_a, hsetp2.abs_a != 0, hsetp2.neg_a != 0);
     rhs_a = v.ir.FPAbsNeg(rhs_a, hsetp2.abs_a != 0, hsetp2.neg_a != 0);

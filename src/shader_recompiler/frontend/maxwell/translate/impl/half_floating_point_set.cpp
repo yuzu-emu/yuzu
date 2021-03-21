@@ -22,8 +22,8 @@ void HSET2(TranslatorVisitor& v, u64 insn, const IR::U32& src_b, bool bf, bool f
 
     auto [lhs_a, rhs_a]{Extract(v.ir, v.X(hset2.src_a_reg), hset2.swizzle_a)};
     auto [lhs_b, rhs_b]{Extract(v.ir, src_b, swizzle_b)};
-    // TODO: Implement FP16 FloatingPointCompare
-    //if (lhs_a.Type() != lhs_b.Type()) {
+
+    if (lhs_a.Type() != lhs_b.Type()) {
         if (lhs_a.Type() == IR::Type::F16) {
             lhs_a = v.ir.FPConvert(32, lhs_a);
             rhs_a = v.ir.FPConvert(32, rhs_a);
@@ -32,7 +32,7 @@ void HSET2(TranslatorVisitor& v, u64 insn, const IR::U32& src_b, bool bf, bool f
             lhs_b = v.ir.FPConvert(32, lhs_b);
             rhs_b = v.ir.FPConvert(32, rhs_b);
         }
-    //}
+    }
 
     lhs_a = v.ir.FPAbsNeg(lhs_a, hset2.abs_a != 0, hset2.neg_a != 0);
     rhs_a = v.ir.FPAbsNeg(rhs_a, hset2.abs_a != 0, hset2.neg_a != 0);
@@ -94,22 +94,22 @@ void TranslatorVisitor::HSET2_cbuf(u64 insn) {
 }
 
 void TranslatorVisitor::HSET2_imm(u64 insn) {
-  union {
-      u64 insn;
-      BitField<53, 1, u64> bf;
-      BitField<54, 1, u64> ftz;
-      BitField<49, 4, FPCompareOp> compare_op;
-      BitField<56, 1, u64> neg_high;
-      BitField<30, 9, u64> high;
-      BitField<29, 1, u64> neg_low;
-      BitField<20, 9, u64> low;
-  } const hset2{insn};
+    union {
+        u64 insn;
+        BitField<53, 1, u64> bf;
+        BitField<54, 1, u64> ftz;
+        BitField<49, 4, FPCompareOp> compare_op;
+        BitField<56, 1, u64> neg_high;
+        BitField<30, 9, u64> high;
+        BitField<29, 1, u64> neg_low;
+        BitField<20, 9, u64> low;
+    } const hset2{insn};
 
-  const u32 imm{static_cast<u32>(hset2.low << 6) | ((hset2.neg_low != 0 ? 1 : 0) << 15) |
-                static_cast<u32>(hset2.high << 22) | ((hset2.neg_high != 0 ? 1 : 0) << 31)};
+    const u32 imm{static_cast<u32>(hset2.low << 6) | ((hset2.neg_low != 0 ? 1 : 0) << 15) |
+                  static_cast<u32>(hset2.high << 22) | ((hset2.neg_high != 0 ? 1 : 0) << 31)};
 
-  HSET2(*this, insn, ir.Imm32(imm), hset2.bf != 0, hset2.ftz != 0, false, false,
-        hset2.compare_op, Swizzle::H1_H0);
+    HSET2(*this, insn, ir.Imm32(imm), hset2.bf != 0, hset2.ftz != 0, false, false, hset2.compare_op,
+          Swizzle::H1_H0);
 }
 
 } // namespace Shader::Maxwell

@@ -18,7 +18,7 @@ namespace Shader::Maxwell {
 
 [[nodiscard]] bool IsCompareOpOrdered(FPCompareOp op);
 
-[[nodiscard]] IR::U1 FloatingPointCompare(IR::IREmitter& ir, const IR::F32& operand_1,
-                                          const IR::F32& operand_2, FPCompareOp compare_op,
+[[nodiscard]] IR::U1 FloatingPointCompare(IR::IREmitter& ir, const IR::F16F32F64& operand_1,
+                                          const IR::F16F32F64& operand_2, FPCompareOp compare_op,
                                           IR::FpControl control = {});
 } // namespace Shader::Maxwell
