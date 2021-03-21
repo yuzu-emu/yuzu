@@ -25,12 +25,29 @@ IR::F32 TranslatorVisitor::F(IR::Reg reg) {
     return ir.BitCast<IR::F32>(X(reg));
 }
 
+IR::F64 TranslatorVisitor::D(IR::Reg reg) {
+    if (!IR::IsAligned(reg, 2)) {
+        throw NotImplementedException("Unaligned source register {}", reg);
+    }
+    return IR::F64{ir.PackDouble2x32(ir.CompositeConstruct(X(reg), X(reg + 1)))};
+}
+
 void TranslatorVisitor::X(IR::Reg dest_reg, const IR::U32& value) {
     ir.SetReg(dest_reg, value);
 }
 
 void TranslatorVisitor::F(IR::Reg dest_reg, const IR::F32& value) {
     X(dest_reg, ir.BitCast<IR::U32>(value));
+}
+
+void TranslatorVisitor::D(IR::Reg dest_reg, const IR::F64& value) {
+    if (!IR::IsAligned(dest_reg, 2)) {
+        throw NotImplementedException("Unaligned destination register {}", dest_reg);
+    }
+    const IR::Value result{ir.UnpackDouble2x32(value)};
+    for (int i = 0; i < 2; i++) {
+        X(dest_reg + i, IR::U32{ir.CompositeExtract(result, i)});
+    }
 }
 
 IR::U32 TranslatorVisitor::GetReg8(u64 insn) {
@@ -68,13 +85,9 @@ IR::F32 TranslatorVisitor::GetFloatReg39(u64 insn) {
 IR::F64 TranslatorVisitor::GetDoubleReg20(u64 insn) {
     union {
         u64 raw;
-        BitField<20, 8, IR::Reg> src;
-    } const index{insn};
-    const IR::Reg reg{index.src};
-    if (!IR::IsAligned(reg, 2)) {
-        throw NotImplementedException("Unaligned source register {}", reg);
-    }
-    return ir.PackDouble2x32(ir.CompositeConstruct(X(reg), X(reg + 1)));
+        BitField<20, 8, IR::Reg> index;
+    } const reg{insn};
+    return D(reg.index);
 }
 
 static std::pair<IR::U32, IR::U32> CbufAddr(u64 insn) {
