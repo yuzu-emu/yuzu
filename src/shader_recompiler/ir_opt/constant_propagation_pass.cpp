@@ -236,6 +236,38 @@ void FoldSelect(IR::Inst& inst) {
     }
 }
 
+void FoldFPMul32(IR::Inst& inst) {
+    const auto control{inst.Flags<IR::FpControl>()};
+    if (control.no_contraction) {
+        return;
+    }
+    // Fold interpolation operations
+    const IR::Value lhs_value{inst.Arg(0)};
+    const IR::Value rhs_value{inst.Arg(1)};
+    if (lhs_value.IsImmediate() || rhs_value.IsImmediate()) {
+        return;
+    }
+    IR::Inst* const lhs_op{lhs_value.InstRecursive()};
+    IR::Inst* const rhs_op{rhs_value.InstRecursive()};
+    if (lhs_op->Opcode() != IR::Opcode::FPMul32 || rhs_op->Opcode() != IR::Opcode::FPRecip32) {
+        return;
+    }
+    const IR::Value recip_source{rhs_op->Arg(0)};
+    const IR::Value lhs_mul_source{lhs_op->Arg(1).Resolve()};
+    if (recip_source.IsImmediate() || lhs_mul_source.IsImmediate()) {
+        return;
+    }
+    IR::Inst* const attr_a{recip_source.InstRecursive()};
+    IR::Inst* const attr_b{lhs_mul_source.InstRecursive()};
+    if (attr_a->Opcode() != IR::Opcode::GetAttribute ||
+        attr_b->Opcode() != IR::Opcode::GetAttribute) {
+        return;
+    }
+    if (attr_a->Arg(0).Attribute() == attr_b->Arg(0).Attribute()) {
+        inst.ReplaceUsesWith(lhs_op->Arg(0));
+    }
+}
+
 void FoldLogicalAnd(IR::Inst& inst) {
     if (!FoldCommutative<bool>(inst, [](bool a, bool b) { return a && b; })) {
         return;
@@ -348,6 +380,8 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
     case IR::Opcode::SelectF32:
     case IR::Opcode::SelectF64:
         return FoldSelect(inst);
+    case IR::Opcode::FPMul32:
+        return FoldFPMul32(inst);
     case IR::Opcode::LogicalAnd:
         return FoldLogicalAnd(inst);
     case IR::Opcode::LogicalOr:
