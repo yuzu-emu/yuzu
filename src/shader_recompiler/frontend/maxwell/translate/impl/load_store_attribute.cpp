@@ -141,14 +141,16 @@ void TranslatorVisitor::IPA(u64 insn) {
     const IR::Attribute attribute{ipa.attribute};
     IR::F32 value{ir.GetAttribute(attribute)};
     if (IR::IsGeneric(attribute)) {
-        // const bool is_perspective{UnimplementedReadHeader(GenericAttributeIndex(attribute))};
-        const bool is_perspective{false};
+        const ProgramHeader& sph{env.SPH()};
+        const u32 attr_index{IR::GenericAttributeIndex(attribute)};
+        const u32 element{static_cast<u32>(attribute) % 4};
+        const std::array input_map{sph.ps.GenericInputMap(attr_index)};
+        const bool is_perspective{input_map[element] == Shader::PixelImap::Perspective};
         if (is_perspective) {
-            const IR::F32 rcp_position_w{ir.FPRecip(ir.GetAttribute(IR::Attribute::PositionW))};
-            value = ir.FPMul(value, rcp_position_w);
+            const IR::F32 position_w{ir.GetAttribute(IR::Attribute::PositionW)};
+            value = ir.FPMul(value, position_w);
         }
     }
-
     switch (ipa.interpolation_mode) {
     case InterpolationMode::Pass:
         break;
