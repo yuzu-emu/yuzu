@@ -21,6 +21,13 @@ IR::U32 TranslatorVisitor::X(IR::Reg reg) {
     return ir.GetReg(reg);
 }
 
+IR::U64 TranslatorVisitor::L(IR::Reg reg) {
+    if (!IR::IsAligned(reg, 2)) {
+        throw NotImplementedException("Unaligned source register {}", reg);
+    }
+    return IR::U64{ir.PackUint2x32(ir.CompositeConstruct(X(reg), X(reg + 1)))};
+}
+
 IR::F32 TranslatorVisitor::F(IR::Reg reg) {
     return ir.BitCast<IR::F32>(X(reg));
 }
@@ -34,6 +41,16 @@ IR::F64 TranslatorVisitor::D(IR::Reg reg) {
 
 void TranslatorVisitor::X(IR::Reg dest_reg, const IR::U32& value) {
     ir.SetReg(dest_reg, value);
+}
+
+void TranslatorVisitor::L(IR::Reg dest_reg, const IR::U64& value) {
+    if (!IR::IsAligned(dest_reg, 2)) {
+        throw NotImplementedException("Unaligned destination register {}", dest_reg);
+    }
+    const IR::Value result{ir.UnpackUint2x32(value)};
+    for (int i = 0; i < 2; i++) {
+        X(dest_reg + i, IR::U32{ir.CompositeExtract(result, i)});
+    }
 }
 
 void TranslatorVisitor::F(IR::Reg dest_reg, const IR::F32& value) {
