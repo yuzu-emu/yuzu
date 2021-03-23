@@ -188,6 +188,7 @@ void Impl(TranslatorVisitor& v, u64 insn, bool aoffi, Blod blod, bool lc,
         }
     }()};
 
+    IR::Reg dest_reg{tex.dest_reg};
     for (int element = 0; element < 4; ++element) {
         if (((tex.mask >> element) & 1) == 0) {
             continue;
@@ -198,7 +199,8 @@ void Impl(TranslatorVisitor& v, u64 insn, bool aoffi, Blod blod, bool lc,
         } else {
             value = IR::F32{v.ir.CompositeExtract(sample, element)};
         }
-        v.F(tex.dest_reg + element, value);
+        v.F(dest_reg, value);
+        ++dest_reg;
     }
     if (tex.sparse_pred != IR::Pred::PT) {
         v.ir.SetPred(tex.sparse_pred, v.ir.LogicalNot(v.ir.GetSparseFromOp(sample)));
