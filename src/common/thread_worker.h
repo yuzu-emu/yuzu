@@ -18,12 +18,14 @@ public:
     explicit ThreadWorker(std::size_t num_workers, const std::string& name);
     ~ThreadWorker();
     void QueueWork(std::function<void()>&& work);
+    void WaitForRequests();
 
 private:
     std::vector<std::thread> threads;
     std::queue<std::function<void()>> requests;
     std::mutex queue_mutex;
     std::condition_variable condition;
+    std::condition_variable wait_condition;
     std::atomic_bool stop{};
 };
 

@@ -29,6 +29,10 @@ ThreadWorker::ThreadWorker(std::size_t num_workers, const std::string& name) {
                     }
                     task = std::move(requests.front());
                     requests.pop();
+
+                    if (requests.empty()) {
+                        wait_condition.notify_one();
+                    }
                 }
 
                 task();
@@ -53,6 +57,11 @@ void ThreadWorker::QueueWork(std::function<void()>&& work) {
         requests.emplace(work);
     }
     condition.notify_one();
+}
+
+void ThreadWorker::WaitForRequests() {
+    std::unique_lock lock{queue_mutex};
+    wait_condition.wait(lock, [this] { return stop || requests.empty(); });
 }
 
 } // namespace Common
