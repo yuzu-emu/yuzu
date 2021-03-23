@@ -111,9 +111,9 @@ struct ShaderInfo {
 
 struct ShaderPools {
     void ReleaseContents() {
-        inst.ReleaseContents();
-        block.ReleaseContents();
         flow_block.ReleaseContents();
+        block.ReleaseContents();
+        inst.ReleaseContents();
     }
 
     Shader::ObjectPool<Shader::IR::Inst> inst;
