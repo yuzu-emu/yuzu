@@ -514,6 +514,11 @@ bool RasterizerVulkan::AccelerateDisplay(const Tegra::FramebufferConfig& config,
     return true;
 }
 
+void RasterizerVulkan::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
+                                         const VideoCore::DiskResourceLoadCallback& callback) {
+    pipeline_cache.LoadDiskResources(title_id, stop_loading, callback);
+}
+
 void RasterizerVulkan::FlushWork() {
     static constexpr u32 DRAWS_TO_DISPATCH = 4096;
 
