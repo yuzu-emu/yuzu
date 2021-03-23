@@ -30,6 +30,8 @@ IR::Opcode Replace(IR::Opcode op) {
         return IR::Opcode::FPRoundEven32;
     case IR::Opcode::FPSaturate16:
         return IR::Opcode::FPSaturate32;
+    case IR::Opcode::FPClamp16:
+        return IR::Opcode::FPClamp32;
     case IR::Opcode::FPTrunc16:
         return IR::Opcode::FPTrunc32;
     case IR::Opcode::CompositeConstructF16x2:

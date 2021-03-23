@@ -15,7 +15,7 @@ Id Decorate(EmitContext& ctx, IR::Inst* inst, Id op) {
     return op;
 }
 
-Id Saturate(EmitContext& ctx, Id type, Id value, Id zero, Id one) {
+Id Clamp(EmitContext& ctx, Id type, Id value, Id zero, Id one) {
     if (ctx.profile.has_broken_spirv_clamp) {
         return ctx.OpFMin(type, ctx.OpFMax(type, value, zero), one);
     } else {
@@ -139,19 +139,31 @@ Id EmitFPSqrt(EmitContext& ctx, Id value) {
 Id EmitFPSaturate16(EmitContext& ctx, Id value) {
     const Id zero{ctx.Constant(ctx.F16[1], u16{0})};
     const Id one{ctx.Constant(ctx.F16[1], u16{0x3c00})};
-    return Saturate(ctx, ctx.F16[1], value, zero, one);
+    return Clamp(ctx, ctx.F16[1], value, zero, one);
 }
 
 Id EmitFPSaturate32(EmitContext& ctx, Id value) {
     const Id zero{ctx.Constant(ctx.F32[1], f32{0.0})};
     const Id one{ctx.Constant(ctx.F32[1], f32{1.0})};
-    return Saturate(ctx, ctx.F32[1], value, zero, one);
+    return Clamp(ctx, ctx.F32[1], value, zero, one);
 }
 
 Id EmitFPSaturate64(EmitContext& ctx, Id value) {
     const Id zero{ctx.Constant(ctx.F64[1], f64{0.0})};
     const Id one{ctx.Constant(ctx.F64[1], f64{1.0})};
-    return Saturate(ctx, ctx.F64[1], value, zero, one);
+    return Clamp(ctx, ctx.F64[1], value, zero, one);
+}
+
+Id EmitFPClamp16(EmitContext& ctx, Id value, Id min_value, Id max_value) {
+    return Clamp(ctx, ctx.F16[1], value, min_value, max_value);
+}
+
+Id EmitFPClamp32(EmitContext& ctx, Id value, Id min_value, Id max_value) {
+    return Clamp(ctx, ctx.F32[1], value, min_value, max_value);
+}
+
+Id EmitFPClamp64(EmitContext& ctx, Id value, Id min_value, Id max_value) {
+    return Clamp(ctx, ctx.F64[1], value, min_value, max_value);
 }
 
 Id EmitFPRoundEven16(EmitContext& ctx, Id value) {

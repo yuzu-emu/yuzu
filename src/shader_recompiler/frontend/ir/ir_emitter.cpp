@@ -731,6 +731,24 @@ F16F32F64 IREmitter::FPSaturate(const F16F32F64& value) {
     }
 }
 
+F16F32F64 IREmitter::FPClamp(const F16F32F64& value, const F16F32F64& min_value,
+                             const F16F32F64& max_value) {
+    if (value.Type() != min_value.Type() || value.Type() != max_value.Type()) {
+        throw InvalidArgument("Mismatching types {}, {}, and {}", value.Type(), min_value.Type(),
+                              max_value.Type());
+    }
+    switch (value.Type()) {
+    case Type::F16:
+        return Inst<F16>(Opcode::FPClamp16, value, min_value, max_value);
+    case Type::F32:
+        return Inst<F32>(Opcode::FPClamp32, value, min_value, max_value);
+    case Type::F64:
+        return Inst<F64>(Opcode::FPClamp64, value, min_value, max_value);
+    default:
+        ThrowInvalidType(value.Type());
+    }
+}
+
 F16F32F64 IREmitter::FPRoundEven(const F16F32F64& value, FpControl control) {
     switch (value.Type()) {
     case Type::F16:

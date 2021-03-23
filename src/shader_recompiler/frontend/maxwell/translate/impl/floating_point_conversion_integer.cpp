@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <limits>
+
 #include "common/common_types.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/maxwell/opcodes.h"
@@ -53,6 +55,37 @@ size_t BitSize(DestFormat dest_format) {
     default:
         throw NotImplementedException("Invalid destination format {}", dest_format);
     }
+}
+
+std::pair<f64, f64> ClampBounds(DestFormat format, bool is_signed) {
+    if (is_signed) {
+        switch (format) {
+        case DestFormat::I16:
+            return {static_cast<f64>(std::numeric_limits<s16>::max()),
+                    static_cast<f64>(std::numeric_limits<s16>::min())};
+        case DestFormat::I32:
+            return {static_cast<f64>(std::numeric_limits<s32>::max()),
+                    static_cast<f64>(std::numeric_limits<s32>::min())};
+        case DestFormat::I64:
+            return {static_cast<f64>(std::numeric_limits<s64>::max()),
+                    static_cast<f64>(std::numeric_limits<s64>::min())};
+        default: {}
+        }
+    } else {
+        switch (format) {
+        case DestFormat::I16:
+            return {static_cast<f64>(std::numeric_limits<u16>::max()),
+                    static_cast<f64>(std::numeric_limits<u16>::min())};
+        case DestFormat::I32:
+            return {static_cast<f64>(std::numeric_limits<u32>::max()),
+                    static_cast<f64>(std::numeric_limits<u32>::min())};
+        case DestFormat::I64:
+            return {static_cast<f64>(std::numeric_limits<u64>::max()),
+                    static_cast<f64>(std::numeric_limits<u64>::min())};
+        default: {}
+        }
+    }
+    throw NotImplementedException("Invalid destination format {}", format);
 }
 
 IR::F64 UnpackCbuf(TranslatorVisitor& v, u64 insn) {
@@ -112,13 +145,58 @@ void TranslateF2I(TranslatorVisitor& v, u64 insn, const IR::F16F32F64& src_a) {
     // For example converting F32 65537.0 to U16, the expected value is 0xffff,
 
     const bool is_signed{f2i.is_signed != 0};
-    const size_t bitsize{BitSize(f2i.dest_format)};
-    const IR::U16U32U64 result{v.ir.ConvertFToI(bitsize, is_signed, rounded_value)};
+    const auto [max_bound, min_bound] = ClampBounds(f2i.dest_format, is_signed);
+
+    IR::F16F32F64 intermediate;
+    switch (f2i.src_format) {
+    case SrcFormat::F16: {
+        const IR::F16 max_val{v.ir.FPConvert(16, v.ir.Imm32(static_cast<f32>(max_bound)))};
+        const IR::F16 min_val{v.ir.FPConvert(16, v.ir.Imm32(static_cast<f32>(min_bound)))};
+        intermediate = v.ir.FPClamp(rounded_value, min_val, max_val);
+        break;
+    }
+    case SrcFormat::F32: {
+        const IR::F32 max_val{v.ir.Imm32(static_cast<f32>(max_bound))};
+        const IR::F32 min_val{v.ir.Imm32(static_cast<f32>(min_bound))};
+        intermediate = v.ir.FPClamp(rounded_value, min_val, max_val);
+        break;
+    }
+    case SrcFormat::F64: {
+        const IR::F64 max_val{v.ir.Imm64(max_bound)};
+        const IR::F64 min_val{v.ir.Imm64(min_bound)};
+        intermediate = v.ir.FPClamp(rounded_value, min_val, max_val);
+        break;
+    }
+    default:
+        throw NotImplementedException("Invalid destination format {}", f2i.dest_format.Value());
+    }
+
+    const size_t bitsize{std::max<size_t>(32, BitSize(f2i.dest_format))};
+    IR::U16U32U64 result{v.ir.ConvertFToI(bitsize, is_signed, intermediate)};
+
+    bool handled_special_case = false;
+    const bool special_nan_cases =
+        (f2i.src_format == SrcFormat::F64) != (f2i.dest_format == DestFormat::I64);
+    if (special_nan_cases) {
+        if (f2i.dest_format == DestFormat::I32) {
+            handled_special_case = true;
+            result = IR::U32{v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm32(0x8000'0000U), result)};
+        } else if (f2i.dest_format == DestFormat::I64) {
+            handled_special_case = true;
+            result = IR::U64{
+                v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm64(0x8000'0000'0000'0000ULL), result)};
+        }
+    }
+    if (!handled_special_case && is_signed) {
+        if (bitsize != 64) {
+            result = IR::U32{v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm32(0U), result)};
+        } else {
+            result = IR::U64{v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm64(0ULL), result)};
+        }
+    }
 
     if (bitsize == 64) {
-        const IR::Value vector{v.ir.UnpackUint2x32(result)};
-        v.X(f2i.dest_reg + 0, IR::U32{v.ir.CompositeExtract(vector, 0)});
-        v.X(f2i.dest_reg + 1, IR::U32{v.ir.CompositeExtract(vector, 1)});
+        v.L(f2i.dest_reg, result);
     } else {
         v.X(f2i.dest_reg, result);
     }

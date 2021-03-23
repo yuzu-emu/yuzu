@@ -147,6 +147,7 @@ public:
     [[nodiscard]] F32F64 FPRecipSqrt(const F32F64& value);
     [[nodiscard]] F32 FPSqrt(const F32& value);
     [[nodiscard]] F16F32F64 FPSaturate(const F16F32F64& value);
+    [[nodiscard]] F16F32F64 FPClamp(const F16F32F64& value, const F16F32F64& min_value, const F16F32F64& max_value);
     [[nodiscard]] F16F32F64 FPRoundEven(const F16F32F64& value, FpControl control = {});
     [[nodiscard]] F16F32F64 FPFloor(const F16F32F64& value, FpControl control = {});
     [[nodiscard]] F16F32F64 FPCeil(const F16F32F64& value, FpControl control = {});

@@ -105,6 +105,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::FPNeg16:
     case IR::Opcode::FPRoundEven16:
     case IR::Opcode::FPSaturate16:
+    case IR::Opcode::FPClamp16:
     case IR::Opcode::FPTrunc16:
     case IR::Opcode::FPOrdEqual16:
     case IR::Opcode::FPUnordEqual16:
@@ -148,6 +149,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::FPRecipSqrt64:
     case IR::Opcode::FPRoundEven64:
     case IR::Opcode::FPSaturate64:
+    case IR::Opcode::FPClamp64:
     case IR::Opcode::FPTrunc64:
     case IR::Opcode::FPOrdEqual64:
     case IR::Opcode::FPUnordEqual64:
