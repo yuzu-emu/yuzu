@@ -14,9 +14,9 @@ public:
 
     u64 ReadInstruction(u32 offset) override;
 
-    u32 TextureBoundBuffer() override;
+    u32 TextureBoundBuffer() const override;
 
-    std::array<u32, 3> WorkgroupSize() override;
+    std::array<u32, 3> WorkgroupSize() const override;
 
 private:
     std::vector<u64> data;

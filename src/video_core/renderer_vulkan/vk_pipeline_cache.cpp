@@ -4,12 +4,15 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <fstream>
 #include <memory>
 #include <vector>
 
 #include "common/bit_cast.h"
 #include "common/cityhash.h"
+#include "common/file_util.h"
 #include "common/microprofile.h"
+#include "common/thread_worker.h"
 #include "core/core.h"
 #include "core/memory.h"
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
@@ -37,18 +40,23 @@
 namespace Vulkan {
 MICROPROFILE_DECLARE(Vulkan_PipelineCache);
 
-namespace {
-using Shader::Backend::SPIRV::EmitSPIRV;
+template <typename Container>
+auto MakeSpan(Container& container) {
+    return std::span(container.data(), container.size());
+}
 
 class GenericEnvironment : public Shader::Environment {
 public:
     explicit GenericEnvironment() = default;
-    explicit GenericEnvironment(Tegra::MemoryManager& gpu_memory_, GPUVAddr program_base_)
-        : gpu_memory{&gpu_memory_}, program_base{program_base_} {}
+    explicit GenericEnvironment(Tegra::MemoryManager& gpu_memory_, GPUVAddr program_base_,
+                                u32 start_address_)
+        : gpu_memory{&gpu_memory_}, program_base{program_base_} {
+        start_address = start_address_;
+    }
 
     ~GenericEnvironment() override = default;
 
-    std::optional<u128> Analyze(u32 start_address) {
+    std::optional<u128> Analyze() {
         const std::optional<u64> size{TryFindSize(start_address)};
         if (!size) {
             return std::nullopt;
@@ -66,11 +74,15 @@ public:
         return read_highest - read_lowest + INST_SIZE;
     }
 
+    [[nodiscard]] bool CanBeSerialized() const noexcept {
+        return has_unbound_instructions;
+    }
+
     [[nodiscard]] u128 CalculateHash() const {
         const size_t size{ReadSize()};
-        auto data = std::make_unique<u64[]>(size);
+        const auto data{std::make_unique<char[]>(size)};
         gpu_memory->ReadBlock(program_base + read_lowest, data.get(), size);
-        return Common::CityHash128(reinterpret_cast<const char*>(data.get()), size);
+        return Common::CityHash128(data.get(), size);
     }
 
     u64 ReadInstruction(u32 address) final {
@@ -80,7 +92,30 @@ public:
         if (address >= cached_lowest && address < cached_highest) {
             return code[address / INST_SIZE];
         }
+        has_unbound_instructions = true;
         return gpu_memory->Read<u64>(program_base + address);
+    }
+
+    void Serialize(std::ofstream& file) const {
+        const u64 code_size{static_cast<u64>(ReadSize())};
+        const auto data{std::make_unique<char[]>(code_size)};
+        gpu_memory->ReadBlock(program_base + read_lowest, data.get(), code_size);
+
+        const u32 texture_bound{TextureBoundBuffer()};
+
+        file.write(reinterpret_cast<const char*>(&code_size), sizeof(code_size))
+            .write(reinterpret_cast<const char*>(&texture_bound), sizeof(texture_bound))
+            .write(reinterpret_cast<const char*>(&start_address), sizeof(start_address))
+            .write(reinterpret_cast<const char*>(&read_lowest), sizeof(read_lowest))
+            .write(reinterpret_cast<const char*>(&read_highest), sizeof(read_highest))
+            .write(reinterpret_cast<const char*>(&stage), sizeof(stage))
+            .write(data.get(), code_size);
+        if (stage == Shader::Stage::Compute) {
+            const std::array<u32, 3> workgroup_size{WorkgroupSize()};
+            file.write(reinterpret_cast<const char*>(&workgroup_size), sizeof(workgroup_size));
+        } else {
+            file.write(reinterpret_cast<const char*>(&sph), sizeof(sph));
+        }
     }
 
 protected:
@@ -122,16 +157,22 @@ protected:
 
     u32 cached_lowest = std::numeric_limits<u32>::max();
     u32 cached_highest = 0;
+
+    bool has_unbound_instructions = false;
 };
+
+namespace {
+using Shader::Backend::SPIRV::EmitSPIRV;
+using Shader::Maxwell::TranslateProgram;
 
 class GraphicsEnvironment final : public GenericEnvironment {
 public:
     explicit GraphicsEnvironment() = default;
     explicit GraphicsEnvironment(Tegra::Engines::Maxwell3D& maxwell3d_,
                                  Tegra::MemoryManager& gpu_memory_, Maxwell::ShaderProgram program,
-                                 GPUVAddr program_base_, u32 start_offset)
-        : GenericEnvironment{gpu_memory_, program_base_}, maxwell3d{&maxwell3d_} {
-        gpu_memory->ReadBlock(program_base + start_offset, &sph, sizeof(sph));
+                                 GPUVAddr program_base_, u32 start_address_)
+        : GenericEnvironment{gpu_memory_, program_base_, start_address_}, maxwell3d{&maxwell3d_} {
+        gpu_memory->ReadBlock(program_base + start_address, &sph, sizeof(sph));
         switch (program) {
         case Maxwell::ShaderProgram::VertexA:
             stage = Shader::Stage::VertexA;
@@ -158,11 +199,11 @@ public:
 
     ~GraphicsEnvironment() override = default;
 
-    u32 TextureBoundBuffer() override {
+    u32 TextureBoundBuffer() const override {
         return maxwell3d->regs.tex_cb_index;
     }
 
-    std::array<u32, 3> WorkgroupSize() override {
+    std::array<u32, 3> WorkgroupSize() const override {
         throw Shader::LogicError("Requesting workgroup size in a graphics stage");
     }
 
@@ -174,18 +215,20 @@ class ComputeEnvironment final : public GenericEnvironment {
 public:
     explicit ComputeEnvironment() = default;
     explicit ComputeEnvironment(Tegra::Engines::KeplerCompute& kepler_compute_,
-                                Tegra::MemoryManager& gpu_memory_, GPUVAddr program_base_)
-        : GenericEnvironment{gpu_memory_, program_base_}, kepler_compute{&kepler_compute_} {
+                                Tegra::MemoryManager& gpu_memory_, GPUVAddr program_base_,
+                                u32 start_address_)
+        : GenericEnvironment{gpu_memory_, program_base_, start_address_}, kepler_compute{
+                                                                              &kepler_compute_} {
         stage = Shader::Stage::Compute;
     }
 
     ~ComputeEnvironment() override = default;
 
-    u32 TextureBoundBuffer() override {
+    u32 TextureBoundBuffer() const override {
         return kepler_compute->regs.tex_cb_index;
     }
 
-    std::array<u32, 3> WorkgroupSize() override {
+    std::array<u32, 3> WorkgroupSize() const override {
         const auto& qmd{kepler_compute->launch_description};
         return {qmd.block_dim_x, qmd.block_dim_y, qmd.block_dim_z};
     }
@@ -193,7 +236,173 @@ public:
 private:
     Tegra::Engines::KeplerCompute* kepler_compute{};
 };
+
+void SerializePipeline(std::span<const char> key, std::span<const GenericEnvironment* const> envs,
+                       std::ofstream& file) {
+    if (!std::ranges::all_of(envs, &GenericEnvironment::CanBeSerialized)) {
+        return;
+    }
+    const u32 num_envs{static_cast<u32>(envs.size())};
+    file.write(reinterpret_cast<const char*>(&num_envs), sizeof(num_envs));
+    for (const GenericEnvironment* const env : envs) {
+        env->Serialize(file);
+    }
+    file.write(key.data(), key.size_bytes());
+}
+
+template <typename Key, typename Envs>
+void SerializePipeline(const Key& key, const Envs& envs, const std::string& filename) {
+    try {
+        std::ofstream file;
+        file.exceptions(std::ifstream::failbit);
+        Common::FS::OpenFStream(file, filename, std::ios::binary | std::ios::app);
+        if (!file.is_open()) {
+            LOG_ERROR(Common_Filesystem, "Failed to open pipeline cache file {}", filename);
+            return;
+        }
+        if (file.tellp() == 0) {
+            // Write header...
+        }
+        const std::span key_span(reinterpret_cast<const char*>(&key), sizeof(key));
+        SerializePipeline(key_span, MakeSpan(envs), file);
+
+    } catch (const std::ios_base::failure& e) {
+        LOG_ERROR(Common_Filesystem, "{}", e.what());
+        if (!Common::FS::Delete(filename)) {
+            LOG_ERROR(Common_Filesystem, "Failed to delete pipeline cache file {}", filename);
+        }
+    }
+}
+
+class FileEnvironment final : public Shader::Environment {
+public:
+    void Deserialize(std::ifstream& file) {
+        u64 code_size{};
+        file.read(reinterpret_cast<char*>(&code_size), sizeof(code_size))
+            .read(reinterpret_cast<char*>(&texture_bound), sizeof(texture_bound))
+            .read(reinterpret_cast<char*>(&start_address), sizeof(start_address))
+            .read(reinterpret_cast<char*>(&read_lowest), sizeof(read_lowest))
+            .read(reinterpret_cast<char*>(&read_highest), sizeof(read_highest))
+            .read(reinterpret_cast<char*>(&stage), sizeof(stage));
+        code = std::make_unique<u64[]>(Common::DivCeil(code_size, sizeof(u64)));
+        file.read(reinterpret_cast<char*>(code.get()), code_size);
+        if (stage == Shader::Stage::Compute) {
+            file.read(reinterpret_cast<char*>(&workgroup_size), sizeof(workgroup_size));
+        } else {
+            file.read(reinterpret_cast<char*>(&sph), sizeof(sph));
+        }
+    }
+
+    u64 ReadInstruction(u32 address) override {
+        if (address < read_lowest || address > read_highest) {
+            throw Shader::LogicError("Out of bounds address {}", address);
+        }
+        return code[(address - read_lowest) / sizeof(u64)];
+    }
+
+    u32 TextureBoundBuffer() const override {
+        return texture_bound;
+    }
+
+    std::array<u32, 3> WorkgroupSize() const override {
+        return workgroup_size;
+    }
+
+private:
+    std::unique_ptr<u64[]> code;
+    std::array<u32, 3> workgroup_size{};
+    u32 texture_bound{};
+    u32 read_lowest{};
+    u32 read_highest{};
+};
 } // Anonymous namespace
+
+void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
+                                      const VideoCore::DiskResourceLoadCallback& callback) {
+    if (title_id == 0) {
+        return;
+    }
+    std::string shader_dir{Common::FS::GetUserPath(Common::FS::UserPath::ShaderDir)};
+    std::string base_dir{shader_dir + "/vulkan"};
+    std::string transferable_dir{base_dir + "/transferable"};
+    std::string precompiled_dir{base_dir + "/precompiled"};
+    if (!Common::FS::CreateDir(shader_dir) || !Common::FS::CreateDir(base_dir) ||
+        !Common::FS::CreateDir(transferable_dir) || !Common::FS::CreateDir(precompiled_dir)) {
+        LOG_ERROR(Common_Filesystem, "Failed to create pipeline cache directories");
+        return;
+    }
+    pipeline_cache_filename = fmt::format("{}/{:016x}.bin", transferable_dir, title_id);
+
+    Common::ThreadWorker worker(11, "PipelineBuilder");
+    std::mutex cache_mutex;
+    struct {
+        size_t total{0};
+        size_t built{0};
+        bool has_loaded{false};
+    } state;
+
+    std::ifstream file;
+    Common::FS::OpenFStream(file, pipeline_cache_filename, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) {
+        return;
+    }
+    file.exceptions(std::ifstream::failbit);
+    const auto end{file.tellg()};
+    file.seekg(0, std::ios::beg);
+    // Read header...
+
+    while (file.tellg() != end) {
+        if (stop_loading) {
+            return;
+        }
+        u32 num_envs{};
+        file.read(reinterpret_cast<char*>(&num_envs), sizeof(num_envs));
+        auto envs{std::make_shared<std::vector<FileEnvironment>>(num_envs)};
+        for (FileEnvironment& env : *envs) {
+            env.Deserialize(file);
+        }
+        if (envs->front().ShaderStage() == Shader::Stage::Compute) {
+            ComputePipelineCacheKey key;
+            file.read(reinterpret_cast<char*>(&key), sizeof(key));
+
+            worker.QueueWork([this, key, envs, &cache_mutex, &state, &callback] {
+                ShaderPools pools;
+                ComputePipeline pipeline{CreateComputePipeline(pools, key, envs->front())};
+
+                std::lock_guard lock{cache_mutex};
+                compute_cache.emplace(key, std::move(pipeline));
+                if (state.has_loaded) {
+                    callback(VideoCore::LoadCallbackStage::Build, ++state.built, state.total);
+                }
+            });
+        } else {
+            GraphicsPipelineCacheKey key;
+            file.read(reinterpret_cast<char*>(&key), sizeof(key));
+
+            worker.QueueWork([this, key, envs, &cache_mutex, &state, &callback] {
+                ShaderPools pools;
+                boost::container::static_vector<Shader::Environment*, 5> env_ptrs;
+                for (auto& env : *envs) {
+                    env_ptrs.push_back(&env);
+                }
+                GraphicsPipeline pipeline{CreateGraphicsPipeline(pools, key, MakeSpan(env_ptrs))};
+
+                std::lock_guard lock{cache_mutex};
+                graphics_cache.emplace(key, std::move(pipeline));
+                if (state.has_loaded) {
+                    callback(VideoCore::LoadCallbackStage::Build, ++state.built, state.total);
+                }
+            });
+        }
+        ++state.total;
+    }
+    {
+        std::lock_guard lock{cache_mutex};
+        callback(VideoCore::LoadCallbackStage::Build, 0, state.total);
+        state.has_loaded = true;
+    }
+    worker.WaitForRequests();
+}
 
 size_t ComputePipelineCacheKey::Hash() const noexcept {
     const u64 hash = Common::CityHash64(reinterpret_cast<const char*>(this), sizeof *this);
@@ -279,17 +488,22 @@ ComputePipeline* PipelineCache::CurrentComputePipeline() {
     if (!cpu_shader_addr) {
         return nullptr;
     }
-    ShaderInfo* const shader{TryGet(*cpu_shader_addr)};
+    const ShaderInfo* shader{TryGet(*cpu_shader_addr)};
     if (!shader) {
-        return CreateComputePipelineWithoutShader(*cpu_shader_addr);
+        ComputeEnvironment env{kepler_compute, gpu_memory, program_base, qmd.program_start};
+        shader = MakeShaderInfo(env, *cpu_shader_addr);
     }
-    const ComputePipelineCacheKey key{MakeComputePipelineKey(shader->unique_hash)};
+    const ComputePipelineCacheKey key{
+        .unique_hash = shader->unique_hash,
+        .shared_memory_size = qmd.shared_alloc,
+        .workgroup_size{qmd.block_dim_x, qmd.block_dim_y, qmd.block_dim_z},
+    };
     const auto [pair, is_new]{compute_cache.try_emplace(key)};
     auto& pipeline{pair->second};
     if (!is_new) {
         return &pipeline;
     }
-    pipeline = CreateComputePipeline(shader);
+    pipeline = CreateComputePipeline(key, shader);
     return &pipeline;
 }
 
@@ -310,26 +524,25 @@ bool PipelineCache::RefreshStages() {
         }
         const ShaderInfo* shader_info{TryGet(*cpu_shader_addr)};
         if (!shader_info) {
-            const u32 offset{shader_config.offset};
-            shader_info = MakeShaderInfo(program, base_addr, offset, *cpu_shader_addr);
+            const u32 start_address{shader_config.offset};
+            GraphicsEnvironment env{maxwell3d, gpu_memory, program, base_addr, start_address};
+            shader_info = MakeShaderInfo(env, *cpu_shader_addr);
         }
         graphics_key.unique_hashes[index] = shader_info->unique_hash;
     }
     return true;
 }
 
-const ShaderInfo* PipelineCache::MakeShaderInfo(Maxwell::ShaderProgram program, GPUVAddr base_addr,
-                                                u32 start_address, VAddr cpu_addr) {
-    GraphicsEnvironment env{maxwell3d, gpu_memory, program, base_addr, start_address};
+const ShaderInfo* PipelineCache::MakeShaderInfo(GenericEnvironment& env, VAddr cpu_addr) {
     auto info = std::make_unique<ShaderInfo>();
-    if (const std::optional<u128> cached_hash{env.Analyze(start_address)}) {
+    if (const std::optional<u128> cached_hash{env.Analyze()}) {
         info->unique_hash = *cached_hash;
         info->size_bytes = env.CachedSize();
     } else {
         // Slow path, not really hit on commercial games
         // Build a control flow graph to get the real shader size
-        flow_block_pool.ReleaseContents();
-        Shader::Maxwell::Flow::CFG cfg{env, flow_block_pool, start_address};
+        main_pools.flow_block.ReleaseContents();
+        Shader::Maxwell::Flow::CFG cfg{env, main_pools.flow_block, env.StartAddress()};
         info->unique_hash = env.CalculateHash();
         info->size_bytes = env.ReadSize();
     }
@@ -339,13 +552,55 @@ const ShaderInfo* PipelineCache::MakeShaderInfo(Maxwell::ShaderProgram program, 
     return result;
 }
 
-GraphicsPipeline PipelineCache::CreateGraphicsPipeline() {
-    flow_block_pool.ReleaseContents();
-    inst_pool.ReleaseContents();
-    block_pool.ReleaseContents();
-
-    std::array<GraphicsEnvironment, Maxwell::MaxShaderProgram> envs;
+GraphicsPipeline PipelineCache::CreateGraphicsPipeline(ShaderPools& pools,
+                                                       const GraphicsPipelineCacheKey& key,
+                                                       std::span<Shader::Environment* const> envs) {
+    LOG_INFO(Render_Vulkan, "0x{:016x}", key.Hash());
+    size_t env_index{0};
     std::array<Shader::IR::Program, Maxwell::MaxShaderProgram> programs;
+    for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
+        if (key.unique_hashes[index] == u128{}) {
+            continue;
+        }
+        Shader::Environment& env{*envs[env_index]};
+        ++env_index;
+
+        const u32 cfg_offset{env.StartAddress() + sizeof(Shader::ProgramHeader)};
+        Shader::Maxwell::Flow::CFG cfg(env, pools.flow_block, cfg_offset);
+        programs[index] = TranslateProgram(pools.inst, pools.block, env, cfg);
+    }
+    std::array<const Shader::Info*, Maxwell::MaxShaderStage> infos{};
+    std::array<vk::ShaderModule, Maxwell::MaxShaderStage> modules;
+
+    u32 binding{0};
+    env_index = 0;
+    for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
+        if (key.unique_hashes[index] == u128{}) {
+            continue;
+        }
+        UNIMPLEMENTED_IF(index == 0);
+
+        Shader::IR::Program& program{programs[index]};
+        const size_t stage_index{index - 1};
+        infos[stage_index] = &program.info;
+
+        Shader::Environment& env{*envs[env_index]};
+        ++env_index;
+
+        const std::vector<u32> code{EmitSPIRV(profile, env, program, binding)};
+        modules[stage_index] = BuildShader(device, code);
+    }
+    return GraphicsPipeline(maxwell3d, gpu_memory, scheduler, buffer_cache, texture_cache, device,
+                            descriptor_pool, update_descriptor_queue, render_pass_cache, key.state,
+                            std::move(modules), infos);
+}
+
+GraphicsPipeline PipelineCache::CreateGraphicsPipeline() {
+    main_pools.ReleaseContents();
+
+    std::array<GraphicsEnvironment, Maxwell::MaxShaderProgram> graphics_envs;
+    boost::container::static_vector<GenericEnvironment*, Maxwell::MaxShaderProgram> generic_envs;
+    boost::container::static_vector<Shader::Environment*, Maxwell::MaxShaderProgram> envs;
 
     const GPUVAddr base_addr{maxwell3d.regs.code_address.CodeAddress()};
     for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
@@ -353,86 +608,44 @@ GraphicsPipeline PipelineCache::CreateGraphicsPipeline() {
             continue;
         }
         const auto program{static_cast<Maxwell::ShaderProgram>(index)};
-        GraphicsEnvironment& env{envs[index]};
+        GraphicsEnvironment& env{graphics_envs[index]};
         const u32 start_address{maxwell3d.regs.shader_config[index].offset};
         env = GraphicsEnvironment{maxwell3d, gpu_memory, program, base_addr, start_address};
-
-        const u32 cfg_offset = start_address + sizeof(Shader::ProgramHeader);
-        Shader::Maxwell::Flow::CFG cfg(env, flow_block_pool, cfg_offset);
-        programs[index] = Shader::Maxwell::TranslateProgram(inst_pool, block_pool, env, cfg);
+        generic_envs.push_back(&env);
+        envs.push_back(&env);
     }
-    std::array<const Shader::Info*, Maxwell::MaxShaderStage> infos{};
-    std::array<vk::ShaderModule, Maxwell::MaxShaderStage> modules;
-
-    u32 binding{0};
-    for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
-        if (graphics_key.unique_hashes[index] == u128{}) {
-            continue;
-        }
-        UNIMPLEMENTED_IF(index == 0);
-
-        GraphicsEnvironment& env{envs[index]};
-        Shader::IR::Program& program{programs[index]};
-
-        const size_t stage_index{index - 1};
-        infos[stage_index] = &program.info;
-        std::vector<u32> code{EmitSPIRV(profile, env, program, binding)};
-
-        FILE* file = fopen("D:\\shader.spv", "wb");
-        fwrite(code.data(), 4, code.size(), file);
-        fclose(file);
-        std::system("spirv-cross --vulkan-semantics D:\\shader.spv");
-
-        modules[stage_index] = BuildShader(device, code);
+    GraphicsPipeline pipeline{CreateGraphicsPipeline(main_pools, graphics_key, MakeSpan(envs))};
+    if (!pipeline_cache_filename.empty()) {
+        SerializePipeline(graphics_key, generic_envs, pipeline_cache_filename);
     }
-    return GraphicsPipeline(maxwell3d, gpu_memory, scheduler, buffer_cache, texture_cache, device,
-                            descriptor_pool, update_descriptor_queue, render_pass_cache,
-                            graphics_key.state, std::move(modules), infos);
+    return pipeline;
 }
 
-ComputePipeline PipelineCache::CreateComputePipeline(ShaderInfo* shader_info) {
+ComputePipeline PipelineCache::CreateComputePipeline(const ComputePipelineCacheKey& key,
+                                                     const ShaderInfo* shader) {
     const GPUVAddr program_base{kepler_compute.regs.code_loc.Address()};
     const auto& qmd{kepler_compute.launch_description};
-    ComputeEnvironment env{kepler_compute, gpu_memory, program_base};
-    if (const std::optional<u128> cached_hash{env.Analyze(qmd.program_start)}) {
-        // TODO: Load from cache
+    ComputeEnvironment env{kepler_compute, gpu_memory, program_base, qmd.program_start};
+    main_pools.ReleaseContents();
+    ComputePipeline pipeline{CreateComputePipeline(main_pools, key, env)};
+    if (!pipeline_cache_filename.empty()) {
+        SerializePipeline(key, std::array<const GenericEnvironment*, 1>{&env},
+                          pipeline_cache_filename);
     }
-    flow_block_pool.ReleaseContents();
-    inst_pool.ReleaseContents();
-    block_pool.ReleaseContents();
+    return pipeline;
+}
 
-    Shader::Maxwell::Flow::CFG cfg{env, flow_block_pool, qmd.program_start};
-    Shader::IR::Program program{Shader::Maxwell::TranslateProgram(inst_pool, block_pool, env, cfg)};
+ComputePipeline PipelineCache::CreateComputePipeline(ShaderPools& pools,
+                                                     const ComputePipelineCacheKey& key,
+                                                     Shader::Environment& env) const {
+    LOG_INFO(Render_Vulkan, "0x{:016x}", key.Hash());
+
+    Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
+    Shader::IR::Program program{TranslateProgram(pools.inst, pools.block, env, cfg)};
     u32 binding{0};
     std::vector<u32> code{EmitSPIRV(profile, env, program, binding)};
-    /*
-    FILE* file = fopen("D:\\shader.spv", "wb");
-    fwrite(code.data(), 4, code.size(), file);
-    fclose(file);
-    std::system("spirv-dis D:\\shader.spv");
-    */
-    shader_info->unique_hash = env.CalculateHash();
-    shader_info->size_bytes = env.ReadSize();
     return ComputePipeline{device, descriptor_pool, update_descriptor_queue, program.info,
                            BuildShader(device, code)};
-}
-
-ComputePipeline* PipelineCache::CreateComputePipelineWithoutShader(VAddr shader_cpu_addr) {
-    ShaderInfo shader;
-    ComputePipeline pipeline{CreateComputePipeline(&shader)};
-    const ComputePipelineCacheKey key{MakeComputePipelineKey(shader.unique_hash)};
-    const size_t size_bytes{shader.size_bytes};
-    Register(std::make_unique<ShaderInfo>(std::move(shader)), shader_cpu_addr, size_bytes);
-    return &compute_cache.emplace(key, std::move(pipeline)).first->second;
-}
-
-ComputePipelineCacheKey PipelineCache::MakeComputePipelineKey(u128 unique_hash) const {
-    const auto& qmd{kepler_compute.launch_description};
-    return {
-        .unique_hash = unique_hash,
-        .shared_memory_size = qmd.shared_alloc,
-        .workgroup_size{qmd.block_dim_x, qmd.block_dim_y, qmd.block_dim_z},
-    };
 }
 
 } // namespace Vulkan

@@ -4,9 +4,11 @@
 
 #pragma once
 
+#include "common/common_types.h"
+
 namespace Shader {
 
-enum class Stage {
+enum class Stage : u32 {
     Compute,
     VertexA,
     VertexB,

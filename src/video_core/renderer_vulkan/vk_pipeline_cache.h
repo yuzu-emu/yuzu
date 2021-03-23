@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cstddef>
+#include <iosfwd>
 #include <memory>
 #include <type_traits>
 #include <unordered_map>
@@ -96,6 +97,7 @@ namespace Vulkan {
 
 class ComputePipeline;
 class Device;
+class GenericEnvironment;
 class RasterizerVulkan;
 class RenderPassCache;
 class VKDescriptorPool;
@@ -105,6 +107,18 @@ class VKUpdateDescriptorQueue;
 struct ShaderInfo {
     u128 unique_hash{};
     size_t size_bytes{};
+};
+
+struct ShaderPools {
+    void ReleaseContents() {
+        inst.ReleaseContents();
+        block.ReleaseContents();
+        flow_block.ReleaseContents();
+    }
+
+    Shader::ObjectPool<Shader::IR::Inst> inst;
+    Shader::ObjectPool<Shader::IR::Block> block;
+    Shader::ObjectPool<Shader::Maxwell::Flow::Block> flow_block;
 };
 
 class PipelineCache final : public VideoCommon::ShaderCache<ShaderInfo> {
@@ -123,19 +137,24 @@ public:
 
     [[nodiscard]] ComputePipeline* CurrentComputePipeline();
 
+    void LoadDiskResources(u64 title_id, std::stop_token stop_loading,
+                           const VideoCore::DiskResourceLoadCallback& callback);
+
 private:
     bool RefreshStages();
 
-    const ShaderInfo* MakeShaderInfo(Maxwell::ShaderProgram program, GPUVAddr base_addr,
-                                     u32 start_address, VAddr cpu_addr);
+    const ShaderInfo* MakeShaderInfo(GenericEnvironment& env, VAddr cpu_addr);
 
     GraphicsPipeline CreateGraphicsPipeline();
 
-    ComputePipeline CreateComputePipeline(ShaderInfo* shader);
+    GraphicsPipeline CreateGraphicsPipeline(ShaderPools& pools, const GraphicsPipelineCacheKey& key,
+                                            std::span<Shader::Environment* const> envs);
 
-    ComputePipeline* CreateComputePipelineWithoutShader(VAddr shader_cpu_addr);
+    ComputePipeline CreateComputePipeline(const ComputePipelineCacheKey& key,
+                                          const ShaderInfo* shader);
 
-    ComputePipelineCacheKey MakeComputePipelineKey(u128 unique_hash) const;
+    ComputePipeline CreateComputePipeline(ShaderPools& pools, const ComputePipelineCacheKey& key,
+                                          Shader::Environment& env) const;
 
     Tegra::GPU& gpu;
     Tegra::Engines::Maxwell3D& maxwell3d;
@@ -155,11 +174,10 @@ private:
     std::unordered_map<ComputePipelineCacheKey, ComputePipeline> compute_cache;
     std::unordered_map<GraphicsPipelineCacheKey, GraphicsPipeline> graphics_cache;
 
-    Shader::ObjectPool<Shader::IR::Inst> inst_pool;
-    Shader::ObjectPool<Shader::IR::Block> block_pool;
-    Shader::ObjectPool<Shader::Maxwell::Flow::Block> flow_block_pool;
+    ShaderPools main_pools;
 
     Shader::Profile profile;
+    std::string pipeline_cache_filename;
 };
 
 } // namespace Vulkan
