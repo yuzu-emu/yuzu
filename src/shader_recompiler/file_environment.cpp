@@ -39,11 +39,11 @@ u64 FileEnvironment::ReadInstruction(u32 offset) {
     return data[offset / 8];
 }
 
-u32 FileEnvironment::TextureBoundBuffer() {
+u32 FileEnvironment::TextureBoundBuffer() const {
     throw NotImplementedException("Texture bound buffer serialization");
 }
 
-std::array<u32, 3> FileEnvironment::WorkgroupSize() {
+std::array<u32, 3> FileEnvironment::WorkgroupSize() const {
     return {1, 1, 1};
 }
 

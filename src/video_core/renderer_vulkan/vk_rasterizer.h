@@ -86,6 +86,8 @@ public:
                                const Tegra::Engines::Fermi2D::Config& copy_config) override;
     bool AccelerateDisplay(const Tegra::FramebufferConfig& config, VAddr framebuffer_addr,
                            u32 pixel_stride) override;
+    void LoadDiskResources(u64 title_id, std::stop_token stop_loading,
+                           const VideoCore::DiskResourceLoadCallback& callback) override;
 
 private:
     static constexpr size_t MAX_TEXTURES = 192;

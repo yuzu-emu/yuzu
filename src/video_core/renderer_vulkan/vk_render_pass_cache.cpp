@@ -50,6 +50,7 @@ VkAttachmentDescription AttachmentDescription(const Device& device, PixelFormat 
 RenderPassCache::RenderPassCache(const Device& device_) : device{&device_} {}
 
 VkRenderPass RenderPassCache::Get(const RenderPassKey& key) {
+    std::lock_guard lock{mutex};
     const auto [pair, is_new] = cache.try_emplace(key);
     if (!is_new) {
         return *pair->second;

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <mutex>
 #include <unordered_map>
 
 #include "video_core/surface.h"
@@ -37,7 +38,7 @@ struct hash<Vulkan::RenderPassKey> {
 
 namespace Vulkan {
 
-    class Device;
+class Device;
 
 class RenderPassCache {
 public:
@@ -48,6 +49,7 @@ public:
 private:
     const Device* device{};
     std::unordered_map<RenderPassKey, vk::RenderPass> cache;
+    std::mutex mutex;
 };
 
 } // namespace Vulkan
