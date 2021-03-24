@@ -240,6 +240,12 @@ public:
                                                  const Value& offset, const F32& lod_clamp,
                                                  TextureInstInfo info);
 
+    [[nodiscard]] Value ImageGather(const Value& handle, const Value& coords, const Value& offset,
+                                    const Value& offset2, TextureInstInfo info);
+
+    [[nodiscard]] Value ImageGatherDref(const Value& handle, const Value& coords, const Value& offset,
+                                      const Value& offset2, const F32& dref, TextureInstInfo info);
+
     [[nodiscard]] U1 VoteAll(const U1& value);
     [[nodiscard]] U1 VoteAny(const U1& value);
     [[nodiscard]] U1 VoteEqual(const U1& value);

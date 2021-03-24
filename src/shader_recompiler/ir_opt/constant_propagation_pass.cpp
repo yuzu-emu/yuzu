@@ -403,6 +403,18 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
             return (base >> shift) & ((1U << count) - 1);
         });
         return;
+    case IR::Opcode::BitFieldSExtract:
+        FoldWhenAllImmediates(inst, [](s32 base, u32 shift, u32 count) {
+            const size_t back_shift = static_cast<size_t>(shift) + static_cast<size_t>(count);
+            if (back_shift > Common::BitSize<s32>()) {
+                throw LogicError("Undefined result in {}({}, {}, {})", IR::Opcode::BitFieldSExtract,
+                                 base, shift, count);
+            }
+            const size_t left_shift = Common::BitSize<s32>() - back_shift;
+            return static_cast<u32>(static_cast<s32>(base << left_shift) >>
+                                    static_cast<size_t>(Common::BitSize<s32>() - count));
+        });
+        return;
     case IR::Opcode::BranchConditional:
         return FoldBranchConditional(inst);
     default:

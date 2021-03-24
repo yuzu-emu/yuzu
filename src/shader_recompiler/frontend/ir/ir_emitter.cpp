@@ -1474,6 +1474,19 @@ F32 IREmitter::ImageSampleDrefExplicitLod(const Value& handle, const Value& coor
     return Inst<F32>(op, Flags{info}, handle, coords, dref, lod_lc, offset);
 }
 
+Value IREmitter::ImageGather(const Value& handle, const Value& coords, const Value& offset,
+                             const Value& offset2, TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageGather : Opcode::BindlessImageGather};
+    return Inst(op, Flags{info}, handle, coords, offset, offset2);
+}
+
+Value IREmitter::ImageGatherDref(const Value& handle, const Value& coords, const Value& offset,
+                    const Value& offset2, const F32& dref, TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageGatherDref
+                                         : Opcode::BindlessImageGatherDref};
+    return Inst(op, Flags{info}, handle, coords, offset, offset2, dref);
+}
+
 U1 IREmitter::VoteAll(const U1& value) {
     return Inst<U1>(Opcode::VoteAll, value);
 }

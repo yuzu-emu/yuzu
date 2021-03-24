@@ -352,14 +352,20 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::BindlessImageSampleExplicitLod:
     case IR::Opcode::BindlessImageSampleDrefImplicitLod:
     case IR::Opcode::BindlessImageSampleDrefExplicitLod:
+    case IR::Opcode::BindlessImageGather:
+    case IR::Opcode::BindlessImageGatherDref:
     case IR::Opcode::BoundImageSampleImplicitLod:
     case IR::Opcode::BoundImageSampleExplicitLod:
     case IR::Opcode::BoundImageSampleDrefImplicitLod:
     case IR::Opcode::BoundImageSampleDrefExplicitLod:
+    case IR::Opcode::BoundImageGather:
+    case IR::Opcode::BoundImageGatherDref:
     case IR::Opcode::ImageSampleImplicitLod:
     case IR::Opcode::ImageSampleExplicitLod:
     case IR::Opcode::ImageSampleDrefImplicitLod:
-    case IR::Opcode::ImageSampleDrefExplicitLod: {
+    case IR::Opcode::ImageSampleDrefExplicitLod:
+    case IR::Opcode::ImageGather:
+    case IR::Opcode::ImageGatherDref: {
         const TextureType type{inst.Flags<IR::TextureInstInfo>().type};
         info.uses_sampled_1d |= type == TextureType::Color1D || type == TextureType::ColorArray1D ||
                                 type == TextureType::Shadow1D || type == TextureType::ShadowArray1D;
