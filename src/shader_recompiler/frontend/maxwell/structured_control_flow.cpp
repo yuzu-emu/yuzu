@@ -635,7 +635,8 @@ public:
           block_list{block_list_} {
         Visit(root_stmt, nullptr, nullptr);
 
-        IR::IREmitter ir{*block_list.front()};
+        IR::Block& first_block{*block_list.front()};
+        IR::IREmitter ir{first_block, first_block.begin()};
         ir.Prologue();
     }
 
