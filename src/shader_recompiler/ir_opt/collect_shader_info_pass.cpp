@@ -359,6 +359,12 @@ void VisitUsages(Info& info, IR::Inst& inst) {
             inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp) != nullptr;
         break;
     }
+    case IR::Opcode::VoteAll:
+    case IR::Opcode::VoteAny:
+    case IR::Opcode::VoteEqual:
+    case IR::Opcode::SubgroupBallot:
+        info.uses_subgroup_vote = true;
+        break;
     default:
         break;
     }

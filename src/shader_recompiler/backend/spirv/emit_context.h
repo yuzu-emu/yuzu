@@ -82,6 +82,7 @@ public:
 
     Id workgroup_id{};
     Id local_invocation_id{};
+    Id subgroup_local_invocation_id{};
     Id instance_id{};
     Id instance_index{};
     Id base_instance{};
@@ -96,7 +97,7 @@ public:
     std::array<Id, 32> output_generics{};
 
     std::array<Id, 8> frag_color{};
-    Id frag_depth {};
+    Id frag_depth{};
 
     std::vector<Id> interfaces;
 

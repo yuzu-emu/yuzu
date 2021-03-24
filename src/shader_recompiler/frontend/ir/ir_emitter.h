@@ -234,6 +234,11 @@ public:
                                                  const Value& offset, const F32& lod_clamp,
                                                  TextureInstInfo info);
 
+    [[nodiscard]] U1 VoteAll(const U1& value);
+    [[nodiscard]] U1 VoteAny(const U1& value);
+    [[nodiscard]] U1 VoteEqual(const U1& value);
+    [[nodiscard]] U32 SubgroupBallot(const U1& value);
+
 private:
     IR::Block::iterator insertion_point;
 

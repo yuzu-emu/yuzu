@@ -259,6 +259,10 @@ void EmitContext::DefineInputs(const Info& info, Stage stage) {
     if (info.uses_local_invocation_id) {
         local_invocation_id = DefineInput(*this, U32[3], spv::BuiltIn::LocalInvocationId);
     }
+    if (profile.warp_size_potentially_larger_than_guest && info.uses_subgroup_vote) {
+        subgroup_local_invocation_id =
+            DefineInput(*this, U32[1], spv::BuiltIn::SubgroupLocalInvocationId);
+    }
     if (info.loads_position) {
         const bool is_fragment{stage != Stage::Fragment};
         const spv::BuiltIn built_in{is_fragment ? spv::BuiltIn::Position : spv::BuiltIn::FragCoord};

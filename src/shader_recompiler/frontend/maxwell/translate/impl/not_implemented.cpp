@@ -417,10 +417,6 @@ void TranslatorVisitor::VMNMX(u64) {
     ThrowNotImplemented(Opcode::VMNMX);
 }
 
-void TranslatorVisitor::VOTE(u64) {
-    ThrowNotImplemented(Opcode::VOTE);
-}
-
 void TranslatorVisitor::VOTE_vtg(u64) {
     ThrowNotImplemented(Opcode::VOTE_vtg);
 }

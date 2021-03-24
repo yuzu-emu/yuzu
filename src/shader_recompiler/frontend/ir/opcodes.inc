@@ -355,3 +355,9 @@ OPCODE(ImageSampleImplicitLod,                              F32x4,          U32,
 OPCODE(ImageSampleExplicitLod,                              F32x4,          U32,            Opaque,         Opaque,         Opaque,                         )
 OPCODE(ImageSampleDrefImplicitLod,                          F32,            U32,            Opaque,         F32,            Opaque,         Opaque,         )
 OPCODE(ImageSampleDrefExplicitLod,                          F32,            U32,            Opaque,         F32,            Opaque,         Opaque,         )
+
+// Vote operations
+OPCODE(VoteAll,                                             U1,             U1,                                                                             )
+OPCODE(VoteAny,                                             U1,             U1,                                                                             )
+OPCODE(VoteEqual,                                           U1,             U1,                                                                             )
+OPCODE(SubgroupBallot,                                      U32,            U1,                                                                             )
