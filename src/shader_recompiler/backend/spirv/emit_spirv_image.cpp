@@ -30,6 +30,12 @@ public:
         }
     }
 
+    explicit ImageOperands([[maybe_unused]] EmitContext& ctx, Id offset) {
+        if (Sirit::ValidId(offset)) {
+            Add(spv::ImageOperandsMask::Offset, offset);
+        }
+    }
+
     void Add(spv::ImageOperandsMask new_mask, Id value) {
         mask = static_cast<spv::ImageOperandsMask>(static_cast<unsigned>(mask) |
                                                    static_cast<unsigned>(new_mask));
@@ -98,6 +104,14 @@ Id EmitBindlessImageSampleDrefExplicitLod(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
 
+Id EmitBindlessImageGather(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+Id EmitBindlessImageGatherDref(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
 Id EmitBoundImageSampleImplicitLod(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
@@ -111,6 +125,14 @@ Id EmitBoundImageSampleDrefImplicitLod(EmitContext&) {
 }
 
 Id EmitBoundImageSampleDrefExplicitLod(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+Id EmitBoundImageGather(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+Id EmitBoundImageGatherDref(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
 
@@ -150,6 +172,24 @@ Id EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Va
     return Emit(&EmitContext::OpImageSparseSampleDrefExplicitLod,
                 &EmitContext::OpImageSampleDrefExplicitLod, ctx, inst, ctx.F32[1],
                 Texture(ctx, index), coords, dref, operands.Mask(), operands.Span());
+}
+
+Id EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords, Id offset,
+                   [[maybe_unused]] Id offset2) {
+    const auto info{inst->Flags<IR::TextureInstInfo>()};
+    const ImageOperands operands(ctx, offset);
+    return Emit(&EmitContext::OpImageSparseGather, &EmitContext::OpImageGather, ctx, inst,
+                ctx.F32[4], Texture(ctx, index), coords,
+                ctx.Constant(ctx.U32[1], info.gather_component.Value()), operands.Mask(),
+                operands.Span());
+}
+
+Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                       Id offset, [[maybe_unused]] Id offset2, Id dref) {
+    const auto info{inst->Flags<IR::TextureInstInfo>()};
+    const ImageOperands operands(ctx, offset);
+    return Emit(&EmitContext::OpImageSparseDrefGather, &EmitContext::OpImageDrefGather, ctx, inst,
+                ctx.F32[4], Texture(ctx, index), coords, dref, operands.Mask(), operands.Span());
 }
 
 } // namespace Shader::Backend::SPIRV

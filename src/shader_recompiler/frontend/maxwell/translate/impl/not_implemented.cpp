@@ -349,14 +349,6 @@ void TranslatorVisitor::TLD_b(u64) {
     ThrowNotImplemented(Opcode::TLD_b);
 }
 
-void TranslatorVisitor::TLD4(u64) {
-    ThrowNotImplemented(Opcode::TLD4);
-}
-
-void TranslatorVisitor::TLD4_b(u64) {
-    ThrowNotImplemented(Opcode::TLD4_b);
-}
-
 void TranslatorVisitor::TLD4S(u64) {
     ThrowNotImplemented(Opcode::TLD4S);
 }
