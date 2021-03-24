@@ -15,6 +15,10 @@ OPCODE(SelectionMerge,                                      Void,           Labe
 OPCODE(Return,                                              Void,                                                                                           )
 OPCODE(DemoteToHelperInvocation,                            Void,           Label,                                                                          )
 
+// Special operations
+OPCODE(Prologue,                                            Void,                                                                                           )
+OPCODE(Epilogue,                                            Void,                                                                                           )
+
 // Context getters/setters
 OPCODE(GetRegister,                                         U32,            Reg,                                                                            )
 OPCODE(SetRegister,                                         Void,           Reg,            U32,                                                            )

@@ -2,30 +2,26 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <tuple>
+
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
+
+#pragma optimize("", off)
 
 namespace Shader::Backend::SPIRV {
 namespace {
-Id InputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
-    const u32 element{static_cast<u32>(attr) % 4};
-    const auto element_id{[&] { return ctx.Constant(ctx.U32[1], element); }};
-    if (IR::IsGeneric(attr)) {
-        const u32 index{IR::GenericAttributeIndex(attr)};
-        return ctx.OpAccessChain(ctx.input_f32, ctx.input_generics.at(index), element_id());
+std::tuple<Id, Id, bool> AttrTypes(EmitContext& ctx, u32 index) {
+    const bool is_first_reader{ctx.stage == Stage::VertexB};
+    const AttributeType type{ctx.profile.generic_input_types.at(index)};
+    switch (type) {
+    case AttributeType::Float:
+        return {ctx.input_f32, ctx.F32[1], false};
+    case AttributeType::UnsignedInt:
+        return {ctx.input_u32, ctx.U32[1], true};
+    case AttributeType::SignedInt:
+        return {ctx.input_s32, ctx.TypeInt(32, true), true};
     }
-    switch (attr) {
-    case IR::Attribute::PositionX:
-    case IR::Attribute::PositionY:
-    case IR::Attribute::PositionZ:
-    case IR::Attribute::PositionW:
-        return ctx.OpAccessChain(ctx.input_f32, ctx.input_position, element_id());
-    case IR::Attribute::InstanceId:
-        return ctx.OpLoad(ctx.U32[1], ctx.instance_id);
-    case IR::Attribute::VertexId:
-        return ctx.OpLoad(ctx.U32[1], ctx.vertex_id);
-    default:
-        throw NotImplementedException("Read attribute {}", attr);
-    }
+    throw InvalidArgument("Invalid attribute type {}", type);
 }
 
 Id OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
@@ -129,19 +125,40 @@ Id EmitGetCbufU64(EmitContext& ctx, const IR::Value& binding, const IR::Value& o
 }
 
 Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr) {
-    if (!ctx.profile.support_vertex_instance_id) {
-        switch (attr) {
-        case IR::Attribute::InstanceId:
+    const u32 element{static_cast<u32>(attr) % 4};
+    const auto element_id{[&] { return ctx.Constant(ctx.U32[1], element); }};
+    if (IR::IsGeneric(attr)) {
+        const u32 index{IR::GenericAttributeIndex(attr)};
+        const auto [pointer_type, type, needs_cast]{AttrTypes(ctx, index)};
+        const Id generic_id{ctx.input_generics.at(index)};
+        const Id pointer{ctx.OpAccessChain(pointer_type, generic_id, element_id())};
+        const Id value{ctx.OpLoad(type, pointer)};
+        return needs_cast ? ctx.OpBitcast(ctx.F32[1], value) : value;
+    }
+    switch (attr) {
+    case IR::Attribute::PositionX:
+    case IR::Attribute::PositionY:
+    case IR::Attribute::PositionZ:
+    case IR::Attribute::PositionW:
+        return ctx.OpLoad(ctx.F32[1],
+                          ctx.OpAccessChain(ctx.input_f32, ctx.input_position, element_id()));
+    case IR::Attribute::InstanceId:
+        if (ctx.profile.support_vertex_instance_id) {
+            return ctx.OpLoad(ctx.U32[1], ctx.instance_id);
+        } else {
             return ctx.OpISub(ctx.U32[1], ctx.OpLoad(ctx.U32[1], ctx.instance_index),
                               ctx.OpLoad(ctx.U32[1], ctx.base_instance));
-        case IR::Attribute::VertexId:
+        }
+    case IR::Attribute::VertexId:
+        if (ctx.profile.support_vertex_instance_id) {
+            return ctx.OpLoad(ctx.U32[1], ctx.vertex_id);
+        } else {
             return ctx.OpISub(ctx.U32[1], ctx.OpLoad(ctx.U32[1], ctx.vertex_index),
                               ctx.OpLoad(ctx.U32[1], ctx.base_vertex));
-        default:
-            break;
         }
+    default:
+        throw NotImplementedException("Read attribute {}", attr);
     }
-    return ctx.OpLoad(ctx.F32[1], InputAttrPointer(ctx, attr));
 }
 
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value) {

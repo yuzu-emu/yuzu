@@ -39,6 +39,9 @@ public:
     void Return();
     void DemoteToHelperInvocation(Block* continue_label);
 
+    void Prologue();
+    void Epilogue();
+
     [[nodiscard]] U32 GetReg(IR::Reg reg);
     void SetReg(IR::Reg reg, const U32& value);
 

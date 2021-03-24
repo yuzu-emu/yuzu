@@ -56,6 +56,8 @@ bool Inst::MayHaveSideEffects() const noexcept {
     case Opcode::SelectionMerge:
     case Opcode::Return:
     case Opcode::DemoteToHelperInvocation:
+    case Opcode::Prologue:
+    case Opcode::Epilogue:
     case Opcode::SetAttribute:
     case Opcode::SetAttributeIndexed:
     case Opcode::SetFragColor:
