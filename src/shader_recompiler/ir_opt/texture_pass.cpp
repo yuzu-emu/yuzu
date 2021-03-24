@@ -121,7 +121,7 @@ TextureInst MakeInst(Environment& env, IR::Block* block, IR::Inst& inst) {
     ConstBufferAddr addr;
     if (IsBindless(inst)) {
         VisitedBlocks visited;
-        const std::optional<ConstBufferAddr> track_addr{Track(block, IR::Value{&inst}, visited)};
+        const std::optional<ConstBufferAddr> track_addr{Track(block, inst.Arg(0), visited)};
         if (!track_addr) {
             throw NotImplementedException("Failed to track bindless texture constant buffer");
         }
