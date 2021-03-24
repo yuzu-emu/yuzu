@@ -437,7 +437,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
       buffer_cache{buffer_cache_}, texture_cache{texture_cache_} {
     const auto& float_control{device.FloatControlProperties()};
     const VkDriverIdKHR driver_id{device.GetDriverID()};
-    profile = Shader::Profile{
+    base_profile = Shader::Profile{
         .unified_descriptor_binding = true,
         .support_vertex_instance_id = false,
         .support_float_controls = true,
@@ -458,6 +458,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
         .support_vote = true,
         .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyBiggerThanGuest(),
         .has_broken_spirv_clamp = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS_KHR,
+        .generic_input_types{},
     };
 }
 
@@ -589,6 +590,7 @@ GraphicsPipeline PipelineCache::CreateGraphicsPipeline(ShaderPools& pools,
         Shader::Environment& env{*envs[env_index]};
         ++env_index;
 
+        const Shader::Profile profile{MakeProfile(key, env.ShaderStage())};
         const std::vector<u32> code{EmitSPIRV(profile, env, program, binding)};
         modules[stage_index] = BuildShader(device, code);
     }
@@ -645,9 +647,36 @@ ComputePipeline PipelineCache::CreateComputePipeline(ShaderPools& pools,
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
     Shader::IR::Program program{TranslateProgram(pools.inst, pools.block, env, cfg)};
     u32 binding{0};
-    std::vector<u32> code{EmitSPIRV(profile, env, program, binding)};
+    std::vector<u32> code{EmitSPIRV(base_profile, env, program, binding)};
     return ComputePipeline{device, descriptor_pool, update_descriptor_queue, program.info,
                            BuildShader(device, code)};
+}
+
+static Shader::AttributeType CastAttributeType(const FixedPipelineState::VertexAttribute& attr) {
+    switch (attr.Type()) {
+    case Maxwell::VertexAttribute::Type::SignedNorm:
+    case Maxwell::VertexAttribute::Type::UnsignedNorm:
+    case Maxwell::VertexAttribute::Type::UnsignedScaled:
+    case Maxwell::VertexAttribute::Type::SignedScaled:
+    case Maxwell::VertexAttribute::Type::Float:
+        return Shader::AttributeType::Float;
+    case Maxwell::VertexAttribute::Type::SignedInt:
+        return Shader::AttributeType::SignedInt;
+    case Maxwell::VertexAttribute::Type::UnsignedInt:
+        return Shader::AttributeType::UnsignedInt;
+    }
+    return Shader::AttributeType::Float;
+}
+
+Shader::Profile PipelineCache::MakeProfile(const GraphicsPipelineCacheKey& key,
+                                           Shader::Stage stage) {
+    Shader::Profile profile{base_profile};
+    if (stage == Shader::Stage::VertexB) {
+        profile.convert_depth_mode = key.state.ndc_minus_one_to_one != 0;
+        std::ranges::transform(key.state.attributes, profile.generic_input_types.begin(),
+                               &CastAttributeType);
+    }
+    return profile;
 }
 
 } // namespace Vulkan

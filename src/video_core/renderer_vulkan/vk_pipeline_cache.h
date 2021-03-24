@@ -156,6 +156,8 @@ private:
     ComputePipeline CreateComputePipeline(ShaderPools& pools, const ComputePipelineCacheKey& key,
                                           Shader::Environment& env) const;
 
+    Shader::Profile MakeProfile(const GraphicsPipelineCacheKey& key, Shader::Stage stage);
+
     Tegra::GPU& gpu;
     Tegra::Engines::Maxwell3D& maxwell3d;
     Tegra::Engines::KeplerCompute& kepler_compute;
@@ -176,7 +178,7 @@ private:
 
     ShaderPools main_pools;
 
-    Shader::Profile profile;
+    Shader::Profile base_profile;
     std::string pipeline_cache_filename;
 };
 

@@ -4,7 +4,17 @@
 
 #pragma once
 
+#include <array>
+
+#include "common/common_types.h"
+
 namespace Shader {
+
+enum class AttributeType : u8 {
+    Float,
+    SignedInt,
+    UnsignedInt,
+};
 
 struct Profile {
     bool unified_descriptor_binding{};
@@ -24,6 +34,9 @@ struct Profile {
 
     // FClamp is broken and OpFMax + OpFMin should be used instead
     bool has_broken_spirv_clamp{};
+
+    std::array<AttributeType, 32> generic_input_types{};
+    bool convert_depth_mode{};
 };
 
 } // namespace Shader

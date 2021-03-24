@@ -52,6 +52,7 @@ public:
     [[nodiscard]] Id Def(const IR::Value& value);
 
     const Profile& profile;
+    Stage stage{};
 
     Id void_id{};
     Id U1{};
@@ -72,6 +73,9 @@ public:
     UniformDefinitions uniform_types;
 
     Id input_f32{};
+    Id input_u32{};
+    Id input_s32{};
+
     Id output_f32{};
 
     Id storage_u32{};
@@ -104,7 +108,7 @@ public:
 private:
     void DefineCommonTypes(const Info& info);
     void DefineCommonConstants();
-    void DefineInterfaces(const Info& info, Stage stage);
+    void DefineInterfaces(const Info& info);
     void DefineConstantBuffers(const Info& info, u32& binding);
     void DefineStorageBuffers(const Info& info, u32& binding);
     void DefineTextures(const Info& info, u32& binding);
@@ -113,8 +117,8 @@ private:
     void DefineConstantBuffers(const Info& info, Id UniformDefinitions::*member_type, u32 binding,
                                Id type, char type_char, u32 element_size);
 
-    void DefineInputs(const Info& info, Stage stage);
-    void DefineOutputs(const Info& info, Stage stage);
+    void DefineInputs(const Info& info);
+    void DefineOutputs(const Info& info);
 };
 
 } // namespace Shader::Backend::SPIRV

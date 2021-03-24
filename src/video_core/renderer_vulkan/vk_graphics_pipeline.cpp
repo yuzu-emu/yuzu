@@ -181,6 +181,9 @@ void GraphicsPipeline::Configure(bool is_indexed) {
         PushImageDescriptors(stage_infos[stage], samplers.data(), image_view_ids.data(),
                              *texture_cache, *update_descriptor_queue, index);
     }
+    if (!descriptor_set_layout) {
+        return;
+    }
     const VkDescriptorSet descriptor_set{descriptor_allocator.Commit()};
     update_descriptor_queue->Send(*descriptor_update_template, descriptor_set);
 

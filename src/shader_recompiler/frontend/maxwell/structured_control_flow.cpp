@@ -634,6 +634,9 @@ public:
         : stmt_pool{stmt_pool_}, inst_pool{inst_pool_}, block_pool{block_pool_}, env{env_},
           block_list{block_list_} {
         Visit(root_stmt, nullptr, nullptr);
+
+        IR::IREmitter ir{*block_list.front()};
+        ir.Prologue();
     }
 
 private:
@@ -734,7 +737,9 @@ private:
                     current_block = block_pool.Create(inst_pool);
                     block_list.push_back(current_block);
                 }
-                IR::IREmitter{*current_block}.Return();
+                IR::IREmitter ir{*current_block};
+                ir.Epilogue();
+                ir.Return();
                 current_block = nullptr;
                 break;
             }

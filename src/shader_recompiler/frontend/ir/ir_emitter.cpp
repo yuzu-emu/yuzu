@@ -92,6 +92,14 @@ void IREmitter::DemoteToHelperInvocation(Block* continue_label) {
     Inst(Opcode::DemoteToHelperInvocation, continue_label);
 }
 
+void IREmitter::Prologue() {
+    Inst(Opcode::Prologue);
+}
+
+void IREmitter::Epilogue() {
+    Inst(Opcode::Epilogue);
+}
+
 U32 IREmitter::GetReg(IR::Reg reg) {
     return Inst<U32>(Opcode::GetRegister, reg);
 }

@@ -67,6 +67,18 @@ Id DefineInput(EmitContext& ctx, Id type, std::optional<spv::BuiltIn> builtin = 
 Id DefineOutput(EmitContext& ctx, Id type, std::optional<spv::BuiltIn> builtin = std::nullopt) {
     return DefineVariable(ctx, type, builtin, spv::StorageClass::Output);
 }
+
+Id GetAttributeType(EmitContext& ctx, AttributeType type) {
+    switch (type) {
+    case AttributeType::Float:
+        return ctx.F32[4];
+    case AttributeType::SignedInt:
+        return ctx.TypeVector(ctx.TypeInt(32, true), 4);
+    case AttributeType::UnsignedInt:
+        return ctx.U32[4];
+    }
+    throw InvalidArgument("Invalid attribute type {}", type);
+}
 } // Anonymous namespace
 
 void VectorTypes::Define(Sirit::Module& sirit_ctx, Id base_type, std::string_view name) {
@@ -82,11 +94,11 @@ void VectorTypes::Define(Sirit::Module& sirit_ctx, Id base_type, std::string_vie
 }
 
 EmitContext::EmitContext(const Profile& profile_, IR::Program& program, u32& binding)
-    : Sirit::Module(0x00010000), profile{profile_} {
+    : Sirit::Module(0x00010000), profile{profile_}, stage{program.stage} {
     AddCapability(spv::Capability::Shader);
     DefineCommonTypes(program.info);
     DefineCommonConstants();
-    DefineInterfaces(program.info, program.stage);
+    DefineInterfaces(program.info);
     DefineConstantBuffers(program.info, binding);
     DefineStorageBuffers(program.info, binding);
     DefineTextures(program.info, binding);
@@ -130,6 +142,9 @@ void EmitContext::DefineCommonTypes(const Info& info) {
     U32.Define(*this, TypeInt(32, false), "u32");
 
     input_f32 = Name(TypePointer(spv::StorageClass::Input, F32[1]), "input_f32");
+    input_u32 = Name(TypePointer(spv::StorageClass::Input, U32[1]), "input_u32");
+    input_s32 = Name(TypePointer(spv::StorageClass::Input, TypeInt(32, true)), "input_s32");
+
     output_f32 = Name(TypePointer(spv::StorageClass::Output, F32[1]), "output_f32");
 
     if (info.uses_int8) {
@@ -162,9 +177,9 @@ void EmitContext::DefineCommonConstants() {
     u32_zero_value = Constant(U32[1], 0U);
 }
 
-void EmitContext::DefineInterfaces(const Info& info, Stage stage) {
-    DefineInputs(info, stage);
-    DefineOutputs(info, stage);
+void EmitContext::DefineInterfaces(const Info& info) {
+    DefineInputs(info);
+    DefineOutputs(info);
 }
 
 void EmitContext::DefineConstantBuffers(const Info& info, u32& binding) {
@@ -252,7 +267,7 @@ void EmitContext::DefineLabels(IR::Program& program) {
     }
 }
 
-void EmitContext::DefineInputs(const Info& info, Stage stage) {
+void EmitContext::DefineInputs(const Info& info) {
     if (info.uses_workgroup_id) {
         workgroup_id = DefineInput(*this, U32[3], spv::BuiltIn::WorkgroupId);
     }
@@ -288,8 +303,8 @@ void EmitContext::DefineInputs(const Info& info, Stage stage) {
         if (!info.loads_generics[index]) {
             continue;
         }
-        // FIXME: Declare size from input
-        const Id id{DefineInput(*this, F32[4])};
+        const Id type{GetAttributeType(*this, profile.generic_input_types[index])};
+        const Id id{DefineInput(*this, type)};
         Decorate(id, spv::Decoration::Location, static_cast<u32>(index));
         Name(id, fmt::format("in_attr{}", index));
         input_generics[index] = id;
@@ -323,8 +338,8 @@ void EmitContext::DefineConstantBuffers(const Info& info, Id UniformDefinitions:
     }
 }
 
-void EmitContext::DefineOutputs(const Info& info, Stage stage) {
-    if (info.stores_position) {
+void EmitContext::DefineOutputs(const Info& info) {
+    if (info.stores_position || stage == Stage::VertexB) {
         output_position = DefineOutput(*this, F32[4], spv::BuiltIn::Position);
     }
     for (size_t i = 0; i < info.stores_generics.size(); ++i) {
