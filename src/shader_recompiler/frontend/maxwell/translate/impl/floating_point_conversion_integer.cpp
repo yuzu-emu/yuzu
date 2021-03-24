@@ -69,7 +69,8 @@ std::pair<f64, f64> ClampBounds(DestFormat format, bool is_signed) {
         case DestFormat::I64:
             return {static_cast<f64>(std::numeric_limits<s64>::max()),
                     static_cast<f64>(std::numeric_limits<s64>::min())};
-        default: {}
+        default:
+            break;
         }
     } else {
         switch (format) {
@@ -82,7 +83,8 @@ std::pair<f64, f64> ClampBounds(DestFormat format, bool is_signed) {
         case DestFormat::I64:
             return {static_cast<f64>(std::numeric_limits<u64>::max()),
                     static_cast<f64>(std::numeric_limits<u64>::min())};
-        default: {}
+        default:
+            break;
         }
     }
     throw NotImplementedException("Invalid destination format {}", format);
