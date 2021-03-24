@@ -1444,4 +1444,20 @@ F32 IREmitter::ImageSampleDrefExplicitLod(const Value& handle, const Value& coor
     return Inst<F32>(op, Flags{info}, handle, coords, dref, lod_lc, offset);
 }
 
+U1 IREmitter::VoteAll(const U1& value) {
+    return Inst<U1>(Opcode::VoteAll, value);
+}
+
+U1 IREmitter::VoteAny(const U1& value) {
+    return Inst<U1>(Opcode::VoteAny, value);
+}
+
+U1 IREmitter::VoteEqual(const U1& value) {
+    return Inst<U1>(Opcode::VoteEqual, value);
+}
+
+U32 IREmitter::SubgroupBallot(const U1& value) {
+    return Inst<U32>(Opcode::SubgroupBallot, value);
+}
+
 } // namespace Shader::IR

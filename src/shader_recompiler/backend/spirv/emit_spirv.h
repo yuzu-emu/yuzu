@@ -346,5 +346,9 @@ Id EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Va
                                   Id coords, Id dref, Id bias_lc, Id offset);
 Id EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
                                   Id coords, Id dref, Id lod_lc, Id offset);
+Id EmitVoteAll(EmitContext& ctx, Id pred);
+Id EmitVoteAny(EmitContext& ctx, Id pred);
+Id EmitVoteEqual(EmitContext& ctx, Id pred);
+Id EmitSubgroupBallot(EmitContext& ctx, Id pred);
 
 } // namespace Shader::Backend::SPIRV

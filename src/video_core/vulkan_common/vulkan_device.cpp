@@ -737,6 +737,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
             subgroup_properties.maxSubgroupSize >= GuestWarpSize) {
             extensions.push_back(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
             guest_warp_stages = subgroup_properties.requiredSubgroupSizeStages;
+            ext_subgroup_size_control = true;
         }
     } else {
         is_warp_potentially_bigger = true;

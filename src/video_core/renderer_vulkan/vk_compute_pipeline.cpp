@@ -36,13 +36,18 @@ ComputePipeline::ComputePipeline(const Device& device, VKDescriptorPool& descrip
     descriptor_update_template = std::move(tuple.descriptor_update_template);
     descriptor_allocator = DescriptorAllocator(descriptor_pool, *descriptor_set_layout);
 
+    const VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT subgroup_size_ci{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO_EXT,
+        .pNext = nullptr,
+        .requiredSubgroupSize = GuestWarpSize,
+    };
     pipeline = device.GetLogical().CreateComputePipeline({
         .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
         .stage{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .pNext = nullptr,
+            .pNext = device.IsExtSubgroupSizeControlSupported() ? &subgroup_size_ci : nullptr,
             .flags = 0,
             .stage = VK_SHADER_STAGE_COMPUTE_BIT,
             .module = *spv_module,

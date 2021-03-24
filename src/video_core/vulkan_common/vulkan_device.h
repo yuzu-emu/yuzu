@@ -193,6 +193,11 @@ public:
         return ext_shader_viewport_index_layer;
     }
 
+    /// Returns true if the device supports VK_EXT_subgroup_size_control.
+    bool IsExtSubgroupSizeControlSupported() const {
+        return ext_subgroup_size_control;
+    }
+
     /// Returns true if the device supports VK_EXT_transform_feedback.
     bool IsExtTransformFeedbackSupported() const {
         return ext_transform_feedback;
@@ -297,6 +302,7 @@ private:
     bool ext_depth_range_unrestricted{};        ///< Support for VK_EXT_depth_range_unrestricted.
     bool ext_shader_viewport_index_layer{};     ///< Support for VK_EXT_shader_viewport_index_layer.
     bool ext_tooling_info{};                    ///< Support for VK_EXT_tooling_info.
+    bool ext_subgroup_size_control{};           ///< Support for VK_EXT_subgroup_size_control.
     bool ext_transform_feedback{};              ///< Support for VK_EXT_transform_feedback.
     bool ext_custom_border_color{};             ///< Support for VK_EXT_custom_border_color.
     bool ext_extended_dynamic_state{};          ///< Support for VK_EXT_extended_dynamic_state.

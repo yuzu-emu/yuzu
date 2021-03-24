@@ -224,6 +224,15 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
         ctx.AddExtension("SPV_KHR_shader_draw_parameters");
         ctx.AddCapability(spv::Capability::DrawParameters);
     }
+    if (info.uses_subgroup_vote && profile.support_vote) {
+        ctx.AddExtension("SPV_KHR_shader_ballot");
+        ctx.AddCapability(spv::Capability::SubgroupBallotKHR);
+        if (!profile.warp_size_potentially_larger_than_guest) {
+            // vote ops are only used when not taking the long path
+            ctx.AddExtension("SPV_KHR_subgroup_vote");
+            ctx.AddCapability(spv::Capability::SubgroupVoteKHR);
+        }
+    }
     // TODO: Track this usage
     ctx.AddCapability(spv::Capability::ImageGatherExtended);
 }
