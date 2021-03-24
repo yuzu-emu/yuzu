@@ -18,7 +18,7 @@ public:
     }
 
     template <typename... Args>
-    requires std::is_constructible_v<T, Args...>[[nodiscard]] T* Create(Args&&... args) {
+    requires std::is_constructible_v<T, Args...> [[nodiscard]] T* Create(Args&&... args) {
         return std::construct_at(Memory(), std::forward<Args>(args)...);
     }
 
@@ -32,12 +32,12 @@ public:
             const size_t total_objects{root.num_objects + new_chunk_size * (chunks.size() - 1)};
             chunks.clear();
             chunks.emplace_back(total_objects);
-            chunks.shrink_to_fit();
         } else {
             root.Release();
             chunks.resize(1);
-            chunks.shrink_to_fit();
         }
+        chunks.shrink_to_fit();
+        node = &chunks.front();
     }
 
 private:
