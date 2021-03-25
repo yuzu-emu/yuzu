@@ -56,6 +56,7 @@ struct Info {
 
     bool uses_workgroup_id{};
     bool uses_local_invocation_id{};
+    bool uses_subgroup_invocation_id{};
 
     std::array<bool, 32> loads_generics{};
     bool loads_position{};

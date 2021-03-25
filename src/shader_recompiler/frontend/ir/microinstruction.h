@@ -134,6 +134,7 @@ static_assert(sizeof(Inst) <= 128, "Inst size unintentionally increased");
 
 struct AssociatedInsts {
     union {
+        Inst* in_bounds_inst;
         Inst* sparse_inst;
         Inst* zero_inst{};
     };

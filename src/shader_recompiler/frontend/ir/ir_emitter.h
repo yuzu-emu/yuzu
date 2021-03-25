@@ -104,6 +104,7 @@ public:
     [[nodiscard]] U1 GetCarryFromOp(const Value& op);
     [[nodiscard]] U1 GetOverflowFromOp(const Value& op);
     [[nodiscard]] U1 GetSparseFromOp(const Value& op);
+    [[nodiscard]] U1 GetInBoundsFromOp(const Value& op);
 
     [[nodiscard]] Value CompositeConstruct(const Value& e1, const Value& e2);
     [[nodiscard]] Value CompositeConstruct(const Value& e1, const Value& e2, const Value& e3);
@@ -147,7 +148,8 @@ public:
     [[nodiscard]] F32F64 FPRecipSqrt(const F32F64& value);
     [[nodiscard]] F32 FPSqrt(const F32& value);
     [[nodiscard]] F16F32F64 FPSaturate(const F16F32F64& value);
-    [[nodiscard]] F16F32F64 FPClamp(const F16F32F64& value, const F16F32F64& min_value, const F16F32F64& max_value);
+    [[nodiscard]] F16F32F64 FPClamp(const F16F32F64& value, const F16F32F64& min_value,
+                                    const F16F32F64& max_value);
     [[nodiscard]] F16F32F64 FPRoundEven(const F16F32F64& value, FpControl control = {});
     [[nodiscard]] F16F32F64 FPFloor(const F16F32F64& value, FpControl control = {});
     [[nodiscard]] F16F32F64 FPCeil(const F16F32F64& value, FpControl control = {});
@@ -242,6 +244,14 @@ public:
     [[nodiscard]] U1 VoteAny(const U1& value);
     [[nodiscard]] U1 VoteEqual(const U1& value);
     [[nodiscard]] U32 SubgroupBallot(const U1& value);
+    [[nodiscard]] U32 ShuffleIndex(const IR::U32& value, const IR::U32& index, const IR::U32& clamp,
+                                   const IR::U32& seg_mask);
+    [[nodiscard]] U32 ShuffleUp(const IR::U32& value, const IR::U32& index, const IR::U32& clamp,
+                                const IR::U32& seg_mask);
+    [[nodiscard]] U32 ShuffleDown(const IR::U32& value, const IR::U32& index, const IR::U32& clamp,
+                                  const IR::U32& seg_mask);
+    [[nodiscard]] U32 ShuffleButterfly(const IR::U32& value, const IR::U32& index,
+                                       const IR::U32& clamp, const IR::U32& seg_mask);
 
 private:
     IR::Block::iterator insertion_point;
