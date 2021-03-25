@@ -274,7 +274,8 @@ void EmitContext::DefineInputs(const Info& info) {
     if (info.uses_local_invocation_id) {
         local_invocation_id = DefineInput(*this, U32[3], spv::BuiltIn::LocalInvocationId);
     }
-    if (profile.warp_size_potentially_larger_than_guest && info.uses_subgroup_vote) {
+    if (info.uses_subgroup_invocation_id ||
+        (profile.warp_size_potentially_larger_than_guest && info.uses_subgroup_vote)) {
         subgroup_local_invocation_id =
             DefineInput(*this, U32[1], spv::BuiltIn::SubgroupLocalInvocationId);
     }

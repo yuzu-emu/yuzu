@@ -16,7 +16,7 @@ add_library(shader_recompiler STATIC
     backend/spirv/emit_spirv_select.cpp
     backend/spirv/emit_spirv_special.cpp
     backend/spirv/emit_spirv_undefined.cpp
-    backend/spirv/emit_spirv_vote.cpp
+    backend/spirv/emit_spirv_warp.cpp
     environment.h
     exception.h
     file_environment.cpp
@@ -125,6 +125,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/texture_fetch.cpp
     frontend/maxwell/translate/impl/texture_fetch_swizzled.cpp
     frontend/maxwell/translate/impl/vote.cpp
+    frontend/maxwell/translate/impl/warp_shuffle.cpp
     frontend/maxwell/translate/translate.cpp
     frontend/maxwell/translate/translate.h
     ir_opt/collect_shader_info_pass.cpp

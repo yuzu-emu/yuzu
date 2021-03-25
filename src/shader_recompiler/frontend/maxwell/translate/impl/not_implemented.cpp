@@ -301,10 +301,6 @@ void TranslatorVisitor::SETLMEMBASE(u64) {
     ThrowNotImplemented(Opcode::SETLMEMBASE);
 }
 
-void TranslatorVisitor::SHFL(u64) {
-    ThrowNotImplemented(Opcode::SHFL);
-}
-
 void TranslatorVisitor::SSY() {
     // SSY is a no-op
 }

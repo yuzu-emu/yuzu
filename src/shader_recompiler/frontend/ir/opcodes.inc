@@ -159,6 +159,7 @@ OPCODE(GetSignFromOp,                                       U1,             Opaq
 OPCODE(GetCarryFromOp,                                      U1,             Opaque,                                                                         )
 OPCODE(GetOverflowFromOp,                                   U1,             Opaque,                                                                         )
 OPCODE(GetSparseFromOp,                                     U1,             Opaque,                                                                         )
+OPCODE(GetInBoundsFromOp,                                   U1,             Opaque,                                                                         )
 
 // Floating-point operations
 OPCODE(FPAbs16,                                             F16,            F16,                                                                            )
@@ -363,8 +364,12 @@ OPCODE(ImageSampleExplicitLod,                              F32x4,          U32,
 OPCODE(ImageSampleDrefImplicitLod,                          F32,            U32,            Opaque,         F32,            Opaque,         Opaque,         )
 OPCODE(ImageSampleDrefExplicitLod,                          F32,            U32,            Opaque,         F32,            Opaque,         Opaque,         )
 
-// Vote operations
+// Warp operations
 OPCODE(VoteAll,                                             U1,             U1,                                                                             )
 OPCODE(VoteAny,                                             U1,             U1,                                                                             )
 OPCODE(VoteEqual,                                           U1,             U1,                                                                             )
 OPCODE(SubgroupBallot,                                      U32,            U1,                                                                             )
+OPCODE(ShuffleIndex,                                        U32,            U32,            U32,            U32,            U32,                            )
+OPCODE(ShuffleUp,                                           U32,            U32,            U32,            U32,            U32,                            )
+OPCODE(ShuffleDown,                                         U32,            U32,            U32,            U32,            U32,                            )
+OPCODE(ShuffleButterfly,                                    U32,            U32,            U32,            U32,            U32,                            )

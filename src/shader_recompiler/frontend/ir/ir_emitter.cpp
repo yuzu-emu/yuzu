@@ -374,6 +374,10 @@ U1 IREmitter::GetSparseFromOp(const Value& op) {
     return Inst<U1>(Opcode::GetSparseFromOp, op);
 }
 
+U1 IREmitter::GetInBoundsFromOp(const Value& op) {
+    return Inst<U1>(Opcode::GetInBoundsFromOp, op);
+}
+
 F16F32F64 IREmitter::FPAdd(const F16F32F64& a, const F16F32F64& b, FpControl control) {
     if (a.Type() != b.Type()) {
         throw InvalidArgument("Mismatching types {} and {}", a.Type(), b.Type());
@@ -1486,4 +1490,23 @@ U32 IREmitter::SubgroupBallot(const U1& value) {
     return Inst<U32>(Opcode::SubgroupBallot, value);
 }
 
+U32 IREmitter::ShuffleIndex(const IR::U32& value, const IR::U32& index, const IR::U32& clamp,
+                            const IR::U32& seg_mask) {
+    return Inst<U32>(Opcode::ShuffleIndex, value, index, clamp, seg_mask);
+}
+
+U32 IREmitter::ShuffleUp(const IR::U32& value, const IR::U32& index, const IR::U32& clamp,
+                         const IR::U32& seg_mask) {
+    return Inst<U32>(Opcode::ShuffleUp, value, index, clamp, seg_mask);
+}
+
+U32 IREmitter::ShuffleDown(const IR::U32& value, const IR::U32& index, const IR::U32& clamp,
+                           const IR::U32& seg_mask) {
+    return Inst<U32>(Opcode::ShuffleDown, value, index, clamp, seg_mask);
+}
+
+U32 IREmitter::ShuffleButterfly(const IR::U32& value, const IR::U32& index, const IR::U32& clamp,
+                                const IR::U32& seg_mask) {
+    return Inst<U32>(Opcode::ShuffleButterfly, value, index, clamp, seg_mask);
+}
 } // namespace Shader::IR

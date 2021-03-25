@@ -158,6 +158,7 @@ void EmitGetSignFromOp(EmitContext& ctx);
 void EmitGetCarryFromOp(EmitContext& ctx);
 void EmitGetOverflowFromOp(EmitContext& ctx);
 void EmitGetSparseFromOp(EmitContext& ctx);
+void EmitGetInBoundsFromOp(EmitContext& ctx);
 Id EmitFPAbs16(EmitContext& ctx, Id value);
 Id EmitFPAbs32(EmitContext& ctx, Id value);
 Id EmitFPAbs64(EmitContext& ctx, Id value);
@@ -355,5 +356,13 @@ Id EmitVoteAll(EmitContext& ctx, Id pred);
 Id EmitVoteAny(EmitContext& ctx, Id pred);
 Id EmitVoteEqual(EmitContext& ctx, Id pred);
 Id EmitSubgroupBallot(EmitContext& ctx, Id pred);
+Id EmitShuffleIndex(EmitContext& ctx, IR::Inst* inst, Id value, Id index, Id clamp,
+                    Id segmentation_mask);
+Id EmitShuffleUp(EmitContext& ctx, IR::Inst* inst, Id value, Id index, Id clamp,
+                 Id segmentation_mask);
+Id EmitShuffleDown(EmitContext& ctx, IR::Inst* inst, Id value, Id index, Id clamp,
+                   Id segmentation_mask);
+Id EmitShuffleButterfly(EmitContext& ctx, IR::Inst* inst, Id value, Id index, Id clamp,
+                        Id segmentation_mask);
 
 } // namespace Shader::Backend::SPIRV

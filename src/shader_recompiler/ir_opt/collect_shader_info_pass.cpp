@@ -307,6 +307,12 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::LocalInvocationId:
         info.uses_local_invocation_id = true;
         break;
+    case IR::Opcode::ShuffleIndex:
+    case IR::Opcode::ShuffleUp:
+    case IR::Opcode::ShuffleDown:
+    case IR::Opcode::ShuffleButterfly:
+        info.uses_subgroup_invocation_id = true;
+        break;
     case IR::Opcode::GetCbufU8:
     case IR::Opcode::GetCbufS8:
     case IR::Opcode::GetCbufU16:

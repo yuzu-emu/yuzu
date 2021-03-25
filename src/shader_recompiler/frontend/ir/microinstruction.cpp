@@ -89,6 +89,7 @@ bool Inst::IsPseudoInstruction() const noexcept {
     case Opcode::GetCarryFromOp:
     case Opcode::GetOverflowFromOp:
     case Opcode::GetSparseFromOp:
+    case Opcode::GetInBoundsFromOp:
         return true;
     default:
         return false;
@@ -123,6 +124,9 @@ Inst* Inst::GetAssociatedPseudoOperation(IR::Opcode opcode) {
     case Opcode::GetSparseFromOp:
         CheckPseudoInstruction(associated_insts->sparse_inst, Opcode::GetSparseFromOp);
         return associated_insts->sparse_inst;
+    case Opcode::GetInBoundsFromOp:
+        CheckPseudoInstruction(associated_insts->in_bounds_inst, Opcode::GetInBoundsFromOp);
+        return associated_insts->in_bounds_inst;
     default:
         throw InvalidArgument("{} is not a pseudo-instruction", opcode);
     }
@@ -262,6 +266,10 @@ void Inst::Use(const Value& value) {
         AllocAssociatedInsts(assoc_inst);
         SetPseudoInstruction(assoc_inst->sparse_inst, this);
         break;
+    case Opcode::GetInBoundsFromOp:
+        AllocAssociatedInsts(assoc_inst);
+        SetPseudoInstruction(assoc_inst->in_bounds_inst, this);
+        break;
     default:
         break;
     }
@@ -288,6 +296,10 @@ void Inst::UndoUse(const Value& value) {
     case Opcode::GetOverflowFromOp:
         AllocAssociatedInsts(assoc_inst);
         RemovePseudoInstruction(assoc_inst->overflow_inst, Opcode::GetOverflowFromOp);
+        break;
+    case Opcode::GetInBoundsFromOp:
+        AllocAssociatedInsts(assoc_inst);
+        RemovePseudoInstruction(assoc_inst->in_bounds_inst, Opcode::GetInBoundsFromOp);
         break;
     default:
         break;

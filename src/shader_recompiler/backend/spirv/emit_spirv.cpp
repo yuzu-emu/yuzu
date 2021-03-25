@@ -224,7 +224,7 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
         ctx.AddExtension("SPV_KHR_shader_draw_parameters");
         ctx.AddCapability(spv::Capability::DrawParameters);
     }
-    if (info.uses_subgroup_vote && profile.support_vote) {
+    if ((info.uses_subgroup_vote || info.uses_subgroup_invocation_id) && profile.support_vote) {
         ctx.AddExtension("SPV_KHR_shader_ballot");
         ctx.AddCapability(spv::Capability::SubgroupBallotKHR);
         if (!profile.warp_size_potentially_larger_than_guest) {
@@ -312,6 +312,10 @@ void EmitGetOverflowFromOp(EmitContext&) {
 }
 
 void EmitGetSparseFromOp(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitGetInBoundsFromOp(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
 
