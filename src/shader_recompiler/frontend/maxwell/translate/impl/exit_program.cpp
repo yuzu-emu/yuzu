@@ -25,7 +25,7 @@ void ExitFragment(TranslatorVisitor& v) {
         throw NotImplementedException("Sample mask");
     }
     if (sph.ps.omap.depth != 0) {
-        throw NotImplementedException("Fragment depth");
+        v.ir.SetFragDepth(v.F(src_reg + 1));
     }
 }
 } // Anonymous namespace

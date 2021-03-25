@@ -359,6 +359,12 @@ void EmitContext::DefineOutputs(const Info& info) {
             Decorate(frag_color[i], spv::Decoration::Location, static_cast<u32>(i));
             Name(frag_color[i], fmt::format("frag_color{}", i));
         }
+        if (!info.stores_frag_depth) {
+            return;
+        }
+        frag_depth = DefineOutput(*this, F32[1]);
+        Decorate(frag_depth, spv::Decoration::BuiltIn, static_cast<u32>(spv::BuiltIn::FragDepth));
+        Name(frag_depth, "frag_depth");
     }
 }
 
