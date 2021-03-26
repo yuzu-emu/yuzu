@@ -91,7 +91,15 @@ private:
 Id Texture(EmitContext& ctx, const IR::Value& index) {
     if (index.IsImmediate()) {
         const TextureDefinition def{ctx.textures.at(index.U32())};
-        return ctx.OpLoad(def.type, def.id);
+        return ctx.OpLoad(def.sampled_type, def.id);
+    }
+    throw NotImplementedException("Indirect texture sample");
+}
+
+Id TextureImage(EmitContext& ctx, const IR::Value& index) {
+    if (index.IsImmediate()) {
+        const TextureDefinition def{ctx.textures.at(index.U32())};
+        return ctx.OpImage(def.image_type, ctx.OpLoad(def.sampled_type, def.id));
     }
     throw NotImplementedException("Indirect texture sample");
 }
@@ -149,6 +157,10 @@ Id EmitBindlessImageFetch(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
 
+Id EmitBindlessImageQueryDimensions(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
 Id EmitBoundImageSampleImplicitLod(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
@@ -174,6 +186,10 @@ Id EmitBoundImageGatherDref(EmitContext&) {
 }
 
 Id EmitBoundImageFetch(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+Id EmitBoundImageQueryDimensions(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
 
@@ -239,6 +255,36 @@ Id EmitImageFetch(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id c
     const ImageOperands operands(offset, lod, ms);
     return Emit(&EmitContext::OpImageSparseFetch, &EmitContext::OpImageFetch, ctx, inst, ctx.F32[4],
                 Texture(ctx, index), coords, operands.Mask(), operands.Span());
+}
+
+Id EmitImageQueryDimensions(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id lod) {
+    const auto info{inst->Flags<IR::TextureInstInfo>()};
+    const Id image{TextureImage(ctx, index)};
+    const Id zero{ctx.u32_zero_value};
+    const auto mips{[&] { return ctx.OpImageQueryLevels(ctx.U32[1], image); }};
+    switch (info.type) {
+    case TextureType::Color1D:
+    case TextureType::Shadow1D:
+        return ctx.OpCompositeConstruct(ctx.U32[4], ctx.OpImageQuerySizeLod(ctx.U32[1], image, lod),
+                                        zero, zero, mips());
+    case TextureType::ColorArray1D:
+    case TextureType::Color2D:
+    case TextureType::ColorCube:
+    case TextureType::ShadowArray1D:
+    case TextureType::Shadow2D:
+    case TextureType::ShadowCube:
+        return ctx.OpCompositeConstruct(ctx.U32[4], ctx.OpImageQuerySizeLod(ctx.U32[2], image, lod),
+                                        zero, mips());
+    case TextureType::ColorArray2D:
+    case TextureType::Color3D:
+    case TextureType::ColorArrayCube:
+    case TextureType::ShadowArray2D:
+    case TextureType::Shadow3D:
+    case TextureType::ShadowArrayCube:
+        return ctx.OpCompositeConstruct(ctx.U32[4], ctx.OpImageQuerySizeLod(ctx.U32[3], image, lod),
+                                        mips());
+    }
+    throw LogicError("Unspecified image type {}", info.type.Value());
 }
 
 } // namespace Shader::Backend::SPIRV

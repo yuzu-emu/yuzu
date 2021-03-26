@@ -1493,6 +1493,12 @@ Value IREmitter::ImageFetch(const Value& handle, const Value& coords, const Valu
     return Inst(op, Flags{info}, handle, coords, offset, lod, multisampling);
 }
 
+Value IREmitter::ImageQueryDimension(const Value& handle, const IR::U32& lod) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageQueryDimensions
+                                         : Opcode::BindlessImageQueryDimensions};
+    return Inst(op, handle, lod);
+}
+
 U1 IREmitter::VoteAll(const U1& value) {
     return Inst<U1>(Opcode::VoteAll, value);
 }

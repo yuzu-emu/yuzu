@@ -54,6 +54,9 @@ IR::Opcode IndexedInstruction(const IR::Inst& inst) {
     case IR::Opcode::BindlessImageFetch:
     case IR::Opcode::BoundImageFetch:
         return IR::Opcode::ImageFetch;
+    case IR::Opcode::BoundImageQueryDimensions:
+    case IR::Opcode::BindlessImageQueryDimensions:
+        return IR::Opcode::ImageQueryDimensions;
     default:
         return IR::Opcode::Void;
     }
@@ -68,6 +71,7 @@ bool IsBindless(const IR::Inst& inst) {
     case IR::Opcode::BindlessImageGather:
     case IR::Opcode::BindlessImageGatherDref:
     case IR::Opcode::BindlessImageFetch:
+    case IR::Opcode::BindlessImageQueryDimensions:
         return true;
     case IR::Opcode::BoundImageSampleImplicitLod:
     case IR::Opcode::BoundImageSampleExplicitLod:
@@ -76,6 +80,7 @@ bool IsBindless(const IR::Inst& inst) {
     case IR::Opcode::BoundImageGather:
     case IR::Opcode::BoundImageGatherDref:
     case IR::Opcode::BoundImageFetch:
+    case IR::Opcode::BoundImageQueryDimensions:
         return false;
     default:
         throw InvalidArgument("Invalid opcode {}", inst.Opcode());
@@ -198,13 +203,20 @@ void TexturePass(Environment& env, IR::Program& program) {
     for (TextureInst& texture_inst : to_replace) {
         // TODO: Handle arrays
         IR::Inst* const inst{texture_inst.inst};
+        inst->ReplaceOpcode(IndexedInstruction(*inst));
+
+        const auto& cbuf{texture_inst.cbuf};
+        auto flags{inst->Flags<IR::TextureInstInfo>()};
+        if (inst->Opcode() == IR::Opcode::ImageQueryDimensions) {
+            flags.type.Assign(env.ReadTextureType(cbuf.index, cbuf.offset));
+            inst->SetFlags(flags);
+        }
         const u32 index{descriptors.Add(TextureDescriptor{
-            .type{inst->Flags<IR::TextureInstInfo>().type},
-            .cbuf_index{texture_inst.cbuf.index},
-            .cbuf_offset{texture_inst.cbuf.offset},
+            .type{flags.type},
+            .cbuf_index{cbuf.index},
+            .cbuf_offset{cbuf.offset},
             .count{1},
         })};
-        inst->ReplaceOpcode(IndexedInstruction(*inst));
         inst->SetArg(0, IR::Value{index});
     }
 }

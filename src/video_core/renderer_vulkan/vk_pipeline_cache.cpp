@@ -25,6 +25,7 @@
 #include "video_core/memory_manager.h"
 #include "video_core/renderer_vulkan/fixed_pipeline_state.h"
 #include "video_core/renderer_vulkan/maxwell_to_vk.h"
+#include "video_core/renderer_vulkan/pipeline_helper.h"
 #include "video_core/renderer_vulkan/vk_compute_pipeline.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
 #include "video_core/renderer_vulkan/vk_pipeline_cache.h"
@@ -43,6 +44,10 @@ MICROPROFILE_DECLARE(Vulkan_PipelineCache);
 template <typename Container>
 auto MakeSpan(Container& container) {
     return std::span(container.data(), container.size());
+}
+
+u64 MakeCbufKey(u32 index, u32 offset) {
+    return (static_cast<u64>(index) << 32) | static_cast<u64>(offset);
 }
 
 class GenericEnvironment : public Shader::Environment {
@@ -101,15 +106,21 @@ public:
         const auto data{std::make_unique<char[]>(code_size)};
         gpu_memory->ReadBlock(program_base + read_lowest, data.get(), code_size);
 
+        const u64 num_texture_types{static_cast<u64>(texture_types.size())};
         const u32 texture_bound{TextureBoundBuffer()};
 
         file.write(reinterpret_cast<const char*>(&code_size), sizeof(code_size))
+            .write(reinterpret_cast<const char*>(&num_texture_types), sizeof(num_texture_types))
             .write(reinterpret_cast<const char*>(&texture_bound), sizeof(texture_bound))
             .write(reinterpret_cast<const char*>(&start_address), sizeof(start_address))
             .write(reinterpret_cast<const char*>(&read_lowest), sizeof(read_lowest))
             .write(reinterpret_cast<const char*>(&read_highest), sizeof(read_highest))
             .write(reinterpret_cast<const char*>(&stage), sizeof(stage))
             .write(data.get(), code_size);
+        for (const auto [key, type] : texture_types) {
+            file.write(reinterpret_cast<const char*>(&key), sizeof(key))
+                .write(reinterpret_cast<const char*>(&type), sizeof(type));
+        }
         if (stage == Shader::Stage::Compute) {
             const std::array<u32, 3> workgroup_size{WorkgroupSize()};
             file.write(reinterpret_cast<const char*>(&workgroup_size), sizeof(workgroup_size));
@@ -147,10 +158,47 @@ protected:
         return std::nullopt;
     }
 
+    Shader::TextureType ReadTextureTypeImpl(GPUVAddr tic_addr, u32 tic_limit, bool via_header_index,
+                                            GPUVAddr cbuf_addr, u32 cbuf_size, u32 cbuf_index,
+                                            u32 cbuf_offset) {
+        const u32 raw{cbuf_offset < cbuf_size ? gpu_memory->Read<u32>(cbuf_addr + cbuf_offset) : 0};
+        const TextureHandle handle{raw, via_header_index};
+        const GPUVAddr descriptor_addr{tic_addr + handle.image * sizeof(Tegra::Texture::TICEntry)};
+        Tegra::Texture::TICEntry entry;
+        gpu_memory->ReadBlock(descriptor_addr, &entry, sizeof(entry));
+
+        const Shader::TextureType result{[&] {
+            switch (entry.texture_type) {
+            case Tegra::Texture::TextureType::Texture1D:
+                return Shader::TextureType::Color1D;
+            case Tegra::Texture::TextureType::Texture2D:
+            case Tegra::Texture::TextureType::Texture2DNoMipmap:
+                return Shader::TextureType::Color2D;
+            case Tegra::Texture::TextureType::Texture3D:
+                return Shader::TextureType::Color3D;
+            case Tegra::Texture::TextureType::TextureCubemap:
+                return Shader::TextureType::ColorCube;
+            case Tegra::Texture::TextureType::Texture1DArray:
+                return Shader::TextureType::ColorArray1D;
+            case Tegra::Texture::TextureType::Texture2DArray:
+                return Shader::TextureType::ColorArray2D;
+            case Tegra::Texture::TextureType::Texture1DBuffer:
+                throw Shader::NotImplementedException("Texture buffer");
+            case Tegra::Texture::TextureType::TextureCubeArray:
+                return Shader::TextureType::ColorArrayCube;
+            default:
+                throw Shader::NotImplementedException("Unknown texture type");
+            }
+        }()};
+        texture_types.emplace(MakeCbufKey(cbuf_index, cbuf_offset), result);
+        return result;
+    }
+
     Tegra::MemoryManager* gpu_memory{};
     GPUVAddr program_base{};
 
     std::vector<u64> code;
+    std::unordered_map<u64, Shader::TextureType> texture_types;
 
     u32 read_lowest = std::numeric_limits<u32>::max();
     u32 read_highest = 0;
@@ -176,28 +224,44 @@ public:
         switch (program) {
         case Maxwell::ShaderProgram::VertexA:
             stage = Shader::Stage::VertexA;
+            stage_index = 0;
             break;
         case Maxwell::ShaderProgram::VertexB:
             stage = Shader::Stage::VertexB;
+            stage_index = 0;
             break;
         case Maxwell::ShaderProgram::TesselationControl:
             stage = Shader::Stage::TessellationControl;
+            stage_index = 1;
             break;
         case Maxwell::ShaderProgram::TesselationEval:
             stage = Shader::Stage::TessellationEval;
+            stage_index = 2;
             break;
         case Maxwell::ShaderProgram::Geometry:
             stage = Shader::Stage::Geometry;
+            stage_index = 3;
             break;
         case Maxwell::ShaderProgram::Fragment:
             stage = Shader::Stage::Fragment;
+            stage_index = 4;
             break;
         default:
             UNREACHABLE_MSG("Invalid program={}", program);
+            break;
         }
     }
 
     ~GraphicsEnvironment() override = default;
+
+    Shader::TextureType ReadTextureType(u32 cbuf_index, u32 cbuf_offset) override {
+        const auto& regs{maxwell3d->regs};
+        const auto& cbuf{maxwell3d->state.shader_stages[stage_index].const_buffers[cbuf_index]};
+        ASSERT(cbuf.enabled);
+        const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};
+        return ReadTextureTypeImpl(regs.tic.Address(), regs.tic.limit, via_header_index,
+                                   cbuf.address, cbuf.size, cbuf_index, cbuf_offset);
+    }
 
     u32 TextureBoundBuffer() const override {
         return maxwell3d->regs.tex_cb_index;
@@ -209,6 +273,7 @@ public:
 
 private:
     Tegra::Engines::Maxwell3D* maxwell3d{};
+    size_t stage_index{};
 };
 
 class ComputeEnvironment final : public GenericEnvironment {
@@ -223,6 +288,15 @@ public:
     }
 
     ~ComputeEnvironment() override = default;
+
+    Shader::TextureType ReadTextureType(u32 cbuf_index, u32 cbuf_offset) override {
+        const auto& regs{kepler_compute->regs};
+        const auto& qmd{kepler_compute->launch_description};
+        ASSERT(((qmd.const_buffer_enable_mask.Value() >> cbuf_index) & 1) != 0);
+        const auto& cbuf{qmd.const_buffer_config[cbuf_index]};
+        return ReadTextureTypeImpl(regs.tic.Address(), regs.tic.limit, qmd.linked_tsc != 0,
+                                   cbuf.Address(), cbuf.size, cbuf_index, cbuf_offset);
+    }
 
     u32 TextureBoundBuffer() const override {
         return kepler_compute->regs.tex_cb_index;
@@ -278,7 +352,9 @@ class FileEnvironment final : public Shader::Environment {
 public:
     void Deserialize(std::ifstream& file) {
         u64 code_size{};
+        u64 num_texture_types{};
         file.read(reinterpret_cast<char*>(&code_size), sizeof(code_size))
+            .read(reinterpret_cast<char*>(&num_texture_types), sizeof(num_texture_types))
             .read(reinterpret_cast<char*>(&texture_bound), sizeof(texture_bound))
             .read(reinterpret_cast<char*>(&start_address), sizeof(start_address))
             .read(reinterpret_cast<char*>(&read_lowest), sizeof(read_lowest))
@@ -286,6 +362,13 @@ public:
             .read(reinterpret_cast<char*>(&stage), sizeof(stage));
         code = std::make_unique<u64[]>(Common::DivCeil(code_size, sizeof(u64)));
         file.read(reinterpret_cast<char*>(code.get()), code_size);
+        for (size_t i = 0; i < num_texture_types; ++i) {
+            u64 key;
+            Shader::TextureType type;
+            file.read(reinterpret_cast<char*>(&key), sizeof(key))
+                .read(reinterpret_cast<char*>(&type), sizeof(type));
+            texture_types.emplace(key, type);
+        }
         if (stage == Shader::Stage::Compute) {
             file.read(reinterpret_cast<char*>(&workgroup_size), sizeof(workgroup_size));
         } else {
@@ -300,6 +383,14 @@ public:
         return code[(address - read_lowest) / sizeof(u64)];
     }
 
+    Shader::TextureType ReadTextureType(u32 cbuf_index, u32 cbuf_offset) override {
+        const auto it{texture_types.find(MakeCbufKey(cbuf_index, cbuf_offset))};
+        if (it == texture_types.end()) {
+            throw Shader::LogicError("Uncached read texture type");
+        }
+        return it->second;
+    }
+
     u32 TextureBoundBuffer() const override {
         return texture_bound;
     }
@@ -310,6 +401,7 @@ public:
 
 private:
     std::unique_ptr<u64[]> code;
+    std::unordered_map<u64, Shader::TextureType> texture_types;
     std::array<u32, 3> workgroup_size{};
     u32 texture_bound{};
     u32 read_lowest{};

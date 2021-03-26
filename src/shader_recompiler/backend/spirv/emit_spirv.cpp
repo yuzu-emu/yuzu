@@ -126,10 +126,10 @@ Id DefineMain(EmitContext& ctx, IR::Program& program) {
     return main;
 }
 
-void DefineEntryPoint(Environment& env, EmitContext& ctx, Id main) {
+void DefineEntryPoint(Environment& env, const IR::Program& program, EmitContext& ctx, Id main) {
     const std::span interfaces(ctx.interfaces.data(), ctx.interfaces.size());
     spv::ExecutionModel execution_model{};
-    switch (env.ShaderStage()) {
+    switch (program.stage) {
     case Shader::Stage::Compute: {
         const std::array<u32, 3> workgroup_size{env.WorkgroupSize()};
         execution_model = spv::ExecutionModel::GLCompute;
@@ -143,6 +143,9 @@ void DefineEntryPoint(Environment& env, EmitContext& ctx, Id main) {
     case Shader::Stage::Fragment:
         execution_model = spv::ExecutionModel::Fragment;
         ctx.AddExecutionMode(main, spv::ExecutionMode::OriginUpperLeft);
+        if (program.info.stores_frag_depth) {
+            ctx.AddExecutionMode(main, spv::ExecutionMode::DepthReplacing);
+        }
         break;
     default:
         throw NotImplementedException("Stage {}", env.ShaderStage());
@@ -235,6 +238,7 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
     }
     // TODO: Track this usage
     ctx.AddCapability(spv::Capability::ImageGatherExtended);
+    ctx.AddCapability(spv::Capability::ImageQuery);
 }
 
 Id PhiArgDef(EmitContext& ctx, IR::Inst* inst, size_t index) {
@@ -267,7 +271,7 @@ std::vector<u32> EmitSPIRV(const Profile& profile, Environment& env, IR::Program
                            u32& binding) {
     EmitContext ctx{profile, program, binding};
     const Id main{DefineMain(ctx, program)};
-    DefineEntryPoint(env, ctx, main);
+    DefineEntryPoint(env, program, ctx, main);
     if (profile.support_float_controls) {
         ctx.AddExtension("SPV_KHR_float_controls");
         SetupDenormControl(profile, program, ctx, main);

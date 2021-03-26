@@ -244,8 +244,9 @@ void EmitContext::DefineTextures(const Info& info, u32& binding) {
         if (desc.count != 1) {
             throw NotImplementedException("Array of textures");
         }
-        const Id type{TypeSampledImage(ImageType(*this, desc))};
-        const Id pointer_type{TypePointer(spv::StorageClass::UniformConstant, type)};
+        const Id image_type{ImageType(*this, desc)};
+        const Id sampled_type{TypeSampledImage(image_type)};
+        const Id pointer_type{TypePointer(spv::StorageClass::UniformConstant, sampled_type)};
         const Id id{AddGlobalVariable(pointer_type, spv::StorageClass::UniformConstant)};
         Decorate(id, spv::Decoration::Binding, binding);
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
@@ -254,7 +255,8 @@ void EmitContext::DefineTextures(const Info& info, u32& binding) {
             // TODO: Pass count info
             textures.push_back(TextureDefinition{
                 .id{id},
-                .type{type},
+                .sampled_type{sampled_type},
+                .image_type{image_type},
             });
         }
         binding += desc.count;
