@@ -30,9 +30,12 @@ public:
         }
     }
 
-    explicit ImageOperands([[maybe_unused]] EmitContext& ctx, Id offset) {
+    explicit ImageOperands([[maybe_unused]] EmitContext& ctx, Id offset, Id offset2) {
         if (Sirit::ValidId(offset)) {
             Add(spv::ImageOperandsMask::Offset, offset);
+        }
+        if (Sirit::ValidId(offset2)) {
+            Add(spv::ImageOperandsMask::ConstOffsets, offset2);
         }
     }
 
@@ -177,7 +180,7 @@ Id EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Va
 Id EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords, Id offset,
                    [[maybe_unused]] Id offset2) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
-    const ImageOperands operands(ctx, offset);
+    const ImageOperands operands(ctx, offset, offset2);
     return Emit(&EmitContext::OpImageSparseGather, &EmitContext::OpImageGather, ctx, inst,
                 ctx.F32[4], Texture(ctx, index), coords,
                 ctx.Constant(ctx.U32[1], info.gather_component.Value()), operands.Mask(),
@@ -187,7 +190,7 @@ Id EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id 
 Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
                        Id offset, [[maybe_unused]] Id offset2, Id dref) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
-    const ImageOperands operands(ctx, offset);
+    const ImageOperands operands(ctx, offset, offset2);
     return Emit(&EmitContext::OpImageSparseDrefGather, &EmitContext::OpImageDrefGather, ctx, inst,
                 ctx.F32[4], Texture(ctx, index), coords, dref, operands.Mask(), operands.Span());
 }

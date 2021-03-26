@@ -169,6 +169,7 @@ void EmitContext::DefineCommonTypes(const Info& info) {
         AddCapability(spv::Capability::Float64);
         F64.Define(*this, TypeFloat(64), "f64");
     }
+    array_U32x2 = Name(TypeArray(U32[2], Constant(U32[1], 4U)), "array-u32x2");
 }
 
 void EmitContext::DefineCommonConstants() {

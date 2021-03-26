@@ -32,6 +32,11 @@ struct FpControl {
 };
 static_assert(sizeof(FpControl) <= sizeof(u32));
 
+struct CompositeDecoration {
+    bool is_constant{false};
+};
+static_assert(sizeof(CompositeDecoration) <= sizeof(u32));
+
 union TextureInstInfo {
     u32 raw;
     BitField<0, 8, TextureType> type;

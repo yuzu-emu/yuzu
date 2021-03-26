@@ -99,6 +99,12 @@ public:
         return ret;
     }
 
+    template <typename FlagsType>
+    requires(sizeof(FlagsType) <= sizeof(u32) && std::is_trivially_copyable_v<FlagsType>)
+        [[nodiscard]] void SetFlags(FlagsType& new_val) noexcept {
+        std::memcpy(&flags, &new_val, sizeof(new_val));
+    }
+
     /// Intrusively store the host definition of this instruction.
     template <typename DefinitionType>
     void SetDefinition(DefinitionType def) {

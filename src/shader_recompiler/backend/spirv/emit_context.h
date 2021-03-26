@@ -65,6 +65,7 @@ public:
     VectorTypes U32;
     VectorTypes F16;
     VectorTypes F64;
+    Id array_U32x2;
 
     Id true_value{};
     Id false_value{};

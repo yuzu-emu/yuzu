@@ -398,15 +398,16 @@ Value IREmitter::CompositeConstruct(const Value& e1, const Value& e2) {
     if (e1.Type() != e2.Type()) {
         throw InvalidArgument("Mismatching types {} and {}", e1.Type(), e2.Type());
     }
+    CompositeDecoration decor{};
     switch (e1.Type()) {
     case Type::U32:
-        return Inst(Opcode::CompositeConstructU32x2, e1, e2);
+        return Inst(Opcode::CompositeConstructU32x2, Flags{decor}, e1, e2);
     case Type::F16:
-        return Inst(Opcode::CompositeConstructF16x2, e1, e2);
+        return Inst(Opcode::CompositeConstructF16x2, Flags{decor}, e1, e2);
     case Type::F32:
-        return Inst(Opcode::CompositeConstructF32x2, e1, e2);
+        return Inst(Opcode::CompositeConstructF32x2, Flags{decor}, e1, e2);
     case Type::F64:
-        return Inst(Opcode::CompositeConstructF64x2, e1, e2);
+        return Inst(Opcode::CompositeConstructF64x2, Flags{decor}, e1, e2);
     default:
         ThrowInvalidType(e1.Type());
     }
@@ -436,6 +437,7 @@ Value IREmitter::CompositeConstruct(const Value& e1, const Value& e2, const Valu
         throw InvalidArgument("Mismatching types {}, {}, {}, and {}", e1.Type(), e2.Type(),
                               e3.Type(), e4.Type());
     }
+    CompositeDecoration decor{};
     switch (e1.Type()) {
     case Type::U32:
         return Inst(Opcode::CompositeConstructU32x4, e1, e2, e3, e4);
@@ -445,6 +447,8 @@ Value IREmitter::CompositeConstruct(const Value& e1, const Value& e2, const Valu
         return Inst(Opcode::CompositeConstructF32x4, e1, e2, e3, e4);
     case Type::F64:
         return Inst(Opcode::CompositeConstructF64x4, e1, e2, e3, e4);
+    case Type::U32x2:
+        return Inst(Opcode::CompositeConstructArrayU32x2, Flags{decor}, e1, e2, e3, e4);
     default:
         ThrowInvalidType(e1.Type());
     }
@@ -1481,7 +1485,7 @@ Value IREmitter::ImageGather(const Value& handle, const Value& coords, const Val
 }
 
 Value IREmitter::ImageGatherDref(const Value& handle, const Value& coords, const Value& offset,
-                    const Value& offset2, const F32& dref, TextureInstInfo info) {
+                                 const Value& offset2, const F32& dref, TextureInstInfo info) {
     const Opcode op{handle.IsImmediate() ? Opcode::BoundImageGatherDref
                                          : Opcode::BindlessImageGatherDref};
     return Inst(op, Flags{info}, handle, coords, offset, offset2, dref);

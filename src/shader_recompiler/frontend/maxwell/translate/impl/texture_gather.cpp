@@ -106,17 +106,17 @@ IR::Value MakeOffset(TranslatorVisitor& v, IR::Reg& reg, TextureType type) {
     throw NotImplementedException("Invalid texture type {}", type);
 }
 
-std::pair<IR::Value, IR::Value> MakeOffsetPTP(TranslatorVisitor& v, IR::Reg& reg) {
+IR::Value MakeOffsetPTP(TranslatorVisitor& v, IR::Reg& reg) {
     const IR::U32 value1{v.X(reg++)};
     const IR::U32 value2{v.X(reg++)};
-    const auto getVector = ([&v](const IR::U32& value) {
+    const IR::U32 bitsize = v.ir.Imm32(6);
+    const auto getVector = ([&v, &bitsize](const IR::U32& value, u32 base) {
         return v.ir.CompositeConstruct(
-            v.ir.BitFieldExtract(value, v.ir.Imm32(0), v.ir.Imm32(6), true),
-            v.ir.BitFieldExtract(value, v.ir.Imm32(8), v.ir.Imm32(6), true),
-            v.ir.BitFieldExtract(value, v.ir.Imm32(16), v.ir.Imm32(6), true),
-            v.ir.BitFieldExtract(value, v.ir.Imm32(24), v.ir.Imm32(6), true));
+            v.ir.BitFieldExtract(value, v.ir.Imm32(base + 0), bitsize, true),
+            v.ir.BitFieldExtract(value, v.ir.Imm32(base + 8), bitsize, true));
     });
-    return {getVector(value1), getVector(value2)};
+    return v.ir.CompositeConstruct(getVector(value1, 0), getVector(value1, 16),
+                                   getVector(value2, 0), getVector(value2, 16));
 }
 
 void Impl(TranslatorVisitor& v, u64 insn, ComponentType component_type, OffsetType offset_type,
@@ -155,7 +155,7 @@ void Impl(TranslatorVisitor& v, u64 insn, ComponentType component_type, OffsetTy
         break;
     }
     case OffsetType::PTP: {
-        std::tie(offset, offset2) = MakeOffsetPTP(v, meta_reg);
+        offset2 = MakeOffsetPTP(v, meta_reg);
         break;
     }
     default:
