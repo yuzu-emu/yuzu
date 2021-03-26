@@ -239,6 +239,7 @@ public:
                                                  const F32& dref, const F32& lod,
                                                  const Value& offset, const F32& lod_clamp,
                                                  TextureInstInfo info);
+    [[nodiscard]] Value ImageQueryDimension(const Value& handle, const IR::U32& lod);
 
     [[nodiscard]] Value ImageGather(const Value& handle, const Value& coords, const Value& offset,
                                     const Value& offset2, TextureInstInfo info);

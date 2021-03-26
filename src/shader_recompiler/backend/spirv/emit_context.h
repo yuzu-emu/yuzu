@@ -31,7 +31,8 @@ private:
 
 struct TextureDefinition {
     Id id;
-    Id type;
+    Id sampled_type;
+    Id image_type;
 };
 
 struct UniformDefinitions {
