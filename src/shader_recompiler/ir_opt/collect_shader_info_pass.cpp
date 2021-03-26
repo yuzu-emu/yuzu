@@ -382,6 +382,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::ImageSampleDrefExplicitLod:
     case IR::Opcode::ImageGather:
     case IR::Opcode::ImageGatherDref:
+    case IR::Opcode::ImageFetch:
     case IR::Opcode::ImageQueryDimensions: {
         const TextureType type{inst.Flags<IR::TextureInstInfo>().type};
         info.uses_sampled_1d |= type == TextureType::Color1D || type == TextureType::ColorArray1D ||
