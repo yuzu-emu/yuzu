@@ -101,8 +101,8 @@ public:
 
     template <typename FlagsType>
     requires(sizeof(FlagsType) <= sizeof(u32) && std::is_trivially_copyable_v<FlagsType>)
-        [[nodiscard]] void SetFlags(FlagsType& new_val) noexcept {
-        std::memcpy(&flags, &new_val, sizeof(new_val));
+        [[nodiscard]] void SetFlags(FlagsType value) noexcept {
+        std::memcpy(&flags, &value, sizeof(value));
     }
 
     /// Intrusively store the host definition of this instruction.

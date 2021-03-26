@@ -7,11 +7,7 @@
 
 namespace Shader::Backend::SPIRV {
 
-Id EmitCompositeConstructU32x2(EmitContext& ctx, IR::Inst* inst, Id e1, Id e2) {
-    const auto info{inst->Flags<IR::CompositeDecoration>()};
-    if (info.is_constant) {
-        return ctx.ConstantComposite(ctx.U32[2], e1, e2);
-    }
+Id EmitCompositeConstructU32x2(EmitContext& ctx, Id e1, Id e2) {
     return ctx.OpCompositeConstruct(ctx.U32[2], e1, e2);
 }
 
@@ -47,12 +43,7 @@ Id EmitCompositeInsertU32x4(EmitContext& ctx, Id composite, Id object, u32 index
     return ctx.OpCompositeInsert(ctx.U32[4], object, composite, index);
 }
 
-Id EmitCompositeConstructF16x2(EmitContext& ctx, IR::Inst* inst, Id e1, Id e2) {
-
-    const auto info{inst->Flags<IR::CompositeDecoration>()};
-    if (info.is_constant) {
-        return ctx.ConstantComposite(ctx.F16[2], e1, e2);
-    }
+Id EmitCompositeConstructF16x2(EmitContext& ctx, Id e1, Id e2) {
     return ctx.OpCompositeConstruct(ctx.F16[2], e1, e2);
 }
 
@@ -88,11 +79,7 @@ Id EmitCompositeInsertF16x4(EmitContext& ctx, Id composite, Id object, u32 index
     return ctx.OpCompositeInsert(ctx.F16[4], object, composite, index);
 }
 
-Id EmitCompositeConstructF32x2(EmitContext& ctx, IR::Inst* inst, Id e1, Id e2) {
-    const auto info{inst->Flags<IR::CompositeDecoration>()};
-    if (info.is_constant) {
-        return ctx.ConstantComposite(ctx.F32[2], e1, e2);
-    }
+Id EmitCompositeConstructF32x2(EmitContext& ctx, Id e1, Id e2) {
     return ctx.OpCompositeConstruct(ctx.F32[2], e1, e2);
 }
 
@@ -162,17 +149,6 @@ Id EmitCompositeInsertF64x3(EmitContext& ctx, Id composite, Id object, u32 index
 
 Id EmitCompositeInsertF64x4(EmitContext& ctx, Id composite, Id object, u32 index) {
     return ctx.OpCompositeInsert(ctx.F64[4], object, composite, index);
-}
-
-Id EmitCompositeConstructArrayU32x2(EmitContext& ctx, IR::Inst* inst, Id e1, Id e2, Id e3, Id e4) {
-    const auto info{inst->Flags<IR::CompositeDecoration>()};
-    if (info.is_constant) {
-        return ctx.ConstantComposite(ctx.array_U32x2, e1, e2, e3, e4);
-    }
-    if (ctx.profile.support_variadic_ptp) {
-        return ctx.OpCompositeConstruct(ctx.array_U32x2, e1, e2, e3, e4);
-    }
-    return {};
 }
 
 } // namespace Shader::Backend::SPIRV

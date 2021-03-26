@@ -106,17 +106,17 @@ IR::Value MakeOffset(TranslatorVisitor& v, IR::Reg& reg, TextureType type) {
     throw NotImplementedException("Invalid texture type {}", type);
 }
 
-IR::Value MakeOffsetPTP(TranslatorVisitor& v, IR::Reg& reg) {
+std::pair<IR::Value, IR::Value> MakeOffsetPTP(TranslatorVisitor& v, IR::Reg& reg) {
     const IR::U32 value1{v.X(reg++)};
     const IR::U32 value2{v.X(reg++)};
-    const IR::U32 bitsize = v.ir.Imm32(6);
-    const auto getVector = ([&v, &bitsize](const IR::U32& value, u32 base) {
-        return v.ir.CompositeConstruct(
-            v.ir.BitFieldExtract(value, v.ir.Imm32(base + 0), bitsize, true),
-            v.ir.BitFieldExtract(value, v.ir.Imm32(base + 8), bitsize, true));
-    });
-    return v.ir.CompositeConstruct(getVector(value1, 0), getVector(value1, 16),
-                                   getVector(value2, 0), getVector(value2, 16));
+    const IR::U32 bitsize{v.ir.Imm32(6)};
+    const auto make_vector{[&v, &bitsize](const IR::U32& value) {
+        return v.ir.CompositeConstruct(v.ir.BitFieldExtract(value, v.ir.Imm32(0), bitsize, true),
+                                       v.ir.BitFieldExtract(value, v.ir.Imm32(8), bitsize, true),
+                                       v.ir.BitFieldExtract(value, v.ir.Imm32(16), bitsize, true),
+                                       v.ir.BitFieldExtract(value, v.ir.Imm32(24), bitsize, true));
+    }};
+    return {make_vector(value1), make_vector(value2)};
 }
 
 void Impl(TranslatorVisitor& v, u64 insn, ComponentType component_type, OffsetType offset_type,
@@ -150,14 +150,12 @@ void Impl(TranslatorVisitor& v, u64 insn, ComponentType component_type, OffsetTy
     switch (offset_type) {
     case OffsetType::None:
         break;
-    case OffsetType::AOFFI: {
+    case OffsetType::AOFFI:
         offset = MakeOffset(v, meta_reg, tld4.type);
         break;
-    }
-    case OffsetType::PTP: {
-        offset2 = MakeOffsetPTP(v, meta_reg);
+    case OffsetType::PTP:
+        std::tie(offset, offset2) = MakeOffsetPTP(v, meta_reg);
         break;
-    }
     default:
         throw NotImplementedException("Invalid offset type {}", offset_type);
     }
@@ -167,7 +165,7 @@ void Impl(TranslatorVisitor& v, u64 insn, ComponentType component_type, OffsetTy
     IR::TextureInstInfo info{};
     info.type.Assign(GetType(tld4.type, tld4.dc != 0));
     info.gather_component.Assign(static_cast<u32>(component_type));
-    const IR::Value sample{[&]() -> IR::Value {
+    const IR::Value sample{[&] {
         if (tld4.dc == 0) {
             return v.ir.ImageGather(handle, coords, offset, offset2, info);
         }

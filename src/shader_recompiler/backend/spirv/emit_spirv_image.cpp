@@ -30,16 +30,34 @@ public:
         }
     }
 
-    explicit ImageOperands([[maybe_unused]] EmitContext& ctx, Id offset, Id offset2) {
-        if (Sirit::ValidId(offset)) {
-            Add(spv::ImageOperandsMask::Offset, offset);
+    explicit ImageOperands(EmitContext& ctx, const IR::Value& offset, const IR::Value& offset2) {
+        if (offset2.IsEmpty()) {
+            if (offset.IsEmpty()) {
+                return;
+            }
+            Add(spv::ImageOperandsMask::Offset, ctx.Def(offset));
+            return;
         }
-        if (Sirit::ValidId(offset2)) {
-            Add(spv::ImageOperandsMask::ConstOffsets, offset2);
+        const std::array values{offset.InstRecursive(), offset2.InstRecursive()};
+        if (!values[0]->AreAllArgsImmediates() || !values[1]->AreAllArgsImmediates()) {
+            throw NotImplementedException("Not all arguments in PTP are immediate");
         }
+        const IR::Opcode opcode{values[0]->Opcode()};
+        if (opcode != values[1]->Opcode() || opcode != IR::Opcode::CompositeConstructU32x4) {
+            throw LogicError("Invalid PTP arguments");
+        }
+        auto read{[&](int a, int b) { return ctx.Constant(ctx.U32[1], values[a]->Arg(b).U32()); }};
+
+        const Id offsets{
+            ctx.ConstantComposite(ctx.TypeArray(ctx.U32[2], ctx.Constant(ctx.U32[1], 4)),
+                                  ctx.ConstantComposite(ctx.U32[2], read(0, 0), read(0, 1)),
+                                  ctx.ConstantComposite(ctx.U32[2], read(0, 2), read(0, 3)),
+                                  ctx.ConstantComposite(ctx.U32[2], read(1, 0), read(1, 1)),
+                                  ctx.ConstantComposite(ctx.U32[2], read(1, 2), read(1, 3)))};
+        Add(spv::ImageOperandsMask::ConstOffsets, offsets);
     }
 
-    explicit ImageOperands([[maybe_unused]] EmitContext& ctx, Id offset, Id lod, Id ms) {
+    explicit ImageOperands(Id offset, Id lod, Id ms) {
         if (Sirit::ValidId(lod)) {
             Add(spv::ImageOperandsMask::Lod, lod);
         }
@@ -197,8 +215,8 @@ Id EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Va
                 Texture(ctx, index), coords, dref, operands.Mask(), operands.Span());
 }
 
-Id EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords, Id offset,
-                   Id offset2) {
+Id EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                   const IR::Value& offset, const IR::Value& offset2) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
     const ImageOperands operands(ctx, offset, offset2);
     return Emit(&EmitContext::OpImageSparseGather, &EmitContext::OpImageGather, ctx, inst,
@@ -208,7 +226,7 @@ Id EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id 
 }
 
 Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
-                       Id offset, Id offset2, Id dref) {
+                       const IR::Value& offset, const IR::Value& offset2, Id dref) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
     const ImageOperands operands(ctx, offset, offset2);
     return Emit(&EmitContext::OpImageSparseDrefGather, &EmitContext::OpImageDrefGather, ctx, inst,
@@ -218,7 +236,7 @@ Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
 Id EmitImageFetch(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords, Id offset,
                   Id lod, Id ms) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
-    const ImageOperands operands(ctx, offset, lod, ms);
+    const ImageOperands operands(offset, lod, ms);
     return Emit(&EmitContext::OpImageSparseFetch, &EmitContext::OpImageFetch, ctx, inst, ctx.F32[4],
                 Texture(ctx, index), coords, operands.Mask(), operands.Span());
 }

@@ -126,7 +126,6 @@ OPCODE(CompositeExtractF64x4,                               F64,            F64x
 OPCODE(CompositeInsertF64x2,                                F64x2,          F64x2,          F64,            U32,                                            )
 OPCODE(CompositeInsertF64x3,                                F64x3,          F64x3,          F64,            U32,                                            )
 OPCODE(CompositeInsertF64x4,                                F64x4,          F64x4,          F64,            U32,                                            )
-OPCODE(CompositeConstructArrayU32x2, Opaque, U32x2, U32x2, U32x2, U32x2, )
 
 // Select operations
 OPCODE(SelectU1,                                            U1,             U1,             U1,             U1,                                             )

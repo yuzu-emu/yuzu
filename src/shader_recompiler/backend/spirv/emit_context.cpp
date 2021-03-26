@@ -169,7 +169,6 @@ void EmitContext::DefineCommonTypes(const Info& info) {
         AddCapability(spv::Capability::Float64);
         F64.Define(*this, TypeFloat(64), "f64");
     }
-    array_U32x2 = Name(TypeArray(U32[2], Constant(U32[1], 4U)), "array-u32x2");
 }
 
 void EmitContext::DefineCommonConstants() {
@@ -352,20 +351,19 @@ void EmitContext::DefineOutputs(const Info& info) {
         }
     }
     if (stage == Stage::Fragment) {
-        for (size_t i = 0; i < 8; ++i) {
-            if (!info.stores_frag_color[i]) {
+        for (u32 index = 0; index < 8; ++index) {
+            if (!info.stores_frag_color[index]) {
                 continue;
             }
-            frag_color[i] = DefineOutput(*this, F32[4]);
-            Decorate(frag_color[i], spv::Decoration::Location, static_cast<u32>(i));
-            Name(frag_color[i], fmt::format("frag_color{}", i));
+            frag_color[index] = DefineOutput(*this, F32[4]);
+            Decorate(frag_color[index], spv::Decoration::Location, index);
+            Name(frag_color[index], fmt::format("frag_color{}", index));
         }
-        if (!info.stores_frag_depth) {
-            return;
+        if (info.stores_frag_depth) {
+            frag_depth = DefineOutput(*this, F32[1]);
+            Decorate(frag_depth, spv::Decoration::BuiltIn, spv::BuiltIn::FragDepth);
+            Name(frag_depth, "frag_depth");
         }
-        frag_depth = DefineOutput(*this, F32[1]);
-        Decorate(frag_depth, spv::Decoration::BuiltIn, static_cast<u32>(spv::BuiltIn::FragDepth));
-        Name(frag_depth, "frag_depth");
     }
 }
 

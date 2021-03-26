@@ -355,17 +355,6 @@ void FoldBranchConditional(IR::Inst& inst) {
     }
 }
 
-void FoldConstantComposite(IR::Inst& inst, size_t amount = 2) {
-    for (size_t i = 0; i < amount; i++) {
-        if (!inst.Arg(i).IsConstantContainer()) {
-            return;
-        }
-    }
-    auto info{inst.Flags<IR::CompositeDecoration>()};
-    info.is_constant = true;
-    inst.SetFlags(info);
-}
-
 void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
     switch (inst.Opcode()) {
     case IR::Opcode::GetRegister:
@@ -391,13 +380,6 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
     case IR::Opcode::SelectF32:
     case IR::Opcode::SelectF64:
         return FoldSelect(inst);
-    case IR::Opcode::CompositeConstructU32x2:
-    case IR::Opcode::CompositeConstructF16x2:
-    case IR::Opcode::CompositeConstructF32x2:
-    case IR::Opcode::CompositeConstructF64x2:
-        return FoldConstantComposite(inst, 2);
-    case IR::Opcode::CompositeConstructArrayU32x2:
-        return FoldConstantComposite(inst, 4);
     case IR::Opcode::FPMul32:
         return FoldFPMul32(inst);
     case IR::Opcode::LogicalAnd:
@@ -423,12 +405,12 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
         return;
     case IR::Opcode::BitFieldSExtract:
         FoldWhenAllImmediates(inst, [](s32 base, u32 shift, u32 count) {
-            const size_t back_shift = static_cast<size_t>(shift) + static_cast<size_t>(count);
+            const size_t back_shift{static_cast<size_t>(shift) + static_cast<size_t>(count)};
             if (back_shift > Common::BitSize<s32>()) {
                 throw LogicError("Undefined result in {}({}, {}, {})", IR::Opcode::BitFieldSExtract,
                                  base, shift, count);
             }
-            const size_t left_shift = Common::BitSize<s32>() - back_shift;
+            const size_t left_shift{Common::BitSize<s32>() - back_shift};
             return static_cast<u32>(static_cast<s32>(base << left_shift) >>
                                     static_cast<size_t>(Common::BitSize<s32>() - count));
         });
