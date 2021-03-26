@@ -243,8 +243,12 @@ public:
     [[nodiscard]] Value ImageGather(const Value& handle, const Value& coords, const Value& offset,
                                     const Value& offset2, TextureInstInfo info);
 
-    [[nodiscard]] Value ImageGatherDref(const Value& handle, const Value& coords, const Value& offset,
-                                      const Value& offset2, const F32& dref, TextureInstInfo info);
+    [[nodiscard]] Value ImageGatherDref(const Value& handle, const Value& coords,
+                                        const Value& offset, const Value& offset2, const F32& dref,
+                                        TextureInstInfo info);
+
+    [[nodiscard]] Value ImageFetch(const Value& handle, const Value& coords, const Value& offset,
+                                   const U32& lod, const U32& multisampling, TextureInstInfo info);
 
     [[nodiscard]] U1 VoteAll(const U1& value);
     [[nodiscard]] U1 VoteAny(const U1& value);

@@ -1491,6 +1491,12 @@ Value IREmitter::ImageGatherDref(const Value& handle, const Value& coords, const
     return Inst(op, Flags{info}, handle, coords, offset, offset2, dref);
 }
 
+Value IREmitter::ImageFetch(const Value& handle, const Value& coords, const Value& offset,
+                            const U32& lod, const U32& multisampling, TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageFetch : Opcode::BindlessImageFetch};
+    return Inst(op, Flags{info}, handle, coords, offset, lod, multisampling);
+}
+
 U1 IREmitter::VoteAll(const U1& value) {
     return Inst<U1>(Opcode::VoteAll, value);
 }
