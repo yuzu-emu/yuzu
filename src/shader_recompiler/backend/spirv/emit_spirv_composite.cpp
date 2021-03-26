@@ -170,7 +170,7 @@ Id EmitCompositeConstructArrayU32x2(EmitContext& ctx, IR::Inst* inst, Id e1, Id 
         return ctx.ConstantComposite(ctx.array_U32x2, e1, e2, e3, e4);
     }
     if (ctx.profile.support_variadic_ptp) {
-        return OpCompositeConstruct(ctx.array_U32x2, e1, e2, e3, e4);
+        return ctx.OpCompositeConstruct(ctx.array_U32x2, e1, e2, e3, e4);
     }
     return {};
 }

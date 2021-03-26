@@ -51,6 +51,9 @@ IR::Opcode IndexedInstruction(const IR::Inst& inst) {
     case IR::Opcode::BindlessImageGatherDref:
     case IR::Opcode::BoundImageGatherDref:
         return IR::Opcode::ImageGatherDref;
+    case IR::Opcode::BindlessImageFetch:
+    case IR::Opcode::BoundImageFetch:
+        return IR::Opcode::ImageFetch;
     default:
         return IR::Opcode::Void;
     }
@@ -64,6 +67,7 @@ bool IsBindless(const IR::Inst& inst) {
     case IR::Opcode::BindlessImageSampleDrefExplicitLod:
     case IR::Opcode::BindlessImageGather:
     case IR::Opcode::BindlessImageGatherDref:
+    case IR::Opcode::BindlessImageFetch:
         return true;
     case IR::Opcode::BoundImageSampleImplicitLod:
     case IR::Opcode::BoundImageSampleExplicitLod:
@@ -71,6 +75,7 @@ bool IsBindless(const IR::Inst& inst) {
     case IR::Opcode::BoundImageSampleDrefExplicitLod:
     case IR::Opcode::BoundImageGather:
     case IR::Opcode::BoundImageGatherDref:
+    case IR::Opcode::BoundImageFetch:
         return false;
     default:
         throw InvalidArgument("Invalid opcode {}", inst.Opcode());
