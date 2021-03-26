@@ -58,6 +58,9 @@ void SetAttribute(Info& info, IR::Attribute attribute) {
         return;
     }
     switch (attribute) {
+    case IR::Attribute::PointSize:
+        info.stores_point_size = true;
+        break;
     case IR::Attribute::PositionX:
     case IR::Attribute::PositionY:
     case IR::Attribute::PositionZ:

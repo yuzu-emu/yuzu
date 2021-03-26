@@ -37,6 +37,8 @@ Id OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
         return ctx.OpAccessChain(ctx.output_f32, ctx.output_generics.at(index), element_id());
     }
     switch (attr) {
+    case IR::Attribute::PointSize:
+        return ctx.output_point_size;
     case IR::Attribute::PositionX:
     case IR::Attribute::PositionY:
     case IR::Attribute::PositionZ:

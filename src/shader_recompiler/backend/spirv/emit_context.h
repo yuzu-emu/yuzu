@@ -120,6 +120,7 @@ public:
     Id input_position{};
     std::array<Id, 32> input_generics{};
 
+    Id output_point_size{};
     Id output_position{};
     std::array<Id, 32> output_generics{};
 

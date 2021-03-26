@@ -79,6 +79,7 @@ struct Info {
     bool stores_frag_depth{};
     std::array<bool, 32> stores_generics{};
     bool stores_position{};
+    bool stores_point_size{};
 
     bool uses_fp16{};
     bool uses_fp64{};
