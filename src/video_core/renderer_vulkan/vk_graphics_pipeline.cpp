@@ -139,7 +139,6 @@ void GraphicsPipeline::Configure(bool is_indexed) {
     static_vector<VkSampler, max_images_elements> samplers;
 
     texture_cache->SynchronizeGraphicsDescriptors();
-    texture_cache->UpdateRenderTargets(false);
 
     const auto& regs{maxwell3d->regs};
     const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};
@@ -181,13 +180,17 @@ void GraphicsPipeline::Configure(bool is_indexed) {
         PushImageDescriptors(stage_infos[stage], samplers.data(), image_view_ids.data(),
                              *texture_cache, *update_descriptor_queue, index);
     }
+    texture_cache->UpdateRenderTargets(false);
+    scheduler->RequestRenderpass(texture_cache->GetFramebuffer());
+
+    scheduler->BindGraphicsPipeline(*pipeline);
+
     if (!descriptor_set_layout) {
         return;
     }
     const VkDescriptorSet descriptor_set{descriptor_allocator.Commit()};
     update_descriptor_queue->Send(*descriptor_update_template, descriptor_set);
 
-    scheduler->BindGraphicsPipeline(*pipeline);
     scheduler->Record([descriptor_set, layout = *pipeline_layout](vk::CommandBuffer cmdbuf) {
         cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, descriptor_set,
                                   nullptr);
