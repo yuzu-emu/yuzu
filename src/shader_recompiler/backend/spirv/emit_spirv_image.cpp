@@ -254,7 +254,7 @@ Id EmitImageFetch(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id c
     const auto info{inst->Flags<IR::TextureInstInfo>()};
     const ImageOperands operands(offset, lod, ms);
     return Emit(&EmitContext::OpImageSparseFetch, &EmitContext::OpImageFetch, ctx, inst, ctx.F32[4],
-                Texture(ctx, index), coords, operands.Mask(), operands.Span());
+                TextureImage(ctx, index), coords, operands.Mask(), operands.Span());
 }
 
 Id EmitImageQueryDimensions(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id lod) {

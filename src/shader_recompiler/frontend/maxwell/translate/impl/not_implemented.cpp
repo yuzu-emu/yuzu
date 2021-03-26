@@ -313,14 +313,6 @@ void TranslatorVisitor::SYNC(u64) {
     ThrowNotImplemented(Opcode::SYNC);
 }
 
-void TranslatorVisitor::TLD(u64) {
-    ThrowNotImplemented(Opcode::TLD);
-}
-
-void TranslatorVisitor::TLD_b(u64) {
-    ThrowNotImplemented(Opcode::TLD_b);
-}
-
 void TranslatorVisitor::TLDS(u64) {
     ThrowNotImplemented(Opcode::TLDS);
 }
