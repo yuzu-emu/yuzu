@@ -56,15 +56,12 @@ VkRenderPass RenderPassCache::Get(const RenderPassKey& key) {
         return *pair->second;
     }
     boost::container::static_vector<VkAttachmentDescription, 9> descriptions;
-    u32 num_images{0};
-
     for (size_t index = 0; index < key.color_formats.size(); ++index) {
         const PixelFormat format{key.color_formats[index]};
         if (format == PixelFormat::Invalid) {
             continue;
         }
         descriptions.push_back(AttachmentDescription(*device, format, key.samples));
-        ++num_images;
     }
     const size_t num_colors{descriptions.size()};
     const VkAttachmentReference* depth_attachment{};
@@ -89,7 +86,7 @@ VkRenderPass RenderPassCache::Get(const RenderPassKey& key) {
         .pNext = nullptr,
         .flags = 0,
         .attachmentCount = static_cast<u32>(descriptions.size()),
-        .pAttachments = descriptions.data(),
+        .pAttachments = descriptions.empty() ? nullptr : descriptions.data(),
         .subpassCount = 1,
         .pSubpasses = &subpass,
         .dependencyCount = 0,

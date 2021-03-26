@@ -178,7 +178,6 @@ void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
 
     BeginTransformFeedback();
 
-    scheduler.RequestRenderpass(texture_cache.GetFramebuffer());
     UpdateDynamicStates();
 
     const auto& regs{maxwell3d.regs};
