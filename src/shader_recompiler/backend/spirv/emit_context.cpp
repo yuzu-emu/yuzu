@@ -492,6 +492,12 @@ void EmitContext::DefineOutputs(const Info& info) {
     if (info.stores_position || stage == Stage::VertexB) {
         output_position = DefineOutput(*this, F32[4], spv::BuiltIn::Position);
     }
+    if (info.stores_point_size) {
+        if (stage == Stage::Fragment) {
+            throw NotImplementedException("Storing PointSize in Fragment stage");
+        }
+        output_point_size = DefineOutput(*this, F32[1], spv::BuiltIn::PointSize);
+    }
     for (size_t i = 0; i < info.stores_generics.size(); ++i) {
         if (info.stores_generics[i]) {
             output_generics[i] = DefineOutput(*this, F32[4]);
