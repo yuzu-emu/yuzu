@@ -101,16 +101,18 @@ IR::Value MakeOffset(TranslatorVisitor& v, IR::Reg& reg, TextureType type) {
     switch (type) {
     case TextureType::_1D:
     case TextureType::ARRAY_1D:
-        return v.ir.BitFieldExtract(value, v.ir.Imm32(0), v.ir.Imm32(4));
+        return v.ir.BitFieldExtract(value, v.ir.Imm32(0), v.ir.Imm32(4), true);
     case TextureType::_2D:
     case TextureType::ARRAY_2D:
-        return v.ir.CompositeConstruct(v.ir.BitFieldExtract(value, v.ir.Imm32(0), v.ir.Imm32(4)),
-                                       v.ir.BitFieldExtract(value, v.ir.Imm32(4), v.ir.Imm32(4)));
+        return v.ir.CompositeConstruct(
+            v.ir.BitFieldExtract(value, v.ir.Imm32(0), v.ir.Imm32(4), true),
+            v.ir.BitFieldExtract(value, v.ir.Imm32(4), v.ir.Imm32(4), true));
     case TextureType::_3D:
     case TextureType::ARRAY_3D:
-        return v.ir.CompositeConstruct(v.ir.BitFieldExtract(value, v.ir.Imm32(0), v.ir.Imm32(4)),
-                                       v.ir.BitFieldExtract(value, v.ir.Imm32(4), v.ir.Imm32(4)),
-                                       v.ir.BitFieldExtract(value, v.ir.Imm32(8), v.ir.Imm32(4)));
+        return v.ir.CompositeConstruct(
+            v.ir.BitFieldExtract(value, v.ir.Imm32(0), v.ir.Imm32(4), true),
+            v.ir.BitFieldExtract(value, v.ir.Imm32(4), v.ir.Imm32(4), true),
+            v.ir.BitFieldExtract(value, v.ir.Imm32(8), v.ir.Imm32(4), true));
     case TextureType::CUBE:
     case TextureType::ARRAY_CUBE:
         throw NotImplementedException("Illegal offset on CUBE sample");

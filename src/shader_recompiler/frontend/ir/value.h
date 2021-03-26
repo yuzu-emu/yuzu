@@ -38,6 +38,7 @@ public:
     [[nodiscard]] bool IsImmediate() const noexcept;
     [[nodiscard]] bool IsLabel() const noexcept;
     [[nodiscard]] IR::Type Type() const noexcept;
+    [[nodiscard]] bool IsConstantContainer() const;
 
     [[nodiscard]] IR::Inst* Inst() const;
     [[nodiscard]] IR::Block* Label() const;

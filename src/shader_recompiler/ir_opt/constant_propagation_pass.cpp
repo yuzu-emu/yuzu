@@ -355,6 +355,17 @@ void FoldBranchConditional(IR::Inst& inst) {
     }
 }
 
+void FoldConstantComposite(IR::Inst& inst, size_t amount = 2) {
+    for (size_t i = 0; i < amount; i++) {
+        if (!inst.Arg(i).IsConstantContainer()) {
+            return;
+        }
+    }
+    auto info{inst.Flags<IR::CompositeDecoration>()};
+    info.is_constant = true;
+    inst.SetFlags(info);
+}
+
 void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
     switch (inst.Opcode()) {
     case IR::Opcode::GetRegister:
@@ -380,6 +391,13 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
     case IR::Opcode::SelectF32:
     case IR::Opcode::SelectF64:
         return FoldSelect(inst);
+    case IR::Opcode::CompositeConstructU32x2:
+    case IR::Opcode::CompositeConstructF16x2:
+    case IR::Opcode::CompositeConstructF32x2:
+    case IR::Opcode::CompositeConstructF64x2:
+        return FoldConstantComposite(inst, 2);
+    case IR::Opcode::CompositeConstructArrayU32x2:
+        return FoldConstantComposite(inst, 4);
     case IR::Opcode::FPMul32:
         return FoldFPMul32(inst);
     case IR::Opcode::LogicalAnd:

@@ -44,6 +44,20 @@ bool Value::IsEmpty() const noexcept {
     return type == Type::Void;
 }
 
+bool Value::IsConstantContainer() const {
+    if (IsImmediate()) {
+        return true;
+    }
+    ValidateAccess(Type::Opaque);
+    auto num_args = inst->NumArgs();
+    for (size_t i = 0; i < num_args; i++) {
+        if (!inst->Arg(i).IsConstantContainer()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool Value::IsImmediate() const noexcept {
     if (IsIdentity()) {
         return inst->Arg(0).IsImmediate();
