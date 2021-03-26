@@ -95,7 +95,7 @@ void EmitWriteStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Va
                         Id value);
 void EmitWriteStorage128(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
                          Id value);
-Id EmitCompositeConstructU32x2(EmitContext& ctx, IR::Inst* inst, Id e1, Id e2);
+Id EmitCompositeConstructU32x2(EmitContext& ctx, Id e1, Id e2);
 Id EmitCompositeConstructU32x3(EmitContext& ctx, Id e1, Id e2, Id e3);
 Id EmitCompositeConstructU32x4(EmitContext& ctx, Id e1, Id e2, Id e3, Id e4);
 Id EmitCompositeExtractU32x2(EmitContext& ctx, Id composite, u32 index);
@@ -104,7 +104,7 @@ Id EmitCompositeExtractU32x4(EmitContext& ctx, Id composite, u32 index);
 Id EmitCompositeInsertU32x2(EmitContext& ctx, Id composite, Id object, u32 index);
 Id EmitCompositeInsertU32x3(EmitContext& ctx, Id composite, Id object, u32 index);
 Id EmitCompositeInsertU32x4(EmitContext& ctx, Id composite, Id object, u32 index);
-Id EmitCompositeConstructF16x2(EmitContext& ctx, IR::Inst* inst, Id e1, Id e2);
+Id EmitCompositeConstructF16x2(EmitContext& ctx, Id e1, Id e2);
 Id EmitCompositeConstructF16x3(EmitContext& ctx, Id e1, Id e2, Id e3);
 Id EmitCompositeConstructF16x4(EmitContext& ctx, Id e1, Id e2, Id e3, Id e4);
 Id EmitCompositeExtractF16x2(EmitContext& ctx, Id composite, u32 index);
@@ -113,7 +113,7 @@ Id EmitCompositeExtractF16x4(EmitContext& ctx, Id composite, u32 index);
 Id EmitCompositeInsertF16x2(EmitContext& ctx, Id composite, Id object, u32 index);
 Id EmitCompositeInsertF16x3(EmitContext& ctx, Id composite, Id object, u32 index);
 Id EmitCompositeInsertF16x4(EmitContext& ctx, Id composite, Id object, u32 index);
-Id EmitCompositeConstructF32x2(EmitContext& ctx, IR::Inst* inst, Id e1, Id e2);
+Id EmitCompositeConstructF32x2(EmitContext& ctx, Id e1, Id e2);
 Id EmitCompositeConstructF32x3(EmitContext& ctx, Id e1, Id e2, Id e3);
 Id EmitCompositeConstructF32x4(EmitContext& ctx, Id e1, Id e2, Id e3, Id e4);
 Id EmitCompositeExtractF32x2(EmitContext& ctx, Id composite, u32 index);
@@ -122,7 +122,6 @@ Id EmitCompositeExtractF32x4(EmitContext& ctx, Id composite, u32 index);
 Id EmitCompositeInsertF32x2(EmitContext& ctx, Id composite, Id object, u32 index);
 Id EmitCompositeInsertF32x3(EmitContext& ctx, Id composite, Id object, u32 index);
 Id EmitCompositeInsertF32x4(EmitContext& ctx, Id composite, Id object, u32 index);
-Id EmitCompositeConstructArrayU32x2(EmitContext& ctx, IR::Inst* inst, Id e1, Id e2, Id e3, Id e4);
 void EmitCompositeConstructF64x2(EmitContext& ctx);
 void EmitCompositeConstructF64x3(EmitContext& ctx);
 void EmitCompositeConstructF64x4(EmitContext& ctx);
@@ -359,10 +358,10 @@ Id EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Va
                                   Id coords, Id dref, Id bias_lc, Id offset);
 Id EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
                                   Id coords, Id dref, Id lod_lc, Id offset);
-Id EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords, Id offset,
-                   Id offset2);
+Id EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                   const IR::Value& offset, const IR::Value& offset2);
 Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
-                       Id offset, Id offset2, Id dref);
+                       const IR::Value& offset, const IR::Value& offset2, Id dref);
 Id EmitImageFetch(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords, Id offset,
                   Id lod, Id ms);
 Id EmitVoteAll(EmitContext& ctx, Id pred);
