@@ -6,8 +6,6 @@
 
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 
-#pragma optimize("", off)
-
 namespace Shader::Backend::SPIRV {
 namespace {
 struct AttrInfo {
@@ -71,6 +69,14 @@ void EmitSetGotoVariable(EmitContext&) {
 }
 
 void EmitGetGotoVariable(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+void EmitSetIndirectBranchVariable(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+void EmitGetIndirectBranchVariable(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 

@@ -5,25 +5,11 @@
 #include "common/bit_field.h"
 #include "common/common_types.h"
 #include "shader_recompiler/frontend/maxwell/translate/impl/impl.h"
+#include "shader_recompiler/frontend/maxwell/translate/impl/load_constant.h"
 
 namespace Shader::Maxwell {
+using namespace LDC;
 namespace {
-enum class Mode : u64 {
-    Default,
-    IL,
-    IS,
-    ISL,
-};
-
-enum class Size : u64 {
-    U8,
-    S8,
-    U16,
-    S16,
-    B32,
-    B64,
-};
-
 std::pair<IR::U32, IR::U32> Slot(IR::IREmitter& ir, Mode mode, const IR::U32& imm_index,
                                  const IR::U32& reg, const IR::U32& imm) {
     switch (mode) {
@@ -37,16 +23,7 @@ std::pair<IR::U32, IR::U32> Slot(IR::IREmitter& ir, Mode mode, const IR::U32& im
 } // Anonymous namespace
 
 void TranslatorVisitor::LDC(u64 insn) {
-    union {
-        u64 raw;
-        BitField<0, 8, IR::Reg> dest_reg;
-        BitField<8, 8, IR::Reg> src_reg;
-        BitField<20, 16, s64> offset;
-        BitField<36, 5, u64> index;
-        BitField<44, 2, Mode> mode;
-        BitField<48, 3, Size> size;
-    } const ldc{insn};
-
+    const Encoding ldc{insn};
     const IR::U32 imm_index{ir.Imm32(static_cast<u32>(ldc.index))};
     const IR::U32 reg{X(ldc.src_reg)};
     const IR::U32 imm{ir.Imm32(static_cast<s32>(ldc.offset))};

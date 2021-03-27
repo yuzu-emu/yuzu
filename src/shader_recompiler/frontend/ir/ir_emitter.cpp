@@ -87,6 +87,10 @@ void IREmitter::Return() {
     Inst(Opcode::Return);
 }
 
+void IREmitter::Unreachable() {
+    Inst(Opcode::Unreachable);
+}
+
 void IREmitter::DemoteToHelperInvocation(Block* continue_label) {
     block->SetBranch(continue_label);
     continue_label->AddImmediatePredecessor(block);
@@ -124,6 +128,14 @@ U1 IREmitter::GetGotoVariable(u32 id) {
 
 void IREmitter::SetGotoVariable(u32 id, const U1& value) {
     Inst(Opcode::SetGotoVariable, id, value);
+}
+
+U32 IREmitter::GetIndirectBranchVariable() {
+    return Inst<U32>(Opcode::GetIndirectBranchVariable);
+}
+
+void IREmitter::SetIndirectBranchVariable(const U32& value) {
+    Inst(Opcode::SetIndirectBranchVariable, value);
 }
 
 void IREmitter::SetPred(IR::Pred pred, const U1& value) {

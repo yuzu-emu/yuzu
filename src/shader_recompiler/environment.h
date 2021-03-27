@@ -15,6 +15,8 @@ public:
 
     [[nodiscard]] virtual u64 ReadInstruction(u32 address) = 0;
 
+    [[nodiscard]] virtual u32 ReadCbufValue(u32 cbuf_index, u32 cbuf_offset) = 0;
+
     [[nodiscard]] virtual TextureType ReadTextureType(u32 cbuf_index, u32 cbuf_offset) = 0;
 
     [[nodiscard]] virtual u32 TextureBoundBuffer() const = 0;

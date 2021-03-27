@@ -26,6 +26,7 @@ using FunctionId = size_t;
 
 enum class EndClass {
     Branch,
+    IndirectBranch,
     Call,
     Exit,
     Return,
@@ -76,11 +77,14 @@ struct Block : boost::intrusive::set_base_hook<
     union {
         Block* branch_true;
         FunctionId function_call;
+        IR::Reg branch_reg;
     };
     union {
         Block* branch_false;
         Block* return_block;
+        s32 branch_offset;
     };
+    std::vector<Block*> indirect_branches;
 };
 
 struct Label {
@@ -139,7 +143,8 @@ private:
 
     void AnalyzeBRA(Block* block, FunctionId function_id, Location pc, Instruction inst,
                     bool is_absolute);
-    void AnalyzeBRX(Block* block, Location pc, Instruction inst, bool is_absolute);
+    AnalysisState AnalyzeBRX(Block* block, Location pc, Instruction inst, bool is_absolute,
+                             FunctionId function_id);
     AnalysisState AnalyzeEXIT(Block* block, FunctionId function_id, Location pc, Instruction inst);
 
     /// Return the branch target block id
