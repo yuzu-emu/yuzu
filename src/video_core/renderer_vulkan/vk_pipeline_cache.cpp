@@ -62,13 +62,20 @@ public:
     ~GenericEnvironment() override = default;
 
     std::optional<u128> Analyze() {
-        const std::optional<u64> size{TryFindSize(start_address)};
+        const std::optional<u64> size{TryFindSize()};
         if (!size) {
             return std::nullopt;
         }
         cached_lowest = start_address;
         cached_highest = start_address + static_cast<u32>(*size);
         return Common::CityHash128(reinterpret_cast<const char*>(code.data()), code.size());
+    }
+
+    void SetCachedSize(size_t size_bytes) {
+        cached_lowest = start_address;
+        cached_highest = start_address + static_cast<u32>(size_bytes);
+        code.resize(CachedSize());
+        gpu_memory->ReadBlock(program_base + cached_lowest, code.data(), code.size() * sizeof(u64));
     }
 
     [[nodiscard]] size_t CachedSize() const noexcept {
@@ -80,7 +87,7 @@ public:
     }
 
     [[nodiscard]] bool CanBeSerialized() const noexcept {
-        return has_unbound_instructions;
+        return !has_unbound_instructions;
     }
 
     [[nodiscard]] u128 CalculateHash() const {
@@ -95,7 +102,7 @@ public:
         read_highest = std::max(read_highest, address);
 
         if (address >= cached_lowest && address < cached_highest) {
-            return code[address / INST_SIZE];
+            return code[(address - cached_lowest) / INST_SIZE];
         }
         has_unbound_instructions = true;
         return gpu_memory->Read<u64>(program_base + address);
@@ -117,30 +124,34 @@ public:
             .write(reinterpret_cast<const char*>(&read_highest), sizeof(read_highest))
             .write(reinterpret_cast<const char*>(&stage), sizeof(stage))
             .write(data.get(), code_size);
+        file.flush();
         for (const auto [key, type] : texture_types) {
             file.write(reinterpret_cast<const char*>(&key), sizeof(key))
                 .write(reinterpret_cast<const char*>(&type), sizeof(type));
         }
+        file.flush();
         if (stage == Shader::Stage::Compute) {
             const std::array<u32, 3> workgroup_size{WorkgroupSize()};
             file.write(reinterpret_cast<const char*>(&workgroup_size), sizeof(workgroup_size));
         } else {
             file.write(reinterpret_cast<const char*>(&sph), sizeof(sph));
         }
+        file.flush();
     }
 
 protected:
     static constexpr size_t INST_SIZE = sizeof(u64);
 
-    std::optional<u64> TryFindSize(GPUVAddr guest_addr) {
+    std::optional<u64> TryFindSize() {
         constexpr size_t BLOCK_SIZE = 0x1000;
         constexpr size_t MAXIMUM_SIZE = 0x100000;
 
         constexpr u64 SELF_BRANCH_A = 0xE2400FFFFF87000FULL;
         constexpr u64 SELF_BRANCH_B = 0xE2400FFFFF07000FULL;
 
-        size_t offset = 0;
-        size_t size = BLOCK_SIZE;
+        GPUVAddr guest_addr{program_base + start_address};
+        size_t offset{0};
+        size_t size{BLOCK_SIZE};
         while (size <= MAXIMUM_SIZE) {
             code.resize(size / INST_SIZE);
             u64* const data = code.data() + offset / INST_SIZE;
@@ -623,6 +634,7 @@ bool PipelineCache::RefreshStages() {
             GraphicsEnvironment env{maxwell3d, gpu_memory, program, base_addr, start_address};
             shader_info = MakeShaderInfo(env, *cpu_shader_addr);
         }
+        shader_infos[index] = shader_info;
         graphics_key.unique_hashes[index] = shader_info->unique_hash;
     }
     return true;
@@ -707,6 +719,8 @@ GraphicsPipeline PipelineCache::CreateGraphicsPipeline() {
         GraphicsEnvironment& env{graphics_envs[index]};
         const u32 start_address{maxwell3d.regs.shader_config[index].offset};
         env = GraphicsEnvironment{maxwell3d, gpu_memory, program, base_addr, start_address};
+        env.SetCachedSize(shader_infos[index]->size_bytes);
+
         generic_envs.push_back(&env);
         envs.push_back(&env);
     }
