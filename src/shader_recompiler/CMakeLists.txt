@@ -127,6 +127,11 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/texture_gather_swizzled.cpp
     frontend/maxwell/translate/impl/texture_gather.cpp
     frontend/maxwell/translate/impl/texture_query.cpp
+    frontend/maxwell/translate/impl/video_helper.cpp
+    frontend/maxwell/translate/impl/video_helper.h
+    frontend/maxwell/translate/impl/video_minimum_maximum.cpp
+    frontend/maxwell/translate/impl/video_multiply_add.cpp
+    frontend/maxwell/translate/impl/video_set_predicate.cpp
     frontend/maxwell/translate/impl/vote.cpp
     frontend/maxwell/translate/impl/warp_shuffle.cpp
     frontend/maxwell/translate/translate.cpp

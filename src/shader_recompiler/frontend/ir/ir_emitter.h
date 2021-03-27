@@ -196,8 +196,10 @@ public:
     [[nodiscard]] U32 FindUMsb(const U32& value);
     [[nodiscard]] U32 SMin(const U32& a, const U32& b);
     [[nodiscard]] U32 UMin(const U32& a, const U32& b);
+    [[nodiscard]] U32 IMin(const U32& a, const U32& b, bool is_signed);
     [[nodiscard]] U32 SMax(const U32& a, const U32& b);
     [[nodiscard]] U32 UMax(const U32& a, const U32& b);
+    [[nodiscard]] U32 IMax(const U32& a, const U32& b, bool is_signed);
 
     [[nodiscard]] U1 ILessThan(const U32& lhs, const U32& rhs, bool is_signed);
     [[nodiscard]] U1 IEqual(const U32U64& lhs, const U32U64& rhs);

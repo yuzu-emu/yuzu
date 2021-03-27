@@ -1121,12 +1121,20 @@ U32 IREmitter::UMin(const U32& a, const U32& b) {
     return Inst<U32>(Opcode::UMin32, a, b);
 }
 
+U32 IREmitter::IMin(const U32& a, const U32& b, bool is_signed) {
+    return is_signed ? SMin(a, b) : UMin(a, b);
+}
+
 U32 IREmitter::SMax(const U32& a, const U32& b) {
     return Inst<U32>(Opcode::SMax32, a, b);
 }
 
 U32 IREmitter::UMax(const U32& a, const U32& b) {
     return Inst<U32>(Opcode::UMax32, a, b);
+}
+
+U32 IREmitter::IMax(const U32& a, const U32& b, bool is_signed) {
+    return is_signed ? SMax(a, b) : UMax(a, b);
 }
 
 U1 IREmitter::ILessThan(const U32& lhs, const U32& rhs, bool is_signed) {
@@ -1267,11 +1275,7 @@ U32U64 IREmitter::ConvertFToU(size_t bitsize, const F16F32F64& value) {
 }
 
 U32U64 IREmitter::ConvertFToI(size_t bitsize, bool is_signed, const F16F32F64& value) {
-    if (is_signed) {
-        return ConvertFToS(bitsize, value);
-    } else {
-        return ConvertFToU(bitsize, value);
-    }
+    return is_signed ? ConvertFToS(bitsize, value) : ConvertFToU(bitsize, value);
 }
 
 F16F32F64 IREmitter::ConvertSToF(size_t dest_bitsize, size_t src_bitsize, const Value& value) {
@@ -1360,11 +1364,8 @@ F16F32F64 IREmitter::ConvertUToF(size_t dest_bitsize, size_t src_bitsize, const 
 
 F16F32F64 IREmitter::ConvertIToF(size_t dest_bitsize, size_t src_bitsize, bool is_signed,
                                  const Value& value) {
-    if (is_signed) {
-        return ConvertSToF(dest_bitsize, src_bitsize, value);
-    } else {
-        return ConvertUToF(dest_bitsize, src_bitsize, value);
-    }
+    return is_signed ? ConvertSToF(dest_bitsize, src_bitsize, value)
+                     : ConvertUToF(dest_bitsize, src_bitsize, value);
 }
 
 U32U64 IREmitter::UConvert(size_t result_bitsize, const U32U64& value) {
