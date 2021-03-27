@@ -76,6 +76,8 @@ Id GetAttributeType(EmitContext& ctx, AttributeType type) {
         return ctx.TypeVector(ctx.TypeInt(32, true), 4);
     case AttributeType::UnsignedInt:
         return ctx.U32[4];
+    case AttributeType::Disabled:
+        break;
     }
     throw InvalidArgument("Invalid attribute type {}", type);
 }
@@ -305,15 +307,36 @@ void EmitContext::DefineInputs(const Info& info) {
     if (info.loads_front_face) {
         front_face = DefineInput(*this, U1, spv::BuiltIn::FrontFacing);
     }
-    for (size_t index = 0; index < info.loads_generics.size(); ++index) {
-        if (!info.loads_generics[index]) {
+    for (size_t index = 0; index < info.input_generics.size(); ++index) {
+        const InputVarying generic{info.input_generics[index]};
+        if (!generic.used) {
             continue;
         }
-        const Id type{GetAttributeType(*this, profile.generic_input_types[index])};
+        const AttributeType input_type{profile.generic_input_types[index]};
+        if (input_type == AttributeType::Disabled) {
+            continue;
+        }
+        const Id type{GetAttributeType(*this, input_type)};
         const Id id{DefineInput(*this, type)};
         Decorate(id, spv::Decoration::Location, static_cast<u32>(index));
         Name(id, fmt::format("in_attr{}", index));
         input_generics[index] = id;
+
+        if (stage != Stage::Fragment) {
+            continue;
+        }
+        switch (generic.interpolation) {
+        case Interpolation::Smooth:
+            // Default
+            // Decorate(id, spv::Decoration::Smooth);
+            break;
+        case Interpolation::NoPerspective:
+            Decorate(id, spv::Decoration::NoPerspective);
+            break;
+        case Interpolation::Flat:
+            Decorate(id, spv::Decoration::Flat);
+            break;
+        }
     }
 }
 

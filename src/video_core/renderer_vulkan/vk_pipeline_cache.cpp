@@ -755,6 +755,9 @@ ComputePipeline PipelineCache::CreateComputePipeline(ShaderPools& pools,
 }
 
 static Shader::AttributeType CastAttributeType(const FixedPipelineState::VertexAttribute& attr) {
+    if (attr.enabled == 0) {
+        return Shader::AttributeType::Disabled;
+    }
     switch (attr.Type()) {
     case Maxwell::VertexAttribute::Type::SignedNorm:
     case Maxwell::VertexAttribute::Type::UnsignedNorm:

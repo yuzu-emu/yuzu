@@ -14,6 +14,7 @@ enum class AttributeType : u8 {
     Float,
     SignedInt,
     UnsignedInt,
+    Disabled,
 };
 
 struct Profile {

@@ -10,16 +10,23 @@
 
 namespace Shader::Backend::SPIRV {
 namespace {
-std::tuple<Id, Id, bool> AttrTypes(EmitContext& ctx, u32 index) {
-    const bool is_first_reader{ctx.stage == Stage::VertexB};
+struct AttrInfo {
+    Id pointer;
+    Id id;
+    bool needs_cast;
+};
+
+std::optional<AttrInfo> AttrTypes(EmitContext& ctx, u32 index) {
     const AttributeType type{ctx.profile.generic_input_types.at(index)};
     switch (type) {
     case AttributeType::Float:
-        return {ctx.input_f32, ctx.F32[1], false};
+        return AttrInfo{ctx.input_f32, ctx.F32[1], false};
     case AttributeType::UnsignedInt:
-        return {ctx.input_u32, ctx.U32[1], true};
+        return AttrInfo{ctx.input_u32, ctx.U32[1], true};
     case AttributeType::SignedInt:
-        return {ctx.input_s32, ctx.TypeInt(32, true), true};
+        return AttrInfo{ctx.input_s32, ctx.TypeInt(32, true), true};
+    case AttributeType::Disabled:
+        return std::nullopt;
     }
     throw InvalidArgument("Invalid attribute type {}", type);
 }
@@ -129,11 +136,15 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr) {
     const auto element_id{[&] { return ctx.Constant(ctx.U32[1], element); }};
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
-        const auto [pointer_type, type, needs_cast]{AttrTypes(ctx, index)};
+        const std::optional<AttrInfo> type{AttrTypes(ctx, index)};
+        if (!type) {
+            // Attribute is disabled
+            return ctx.Constant(ctx.F32[1], 0.0f);
+        }
         const Id generic_id{ctx.input_generics.at(index)};
-        const Id pointer{ctx.OpAccessChain(pointer_type, generic_id, element_id())};
-        const Id value{ctx.OpLoad(type, pointer)};
-        return needs_cast ? ctx.OpBitcast(ctx.F32[1], value) : value;
+        const Id pointer{ctx.OpAccessChain(type->pointer, generic_id, element_id())};
+        const Id value{ctx.OpLoad(type->id, pointer)};
+        return type->needs_cast ? ctx.OpBitcast(ctx.F32[1], value) : value;
     }
     switch (attr) {
     case IR::Attribute::PositionX:

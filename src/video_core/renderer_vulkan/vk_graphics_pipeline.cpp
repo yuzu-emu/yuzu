@@ -221,10 +221,10 @@ void GraphicsPipeline::MakePipeline(const Device& device, const FixedPipelineSta
         }
     }
     static_vector<VkVertexInputAttributeDescription, 32> vertex_attributes;
-    const auto& input_attributes = stage_infos[0].loads_generics;
+    const auto& input_attributes = stage_infos[0].input_generics;
     for (size_t index = 0; index < state.attributes.size(); ++index) {
         const auto& attribute = state.attributes[index];
-        if (!attribute.enabled || !input_attributes[index]) {
+        if (!attribute.enabled || !input_attributes[index].used) {
             continue;
         }
         vertex_attributes.push_back({

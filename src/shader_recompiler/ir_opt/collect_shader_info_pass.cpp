@@ -28,7 +28,7 @@ void AddConstantBufferDescriptor(Info& info, u32 index, u32 count) {
 
 void GetAttribute(Info& info, IR::Attribute attribute) {
     if (IR::IsGeneric(attribute)) {
-        info.loads_generics.at(IR::GenericAttributeIndex(attribute)) = true;
+        info.input_generics.at(IR::GenericAttributeIndex(attribute)).used = true;
         return;
     }
     switch (attribute) {

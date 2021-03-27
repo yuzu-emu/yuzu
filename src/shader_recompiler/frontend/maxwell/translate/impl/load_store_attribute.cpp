@@ -151,16 +151,8 @@ void TranslatorVisitor::IPA(u64 insn) {
             value = ir.FPMul(value, position_w);
         }
     }
-    switch (ipa.interpolation_mode) {
-    case InterpolationMode::Pass:
-        break;
-    case InterpolationMode::Multiply:
+    if (ipa.interpolation_mode == InterpolationMode::Multiply) {
         value = ir.FPMul(value, F(ipa.multiplier));
-        break;
-    case InterpolationMode::Constant:
-        throw NotImplementedException("IPA.CONSTANT");
-    case InterpolationMode::Sc:
-        throw NotImplementedException("IPA.SC");
     }
 
     // Saturated IPAs are generally generated out of clamped varyings.
