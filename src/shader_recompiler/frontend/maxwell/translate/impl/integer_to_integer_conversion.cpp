@@ -52,10 +52,14 @@ void I2I(TranslatorVisitor& v, u64 insn, const IR::U32& src_a) {
         BitField<13, 1, u64> src_fmt_sign;
         BitField<41, 3, u64> selector;
         BitField<45, 1, u64> neg;
+        BitField<47, 1, u64> cc;
         BitField<49, 1, u64> abs;
         BitField<50, 1, u64> sat;
     } const i2i{insn};
 
+    if (i2i.cc != 0) {
+        throw NotImplementedException("I2I CC");
+    }
     if (i2i.sat != 0) {
         throw NotImplementedException("I2I SAT");
     }
