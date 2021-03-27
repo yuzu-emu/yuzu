@@ -172,6 +172,7 @@ private:
     TextureCache& texture_cache;
 
     GraphicsPipelineCacheKey graphics_key{};
+    std::array<const ShaderInfo*, 6> shader_infos{};
 
     std::unordered_map<ComputePipelineCacheKey, ComputePipeline> compute_cache;
     std::unordered_map<GraphicsPipelineCacheKey, GraphicsPipeline> graphics_cache;
