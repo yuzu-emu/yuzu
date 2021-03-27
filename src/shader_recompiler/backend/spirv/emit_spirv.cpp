@@ -126,12 +126,12 @@ Id DefineMain(EmitContext& ctx, IR::Program& program) {
     return main;
 }
 
-void DefineEntryPoint(Environment& env, const IR::Program& program, EmitContext& ctx, Id main) {
+void DefineEntryPoint(const IR::Program& program, EmitContext& ctx, Id main) {
     const std::span interfaces(ctx.interfaces.data(), ctx.interfaces.size());
     spv::ExecutionModel execution_model{};
     switch (program.stage) {
     case Shader::Stage::Compute: {
-        const std::array<u32, 3> workgroup_size{env.WorkgroupSize()};
+        const std::array<u32, 3> workgroup_size{program.workgroup_size};
         execution_model = spv::ExecutionModel::GLCompute;
         ctx.AddExecutionMode(main, spv::ExecutionMode::LocalSize, workgroup_size[0],
                              workgroup_size[1], workgroup_size[2]);
@@ -148,7 +148,7 @@ void DefineEntryPoint(Environment& env, const IR::Program& program, EmitContext&
         }
         break;
     default:
-        throw NotImplementedException("Stage {}", env.ShaderStage());
+        throw NotImplementedException("Stage {}", program.stage);
     }
     ctx.AddEntryPoint(execution_model, main, "main", interfaces);
 }
@@ -267,11 +267,10 @@ Id PhiArgDef(EmitContext& ctx, IR::Inst* inst, size_t index) {
 }
 } // Anonymous namespace
 
-std::vector<u32> EmitSPIRV(const Profile& profile, Environment& env, IR::Program& program,
-                           u32& binding) {
+std::vector<u32> EmitSPIRV(const Profile& profile, IR::Program& program, u32& binding) {
     EmitContext ctx{profile, program, binding};
     const Id main{DefineMain(ctx, program)};
-    DefineEntryPoint(env, program, ctx, main);
+    DefineEntryPoint(program, ctx, main);
     if (profile.support_float_controls) {
         ctx.AddExtension("SPV_KHR_float_controls");
         SetupDenormControl(profile, program, ctx, main);

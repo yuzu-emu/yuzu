@@ -8,15 +8,14 @@
 
 #include "common/common_types.h"
 #include "shader_recompiler/backend/spirv/emit_context.h"
-#include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::SPIRV {
 
-[[nodiscard]] std::vector<u32> EmitSPIRV(const Profile& profile, Environment& env,
-                                         IR::Program& program, u32& binding);
+[[nodiscard]] std::vector<u32> EmitSPIRV(const Profile& profile, IR::Program& program,
+                                         u32& binding);
 
 // Microinstruction emitters
 Id EmitPhi(EmitContext& ctx, IR::Inst* inst);
