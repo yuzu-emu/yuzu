@@ -680,7 +680,6 @@ GraphicsPipeline PipelineCache::CreateGraphicsPipeline(ShaderPools& pools,
     std::array<vk::ShaderModule, Maxwell::MaxShaderStage> modules;
 
     u32 binding{0};
-    env_index = 0;
     for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
         if (key.unique_hashes[index] == u128{}) {
             continue;
@@ -691,11 +690,8 @@ GraphicsPipeline PipelineCache::CreateGraphicsPipeline(ShaderPools& pools,
         const size_t stage_index{index - 1};
         infos[stage_index] = &program.info;
 
-        Shader::Environment& env{*envs[env_index]};
-        ++env_index;
-
-        const Shader::Profile profile{MakeProfile(key, env.ShaderStage())};
-        const std::vector<u32> code{EmitSPIRV(profile, env, program, binding)};
+        const Shader::Profile profile{MakeProfile(key, program.stage)};
+        const std::vector<u32> code{EmitSPIRV(profile, program, binding)};
         modules[stage_index] = BuildShader(device, code);
     }
     return GraphicsPipeline(maxwell3d, gpu_memory, scheduler, buffer_cache, texture_cache, device,
@@ -753,7 +749,7 @@ ComputePipeline PipelineCache::CreateComputePipeline(ShaderPools& pools,
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
     Shader::IR::Program program{TranslateProgram(pools.inst, pools.block, env, cfg)};
     u32 binding{0};
-    std::vector<u32> code{EmitSPIRV(base_profile, env, program, binding)};
+    std::vector<u32> code{EmitSPIRV(base_profile, program, binding)};
     return ComputePipeline{device, descriptor_pool, update_descriptor_queue, program.info,
                            BuildShader(device, code)};
 }

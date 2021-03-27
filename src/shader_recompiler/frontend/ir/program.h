@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <array>
 #include <string>
 
 #include <boost/container/small_vector.hpp>
@@ -19,6 +20,7 @@ struct Program {
     BlockList post_order_blocks;
     Info info;
     Stage stage{};
+    std::array<u32, 3> workgroup_size{};
 };
 
 [[nodiscard]] std::string DumpProgram(const Program& program);
