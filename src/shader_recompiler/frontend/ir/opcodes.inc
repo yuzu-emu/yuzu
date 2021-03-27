@@ -13,6 +13,7 @@ OPCODE(BranchConditional,                                   Void,           U1, 
 OPCODE(LoopMerge,                                           Void,           Label,          Label,                                                          )
 OPCODE(SelectionMerge,                                      Void,           Label,                                                                          )
 OPCODE(Return,                                              Void,                                                                                           )
+OPCODE(Unreachable,                                         Void,                                                                                           )
 OPCODE(DemoteToHelperInvocation,                            Void,           Label,                                                                          )
 
 // Special operations
@@ -26,6 +27,8 @@ OPCODE(GetPred,                                             U1,             Pred
 OPCODE(SetPred,                                             Void,           Pred,           U1,                                                             )
 OPCODE(GetGotoVariable,                                     U1,             U32,                                                                            )
 OPCODE(SetGotoVariable,                                     Void,           U32,            U1,                                                             )
+OPCODE(GetIndirectBranchVariable,                           U32,                                                                                            )
+OPCODE(SetIndirectBranchVariable,                           Void,           U32,                                                                            )
 OPCODE(GetCbufU8,                                           U32,            U32,            U32,                                                            )
 OPCODE(GetCbufS8,                                           U32,            U32,            U32,                                                            )
 OPCODE(GetCbufU16,                                          U32,            U32,            U32,                                                            )

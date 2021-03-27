@@ -52,6 +52,8 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/control_flow.h
     frontend/maxwell/decode.cpp
     frontend/maxwell/decode.h
+    frontend/maxwell/indirect_branch_table_track.cpp
+    frontend/maxwell/indirect_branch_table_track.h
     frontend/maxwell/instruction.h
     frontend/maxwell/location.h
     frontend/maxwell/maxwell.inc
@@ -63,6 +65,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/structured_control_flow.h
     frontend/maxwell/translate/impl/bitfield_extract.cpp
     frontend/maxwell/translate/impl/bitfield_insert.cpp
+    frontend/maxwell/translate/impl/branch_indirect.cpp
     frontend/maxwell/translate/impl/common_encoding.h
     frontend/maxwell/translate/impl/common_funcs.cpp
     frontend/maxwell/translate/impl/common_funcs.h
@@ -110,6 +113,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/integer_short_multiply_add.cpp
     frontend/maxwell/translate/impl/integer_to_integer_conversion.cpp
     frontend/maxwell/translate/impl/load_constant.cpp
+    frontend/maxwell/translate/impl/load_constant.h
     frontend/maxwell/translate/impl/load_effective_address.cpp
     frontend/maxwell/translate/impl/load_store_attribute.cpp
     frontend/maxwell/translate/impl/load_store_local_shared.cpp

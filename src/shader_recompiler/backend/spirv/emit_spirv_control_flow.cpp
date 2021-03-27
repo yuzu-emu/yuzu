@@ -26,6 +26,10 @@ void EmitReturn(EmitContext& ctx) {
     ctx.OpReturn();
 }
 
+void EmitUnreachable(EmitContext& ctx) {
+    ctx.OpUnreachable();
+}
+
 void EmitDemoteToHelperInvocation(EmitContext& ctx, Id continue_label) {
     ctx.OpDemoteToHelperInvocationEXT();
     ctx.OpBranch(continue_label);

@@ -48,8 +48,12 @@ struct GotoVariable : FlagTag {
     u32 index;
 };
 
+struct IndirectBranchVariable {
+    auto operator<=>(const IndirectBranchVariable&) const noexcept = default;
+};
+
 using Variant = std::variant<IR::Reg, IR::Pred, ZeroFlagTag, SignFlagTag, CarryFlagTag,
-                             OverflowFlagTag, GotoVariable>;
+                             OverflowFlagTag, GotoVariable, IndirectBranchVariable>;
 using ValueMap = boost::container::flat_map<IR::Block*, IR::Value, std::less<IR::Block*>>;
 
 struct DefTable {
@@ -63,6 +67,10 @@ struct DefTable {
 
     [[nodiscard]] ValueMap& operator[](GotoVariable goto_variable) {
         return goto_vars[goto_variable.index];
+    }
+
+    [[nodiscard]] ValueMap& operator[](IndirectBranchVariable) {
+        return indirect_branch_var;
     }
 
     [[nodiscard]] ValueMap& operator[](ZeroFlagTag) noexcept {
@@ -84,6 +92,7 @@ struct DefTable {
     std::array<ValueMap, IR::NUM_USER_REGS> regs;
     std::array<ValueMap, IR::NUM_USER_PREDS> preds;
     boost::container::flat_map<u32, ValueMap> goto_vars;
+    ValueMap indirect_branch_var;
     ValueMap zero_flag;
     ValueMap sign_flag;
     ValueMap carry_flag;
@@ -100,6 +109,10 @@ IR::Opcode UndefOpcode(IR::Pred) noexcept {
 
 IR::Opcode UndefOpcode(const FlagTag&) noexcept {
     return IR::Opcode::UndefU1;
+}
+
+IR::Opcode UndefOpcode(IndirectBranchVariable) noexcept {
+    return IR::Opcode::UndefU32;
 }
 
 [[nodiscard]] bool IsPhi(const IR::Inst& inst) noexcept {
@@ -219,6 +232,9 @@ void VisitInst(Pass& pass, IR::Block* block, IR::Inst& inst) {
     case IR::Opcode::SetGotoVariable:
         pass.WriteVariable(GotoVariable{inst.Arg(0).U32()}, block, inst.Arg(1));
         break;
+    case IR::Opcode::SetIndirectBranchVariable:
+        pass.WriteVariable(IndirectBranchVariable{}, block, inst.Arg(0));
+        break;
     case IR::Opcode::SetZFlag:
         pass.WriteVariable(ZeroFlagTag{}, block, inst.Arg(0));
         break;
@@ -243,6 +259,9 @@ void VisitInst(Pass& pass, IR::Block* block, IR::Inst& inst) {
         break;
     case IR::Opcode::GetGotoVariable:
         inst.ReplaceUsesWith(pass.ReadVariable(GotoVariable{inst.Arg(0).U32()}, block));
+        break;
+    case IR::Opcode::GetIndirectBranchVariable:
+        inst.ReplaceUsesWith(pass.ReadVariable(IndirectBranchVariable{}, block));
         break;
     case IR::Opcode::GetZFlag:
         inst.ReplaceUsesWith(pass.ReadVariable(ZeroFlagTag{}, block));

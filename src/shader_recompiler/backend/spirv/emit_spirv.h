@@ -26,6 +26,7 @@ void EmitBranchConditional(EmitContext& ctx, Id condition, Id true_label, Id fal
 void EmitLoopMerge(EmitContext& ctx, Id merge_label, Id continue_label);
 void EmitSelectionMerge(EmitContext& ctx, Id merge_label);
 void EmitReturn(EmitContext& ctx);
+void EmitUnreachable(EmitContext& ctx);
 void EmitDemoteToHelperInvocation(EmitContext& ctx, Id continue_label);
 void EmitPrologue(EmitContext& ctx);
 void EmitEpilogue(EmitContext& ctx);
@@ -35,6 +36,8 @@ void EmitGetPred(EmitContext& ctx);
 void EmitSetPred(EmitContext& ctx);
 void EmitSetGotoVariable(EmitContext& ctx);
 void EmitGetGotoVariable(EmitContext& ctx);
+void EmitSetIndirectBranchVariable(EmitContext& ctx);
+void EmitGetIndirectBranchVariable(EmitContext& ctx);
 Id EmitGetCbufU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 Id EmitGetCbufS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 Id EmitGetCbufU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);

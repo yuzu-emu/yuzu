@@ -53,10 +53,6 @@ void TranslatorVisitor::BRK(u64) {
     ThrowNotImplemented(Opcode::BRK);
 }
 
-void TranslatorVisitor::BRX(u64) {
-    ThrowNotImplemented(Opcode::BRX);
-}
-
 void TranslatorVisitor::CAL() {
     // CAL is a no-op
 }
@@ -179,10 +175,6 @@ void TranslatorVisitor::JCAL(u64) {
 
 void TranslatorVisitor::JMP(u64) {
     ThrowNotImplemented(Opcode::JMP);
-}
-
-void TranslatorVisitor::JMX(u64) {
-    ThrowNotImplemented(Opcode::JMX);
 }
 
 void TranslatorVisitor::KIL() {

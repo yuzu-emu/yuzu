@@ -37,6 +37,7 @@ public:
     void LoopMerge(Block* merge_block, Block* continue_target);
     void SelectionMerge(Block* merge_block);
     void Return();
+    void Unreachable();
     void DemoteToHelperInvocation(Block* continue_label);
 
     void Prologue();
@@ -50,6 +51,9 @@ public:
 
     [[nodiscard]] U1 GetGotoVariable(u32 id);
     void SetGotoVariable(u32 id, const U1& value);
+
+    [[nodiscard]] U32 GetIndirectBranchVariable();
+    void SetIndirectBranchVariable(const U32& value);
 
     [[nodiscard]] U32 GetCbuf(const U32& binding, const U32& byte_offset);
     [[nodiscard]] UAny GetCbuf(const U32& binding, const U32& byte_offset, size_t bitsize,

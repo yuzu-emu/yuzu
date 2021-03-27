@@ -47,7 +47,7 @@ auto MakeSpan(Container& container) {
 }
 
 u64 MakeCbufKey(u32 index, u32 offset) {
-    return (static_cast<u64>(index) << 32) | static_cast<u64>(offset);
+    return (static_cast<u64>(index) << 32) | offset;
 }
 
 class GenericEnvironment : public Shader::Environment {
@@ -114,11 +114,13 @@ public:
         gpu_memory->ReadBlock(program_base + read_lowest, data.get(), code_size);
 
         const u64 num_texture_types{static_cast<u64>(texture_types.size())};
+        const u64 num_cbuf_values{static_cast<u64>(cbuf_values.size())};
         const u32 local_memory_size{LocalMemorySize()};
         const u32 texture_bound{TextureBoundBuffer()};
 
         file.write(reinterpret_cast<const char*>(&code_size), sizeof(code_size))
             .write(reinterpret_cast<const char*>(&num_texture_types), sizeof(num_texture_types))
+            .write(reinterpret_cast<const char*>(&num_cbuf_values), sizeof(num_cbuf_values))
             .write(reinterpret_cast<const char*>(&local_memory_size), sizeof(local_memory_size))
             .write(reinterpret_cast<const char*>(&texture_bound), sizeof(texture_bound))
             .write(reinterpret_cast<const char*>(&start_address), sizeof(start_address))
@@ -127,6 +129,10 @@ public:
             .write(reinterpret_cast<const char*>(&stage), sizeof(stage))
             .write(data.get(), code_size);
         for (const auto [key, type] : texture_types) {
+            file.write(reinterpret_cast<const char*>(&key), sizeof(key))
+                .write(reinterpret_cast<const char*>(&type), sizeof(type));
+        }
+        for (const auto [key, type] : cbuf_values) {
             file.write(reinterpret_cast<const char*>(&key), sizeof(key))
                 .write(reinterpret_cast<const char*>(&type), sizeof(type));
         }
@@ -212,6 +218,7 @@ protected:
 
     std::vector<u64> code;
     std::unordered_map<u64, Shader::TextureType> texture_types;
+    std::unordered_map<u64, u32> cbuf_values;
 
     u32 read_lowest = std::numeric_limits<u32>::max();
     u32 read_highest = 0;
@@ -267,6 +274,17 @@ public:
 
     ~GraphicsEnvironment() override = default;
 
+    u32 ReadCbufValue(u32 cbuf_index, u32 cbuf_offset) override {
+        const auto& cbuf{maxwell3d->state.shader_stages[stage_index].const_buffers[cbuf_index]};
+        ASSERT(cbuf.enabled);
+        u32 value{};
+        if (cbuf_offset < cbuf.size) {
+            value = gpu_memory->Read<u32>(cbuf.address + cbuf_offset);
+        }
+        cbuf_values.emplace(MakeCbufKey(cbuf_index, cbuf_offset), value);
+        return value;
+    }
+
     Shader::TextureType ReadTextureType(u32 cbuf_index, u32 cbuf_offset) override {
         const auto& regs{maxwell3d->regs};
         const auto& cbuf{maxwell3d->state.shader_stages[stage_index].const_buffers[cbuf_index]};
@@ -311,6 +329,18 @@ public:
     }
 
     ~ComputeEnvironment() override = default;
+
+    u32 ReadCbufValue(u32 cbuf_index, u32 cbuf_offset) override {
+        const auto& qmd{kepler_compute->launch_description};
+        ASSERT(((qmd.const_buffer_enable_mask.Value() >> cbuf_index) & 1) != 0);
+        const auto& cbuf{qmd.const_buffer_config[cbuf_index]};
+        u32 value{};
+        if (cbuf_offset < cbuf.size) {
+            value = gpu_memory->Read<u32>(cbuf.Address() + cbuf_offset);
+        }
+        cbuf_values.emplace(MakeCbufKey(cbuf_index, cbuf_offset), value);
+        return value;
+    }
 
     Shader::TextureType ReadTextureType(u32 cbuf_index, u32 cbuf_offset) override {
         const auto& regs{kepler_compute->regs};
@@ -386,8 +416,10 @@ public:
     void Deserialize(std::ifstream& file) {
         u64 code_size{};
         u64 num_texture_types{};
+        u64 num_cbuf_values{};
         file.read(reinterpret_cast<char*>(&code_size), sizeof(code_size))
             .read(reinterpret_cast<char*>(&num_texture_types), sizeof(num_texture_types))
+            .read(reinterpret_cast<char*>(&num_cbuf_values), sizeof(num_cbuf_values))
             .read(reinterpret_cast<char*>(&local_memory_size), sizeof(local_memory_size))
             .read(reinterpret_cast<char*>(&texture_bound), sizeof(texture_bound))
             .read(reinterpret_cast<char*>(&start_address), sizeof(start_address))
@@ -403,6 +435,13 @@ public:
                 .read(reinterpret_cast<char*>(&type), sizeof(type));
             texture_types.emplace(key, type);
         }
+        for (size_t i = 0; i < num_cbuf_values; ++i) {
+            u64 key;
+            u32 value;
+            file.read(reinterpret_cast<char*>(&key), sizeof(key))
+                .read(reinterpret_cast<char*>(&value), sizeof(value));
+            cbuf_values.emplace(key, value);
+        }
         if (stage == Shader::Stage::Compute) {
             file.read(reinterpret_cast<char*>(&workgroup_size), sizeof(workgroup_size))
                 .read(reinterpret_cast<char*>(&shared_memory_size), sizeof(shared_memory_size));
@@ -416,6 +455,14 @@ public:
             throw Shader::LogicError("Out of bounds address {}", address);
         }
         return code[(address - read_lowest) / sizeof(u64)];
+    }
+
+    u32 ReadCbufValue(u32 cbuf_index, u32 cbuf_offset) override {
+        const auto it{cbuf_values.find(MakeCbufKey(cbuf_index, cbuf_offset))};
+        if (it == cbuf_values.end()) {
+            throw Shader::LogicError("Uncached read texture type");
+        }
+        return it->second;
     }
 
     Shader::TextureType ReadTextureType(u32 cbuf_index, u32 cbuf_offset) override {
@@ -445,6 +492,7 @@ public:
 private:
     std::unique_ptr<u64[]> code;
     std::unordered_map<u64, Shader::TextureType> texture_types;
+    std::unordered_map<u64, u32> cbuf_values;
     std::array<u32, 3> workgroup_size{};
     u32 local_memory_size{};
     u32 shared_memory_size{};
