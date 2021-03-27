@@ -156,6 +156,10 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr) {
             return ctx.OpISub(ctx.U32[1], ctx.OpLoad(ctx.U32[1], ctx.vertex_index),
                               ctx.OpLoad(ctx.U32[1], ctx.base_vertex));
         }
+    case IR::Attribute::FrontFace:
+        return ctx.OpSelect(ctx.U32[1], ctx.OpLoad(ctx.U1, ctx.front_face),
+                            ctx.Constant(ctx.U32[1], std::numeric_limits<u32>::max()),
+                            ctx.u32_zero_value);
     default:
         throw NotImplementedException("Read attribute {}", attr);
     }

@@ -94,6 +94,7 @@ public:
     Id vertex_id{};
     Id vertex_index{};
     Id base_vertex{};
+    Id front_face{};
 
     Id input_position{};
     std::array<Id, 32> input_generics{};

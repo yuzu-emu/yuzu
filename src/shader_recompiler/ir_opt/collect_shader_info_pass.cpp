@@ -44,6 +44,9 @@ void GetAttribute(Info& info, IR::Attribute attribute) {
     case IR::Attribute::VertexId:
         info.loads_vertex_id = true;
         break;
+    case IR::Attribute::FrontFace:
+        info.loads_front_face = true;
+        break;
     default:
         throw NotImplementedException("Get attribute {}", attribute);
     }
