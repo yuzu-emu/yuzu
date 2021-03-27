@@ -302,6 +302,9 @@ void EmitContext::DefineInputs(const Info& info) {
             base_vertex = DefineInput(*this, U32[1], spv::BuiltIn::BaseVertex);
         }
     }
+    if (info.loads_front_face) {
+        front_face = DefineInput(*this, U1, spv::BuiltIn::FrontFacing);
+    }
     for (size_t index = 0; index < info.loads_generics.size(); ++index) {
         if (!info.loads_generics[index]) {
             continue;

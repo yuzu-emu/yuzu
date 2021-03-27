@@ -62,6 +62,7 @@ struct Info {
     bool loads_position{};
     bool loads_instance_id{};
     bool loads_vertex_id{};
+    bool loads_front_face{};
 
     std::array<bool, 8> stores_frag_color{};
     bool stores_frag_depth{};
