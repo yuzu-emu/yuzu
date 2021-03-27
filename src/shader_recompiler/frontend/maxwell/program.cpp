@@ -27,6 +27,40 @@ static void RemoveUnreachableBlocks(IR::Program& program) {
     });
 }
 
+static void CollectInterpolationInfo(Environment& env, IR::Program& program) {
+    if (program.stage != Stage::Fragment) {
+        return;
+    }
+    const ProgramHeader& sph{env.SPH()};
+    for (size_t index = 0; index < program.info.input_generics.size(); ++index) {
+        std::optional<PixelImap> imap;
+        for (const PixelImap value : sph.ps.GenericInputMap(static_cast<u32>(index))) {
+            if (value == PixelImap::Unused) {
+                continue;
+            }
+            if (imap && imap != value) {
+                throw NotImplementedException("Per component interpolation");
+            }
+            imap = value;
+        }
+        if (!imap) {
+            continue;
+        }
+        program.info.input_generics[index].interpolation = [&] {
+            switch (*imap) {
+            case PixelImap::Unused:
+            case PixelImap::Perspective:
+                return Interpolation::Smooth;
+            case PixelImap::Constant:
+                return Interpolation::Flat;
+            case PixelImap::ScreenLinear:
+                return Interpolation::NoPerspective;
+            }
+            throw NotImplementedException("Unknown interpolation {}", *imap);
+        }();
+    }
+}
+
 IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
                              Environment& env, Flow::CFG& cfg) {
     IR::Program program;
@@ -51,6 +85,7 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
     Optimization::IdentityRemovalPass(program);
     Optimization::VerificationPass(program);
     Optimization::CollectShaderInfoPass(program);
+    CollectInterpolationInfo(env, program);
     return program;
 }
 

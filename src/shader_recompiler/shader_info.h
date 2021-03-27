@@ -31,6 +31,17 @@ enum class TextureType : u32 {
     ShadowArrayCube,
 };
 
+enum class Interpolation {
+    Smooth,
+    Flat,
+    NoPerspective,
+};
+
+struct InputVarying {
+    Interpolation interpolation{Interpolation::Smooth};
+    bool used{false};
+};
+
 struct TextureDescriptor {
     TextureType type;
     u32 cbuf_index;
@@ -58,7 +69,7 @@ struct Info {
     bool uses_local_invocation_id{};
     bool uses_subgroup_invocation_id{};
 
-    std::array<bool, 32> loads_generics{};
+    std::array<InputVarying, 32> input_generics{};
     bool loads_position{};
     bool loads_instance_id{};
     bool loads_vertex_id{};
