@@ -83,6 +83,7 @@ void IREmitter::SelectionMerge(Block* merge_block) {
 }
 
 void IREmitter::Return() {
+    block->SetReturn();
     Inst(Opcode::Return);
 }
 

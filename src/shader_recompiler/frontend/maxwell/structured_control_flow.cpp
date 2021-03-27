@@ -152,7 +152,9 @@ std::string DumpTree(const Tree& tree, u32 indentation = 0) {
     for (auto stmt = tree.begin(); stmt != tree.end(); ++stmt) {
         switch (stmt->type) {
         case StatementType::Code:
-            ret += fmt::format("{}    Block {:04x};\n", indent, stmt->code->LocationBegin());
+            ret += fmt::format("{}    Block {:04x} -> {:04x} (0x{:016x});\n", indent,
+                               stmt->code->LocationBegin(), stmt->code->LocationEnd(),
+                               reinterpret_cast<uintptr_t>(stmt->code));
             break;
         case StatementType::Goto:
             ret += fmt::format("{}    if ({}) goto L{};\n", indent, DumpExpr(stmt->cond),
@@ -749,8 +751,9 @@ private:
                     current_block = block_pool.Create(inst_pool);
                     block_list.push_back(current_block);
                 }
-                IR::IREmitter{*current_block}.DemoteToHelperInvocation(continue_block);
-                current_block = nullptr;
+                IR::Block* demote_block{MergeBlock(parent, stmt)};
+                IR::IREmitter{*current_block}.DemoteToHelperInvocation(demote_block);
+                current_block = demote_block;
                 break;
             }
             default:
