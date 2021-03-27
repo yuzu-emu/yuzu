@@ -133,6 +133,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/texture_fetch_swizzled.cpp
     frontend/maxwell/translate/impl/texture_gather_swizzled.cpp
     frontend/maxwell/translate/impl/texture_gather.cpp
+    frontend/maxwell/translate/impl/texture_load_swizzled.cpp
     frontend/maxwell/translate/impl/texture_load.cpp
     frontend/maxwell/translate/impl/texture_query.cpp
     frontend/maxwell/translate/impl/video_helper.cpp
