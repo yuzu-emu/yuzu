@@ -1183,6 +1183,14 @@ U32 IREmitter::IMax(const U32& a, const U32& b, bool is_signed) {
     return is_signed ? SMax(a, b) : UMax(a, b);
 }
 
+U32 IREmitter::SClamp(const U32& value, const U32& min, const U32& max) {
+    return Inst<U32>(Opcode::SClamp32, value, min, max);
+}
+
+U32 IREmitter::UClamp(const U32& value, const U32& min, const U32& max) {
+    return Inst<U32>(Opcode::UClamp32, value, min, max);
+}
+
 U1 IREmitter::ILessThan(const U32& lhs, const U32& rhs, bool is_signed) {
     return Inst<U1>(is_signed ? Opcode::SLessThan : Opcode::ULessThan, lhs, rhs);
 }

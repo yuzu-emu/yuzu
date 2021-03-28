@@ -287,6 +287,8 @@ Id EmitSMin32(EmitContext& ctx, Id a, Id b);
 Id EmitUMin32(EmitContext& ctx, Id a, Id b);
 Id EmitSMax32(EmitContext& ctx, Id a, Id b);
 Id EmitUMax32(EmitContext& ctx, Id a, Id b);
+Id EmitSClamp32(EmitContext& ctx, Id value, Id min, Id max);
+Id EmitUClamp32(EmitContext& ctx, Id value, Id min, Id max);
 Id EmitSLessThan(EmitContext& ctx, Id lhs, Id rhs);
 Id EmitULessThan(EmitContext& ctx, Id lhs, Id rhs);
 Id EmitIEqual(EmitContext& ctx, Id lhs, Id rhs);
