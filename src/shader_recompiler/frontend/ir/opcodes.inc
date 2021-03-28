@@ -299,6 +299,8 @@ OPCODE(SMin32,                                              U32,            U32,
 OPCODE(UMin32,                                              U32,            U32,            U32,                                                            )
 OPCODE(SMax32,                                              U32,            U32,            U32,                                                            )
 OPCODE(UMax32,                                              U32,            U32,            U32,                                                            )
+OPCODE(SClamp32,                                            U32,            U32,            U32,            U32,                                            )
+OPCODE(UClamp32,                                            U32,            U32,            U32,            U32,                                            )
 OPCODE(SLessThan,                                           U1,             U32,            U32,                                                            )
 OPCODE(ULessThan,                                           U1,             U32,            U32,                                                            )
 OPCODE(IEqual,                                              U1,             U32,            U32,                                                            )

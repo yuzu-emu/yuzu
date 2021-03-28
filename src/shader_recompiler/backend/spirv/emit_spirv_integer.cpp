@@ -163,6 +163,14 @@ Id EmitUMax32(EmitContext& ctx, Id a, Id b) {
     return ctx.OpUMax(ctx.U32[1], a, b);
 }
 
+Id EmitSClamp32(EmitContext& ctx, Id value, Id min, Id max) {
+    return ctx.OpSClamp(ctx.U32[1], value, min, max);
+}
+
+Id EmitUClamp32(EmitContext& ctx, Id value, Id min, Id max) {
+    return ctx.OpUClamp(ctx.U32[1], value, min, max);
+}
+
 Id EmitSLessThan(EmitContext& ctx, Id lhs, Id rhs) {
     return ctx.OpSLessThan(ctx.U1, lhs, rhs);
 }

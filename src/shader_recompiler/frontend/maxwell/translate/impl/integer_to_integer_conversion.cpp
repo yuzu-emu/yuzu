@@ -30,16 +30,33 @@ enum class IntegerWidth : u64 {
 [[nodiscard]] IR::U32 ConvertInteger(IR::IREmitter& ir, const IR::U32& src,
                                      IntegerWidth dst_width) {
     const IR::U32 zero{ir.Imm32(0)};
+    const IR::U32 count{WidthSize(ir, dst_width)};
+    return ir.BitFieldExtract(src, zero, count, false);
+}
+
+[[nodiscard]] IR::U32 SaturateInteger(IR::IREmitter& ir, const IR::U32& src, IntegerWidth dst_width,
+                                      bool dst_signed, bool src_signed) {
+    IR::U32 min{};
+    IR::U32 max{};
+    const IR::U32 zero{ir.Imm32(0)};
     switch (dst_width) {
     case IntegerWidth::Byte:
-        return ir.BitFieldExtract(src, zero, ir.Imm32(8), false);
+        min = dst_signed && src_signed ? ir.Imm32(0xffffff80) : zero;
+        max = dst_signed ? ir.Imm32(0x7f) : ir.Imm32(0xff);
+        break;
     case IntegerWidth::Short:
-        return ir.BitFieldExtract(src, zero, ir.Imm32(16), false);
+        min = dst_signed && src_signed ? ir.Imm32(0xffff8000) : zero;
+        max = dst_signed ? ir.Imm32(0x7fff) : ir.Imm32(0xffff);
+        break;
     case IntegerWidth::Word:
-        return ir.BitFieldExtract(src, zero, ir.Imm32(32), false);
+        min = dst_signed && src_signed ? ir.Imm32(0x80000000) : zero;
+        max = dst_signed ? ir.Imm32(0x7fffffff) : ir.Imm32(0xffffffff);
+        break;
     default:
         throw NotImplementedException("Invalid width {}", dst_width);
     }
+    const IR::U32 value{!dst_signed && src_signed ? ir.SMax(zero, src) : src};
+    return dst_signed && src_signed ? ir.SClamp(value, min, max) : ir.UClamp(value, min, max);
 }
 
 void I2I(TranslatorVisitor& v, u64 insn, const IR::U32& src_a) {
@@ -60,9 +77,6 @@ void I2I(TranslatorVisitor& v, u64 insn, const IR::U32& src_a) {
     if (i2i.cc != 0) {
         throw NotImplementedException("I2I CC");
     }
-    if (i2i.sat != 0) {
-        throw NotImplementedException("I2I SAT");
-    }
     if (i2i.src_fmt == IntegerWidth::Short && (i2i.selector == 1 || i2i.selector == 3)) {
         throw NotImplementedException("16-bit source format incompatible with selector {}",
                                       i2i.selector);
@@ -75,15 +89,21 @@ void I2I(TranslatorVisitor& v, u64 insn, const IR::U32& src_a) {
     const s32 selector{static_cast<s32>(i2i.selector)};
     const IR::U32 offset{v.ir.Imm32(selector * 8)};
     const IR::U32 count{WidthSize(v.ir, i2i.src_fmt)};
-    IR::U32 src_values{v.ir.BitFieldExtract(src_a, offset, count, i2i.src_fmt_sign != 0)};
-    if (i2i.abs) {
+    const bool src_signed{i2i.src_fmt_sign != 0};
+    const bool dst_signed{i2i.dst_fmt_sign != 0};
+    const bool sat{i2i.sat != 0};
+
+    IR::U32 src_values{v.ir.BitFieldExtract(src_a, offset, count, src_signed)};
+    if (i2i.abs != 0) {
         src_values = v.ir.IAbs(src_values);
     }
-    if (i2i.neg) {
+    if (i2i.neg != 0) {
         src_values = v.ir.INeg(src_values);
     }
+    const IR::U32 result{
+        sat ? SaturateInteger(v.ir, src_values, i2i.dst_fmt, dst_signed, src_signed)
+            : ConvertInteger(v.ir, src_values, i2i.dst_fmt)};
 
-    const IR::U32 result{ConvertInteger(v.ir, src_values, i2i.dst_fmt)};
     v.X(i2i.dest_reg, result);
 }
 } // Anonymous namespace

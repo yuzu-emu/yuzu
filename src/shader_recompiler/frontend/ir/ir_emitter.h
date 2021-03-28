@@ -206,6 +206,8 @@ public:
     [[nodiscard]] U32 SMax(const U32& a, const U32& b);
     [[nodiscard]] U32 UMax(const U32& a, const U32& b);
     [[nodiscard]] U32 IMax(const U32& a, const U32& b, bool is_signed);
+    [[nodiscard]] U32 SClamp(const U32& value, const U32& min, const U32& max);
+    [[nodiscard]] U32 UClamp(const U32& value, const U32& min, const U32& max);
 
     [[nodiscard]] U1 ILessThan(const U32& lhs, const U32& rhs, bool is_signed);
     [[nodiscard]] U1 IEqual(const U32U64& lhs, const U32U64& rhs);
