@@ -70,6 +70,7 @@ public:
     Id true_value{};
     Id false_value{};
     Id u32_zero_value{};
+    Id f32_zero_value{};
 
     UniformDefinitions uniform_types;
 

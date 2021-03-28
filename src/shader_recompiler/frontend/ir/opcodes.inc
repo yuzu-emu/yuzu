@@ -380,6 +380,7 @@ OPCODE(BindlessImageGather,                                 F32x4,          U32,
 OPCODE(BindlessImageGatherDref,                             F32x4,          U32,            Opaque,         Opaque,         Opaque,         F32,            )
 OPCODE(BindlessImageFetch,                                  F32x4,          U32,            Opaque,         Opaque,         Opaque,         Opaque,         )
 OPCODE(BindlessImageQueryDimensions,                        U32x4,          U32,            U32,                                                            )
+OPCODE(BindlessImageQueryLod,                               F32x4,          U32,            Opaque,                                                         )
 
 OPCODE(BoundImageSampleImplicitLod,                         F32x4,          U32,            Opaque,         Opaque,         Opaque,                         )
 OPCODE(BoundImageSampleExplicitLod,                         F32x4,          U32,            Opaque,         Opaque,         Opaque,                         )
@@ -389,6 +390,7 @@ OPCODE(BoundImageGather,                                    F32x4,          U32,
 OPCODE(BoundImageGatherDref,                                F32x4,          U32,            Opaque,         Opaque,         Opaque,         F32,            )
 OPCODE(BoundImageFetch,                                     F32x4,          U32,            Opaque,         Opaque,         Opaque,         Opaque,         )
 OPCODE(BoundImageQueryDimensions,                           U32x4,          U32,            U32,                                                            )
+OPCODE(BoundImageQueryLod,                                  F32x4,          U32,            Opaque,                                                         )
 
 OPCODE(ImageSampleImplicitLod,                              F32x4,          U32,            Opaque,         Opaque,         Opaque,                         )
 OPCODE(ImageSampleExplicitLod,                              F32x4,          U32,            Opaque,         Opaque,         Opaque,                         )
@@ -398,6 +400,7 @@ OPCODE(ImageGather,                                         F32x4,          U32,
 OPCODE(ImageGatherDref,                                     F32x4,          U32,            Opaque,         Opaque,         Opaque,         F32,            )
 OPCODE(ImageFetch,                                          F32x4,          U32,            Opaque,         Opaque,         Opaque,         Opaque,         )
 OPCODE(ImageQueryDimensions,                                U32x4,          U32,            U32,                                                            )
+OPCODE(ImageQueryLod,                                       F32x4,          U32,            Opaque,                                                         )
 
 // Warp operations
 OPCODE(VoteAll,                                             U1,             U1,                                                                             )
