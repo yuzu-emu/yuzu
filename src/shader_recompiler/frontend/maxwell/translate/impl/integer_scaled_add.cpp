@@ -43,7 +43,10 @@ void ISCADD(TranslatorVisitor& v, u64 insn, IR::U32 op_b) {
     v.X(iscadd.dest_reg, result);
 
     if (iscadd.cc != 0) {
-        throw NotImplementedException("ISCADD CC");
+        v.SetZFlag(v.ir.GetZeroFromOp(result));
+        v.SetSFlag(v.ir.GetSignFromOp(result));
+        v.SetCFlag(v.ir.GetCarryFromOp(result));
+        v.SetOFlag(v.ir.GetOverflowFromOp(result));
     }
 }
 
