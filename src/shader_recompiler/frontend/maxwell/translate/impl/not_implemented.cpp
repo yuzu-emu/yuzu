@@ -193,14 +193,6 @@ void TranslatorVisitor::LD(u64) {
     ThrowNotImplemented(Opcode::LD);
 }
 
-void TranslatorVisitor::LDL(u64) {
-    ThrowNotImplemented(Opcode::LDL);
-}
-
-void TranslatorVisitor::LDS(u64) {
-    ThrowNotImplemented(Opcode::LDS);
-}
-
 void TranslatorVisitor::LEPC(u64) {
     ThrowNotImplemented(Opcode::LEPC);
 }
@@ -309,16 +301,8 @@ void TranslatorVisitor::ST(u64) {
     ThrowNotImplemented(Opcode::ST);
 }
 
-void TranslatorVisitor::STL(u64) {
-    ThrowNotImplemented(Opcode::STL);
-}
-
 void TranslatorVisitor::STP(u64) {
     ThrowNotImplemented(Opcode::STP);
-}
-
-void TranslatorVisitor::STS(u64) {
-    ThrowNotImplemented(Opcode::STS);
 }
 
 void TranslatorVisitor::SUATOM_cas(u64) {

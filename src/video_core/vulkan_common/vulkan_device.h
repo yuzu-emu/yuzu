@@ -168,9 +168,19 @@ public:
         return nv_viewport_swizzle;
     }
 
-    /// Returns true if the device supports VK_EXT_scalar_block_layout.
+    /// Returns true if the device supports VK_KHR_uniform_buffer_standard_layout.
     bool IsKhrUniformBufferStandardLayoutSupported() const {
         return khr_uniform_buffer_standard_layout;
+    }
+
+    /// Returns true if the device supports VK_KHR_spirv_1_4.
+    bool IsKhrSpirv1_4Supported() const {
+        return khr_spirv_1_4;
+    }
+
+    /// Returns true if the device supports VK_KHR_workgroup_memory_explicit_layout.
+    bool IsKhrWorkgroupMemoryExplicitLayoutSupported() const {
+        return khr_workgroup_memory_explicit_layout;
     }
 
     /// Returns true if the device supports VK_EXT_index_type_uint8.
@@ -296,20 +306,22 @@ private:
     bool is_shader_storage_image_multisample{}; ///< Support for image operations on MSAA images.
     bool is_blit_depth_stencil_supported{};     ///< Support for blitting from and to depth stencil.
     bool nv_viewport_swizzle{};                 ///< Support for VK_NV_viewport_swizzle.
-    bool khr_uniform_buffer_standard_layout{};  ///< Support for std430 on UBOs.
-    bool ext_index_type_uint8{};                ///< Support for VK_EXT_index_type_uint8.
-    bool ext_sampler_filter_minmax{};           ///< Support for VK_EXT_sampler_filter_minmax.
-    bool ext_depth_range_unrestricted{};        ///< Support for VK_EXT_depth_range_unrestricted.
-    bool ext_shader_viewport_index_layer{};     ///< Support for VK_EXT_shader_viewport_index_layer.
-    bool ext_tooling_info{};                    ///< Support for VK_EXT_tooling_info.
-    bool ext_subgroup_size_control{};           ///< Support for VK_EXT_subgroup_size_control.
-    bool ext_transform_feedback{};              ///< Support for VK_EXT_transform_feedback.
-    bool ext_custom_border_color{};             ///< Support for VK_EXT_custom_border_color.
-    bool ext_extended_dynamic_state{};          ///< Support for VK_EXT_extended_dynamic_state.
-    bool ext_shader_stencil_export{};           ///< Support for VK_EXT_shader_stencil_export.
-    bool nv_device_diagnostics_config{};        ///< Support for VK_NV_device_diagnostics_config.
-    bool has_renderdoc{};                       ///< Has RenderDoc attached
-    bool has_nsight_graphics{};                 ///< Has Nsight Graphics attached
+    bool khr_uniform_buffer_standard_layout{};  ///< Support for scalar uniform buffer layouts.
+    bool khr_spirv_1_4{};                       ///< Support for VK_KHR_spirv_1_4.
+    bool khr_workgroup_memory_explicit_layout{}; ///< Support for explicit workgroup layouts.
+    bool ext_index_type_uint8{};                 ///< Support for VK_EXT_index_type_uint8.
+    bool ext_sampler_filter_minmax{};            ///< Support for VK_EXT_sampler_filter_minmax.
+    bool ext_depth_range_unrestricted{};         ///< Support for VK_EXT_depth_range_unrestricted.
+    bool ext_shader_viewport_index_layer{}; ///< Support for VK_EXT_shader_viewport_index_layer.
+    bool ext_tooling_info{};                ///< Support for VK_EXT_tooling_info.
+    bool ext_subgroup_size_control{};       ///< Support for VK_EXT_subgroup_size_control.
+    bool ext_transform_feedback{};          ///< Support for VK_EXT_transform_feedback.
+    bool ext_custom_border_color{};         ///< Support for VK_EXT_custom_border_color.
+    bool ext_extended_dynamic_state{};      ///< Support for VK_EXT_extended_dynamic_state.
+    bool ext_shader_stencil_export{};       ///< Support for VK_EXT_shader_stencil_export.
+    bool nv_device_diagnostics_config{};    ///< Support for VK_NV_device_diagnostics_config.
+    bool has_renderdoc{};                   ///< Has RenderDoc attached
+    bool has_nsight_graphics{};             ///< Has Nsight Graphics attached
 
     // Telemetry parameters
     std::string vendor_name;                      ///< Device's driver name.

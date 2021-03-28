@@ -355,6 +355,52 @@ void IREmitter::WriteGlobal128(const U64& address, const IR::Value& vector) {
     Inst(Opcode::WriteGlobal128, address, vector);
 }
 
+U32 IREmitter::LoadLocal(const IR::U32& word_offset) {
+    return Inst<U32>(Opcode::LoadLocal, word_offset);
+}
+
+void IREmitter::WriteLocal(const IR::U32& word_offset, const IR::U32& value) {
+    Inst(Opcode::WriteLocal, word_offset, value);
+}
+
+Value IREmitter::LoadShared(int bit_size, bool is_signed, const IR::U32& offset) {
+    switch (bit_size) {
+    case 8:
+        return Inst(is_signed ? Opcode::LoadSharedS8 : Opcode::LoadSharedU8, offset);
+    case 16:
+        return Inst(is_signed ? Opcode::LoadSharedS16 : Opcode::LoadSharedU16, offset);
+    case 32:
+        return Inst(Opcode::LoadSharedU32, offset);
+    case 64:
+        return Inst(Opcode::LoadSharedU64, offset);
+    case 128:
+        return Inst(Opcode::LoadSharedU128, offset);
+    }
+    throw InvalidArgument("Invalid bit size {}", bit_size);
+}
+
+void IREmitter::WriteShared(int bit_size, const IR::U32& offset, const IR::Value& value) {
+    switch (bit_size) {
+    case 8:
+        Inst(Opcode::WriteSharedU8, offset, value);
+        break;
+    case 16:
+        Inst(Opcode::WriteSharedU16, offset, value);
+        break;
+    case 32:
+        Inst(Opcode::WriteSharedU32, offset, value);
+        break;
+    case 64:
+        Inst(Opcode::WriteSharedU64, offset, value);
+        break;
+    case 128:
+        Inst(Opcode::WriteSharedU128, offset, value);
+        break;
+    default:
+        throw InvalidArgument("Invalid bit size {}", bit_size);
+    }
+}
+
 U1 IREmitter::GetZeroFromOp(const Value& op) {
     return Inst<U1>(Opcode::GetZeroFromOp, op);
 }

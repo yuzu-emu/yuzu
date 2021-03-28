@@ -76,6 +76,12 @@ bool Inst::MayHaveSideEffects() const noexcept {
     case Opcode::WriteStorage32:
     case Opcode::WriteStorage64:
     case Opcode::WriteStorage128:
+    case Opcode::WriteLocal:
+    case Opcode::WriteSharedU8:
+    case Opcode::WriteSharedU16:
+    case Opcode::WriteSharedU32:
+    case Opcode::WriteSharedU64:
+    case Opcode::WriteSharedU128:
         return true;
     default:
         return false;

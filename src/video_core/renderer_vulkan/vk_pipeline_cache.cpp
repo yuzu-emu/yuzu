@@ -114,10 +114,12 @@ public:
         gpu_memory->ReadBlock(program_base + read_lowest, data.get(), code_size);
 
         const u64 num_texture_types{static_cast<u64>(texture_types.size())};
+        const u32 local_memory_size{LocalMemorySize()};
         const u32 texture_bound{TextureBoundBuffer()};
 
         file.write(reinterpret_cast<const char*>(&code_size), sizeof(code_size))
             .write(reinterpret_cast<const char*>(&num_texture_types), sizeof(num_texture_types))
+            .write(reinterpret_cast<const char*>(&local_memory_size), sizeof(local_memory_size))
             .write(reinterpret_cast<const char*>(&texture_bound), sizeof(texture_bound))
             .write(reinterpret_cast<const char*>(&start_address), sizeof(start_address))
             .write(reinterpret_cast<const char*>(&read_lowest), sizeof(read_lowest))
@@ -132,7 +134,10 @@ public:
         file.flush();
         if (stage == Shader::Stage::Compute) {
             const std::array<u32, 3> workgroup_size{WorkgroupSize()};
-            file.write(reinterpret_cast<const char*>(&workgroup_size), sizeof(workgroup_size));
+            const u32 shared_memory_size{SharedMemorySize()};
+            file.write(reinterpret_cast<const char*>(&workgroup_size), sizeof(workgroup_size))
+                .write(reinterpret_cast<const char*>(&shared_memory_size),
+                       sizeof(shared_memory_size));
         } else {
             file.write(reinterpret_cast<const char*>(&sph), sizeof(sph));
         }
@@ -278,6 +283,16 @@ public:
         return maxwell3d->regs.tex_cb_index;
     }
 
+    u32 LocalMemorySize() const override {
+        const u64 size{sph.LocalMemorySize()};
+        ASSERT(size <= std::numeric_limits<u32>::max());
+        return static_cast<u32>(size);
+    }
+
+    u32 SharedMemorySize() const override {
+        throw Shader::LogicError("Requesting shared memory size in graphics stage");
+    }
+
     std::array<u32, 3> WorkgroupSize() const override {
         throw Shader::LogicError("Requesting workgroup size in a graphics stage");
     }
@@ -311,6 +326,16 @@ public:
 
     u32 TextureBoundBuffer() const override {
         return kepler_compute->regs.tex_cb_index;
+    }
+
+    u32 LocalMemorySize() const override {
+        const auto& qmd{kepler_compute->launch_description};
+        return qmd.local_pos_alloc;
+    }
+
+    u32 SharedMemorySize() const override {
+        const auto& qmd{kepler_compute->launch_description};
+        return qmd.shared_alloc;
     }
 
     std::array<u32, 3> WorkgroupSize() const override {
@@ -366,6 +391,7 @@ public:
         u64 num_texture_types{};
         file.read(reinterpret_cast<char*>(&code_size), sizeof(code_size))
             .read(reinterpret_cast<char*>(&num_texture_types), sizeof(num_texture_types))
+            .read(reinterpret_cast<char*>(&local_memory_size), sizeof(local_memory_size))
             .read(reinterpret_cast<char*>(&texture_bound), sizeof(texture_bound))
             .read(reinterpret_cast<char*>(&start_address), sizeof(start_address))
             .read(reinterpret_cast<char*>(&read_lowest), sizeof(read_lowest))
@@ -381,7 +407,8 @@ public:
             texture_types.emplace(key, type);
         }
         if (stage == Shader::Stage::Compute) {
-            file.read(reinterpret_cast<char*>(&workgroup_size), sizeof(workgroup_size));
+            file.read(reinterpret_cast<char*>(&workgroup_size), sizeof(workgroup_size))
+                .read(reinterpret_cast<char*>(&shared_memory_size), sizeof(shared_memory_size));
         } else {
             file.read(reinterpret_cast<char*>(&sph), sizeof(sph));
         }
@@ -402,6 +429,14 @@ public:
         return it->second;
     }
 
+    u32 LocalMemorySize() const override {
+        return local_memory_size;
+    }
+
+    u32 SharedMemorySize() const override {
+        return shared_memory_size;
+    }
+
     u32 TextureBoundBuffer() const override {
         return texture_bound;
     }
@@ -414,6 +449,8 @@ private:
     std::unique_ptr<u64[]> code;
     std::unordered_map<u64, Shader::TextureType> texture_types;
     std::array<u32, 3> workgroup_size{};
+    u32 local_memory_size{};
+    u32 shared_memory_size{};
     u32 texture_bound{};
     u32 read_lowest{};
     u32 read_highest{};
@@ -541,6 +578,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
     const auto& float_control{device.FloatControlProperties()};
     const VkDriverIdKHR driver_id{device.GetDriverID()};
     base_profile = Shader::Profile{
+        .supported_spirv = device.IsKhrSpirv1_4Supported() ? 0x00010400U : 0x00010000U,
         .unified_descriptor_binding = true,
         .support_vertex_instance_id = false,
         .support_float_controls = true,
@@ -558,6 +596,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
             float_control.shaderSignedZeroInfNanPreserveFloat32 != VK_FALSE,
         .support_fp64_signed_zero_nan_preserve =
             float_control.shaderSignedZeroInfNanPreserveFloat64 != VK_FALSE,
+        .support_explicit_workgroup_layout = device.IsKhrWorkgroupMemoryExplicitLayoutSupported(),
         .support_vote = true,
         .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyBiggerThanGuest(),
         .has_broken_spirv_clamp = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS_KHR,
@@ -600,8 +639,8 @@ ComputePipeline* PipelineCache::CurrentComputePipeline() {
         shader = MakeShaderInfo(env, *cpu_shader_addr);
     }
     const ComputePipelineCacheKey key{
-        .unique_hash = shader->unique_hash,
-        .shared_memory_size = qmd.shared_alloc,
+        .unique_hash{shader->unique_hash},
+        .shared_memory_size{qmd.shared_alloc},
         .workgroup_size{qmd.block_dim_x, qmd.block_dim_y, qmd.block_dim_z},
     };
     const auto [pair, is_new]{compute_cache.try_emplace(key)};

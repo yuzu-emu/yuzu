@@ -99,6 +99,12 @@ public:
     void WriteGlobal64(const U64& address, const IR::Value& vector);
     void WriteGlobal128(const U64& address, const IR::Value& vector);
 
+    [[nodiscard]] U32 LoadLocal(const U32& word_offset);
+    void WriteLocal(const U32& word_offset, const U32& value);
+
+    [[nodiscard]] Value LoadShared(int bit_size, bool is_signed, const U32& offset);
+    void WriteShared(int bit_size, const U32& offset, const Value& value);
+
     [[nodiscard]] U1 GetZeroFromOp(const Value& op);
     [[nodiscard]] U1 GetSignFromOp(const Value& op);
     [[nodiscard]] U1 GetCarryFromOp(const Value& op);

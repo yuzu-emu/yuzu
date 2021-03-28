@@ -73,6 +73,14 @@ public:
 
     UniformDefinitions uniform_types;
 
+    Id private_u32{};
+
+    Id shared_u8{};
+    Id shared_u16{};
+    Id shared_u32{};
+    Id shared_u32x2{};
+    Id shared_u32x4{};
+
     Id input_f32{};
     Id input_u32{};
     Id input_s32{};
@@ -96,6 +104,17 @@ public:
     Id base_vertex{};
     Id front_face{};
 
+    Id local_memory{};
+
+    Id shared_memory_u8{};
+    Id shared_memory_u16{};
+    Id shared_memory_u32{};
+    Id shared_memory_u32x2{};
+    Id shared_memory_u32x4{};
+
+    Id shared_store_u8_func{};
+    Id shared_store_u16_func{};
+
     Id input_position{};
     std::array<Id, 32> input_generics{};
 
@@ -111,6 +130,8 @@ private:
     void DefineCommonTypes(const Info& info);
     void DefineCommonConstants();
     void DefineInterfaces(const Info& info);
+    void DefineLocalMemory(const IR::Program& program);
+    void DefineSharedMemory(const IR::Program& program);
     void DefineConstantBuffers(const Info& info, u32& binding);
     void DefineStorageBuffers(const Info& info, u32& binding);
     void DefineTextures(const Info& info, u32& binding);
