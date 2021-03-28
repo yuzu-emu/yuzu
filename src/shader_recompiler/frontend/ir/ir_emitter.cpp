@@ -1567,6 +1567,12 @@ Value IREmitter::ImageQueryDimension(const Value& handle, const IR::U32& lod) {
     return Inst(op, handle, lod);
 }
 
+Value IREmitter::ImageQueryLod(const Value& handle, const Value& coords) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageQueryLod
+                                         : Opcode::BindlessImageQueryLod};
+    return Inst(op, handle, coords);
+}
+
 U1 IREmitter::VoteAll(const U1& value) {
     return Inst<U1>(Opcode::VoteAll, value);
 }

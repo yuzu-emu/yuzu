@@ -255,6 +255,8 @@ public:
                                                  TextureInstInfo info);
     [[nodiscard]] Value ImageQueryDimension(const Value& handle, const IR::U32& lod);
 
+    [[nodiscard]] Value ImageQueryLod(const Value& handle, const Value& coords);
+
     [[nodiscard]] Value ImageGather(const Value& handle, const Value& coords, const Value& offset,
                                     const Value& offset2, TextureInstInfo info);
 

@@ -182,6 +182,7 @@ void EmitContext::DefineCommonConstants() {
     true_value = ConstantTrue(U1);
     false_value = ConstantFalse(U1);
     u32_zero_value = Constant(U32[1], 0U);
+    f32_zero_value = Constant(F32[1], 0.0f);
 }
 
 void EmitContext::DefineInterfaces(const Info& info) {

@@ -362,6 +362,7 @@ Id EmitBindlessImageGather(EmitContext&);
 Id EmitBindlessImageGatherDref(EmitContext&);
 Id EmitBindlessImageFetch(EmitContext&);
 Id EmitBindlessImageQueryDimensions(EmitContext&);
+Id EmitBindlessImageQueryLod(EmitContext&);
 Id EmitBoundImageSampleImplicitLod(EmitContext&);
 Id EmitBoundImageSampleExplicitLod(EmitContext&);
 Id EmitBoundImageSampleDrefImplicitLod(EmitContext&);
@@ -370,6 +371,7 @@ Id EmitBoundImageGather(EmitContext&);
 Id EmitBoundImageGatherDref(EmitContext&);
 Id EmitBoundImageFetch(EmitContext&);
 Id EmitBoundImageQueryDimensions(EmitContext&);
+Id EmitBoundImageQueryLod(EmitContext&);
 Id EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
                               Id bias_lc, Id offset);
 Id EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
@@ -385,6 +387,7 @@ Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
 Id EmitImageFetch(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords, Id offset,
                   Id lod, Id ms);
 Id EmitImageQueryDimensions(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id lod);
+Id EmitImageQueryLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords);
 Id EmitVoteAll(EmitContext& ctx, Id pred);
 Id EmitVoteAny(EmitContext& ctx, Id pred);
 Id EmitVoteEqual(EmitContext& ctx, Id pred);

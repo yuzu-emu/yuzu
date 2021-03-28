@@ -161,6 +161,10 @@ Id EmitBindlessImageQueryDimensions(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
 
+Id EmitBindlessImageQueryLod(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
 Id EmitBoundImageSampleImplicitLod(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
@@ -190,6 +194,10 @@ Id EmitBoundImageFetch(EmitContext&) {
 }
 
 Id EmitBoundImageQueryDimensions(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+Id EmitBoundImageQueryLod(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
 
@@ -285,6 +293,13 @@ Id EmitImageQueryDimensions(EmitContext& ctx, IR::Inst* inst, const IR::Value& i
                                         mips());
     }
     throw LogicError("Unspecified image type {}", info.type.Value());
+}
+
+Id EmitImageQueryLod(EmitContext& ctx, IR::Inst*, const IR::Value& index, Id coords) {
+    const Id zero{ctx.f32_zero_value};
+    const Id image{TextureImage(ctx, index)};
+    return ctx.OpCompositeConstruct(ctx.F32[4], ctx.OpImageQueryLod(ctx.F32[2], image, coords),
+                                    zero, zero);
 }
 
 } // namespace Shader::Backend::SPIRV
