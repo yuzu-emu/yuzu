@@ -238,4 +238,14 @@ Id EmitLocalInvocationId(EmitContext& ctx) {
     return ctx.OpLoad(ctx.U32[3], ctx.local_invocation_id);
 }
 
+Id EmitLoadLocal(EmitContext& ctx, Id word_offset) {
+    const Id pointer{ctx.OpAccessChain(ctx.private_u32, ctx.local_memory, word_offset)};
+    return ctx.OpLoad(ctx.U32[1], pointer);
+}
+
+void EmitWriteLocal(EmitContext& ctx, Id word_offset, Id value) {
+    const Id pointer{ctx.OpAccessChain(ctx.private_u32, ctx.local_memory, word_offset)};
+    ctx.OpStore(pointer, value);
+}
+
 } // namespace Shader::Backend::SPIRV

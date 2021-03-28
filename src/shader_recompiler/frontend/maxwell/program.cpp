@@ -67,8 +67,10 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
     program.blocks = VisitAST(inst_pool, block_pool, env, cfg);
     program.post_order_blocks = PostOrder(program.blocks);
     program.stage = env.ShaderStage();
+    program.local_memory_size = env.LocalMemorySize();
     if (program.stage == Stage::Compute) {
         program.workgroup_size = env.WorkgroupSize();
+        program.shared_memory_size = env.SharedMemorySize();
     }
     RemoveUnreachableBlocks(program);
 

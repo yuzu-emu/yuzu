@@ -19,6 +19,10 @@ public:
 
     [[nodiscard]] virtual u32 TextureBoundBuffer() const = 0;
 
+    [[nodiscard]] virtual u32 LocalMemorySize() const = 0;
+
+    [[nodiscard]] virtual u32 SharedMemorySize() const = 0;
+
     [[nodiscard]] virtual std::array<u32, 3> WorkgroupSize() const = 0;
 
     [[nodiscard]] const ProgramHeader& SPH() const noexcept {

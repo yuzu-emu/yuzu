@@ -200,6 +200,9 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::LoadStorageS8:
     case IR::Opcode::WriteStorageU8:
     case IR::Opcode::WriteStorageS8:
+    case IR::Opcode::LoadSharedU8:
+    case IR::Opcode::LoadSharedS8:
+    case IR::Opcode::WriteSharedU8:
     case IR::Opcode::SelectU8:
     case IR::Opcode::ConvertF16S8:
     case IR::Opcode::ConvertF16U8:
@@ -224,6 +227,9 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::LoadStorageS16:
     case IR::Opcode::WriteStorageU16:
     case IR::Opcode::WriteStorageS16:
+    case IR::Opcode::LoadSharedU16:
+    case IR::Opcode::LoadSharedS16:
+    case IR::Opcode::WriteSharedU16:
     case IR::Opcode::SelectU16:
     case IR::Opcode::BitCastU16F16:
     case IR::Opcode::BitCastF16U16:

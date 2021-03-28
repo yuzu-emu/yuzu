@@ -14,6 +14,7 @@ add_library(shader_recompiler STATIC
     backend/spirv/emit_spirv_logical.cpp
     backend/spirv/emit_spirv_memory.cpp
     backend/spirv/emit_spirv_select.cpp
+    backend/spirv/emit_spirv_shared_memory.cpp
     backend/spirv/emit_spirv_special.cpp
     backend/spirv/emit_spirv_undefined.cpp
     backend/spirv/emit_spirv_warp.cpp
@@ -111,6 +112,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/load_constant.cpp
     frontend/maxwell/translate/impl/load_effective_address.cpp
     frontend/maxwell/translate/impl/load_store_attribute.cpp
+    frontend/maxwell/translate/impl/load_store_local_shared.cpp
     frontend/maxwell/translate/impl/load_store_memory.cpp
     frontend/maxwell/translate/impl/logic_operation.cpp
     frontend/maxwell/translate/impl/logic_operation_three_input.cpp

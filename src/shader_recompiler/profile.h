@@ -18,6 +18,8 @@ enum class AttributeType : u8 {
 };
 
 struct Profile {
+    u32 supported_spirv{0x00010000};
+
     bool unified_descriptor_binding{};
     bool support_vertex_instance_id{};
     bool support_float_controls{};
@@ -30,6 +32,7 @@ struct Profile {
     bool support_fp16_signed_zero_nan_preserve{};
     bool support_fp32_signed_zero_nan_preserve{};
     bool support_fp64_signed_zero_nan_preserve{};
+    bool support_explicit_workgroup_layout{};
     bool support_vote{};
     bool warp_size_potentially_larger_than_guest{};
 

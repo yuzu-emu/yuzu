@@ -21,6 +21,8 @@ struct Program {
     Info info;
     Stage stage{};
     std::array<u32, 3> workgroup_size{};
+    u32 local_memory_size{};
+    u32 shared_memory_size{};
 };
 
 [[nodiscard]] std::string DumpProgram(const Program& program);

@@ -58,6 +58,8 @@ void EmitSetCFlag(EmitContext& ctx);
 void EmitSetOFlag(EmitContext& ctx);
 Id EmitWorkgroupId(EmitContext& ctx);
 Id EmitLocalInvocationId(EmitContext& ctx);
+Id EmitLoadLocal(EmitContext& ctx, Id word_offset);
+void EmitWriteLocal(EmitContext& ctx, Id word_offset, Id value);
 Id EmitUndefU1(EmitContext& ctx);
 Id EmitUndefU8(EmitContext& ctx);
 Id EmitUndefU16(EmitContext& ctx);
@@ -94,6 +96,18 @@ void EmitWriteStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Va
                         Id value);
 void EmitWriteStorage128(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
                          Id value);
+Id EmitLoadSharedU8(EmitContext& ctx, Id offset);
+Id EmitLoadSharedS8(EmitContext& ctx, Id offset);
+Id EmitLoadSharedU16(EmitContext& ctx, Id offset);
+Id EmitLoadSharedS16(EmitContext& ctx, Id offset);
+Id EmitLoadSharedU32(EmitContext& ctx, Id offset);
+Id EmitLoadSharedU64(EmitContext& ctx, Id offset);
+Id EmitLoadSharedU128(EmitContext& ctx, Id offset);
+void EmitWriteSharedU8(EmitContext& ctx, Id offset, Id value);
+void EmitWriteSharedU16(EmitContext& ctx, Id offset, Id value);
+void EmitWriteSharedU32(EmitContext& ctx, Id offset, Id value);
+void EmitWriteSharedU64(EmitContext& ctx, Id offset, Id value);
+void EmitWriteSharedU128(EmitContext& ctx, Id offset, Id value);
 Id EmitCompositeConstructU32x2(EmitContext& ctx, Id e1, Id e2);
 Id EmitCompositeConstructU32x3(EmitContext& ctx, Id e1, Id e2, Id e3);
 Id EmitCompositeConstructU32x4(EmitContext& ctx, Id e1, Id e2, Id e3, Id e4);
