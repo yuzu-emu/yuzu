@@ -297,8 +297,8 @@ Id EmitImageQueryDimensions(EmitContext& ctx, IR::Inst* inst, const IR::Value& i
 
 Id EmitImageQueryLod(EmitContext& ctx, IR::Inst*, const IR::Value& index, Id coords) {
     const Id zero{ctx.f32_zero_value};
-    const Id image{TextureImage(ctx, index)};
-    return ctx.OpCompositeConstruct(ctx.F32[4], ctx.OpImageQueryLod(ctx.F32[2], image, coords),
+    const Id sampler{Texture(ctx, index)};
+    return ctx.OpCompositeConstruct(ctx.F32[4], ctx.OpImageQueryLod(ctx.F32[2], sampler, coords),
                                     zero, zero);
 }
 
