@@ -47,6 +47,10 @@ void GetAttribute(Info& info, IR::Attribute attribute) {
     case IR::Attribute::FrontFace:
         info.loads_front_face = true;
         break;
+    case IR::Attribute::PointSpriteS:
+    case IR::Attribute::PointSpriteT:
+        info.loads_point_coord = true;
+        break;
     default:
         throw NotImplementedException("Get attribute {}", attribute);
     }
