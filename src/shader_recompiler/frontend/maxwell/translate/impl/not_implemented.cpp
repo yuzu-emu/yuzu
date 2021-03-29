@@ -89,10 +89,6 @@ void TranslatorVisitor::FCHK_imm(u64) {
     ThrowNotImplemented(Opcode::FCHK_imm);
 }
 
-void TranslatorVisitor::FSWZADD(u64) {
-    ThrowNotImplemented(Opcode::FSWZADD);
-}
-
 void TranslatorVisitor::GETCRSPTR(u64) {
     ThrowNotImplemented(Opcode::GETCRSPTR);
 }
