@@ -68,7 +68,7 @@ public:
         }
         cached_lowest = start_address;
         cached_highest = start_address + static_cast<u32>(*size);
-        return Common::CityHash128(reinterpret_cast<const char*>(code.data()), code.size());
+        return Common::CityHash128(reinterpret_cast<const char*>(code.data()), *size);
     }
 
     void SetCachedSize(size_t size_bytes) {
@@ -126,12 +126,10 @@ public:
             .write(reinterpret_cast<const char*>(&read_highest), sizeof(read_highest))
             .write(reinterpret_cast<const char*>(&stage), sizeof(stage))
             .write(data.get(), code_size);
-        file.flush();
         for (const auto [key, type] : texture_types) {
             file.write(reinterpret_cast<const char*>(&key), sizeof(key))
                 .write(reinterpret_cast<const char*>(&type), sizeof(type));
         }
-        file.flush();
         if (stage == Shader::Stage::Compute) {
             const std::array<u32, 3> workgroup_size{WorkgroupSize()};
             const u32 shared_memory_size{SharedMemorySize()};
@@ -141,7 +139,6 @@ public:
         } else {
             file.write(reinterpret_cast<const char*>(&sph), sizeof(sph));
         }
-        file.flush();
     }
 
 protected:
@@ -161,10 +158,10 @@ protected:
             code.resize(size / INST_SIZE);
             u64* const data = code.data() + offset / INST_SIZE;
             gpu_memory->ReadBlock(guest_addr, data, BLOCK_SIZE);
-            for (size_t i = 0; i < BLOCK_SIZE; i += INST_SIZE) {
-                const u64 inst = data[i / INST_SIZE];
+            for (size_t index = 0; index < BLOCK_SIZE; index += INST_SIZE) {
+                const u64 inst = data[index / INST_SIZE];
                 if (inst == SELF_BRANCH_A || inst == SELF_BRANCH_B) {
-                    return offset + i;
+                    return offset + index;
                 }
             }
             guest_addr += BLOCK_SIZE;
@@ -751,7 +748,7 @@ GraphicsPipeline PipelineCache::CreateGraphicsPipeline() {
             continue;
         }
         const auto program{static_cast<Maxwell::ShaderProgram>(index)};
-        GraphicsEnvironment& env{graphics_envs[index]};
+        auto& env{graphics_envs[index]};
         const u32 start_address{maxwell3d.regs.shader_config[index].offset};
         env = GraphicsEnvironment{maxwell3d, gpu_memory, program, base_addr, start_address};
         env.SetCachedSize(shader_infos[index]->size_bytes);
@@ -771,6 +768,8 @@ ComputePipeline PipelineCache::CreateComputePipeline(const ComputePipelineCacheK
     const GPUVAddr program_base{kepler_compute.regs.code_loc.Address()};
     const auto& qmd{kepler_compute.launch_description};
     ComputeEnvironment env{kepler_compute, gpu_memory, program_base, qmd.program_start};
+    env.SetCachedSize(shader->size_bytes);
+
     main_pools.ReleaseContents();
     ComputePipeline pipeline{CreateComputePipeline(main_pools, key, env)};
     if (!pipeline_cache_filename.empty()) {
