@@ -30,23 +30,24 @@ void ISCADD(TranslatorVisitor& v, u64 insn, IR::U32 op_b) {
         if (iscadd.neg_b != 0) {
             op_b = v.ir.INeg(op_b);
         }
+    } else {
+        // When PO is present, add one
+        op_b = v.ir.IAdd(op_b, v.ir.Imm32(1));
     }
     // With the operands already processed, scale A
     const IR::U32 scale{v.ir.Imm32(static_cast<u32>(iscadd.scale))};
     const IR::U32 scaled_a{v.ir.ShiftLeftLogical(op_a, scale)};
 
-    IR::U32 result{v.ir.IAdd(scaled_a, op_b)};
-    if (po) {
-        // .PO adds one to the final result
-        result = v.ir.IAdd(result, v.ir.Imm32(1));
-    }
+    const IR::U32 result{v.ir.IAdd(scaled_a, op_b)};
     v.X(iscadd.dest_reg, result);
 
     if (iscadd.cc != 0) {
         v.SetZFlag(v.ir.GetZeroFromOp(result));
         v.SetSFlag(v.ir.GetSignFromOp(result));
-        v.SetCFlag(v.ir.GetCarryFromOp(result));
-        v.SetOFlag(v.ir.GetOverflowFromOp(result));
+        const IR::U1 carry{v.ir.GetCarryFromOp(result)};
+        const IR::U1 overflow{v.ir.GetOverflowFromOp(result)};
+        v.SetCFlag(po ? v.ir.LogicalOr(carry, v.ir.GetCarryFromOp(op_b)) : carry);
+        v.SetOFlag(po ? v.ir.LogicalOr(overflow, v.ir.GetOverflowFromOp(op_b)) : overflow);
     }
 }
 
