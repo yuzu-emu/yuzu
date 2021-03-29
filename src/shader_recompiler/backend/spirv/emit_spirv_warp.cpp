@@ -132,4 +132,20 @@ Id EmitShuffleButterfly(EmitContext& ctx, IR::Inst* inst, Id value, Id index, Id
     return SelectValue(ctx, in_range, value, src_thread_id);
 }
 
+Id EmitFSwizzleAdd(EmitContext& ctx, Id op_a, Id op_b, Id swizzle) {
+    const Id three{ctx.Constant(ctx.U32[1], 3)};
+    Id mask{ctx.OpLoad(ctx.U32[1], ctx.subgroup_local_invocation_id)};
+    mask = ctx.OpBitwiseAnd(ctx.U32[1], mask, three);
+    mask = ctx.OpShiftLeftLogical(ctx.U32[1], mask, ctx.Constant(ctx.U32[1], 1));
+    mask = ctx.OpShiftRightLogical(ctx.U32[1], swizzle, mask);
+    mask = ctx.OpBitwiseAnd(ctx.U32[1], mask, three);
+
+    const Id modifier_a{ctx.OpVectorExtractDynamic(ctx.F32[1], ctx.fswzadd_lut_a, mask)};
+    const Id modifier_b{ctx.OpVectorExtractDynamic(ctx.F32[1], ctx.fswzadd_lut_b, mask)};
+
+    const Id result_a{ctx.OpFMul(ctx.F32[1], op_a, modifier_a)};
+    const Id result_b{ctx.OpFMul(ctx.F32[1], op_b, modifier_b)};
+    return ctx.OpFAdd(ctx.F32[1], result_a, result_b);
+}
+
 } // namespace Shader::Backend::SPIRV

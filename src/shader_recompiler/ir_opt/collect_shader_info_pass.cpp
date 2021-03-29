@@ -389,6 +389,9 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::SubgroupBallot:
         info.uses_subgroup_vote = true;
         break;
+    case IR::Opcode::FSwizzleAdd:
+        info.uses_fswzadd = true;
+        break;
     default:
         break;
     }

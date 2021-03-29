@@ -89,6 +89,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/floating_point_multiply.cpp
     frontend/maxwell/translate/impl/floating_point_range_reduction.cpp
     frontend/maxwell/translate/impl/floating_point_set_predicate.cpp
+    frontend/maxwell/translate/impl/floating_point_swizzled_add.cpp
     frontend/maxwell/translate/impl/half_floating_point_add.cpp
     frontend/maxwell/translate/impl/half_floating_point_fused_multiply_add.cpp
     frontend/maxwell/translate/impl/half_floating_point_helper.cpp

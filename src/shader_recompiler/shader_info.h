@@ -94,6 +94,7 @@ struct Info {
     bool uses_sparse_residency{};
     bool uses_demote_to_helper_invocation{};
     bool uses_subgroup_vote{};
+    bool uses_fswzadd{};
 
     IR::Type used_constant_buffer_types{};
 

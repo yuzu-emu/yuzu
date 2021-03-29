@@ -91,6 +91,10 @@ IR::U32 TranslatorVisitor::GetReg39(u64 insn) {
     return X(reg.index);
 }
 
+IR::F32 TranslatorVisitor::GetFloatReg8(u64 insn) {
+    return ir.BitCast<IR::F32>(GetReg8(insn));
+}
+
 IR::F32 TranslatorVisitor::GetFloatReg20(u64 insn) {
     return ir.BitCast<IR::F32>(GetReg20(insn));
 }

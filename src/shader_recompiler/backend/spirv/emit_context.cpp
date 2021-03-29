@@ -393,6 +393,14 @@ void EmitContext::DefineInputs(const Info& info) {
         subgroup_local_invocation_id =
             DefineInput(*this, U32[1], spv::BuiltIn::SubgroupLocalInvocationId);
     }
+    if (info.uses_fswzadd) {
+        const Id f32_one{Constant(F32[1], 1.0f)};
+        const Id f32_minus_one{Constant(F32[1], -1.0f)};
+        const Id f32_zero{Constant(F32[1], 0.0f)};
+        fswzadd_lut_a = ConstantComposite(F32[4], f32_minus_one, f32_one, f32_minus_one, f32_zero);
+        fswzadd_lut_b =
+            ConstantComposite(F32[4], f32_minus_one, f32_minus_one, f32_one, f32_minus_one);
+    }
     if (info.loads_position) {
         const bool is_fragment{stage != Stage::Fragment};
         const spv::BuiltIn built_in{is_fragment ? spv::BuiltIn::Position : spv::BuiltIn::FragCoord};

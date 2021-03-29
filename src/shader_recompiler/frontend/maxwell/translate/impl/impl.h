@@ -353,6 +353,7 @@ public:
     [[nodiscard]] IR::U32 GetReg8(u64 insn);
     [[nodiscard]] IR::U32 GetReg20(u64 insn);
     [[nodiscard]] IR::U32 GetReg39(u64 insn);
+    [[nodiscard]] IR::F32 GetFloatReg8(u64 insn);
     [[nodiscard]] IR::F32 GetFloatReg20(u64 insn);
     [[nodiscard]] IR::F32 GetFloatReg39(u64 insn);
     [[nodiscard]] IR::F64 GetDoubleReg20(u64 insn);
