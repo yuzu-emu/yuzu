@@ -74,9 +74,6 @@ void I2I(TranslatorVisitor& v, u64 insn, const IR::U32& src_a) {
         BitField<50, 1, u64> sat;
     } const i2i{insn};
 
-    if (i2i.cc != 0) {
-        throw NotImplementedException("I2I CC");
-    }
     if (i2i.src_fmt == IntegerWidth::Short && (i2i.selector == 1 || i2i.selector == 3)) {
         throw NotImplementedException("16-bit source format incompatible with selector {}",
                                       i2i.selector);
@@ -105,6 +102,10 @@ void I2I(TranslatorVisitor& v, u64 insn, const IR::U32& src_a) {
             : ConvertInteger(v.ir, src_values, i2i.dst_fmt)};
 
     v.X(i2i.dest_reg, result);
+    if (i2i.cc != 0) {
+        v.SetZFlag(v.ir.GetZeroFromOp(result));
+        v.SetSFlag(v.ir.GetSignFromOp(result));
+    }
 }
 } // Anonymous namespace
 
