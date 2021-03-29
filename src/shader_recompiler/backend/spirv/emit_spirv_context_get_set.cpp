@@ -179,6 +179,12 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr) {
         return ctx.OpSelect(ctx.U32[1], ctx.OpLoad(ctx.U1, ctx.front_face),
                             ctx.Constant(ctx.U32[1], std::numeric_limits<u32>::max()),
                             ctx.u32_zero_value);
+    case IR::Attribute::PointSpriteS:
+        return ctx.OpLoad(ctx.F32[1], ctx.OpAccessChain(ctx.input_f32, ctx.point_coord,
+                                                        ctx.Constant(ctx.U32[1], 0U)));
+    case IR::Attribute::PointSpriteT:
+        return ctx.OpLoad(ctx.F32[1], ctx.OpAccessChain(ctx.input_f32, ctx.point_coord,
+                                                        ctx.Constant(ctx.U32[1], 1U)));
     default:
         throw NotImplementedException("Read attribute {}", attr);
     }

@@ -425,6 +425,9 @@ void EmitContext::DefineInputs(const Info& info) {
     if (info.loads_front_face) {
         front_face = DefineInput(*this, U1, spv::BuiltIn::FrontFacing);
     }
+    if (info.loads_point_coord) {
+        point_coord = DefineInput(*this, F32[2], spv::BuiltIn::PointCoord);
+    }
     for (size_t index = 0; index < info.input_generics.size(); ++index) {
         const InputVarying generic{info.input_generics[index]};
         if (!generic.used) {

@@ -103,6 +103,8 @@ public:
     Id vertex_index{};
     Id base_vertex{};
     Id front_face{};
+    Id point_coord{};
+
     Id fswzadd_lut_a{};
     Id fswzadd_lut_b{};
 
