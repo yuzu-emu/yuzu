@@ -74,62 +74,55 @@ IR::Value Sample(TranslatorVisitor& v, u64 insn) {
     const IR::Reg reg_a{tlds.src_reg_a};
     const IR::Reg reg_b{tlds.src_reg_b};
     IR::Value coords;
-    IR::U32 lod;
+    IR::U32 lod{v.ir.Imm32(0U)};
     IR::Value offsets;
     IR::U32 multisample;
-    Shader::TextureType texture_type;
+    Shader::TextureType texture_type{};
     switch (tlds.encoding) {
-    case 0: {
+    case 0:
         texture_type = Shader::TextureType::Color1D;
         coords = v.X(reg_a);
         break;
-    }
-    case 1: {
+    case 1:
         texture_type = Shader::TextureType::Color1D;
         coords = v.X(reg_a);
         lod = v.X(reg_b);
         break;
-    }
-    case 2: {
+    case 2:
         texture_type = Shader::TextureType::Color2D;
         coords = v.ir.CompositeConstruct(v.X(reg_a), v.X(reg_b));
         break;
-    }
-    case 4: {
+    case 4:
         CheckAlignment(reg_a, 2);
         texture_type = Shader::TextureType::Color2D;
         coords = v.ir.CompositeConstruct(v.X(reg_a), v.X(reg_a + 1));
         offsets = MakeOffset(v, reg_b);
         break;
-    }
-    case 5: {
+    case 5:
         CheckAlignment(reg_a, 2);
         texture_type = Shader::TextureType::Color2D;
         coords = v.ir.CompositeConstruct(v.X(reg_a), v.X(reg_a + 1));
         lod = v.X(reg_b);
         break;
-    }
-    case 6: {
+    case 6:
         CheckAlignment(reg_a, 2);
         texture_type = Shader::TextureType::Color2D;
         coords = v.ir.CompositeConstruct(v.X(reg_a), v.X(reg_a + 1));
         multisample = v.X(reg_b);
         break;
-    }
-    case 7: {
+    case 7:
         CheckAlignment(reg_a, 2);
         texture_type = Shader::TextureType::Color3D;
         coords = v.ir.CompositeConstruct(v.X(reg_a), v.X(reg_a + 1), v.X(reg_b));
         break;
-    }
     case 8: {
         CheckAlignment(reg_b, 2);
+        const IR::U32 array{v.ir.BitFieldExtract(v.X(reg_a), v.ir.Imm32(0), v.ir.Imm32(16))};
         texture_type = Shader::TextureType::ColorArray2D;
-        IR::U32 array = v.ir.BitFieldExtract(v.X(reg_a), v.ir.Imm32(0), v.ir.Imm32(16));
         coords = v.ir.CompositeConstruct(v.X(reg_b), v.X(reg_b + 1), array);
         break;
     }
-    case 12: {
+    case 12:
         CheckAlignment(reg_a, 2);
         CheckAlignment(reg_b, 2);
         texture_type = Shader::TextureType::Color2D;
@@ -137,11 +130,8 @@ IR::Value Sample(TranslatorVisitor& v, u64 insn) {
         lod = v.X(reg_b);
         offsets = MakeOffset(v, reg_b + 1);
         break;
-    }
-    default: {
+    default:
         throw NotImplementedException("Illegal encoding {}", tlds.encoding.Value());
-        break;
-    }
     }
     IR::TextureInstInfo info{};
     if (tlds.precision == Precision::F16) {

@@ -124,6 +124,8 @@ void Impl(TranslatorVisitor& v, u64 insn, bool is_bindless) {
     }
     if (tld.lod != 0) {
         lod = v.X(meta_reg++);
+    } else {
+        lod = v.ir.Imm32(0U);
     }
     if (tld.aoffi != 0) {
         offset = MakeOffset(v, meta_reg, tld.type);
