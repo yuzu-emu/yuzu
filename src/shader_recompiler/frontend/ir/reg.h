@@ -309,7 +309,7 @@ constexpr Reg operator++(Reg& reg, int) {
 }
 
 [[nodiscard]] constexpr bool IsAligned(Reg reg, size_t align) {
-    return (RegIndex(reg) / align) * align == RegIndex(reg);
+    return RegIndex(reg) % align == 0 || reg == Reg::RZ;
 }
 
 } // namespace Shader::IR
