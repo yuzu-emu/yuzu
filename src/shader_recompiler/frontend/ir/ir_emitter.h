@@ -268,6 +268,10 @@ public:
     [[nodiscard]] Value ImageFetch(const Value& handle, const Value& coords, const Value& offset,
                                    const U32& lod, const U32& multisampling, TextureInstInfo info);
 
+    [[nodiscard]] Value ImageGradient(const Value& handle, const Value& coords,
+                                      const Value& derivates, const Value& offset,
+                                      const F32& lod_clamp, TextureInstInfo info);
+
     [[nodiscard]] U1 VoteAll(const U1& value);
     [[nodiscard]] U1 VoteAny(const U1& value);
     [[nodiscard]] U1 VoteEqual(const U1& value);

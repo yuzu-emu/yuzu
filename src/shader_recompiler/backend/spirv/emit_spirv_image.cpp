@@ -69,10 +69,42 @@ public:
         }
     }
 
+    explicit ImageOperands(EmitContext& ctx, bool has_lod_clamp, Id derivates, u32 num_derivates,
+                           Id offset, Id lod_clamp) {
+        if (Sirit::ValidId(derivates)) {
+            boost::container::static_vector<Id, 3> deriv_x_accum;
+            boost::container::static_vector<Id, 3> deriv_y_accum;
+            for (size_t i = 0; i < num_derivates; i++) {
+                deriv_x_accum.push_back(ctx.OpCompositeExtract(ctx.F32[1], derivates, i * 2));
+                deriv_y_accum.push_back(ctx.OpCompositeExtract(ctx.F32[1], derivates, i * 2 + 1));
+            }
+            Id derivates_X = ctx.OpCompositeConstruct(
+                ctx.F32[num_derivates], std::span{deriv_x_accum.data(), deriv_x_accum.size()});
+            Id derivates_Y = ctx.OpCompositeConstruct(
+                ctx.F32[num_derivates], std::span{deriv_y_accum.data(), deriv_y_accum.size()});
+            Add(spv::ImageOperandsMask::Grad, derivates_X, derivates_Y);
+        } else {
+            throw LogicError("Derivates must be present");
+        }
+        if (Sirit::ValidId(offset)) {
+            Add(spv::ImageOperandsMask::Offset, offset);
+        }
+        if (has_lod_clamp) {
+            Add(spv::ImageOperandsMask::MinLod, lod_clamp);
+        }
+    }
+
     void Add(spv::ImageOperandsMask new_mask, Id value) {
         mask = static_cast<spv::ImageOperandsMask>(static_cast<unsigned>(mask) |
                                                    static_cast<unsigned>(new_mask));
         operands.push_back(value);
+    }
+
+    void Add(spv::ImageOperandsMask new_mask, Id value, Id value_2) {
+        mask = static_cast<spv::ImageOperandsMask>(static_cast<unsigned>(mask) |
+                                                   static_cast<unsigned>(new_mask));
+        operands.push_back(value);
+        operands.push_back(value_2);
     }
 
     std::span<const Id> Span() const noexcept {
@@ -84,7 +116,7 @@ public:
     }
 
 private:
-    boost::container::static_vector<Id, 3> operands;
+    boost::container::static_vector<Id, 4> operands;
     spv::ImageOperandsMask mask{};
 };
 
@@ -165,6 +197,10 @@ Id EmitBindlessImageQueryLod(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
 
+Id EmitBindlessImageGradient(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
 Id EmitBoundImageSampleImplicitLod(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
@@ -198,6 +234,10 @@ Id EmitBoundImageQueryDimensions(EmitContext&) {
 }
 
 Id EmitBoundImageQueryLod(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+Id EmitBoundImageGradient(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
 
@@ -300,6 +340,15 @@ Id EmitImageQueryLod(EmitContext& ctx, IR::Inst*, const IR::Value& index, Id coo
     const Id sampler{Texture(ctx, index)};
     return ctx.OpCompositeConstruct(ctx.F32[4], ctx.OpImageQueryLod(ctx.F32[2], sampler, coords),
                                     zero, zero);
+}
+
+Id EmitImageGradient(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                     Id derivates, Id offset, Id lod_clamp) {
+    const auto info{inst->Flags<IR::TextureInstInfo>()};
+    const ImageOperands operands(ctx, info.has_lod_clamp != 0, derivates, info.num_derivates, offset, lod_clamp);
+    return Emit(&EmitContext::OpImageSparseSampleExplicitLod,
+                &EmitContext::OpImageSampleExplicitLod, ctx, inst, ctx.F32[4], Texture(ctx, index),
+                coords, operands.Mask(), operands.Span());
 }
 
 } // namespace Shader::Backend::SPIRV
