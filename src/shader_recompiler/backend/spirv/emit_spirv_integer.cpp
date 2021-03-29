@@ -5,6 +5,25 @@
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 
 namespace Shader::Backend::SPIRV {
+namespace {
+void SetZeroFlag(EmitContext& ctx, IR::Inst* inst, Id result) {
+    IR::Inst* const zero{inst->GetAssociatedPseudoOperation(IR::Opcode::GetZeroFromOp)};
+    if (!zero) {
+        return;
+    }
+    zero->SetDefinition(ctx.OpIEqual(ctx.U1, result, ctx.u32_zero_value));
+    zero->Invalidate();
+}
+
+void SetSignFlag(EmitContext& ctx, IR::Inst* inst, Id result) {
+    IR::Inst* const sign{inst->GetAssociatedPseudoOperation(IR::Opcode::GetSignFromOp)};
+    if (!sign) {
+        return;
+    }
+    sign->SetDefinition(ctx.OpSLessThan(ctx.U1, result, ctx.u32_zero_value));
+    sign->Invalidate();
+}
+} // Anonymous namespace
 
 Id EmitIAdd32(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
     Id result{};
@@ -19,14 +38,8 @@ Id EmitIAdd32(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
     } else {
         result = ctx.OpIAdd(ctx.U32[1], a, b);
     }
-    if (IR::Inst* const zero{inst->GetAssociatedPseudoOperation(IR::Opcode::GetZeroFromOp)}) {
-        zero->SetDefinition(ctx.OpIEqual(ctx.U1, result, ctx.u32_zero_value));
-        zero->Invalidate();
-    }
-    if (IR::Inst* const sign{inst->GetAssociatedPseudoOperation(IR::Opcode::GetSignFromOp)}) {
-        sign->SetDefinition(ctx.OpSLessThan(ctx.U1, result, ctx.u32_zero_value));
-        sign->Invalidate();
-    }
+    SetZeroFlag(ctx, inst, result);
+    SetSignFlag(ctx, inst, result);
     if (IR::Inst * overflow{inst->GetAssociatedPseudoOperation(IR::Opcode::GetOverflowFromOp)}) {
         // https://stackoverflow.com/questions/55468823/how-to-detect-integer-overflow-in-c
         constexpr u32 s32_max{static_cast<u32>(std::numeric_limits<s32>::max())};
@@ -114,16 +127,17 @@ Id EmitBitFieldInsert(EmitContext& ctx, Id base, Id insert, Id offset, Id count)
     return ctx.OpBitFieldInsert(ctx.U32[1], base, insert, offset, count);
 }
 
-Id EmitBitFieldSExtract(EmitContext& ctx, Id base, Id offset, Id count) {
-    return ctx.OpBitFieldSExtract(ctx.U32[1], base, offset, count);
+Id EmitBitFieldSExtract(EmitContext& ctx, IR::Inst* inst, Id base, Id offset, Id count) {
+    const Id result{ctx.OpBitFieldSExtract(ctx.U32[1], base, offset, count)};
+    SetZeroFlag(ctx, inst, result);
+    SetSignFlag(ctx, inst, result);
+    return result;
 }
 
 Id EmitBitFieldUExtract(EmitContext& ctx, IR::Inst* inst, Id base, Id offset, Id count) {
     const Id result{ctx.OpBitFieldUExtract(ctx.U32[1], base, offset, count)};
-    if (IR::Inst* const zero{inst->GetAssociatedPseudoOperation(IR::Opcode::GetZeroFromOp)}) {
-        zero->SetDefinition(ctx.OpIEqual(ctx.U1, result, ctx.u32_zero_value));
-        zero->Invalidate();
-    }
+    SetZeroFlag(ctx, inst, result);
+    SetSignFlag(ctx, inst, result);
     return result;
 }
 
@@ -163,12 +177,18 @@ Id EmitUMax32(EmitContext& ctx, Id a, Id b) {
     return ctx.OpUMax(ctx.U32[1], a, b);
 }
 
-Id EmitSClamp32(EmitContext& ctx, Id value, Id min, Id max) {
-    return ctx.OpSClamp(ctx.U32[1], value, min, max);
+Id EmitSClamp32(EmitContext& ctx, IR::Inst* inst, Id value, Id min, Id max) {
+    const Id result{ctx.OpSClamp(ctx.U32[1], value, min, max)};
+    SetZeroFlag(ctx, inst, result);
+    SetSignFlag(ctx, inst, result);
+    return result;
 }
 
-Id EmitUClamp32(EmitContext& ctx, Id value, Id min, Id max) {
-    return ctx.OpUClamp(ctx.U32[1], value, min, max);
+Id EmitUClamp32(EmitContext& ctx, IR::Inst* inst, Id value, Id min, Id max) {
+    const Id result{ctx.OpUClamp(ctx.U32[1], value, min, max)};
+    SetZeroFlag(ctx, inst, result);
+    SetSignFlag(ctx, inst, result);
+    return result;
 }
 
 Id EmitSLessThan(EmitContext& ctx, Id lhs, Id rhs) {
