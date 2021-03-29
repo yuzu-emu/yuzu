@@ -1602,7 +1602,9 @@ U32 IREmitter::ShuffleButterfly(const IR::U32& value, const IR::U32& index, cons
                                 const IR::U32& seg_mask) {
     return Inst<U32>(Opcode::ShuffleButterfly, value, index, clamp, seg_mask);
 }
+
 F32 IREmitter::FSwizzleAdd(const F32& a, const F32& b, const U32& swizzle, FpControl control) {
     return Inst<F32>(Opcode::FSwizzleAdd, Flags{control}, a, b, swizzle);
 }
+
 } // namespace Shader::IR
