@@ -60,6 +60,9 @@ IR::Opcode IndexedInstruction(const IR::Inst& inst) {
     case IR::Opcode::BoundImageQueryLod:
     case IR::Opcode::BindlessImageQueryLod:
         return IR::Opcode::ImageQueryLod;
+    case IR::Opcode::BoundImageGradient:
+    case IR::Opcode::BindlessImageGradient:
+        return IR::Opcode::ImageGradient;
     default:
         return IR::Opcode::Void;
     }
@@ -76,6 +79,7 @@ bool IsBindless(const IR::Inst& inst) {
     case IR::Opcode::BindlessImageFetch:
     case IR::Opcode::BindlessImageQueryDimensions:
     case IR::Opcode::BindlessImageQueryLod:
+    case IR::Opcode::BindlessImageGradient:
         return true;
     case IR::Opcode::BoundImageSampleImplicitLod:
     case IR::Opcode::BoundImageSampleExplicitLod:
@@ -86,6 +90,7 @@ bool IsBindless(const IR::Inst& inst) {
     case IR::Opcode::BoundImageFetch:
     case IR::Opcode::BoundImageQueryDimensions:
     case IR::Opcode::BoundImageQueryLod:
+    case IR::Opcode::BoundImageGradient:
         return false;
     default:
         throw InvalidArgument("Invalid opcode {}", inst.Opcode());

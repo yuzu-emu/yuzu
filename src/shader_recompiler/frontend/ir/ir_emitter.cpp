@@ -1573,6 +1573,13 @@ Value IREmitter::ImageQueryLod(const Value& handle, const Value& coords, Texture
     return Inst(op, Flags{info}, handle, coords);
 }
 
+Value IREmitter::ImageGradient(const Value& handle, const Value& coords, const Value& derivates,
+                               const Value& offset, const F32& lod_clamp, TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageGradient
+                                         : Opcode::BindlessImageGradient};
+    return Inst(op, Flags{info}, handle, coords, derivates, offset, lod_clamp);
+}
+
 U1 IREmitter::VoteAll(const U1& value) {
     return Inst<U1>(Opcode::VoteAll, value);
 }

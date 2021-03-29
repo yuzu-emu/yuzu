@@ -370,12 +370,20 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::BindlessImageSampleDrefExplicitLod:
     case IR::Opcode::BindlessImageGather:
     case IR::Opcode::BindlessImageGatherDref:
+    case IR::Opcode::BindlessImageFetch:
+    case IR::Opcode::BindlessImageQueryDimensions:
+    case IR::Opcode::BindlessImageQueryLod:
+    case IR::Opcode::BindlessImageGradient:
     case IR::Opcode::BoundImageSampleImplicitLod:
     case IR::Opcode::BoundImageSampleExplicitLod:
     case IR::Opcode::BoundImageSampleDrefImplicitLod:
     case IR::Opcode::BoundImageSampleDrefExplicitLod:
     case IR::Opcode::BoundImageGather:
     case IR::Opcode::BoundImageGatherDref:
+    case IR::Opcode::BoundImageFetch:
+    case IR::Opcode::BoundImageQueryDimensions:
+    case IR::Opcode::BoundImageQueryLod:
+    case IR::Opcode::BoundImageGradient:
     case IR::Opcode::ImageSampleImplicitLod:
     case IR::Opcode::ImageSampleExplicitLod:
     case IR::Opcode::ImageSampleDrefImplicitLod:
@@ -384,7 +392,8 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::ImageGatherDref:
     case IR::Opcode::ImageFetch:
     case IR::Opcode::ImageQueryDimensions:
-    case IR::Opcode::ImageQueryLod: {
+    case IR::Opcode::ImageQueryLod:
+    case IR::Opcode::ImageGradient: {
         const TextureType type{inst.Flags<IR::TextureInstInfo>().type};
         info.uses_sampled_1d |= type == TextureType::Color1D || type == TextureType::ColorArray1D ||
                                 type == TextureType::Shadow1D || type == TextureType::ShadowArray1D;
