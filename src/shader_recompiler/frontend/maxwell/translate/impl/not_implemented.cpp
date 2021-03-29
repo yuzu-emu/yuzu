@@ -317,14 +317,6 @@ void TranslatorVisitor::TXA(u64) {
     ThrowNotImplemented(Opcode::TXA);
 }
 
-void TranslatorVisitor::TXD(u64) {
-    ThrowNotImplemented(Opcode::TXD);
-}
-
-void TranslatorVisitor::TXD_b(u64) {
-    ThrowNotImplemented(Opcode::TXD_b);
-}
-
 void TranslatorVisitor::VABSDIFF(u64) {
     ThrowNotImplemented(Opcode::VABSDIFF);
 }
