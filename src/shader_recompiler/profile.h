@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <optional>
 
 #include "common/common_types.h"
 
@@ -41,6 +42,8 @@ struct Profile {
 
     std::array<AttributeType, 32> generic_input_types{};
     bool convert_depth_mode{};
+
+    std::optional<float> fixed_state_point_size;
 };
 
 } // namespace Shader
