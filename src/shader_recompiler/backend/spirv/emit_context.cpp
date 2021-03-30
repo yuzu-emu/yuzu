@@ -176,9 +176,6 @@ void EmitContext::DefineCommonTypes(const Info& info) {
         AddCapability(spv::Capability::Float64);
         F64.Define(*this, TypeFloat(64), "f64");
     }
-    if (info.stores_clip_distance) {
-      Array8F32 = Name(TypeArray(F32[1], Constant(U32[1], 8)), "array_8_f32");
-    }
 }
 
 void EmitContext::DefineCommonConstants() {
@@ -509,7 +506,8 @@ void EmitContext::DefineOutputs(const Info& info) {
         if (stage == Stage::Fragment) {
             throw NotImplementedException("Storing PointSize in Fragment stage");
         }
-        clip_distances = DefineOutput(*this, Array8F32, spv::BuiltIn::ClipDistance);
+        const Id type{TypeArray(F32[1], Constant(U32[1], 8U))};
+        clip_distances = DefineOutput(*this, type, spv::BuiltIn::ClipDistance);
     }
     for (size_t i = 0; i < info.stores_generics.size(); ++i) {
         if (info.stores_generics[i]) {
