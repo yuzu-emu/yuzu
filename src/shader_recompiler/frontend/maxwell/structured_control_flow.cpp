@@ -446,9 +446,9 @@ private:
             case Flow::EndClass::IndirectBranch:
                 root.insert(ip, *pool.Create(SetIndirectBranchVariable{}, block.branch_reg,
                                              block.branch_offset));
-                for (Flow::Block* const branch : block.indirect_branches) {
-                    const Node indirect_label{local_labels.at(branch)};
-                    Statement* cond{pool.Create(IndirectBranchCond{}, branch->begin.Offset())};
+                for (const Flow::IndirectBranch& indirect : block.indirect_branches) {
+                    const Node indirect_label{local_labels.at(indirect.block)};
+                    Statement* cond{pool.Create(IndirectBranchCond{}, indirect.address)};
                     Statement* goto_stmt{pool.Create(Goto{}, cond, indirect_label, &root_stmt)};
                     gotos.push_back(root.insert(ip, *goto_stmt));
                 }

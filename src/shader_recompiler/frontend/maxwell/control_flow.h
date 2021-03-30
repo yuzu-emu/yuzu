@@ -22,6 +22,8 @@
 
 namespace Shader::Maxwell::Flow {
 
+struct Block;
+
 using FunctionId = size_t;
 
 enum class EndClass {
@@ -60,6 +62,11 @@ private:
     boost::container::small_vector<StackEntry, 3> entries;
 };
 
+struct IndirectBranch {
+    Block* block;
+    u32 address;
+};
+
 struct Block : boost::intrusive::set_base_hook<
                    // Normal link is ~2.5% faster compared to safe link
                    boost::intrusive::link_mode<boost::intrusive::normal_link>> {
@@ -84,7 +91,7 @@ struct Block : boost::intrusive::set_base_hook<
         Block* return_block;
         s32 branch_offset;
     };
-    std::vector<Block*> indirect_branches;
+    std::vector<IndirectBranch> indirect_branches;
 };
 
 struct Label {
