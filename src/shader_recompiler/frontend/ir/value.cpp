@@ -56,7 +56,11 @@ bool Value::IsLabel() const noexcept {
 }
 
 IR::Type Value::Type() const noexcept {
-    if (IsIdentity() || IsPhi()) {
+    if (IsPhi()) {
+        // The type of a phi node is stored in its flags
+        return inst->Flags<IR::Type>();
+    }
+    if (IsIdentity()) {
         return inst->Arg(0).Type();
     }
     if (type == Type::Opaque) {
