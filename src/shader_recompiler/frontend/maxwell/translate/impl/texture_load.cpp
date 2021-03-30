@@ -117,10 +117,10 @@ void Impl(TranslatorVisitor& v, u64 insn, bool is_bindless) {
     IR::Value offset;
     IR::U32 lod;
     IR::U32 multisample;
-    if (!is_bindless) {
-        handle = v.ir.Imm32(static_cast<u32>(tld.cbuf_offset.Value() * 4));
-    } else {
+    if (is_bindless) {
         handle = v.X(meta_reg++);
+    } else {
+        handle = v.ir.Imm32(static_cast<u32>(tld.cbuf_offset.Value() * 4));
     }
     if (tld.lod != 0) {
         lod = v.X(meta_reg++);
@@ -138,9 +138,7 @@ void Impl(TranslatorVisitor& v, u64 insn, bool is_bindless) {
     }
     IR::TextureInstInfo info{};
     info.type.Assign(GetType(tld.type, false));
-    const IR::Value sample{[&]() -> IR::Value {
-        return v.ir.ImageFetch(handle, coords, offset, lod, multisample, info);
-    }()};
+    const IR::Value sample{v.ir.ImageFetch(handle, coords, offset, lod, multisample, info)};
 
     IR::Reg dest_reg{tld.dest_reg};
     for (size_t element = 0; element < 4; ++element) {

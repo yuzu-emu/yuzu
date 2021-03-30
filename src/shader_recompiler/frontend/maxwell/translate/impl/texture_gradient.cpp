@@ -47,7 +47,7 @@ Shader::TextureType GetType(TextureType type, bool dc) {
 
 IR::Value MakeOffset(TranslatorVisitor& v, IR::Reg reg, bool has_lod_clamp) {
     const IR::U32 value{v.X(reg)};
-    const u32 base = has_lod_clamp ? 12 : 16;
+    const u32 base{has_lod_clamp ? 12U : 16U};
     return v.ir.CompositeConstruct(
         v.ir.BitFieldExtract(value, v.ir.Imm32(base), v.ir.Imm32(4), true),
         v.ir.BitFieldExtract(value, v.ir.Imm32(base + 4), v.ir.Imm32(4), true));
@@ -74,20 +74,21 @@ void Impl(TranslatorVisitor& v, u64 insn, bool is_bindless) {
     }
 
     IR::Value coords;
-    u32 num_derivates;
-    IR::Reg base_reg = txd.coord_reg;
+    u32 num_derivates{};
+    IR::Reg base_reg{txd.coord_reg};
     IR::Reg last_reg;
     IR::Value handle;
-    if (!is_bindless) {
-        handle = v.ir.Imm32(static_cast<u32>(txd.cbuf_offset.Value() * 4));
-    } else {
+    if (is_bindless) {
         handle = v.X(base_reg++);
+    } else {
+        handle = v.ir.Imm32(static_cast<u32>(txd.cbuf_offset.Value() * 4));
     }
 
     const auto read_array{[&]() -> IR::F32 {
-        return v.ir.ConvertUToF(32, 16,
-                                v.ir.BitFieldExtract(v.X(last_reg), v.ir.Imm32(0),
-                                                     v.ir.Imm32(has_lod_clamp ? 12 : 16)));
+        const IR::U32 base{v.ir.Imm32(0)};
+        const IR::U32 count{v.ir.Imm32(has_lod_clamp ? 12 : 16)};
+        const IR::U32 array_index{v.ir.BitFieldExtract(v.X(last_reg), base, count)};
+        return v.ir.ConvertUToF(32, 16, array_index);
     }};
     switch (txd.type) {
     case TextureType::_1D: {
@@ -141,19 +142,20 @@ void Impl(TranslatorVisitor& v, u64 insn, bool is_bindless) {
 
     IR::F32 lod_clamp;
     if (has_lod_clamp) {
-        const IR::F32 conv4_8fixp_f = v.ir.Imm32(Common::BitCast<f32>(0x3b800000U));
-        const IR::F32 tmp = v.ir.ConvertUToF(
-            32, 16, v.ir.BitFieldExtract(v.X(last_reg), v.ir.Imm32(20), v.ir.Imm32(12)));
-        lod_clamp = v.ir.FPMul(tmp, conv4_8fixp_f);
+        // Lod Clamp is a Fixed Point 4.8, we need to transform it to float.
+        // to convert a fixed point, float(value) / float(1 << fixed_point)
+        // in this case the fixed_point is 8.
+        const IR::F32 conv4_8fixp_f{v.ir.Imm32(static_cast<f32>(1U << 8))};
+        const IR::F32 fixp_lc{v.ir.ConvertUToF(
+            32, 16, v.ir.BitFieldExtract(v.X(last_reg), v.ir.Imm32(20), v.ir.Imm32(12)))};
+        lod_clamp = v.ir.FPMul(fixp_lc, conv4_8fixp_f);
     }
 
     IR::TextureInstInfo info{};
     info.type.Assign(GetType(txd.type, false));
     info.num_derivates.Assign(num_derivates);
     info.has_lod_clamp.Assign(has_lod_clamp ? 1 : 0);
-    const IR::Value sample{[&]() -> IR::Value {
-        return v.ir.ImageGradient(handle, coords, derivates, offset, lod_clamp, info);
-    }()};
+    const IR::Value sample{v.ir.ImageGradient(handle, coords, derivates, offset, lod_clamp, info)};
 
     IR::Reg dest_reg{txd.dest_reg};
     for (size_t element = 0; element < 4; ++element) {
