@@ -10,11 +10,11 @@ void EmitPrologue(EmitContext& ctx) {
     if (ctx.stage == Stage::VertexB) {
         const Id zero{ctx.Constant(ctx.F32[1], 0.0f)};
         const Id one{ctx.Constant(ctx.F32[1], 1.0f)};
-        const Id null_vector{ctx.ConstantComposite(ctx.F32[4], zero, zero, zero, zero)};
-        ctx.OpStore(ctx.output_position, ctx.ConstantComposite(ctx.F32[4], zero, zero, zero, one));
+        const Id default_vector{ctx.ConstantComposite(ctx.F32[4], zero, zero, zero, one)};
+        ctx.OpStore(ctx.output_position, default_vector);
         for (const Id generic_id : ctx.output_generics) {
             if (Sirit::ValidId(generic_id)) {
-                ctx.OpStore(generic_id, null_vector);
+                ctx.OpStore(generic_id, default_vector);
             }
         }
     }
