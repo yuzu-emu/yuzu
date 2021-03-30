@@ -403,7 +403,7 @@ OPCODE(ImageGatherDref,                                     F32x4,          U32,
 OPCODE(ImageFetch,                                          F32x4,          U32,            Opaque,         Opaque,         U32,            Opaque,         )
 OPCODE(ImageQueryDimensions,                                U32x4,          U32,            U32,                                                            )
 OPCODE(ImageQueryLod,                                       F32x4,          U32,            Opaque,                                                         )
-OPCODE(ImageGradient,                                       F32x4,          U32,            Opaque,         Opaque,         Opaque,         F32,            )
+OPCODE(ImageGradient,                                       F32x4,          U32,            Opaque,         Opaque,         Opaque,         Opaque,         )
 
 // Warp operations
 OPCODE(VoteAll,                                             U1,             U1,                                                                             )

@@ -71,7 +71,7 @@ public:
 
     explicit ImageOperands(EmitContext& ctx, bool has_lod_clamp, Id derivates, u32 num_derivates,
                            Id offset, Id lod_clamp) {
-        if (Sirit::ValidId(derivates)) {
+        if (!Sirit::ValidId(derivates)) {
             throw LogicError("Derivates must be present");
         }
         boost::container::static_vector<Id, 3> deriv_x_accum;
