@@ -193,6 +193,10 @@ void Inst::AddPhiOperand(Block* predecessor, const Value& value) {
     if (!value.IsImmediate()) {
         Use(value);
     }
+    if (Flags<IR::Type>() == IR::Type::Void) {
+        // Set the type of the phi node
+        SetFlags<IR::Type>(value.Type());
+    }
     phi_args.emplace_back(predecessor, value);
 }
 

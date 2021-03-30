@@ -288,7 +288,8 @@ Id EmitPhi(EmitContext& ctx, IR::Inst* inst) {
         operands.push_back(PhiArgDef(ctx, inst, index));
         operands.push_back(inst->PhiBlock(index)->Definition<Id>());
     }
-    const Id result_type{TypeId(ctx, inst->Arg(0).Type())};
+    // The type of a phi instruction is stored in its flags
+    const Id result_type{TypeId(ctx, inst->Flags<IR::Type>())};
     return ctx.OpPhi(result_type, std::span(operands.data(), operands.size()));
 }
 
