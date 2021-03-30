@@ -71,6 +71,16 @@ void SetAttribute(Info& info, IR::Attribute attribute) {
     case IR::Attribute::PositionW:
         info.stores_position = true;
         break;
+    case IR::Attribute::ClipDistance0:
+    case IR::Attribute::ClipDistance1:
+    case IR::Attribute::ClipDistance2:
+    case IR::Attribute::ClipDistance3:
+    case IR::Attribute::ClipDistance4:
+    case IR::Attribute::ClipDistance5:
+    case IR::Attribute::ClipDistance6:
+    case IR::Attribute::ClipDistance7:
+        info.stores_clip_distance = true;
+        break;
     default:
         throw NotImplementedException("Set attribute {}", attribute);
     }
