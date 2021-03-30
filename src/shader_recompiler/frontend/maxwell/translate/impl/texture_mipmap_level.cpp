@@ -81,39 +81,35 @@ void Impl(TranslatorVisitor& v, u64 insn, bool is_bindless) {
         BitField<36, 13, u64> cbuf_offset;
     } const tmml{insn};
 
-    if ((tmml.mask & 0xC) != 0) {
+    if ((tmml.mask & 0b1100) != 0) {
         throw NotImplementedException("TMML BA results are not implmented");
     }
 
-    IR::F32 transform_constant = v.ir.Imm32(256.0f);
+    IR::F32 transform_constant{v.ir.Imm32(256.0f)};
 
     const IR::Value coords{MakeCoords(v, tmml.coord_reg, tmml.type)};
 
     IR::U32 handle;
     IR::Reg meta_reg{tmml.meta_reg};
-    if (!is_bindless) {
-        handle = v.ir.Imm32(static_cast<u32>(tmml.cbuf_offset.Value() * 4));
-    } else {
+    if (is_bindless) {
         handle = v.X(meta_reg++);
+    } else {
+        handle = v.ir.Imm32(static_cast<u32>(tmml.cbuf_offset.Value() * 4));
     }
     IR::TextureInstInfo info{};
     info.type.Assign(GetType(tmml.type, false));
-    const IR::Value sample{
-        [&]() -> IR::Value { return v.ir.ImageQueryLod(handle, coords, info); }()};
+    const IR::Value sample{v.ir.ImageQueryLod(handle, coords, info)};
 
-    const IR::FpControl fp_control{
-        .no_contraction{false},
-        .rounding{IR::FpRounding::RP},
-        .fmz_mode{IR::FmzMode::FTZ},
-    };
     IR::Reg dest_reg{tmml.dest_reg};
     for (size_t element = 0; element < 4; ++element) {
         if (((tmml.mask >> element) & 1) == 0) {
             continue;
         }
-        IR::F32 value = IR::F32{v.ir.CompositeExtract(sample, element)};
-        v.F(dest_reg,
-            element < 2 ? IR::F32{v.ir.FPMul(value, transform_constant, fp_control)} : value);
+        IR::F32 value{v.ir.CompositeExtract(sample, element)};
+        if (element < 2) {
+            value = v.ir.FPMul(value, transform_constant);
+        }
+        v.F(dest_reg, value);
         ++dest_reg;
     }
 }
