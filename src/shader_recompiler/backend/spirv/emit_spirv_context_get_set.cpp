@@ -44,6 +44,19 @@ Id OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
     case IR::Attribute::PositionZ:
     case IR::Attribute::PositionW:
         return ctx.OpAccessChain(ctx.output_f32, ctx.output_position, element_id());
+    case IR::Attribute::ClipDistance0:
+    case IR::Attribute::ClipDistance1:
+    case IR::Attribute::ClipDistance2:
+    case IR::Attribute::ClipDistance3:
+    case IR::Attribute::ClipDistance4:
+    case IR::Attribute::ClipDistance5:
+    case IR::Attribute::ClipDistance6:
+    case IR::Attribute::ClipDistance7: {
+        const u32 base{static_cast<u32>(IR::Attribute::ClipDistance0)};
+        const u32 index{static_cast<u32>(attr) - base};
+        const Id clip_num{ctx.Constant(ctx.U32[1], index)};
+        return ctx.OpAccessChain(ctx.output_f32, ctx.clip_distances, clip_num);
+    }
     default:
         throw NotImplementedException("Read attribute {}", attr);
     }

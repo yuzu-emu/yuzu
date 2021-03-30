@@ -81,6 +81,7 @@ struct Info {
     std::array<bool, 32> stores_generics{};
     bool stores_position{};
     bool stores_point_size{};
+    bool stores_clip_distance{};
 
     bool uses_fp16{};
     bool uses_fp64{};

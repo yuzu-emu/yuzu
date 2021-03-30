@@ -67,6 +67,8 @@ public:
     VectorTypes F16;
     VectorTypes F64;
 
+    Id Array8F32{};
+
     Id true_value{};
     Id false_value{};
     Id u32_zero_value{};
@@ -105,6 +107,7 @@ public:
     Id base_vertex{};
     Id front_face{};
     Id point_coord{};
+    Id clip_distances{};
 
     Id fswzadd_lut_a{};
     Id fswzadd_lut_b{};
