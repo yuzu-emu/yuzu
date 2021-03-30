@@ -434,7 +434,10 @@ CFG::AnalysisState CFG::AnalyzeBRX(Block* block, Location pc, Instruction inst, 
     block->indirect_branches.reserve(targets.size());
     for (const u32 target : targets) {
         Block* const branch{AddLabel(block, block->stack, target, function_id)};
-        block->indirect_branches.push_back(branch);
+        block->indirect_branches.push_back({
+            .block{branch},
+            .address{target},
+        });
     }
     block->cond = IR::Condition{true};
     block->end = pc + 1;
@@ -530,8 +533,8 @@ std::string CFG::Dot() const {
                 }
                 break;
             case EndClass::IndirectBranch:
-                for (Block* const branch : block.indirect_branches) {
-                    add_branch(branch, false);
+                for (const IndirectBranch& branch : block.indirect_branches) {
+                    add_branch(branch.block, false);
                 }
                 break;
             case EndClass::Call:
