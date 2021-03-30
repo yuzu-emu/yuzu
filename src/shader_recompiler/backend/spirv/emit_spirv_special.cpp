@@ -17,6 +17,10 @@ void EmitPrologue(EmitContext& ctx) {
                 ctx.OpStore(generic_id, default_vector);
             }
         }
+        if (ctx.profile.fixed_state_point_size) {
+            const float point_size{*ctx.profile.fixed_state_point_size};
+            ctx.OpStore(ctx.output_point_size, ctx.Constant(ctx.F32[1], point_size));
+        }
     }
 }
 

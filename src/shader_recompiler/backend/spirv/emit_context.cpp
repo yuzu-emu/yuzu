@@ -495,7 +495,7 @@ void EmitContext::DefineOutputs(const Info& info) {
     if (info.stores_position || stage == Stage::VertexB) {
         output_position = DefineOutput(*this, F32[4], spv::BuiltIn::Position);
     }
-    if (info.stores_point_size) {
+    if (info.stores_point_size || profile.fixed_state_point_size) {
         if (stage == Stage::Fragment) {
             throw NotImplementedException("Storing PointSize in Fragment stage");
         }

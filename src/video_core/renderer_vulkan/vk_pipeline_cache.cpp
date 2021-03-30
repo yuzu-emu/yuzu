@@ -864,6 +864,9 @@ Shader::Profile PipelineCache::MakeProfile(const GraphicsPipelineCacheKey& key,
     Shader::Profile profile{base_profile};
     if (stage == Shader::Stage::VertexB) {
         profile.convert_depth_mode = key.state.ndc_minus_one_to_one != 0;
+        if (key.state.topology == Maxwell::PrimitiveTopology::Points) {
+            profile.fixed_state_point_size = Common::BitCast<float>(key.state.point_size);
+        }
         std::ranges::transform(key.state.attributes, profile.generic_input_types.begin(),
                                &CastAttributeType);
     }
