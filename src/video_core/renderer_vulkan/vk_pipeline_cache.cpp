@@ -777,6 +777,11 @@ GraphicsPipeline PipelineCache::CreateGraphicsPipeline(ShaderPools& pools,
         const Shader::Profile profile{MakeProfile(key, program.stage)};
         const std::vector<u32> code{EmitSPIRV(profile, program, binding)};
         modules[stage_index] = BuildShader(device, code);
+        if (device.HasDebuggingToolAttached()) {
+            const std::string name{fmt::format("{:016x}{:016x}", key.unique_hashes[index][0],
+                                               key.unique_hashes[index][1])};
+            modules[stage_index].SetObjectNameEXT(name.c_str());
+        }
     }
     return GraphicsPipeline(maxwell3d, gpu_memory, scheduler, buffer_cache, texture_cache, device,
                             descriptor_pool, update_descriptor_queue, render_pass_cache, key.state,
@@ -836,8 +841,13 @@ ComputePipeline PipelineCache::CreateComputePipeline(ShaderPools& pools,
     Shader::IR::Program program{TranslateProgram(pools.inst, pools.block, env, cfg)};
     u32 binding{0};
     std::vector<u32> code{EmitSPIRV(base_profile, program, binding)};
+    vk::ShaderModule spv_module{BuildShader(device, code)};
+    if (device.HasDebuggingToolAttached()) {
+        const auto name{fmt::format("{:016x}{:016x}", key.unique_hash[0], key.unique_hash[1])};
+        spv_module.SetObjectNameEXT(name.c_str());
+    }
     return ComputePipeline{device, descriptor_pool, update_descriptor_queue, program.info,
-                           BuildShader(device, code)};
+                           std::move(spv_module)};
 }
 
 static Shader::AttributeType CastAttributeType(const FixedPipelineState::VertexAttribute& attr) {
