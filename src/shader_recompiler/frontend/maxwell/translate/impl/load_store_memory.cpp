@@ -118,7 +118,8 @@ void TranslatorVisitor::LDG(u64 insn) {
         }
         break;
     }
-    case LoadSize::B128: {
+    case LoadSize::B128:
+    case LoadSize::U128: {
         if (!IR::IsAligned(dest_reg, 4)) {
             throw NotImplementedException("Unaligned data registers");
         }
@@ -128,8 +129,6 @@ void TranslatorVisitor::LDG(u64 insn) {
         }
         break;
     }
-    case LoadSize::U128:
-        throw NotImplementedException("LDG U.128");
     default:
         throw NotImplementedException("Invalid LDG size {}", ldg.size.Value());
     }
