@@ -17,7 +17,33 @@ struct OpcodeMeta {
     std::array<Type, 5> arg_types;
 };
 
-using enum Type;
+// using enum Type;
+constexpr Type Void{Type::Void};
+constexpr Type Opaque{Type::Opaque};
+constexpr Type Label{Type::Label};
+constexpr Type Reg{Type::Reg};
+constexpr Type Pred{Type::Pred};
+constexpr Type Attribute{Type::Attribute};
+constexpr Type U1{Type::U1};
+constexpr Type U8{Type::U8};
+constexpr Type U16{Type::U16};
+constexpr Type U32{Type::U32};
+constexpr Type U64{Type::U64};
+constexpr Type F16{Type::F16};
+constexpr Type F32{Type::F32};
+constexpr Type F64{Type::F64};
+constexpr Type U32x2{Type::U32x2};
+constexpr Type U32x3{Type::U32x3};
+constexpr Type U32x4{Type::U32x4};
+constexpr Type F16x2{Type::F16x2};
+constexpr Type F16x3{Type::F16x3};
+constexpr Type F16x4{Type::F16x4};
+constexpr Type F32x2{Type::F32x2};
+constexpr Type F32x3{Type::F32x3};
+constexpr Type F32x4{Type::F32x4};
+constexpr Type F64x2{Type::F64x2};
+constexpr Type F64x3{Type::F64x3};
+constexpr Type F64x4{Type::F64x4};
 
 constexpr std::array META_TABLE{
 #define OPCODE(name_token, type_token, ...)                                                        \
