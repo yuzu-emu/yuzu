@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <tuple>
 #include <type_traits>
+#include <ranges>
 
 #include "common/bit_cast.h"
 #include "common/bit_util.h"
@@ -424,7 +425,7 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
 } // Anonymous namespace
 
 void ConstantPropagationPass(IR::Program& program) {
-    for (IR::Block* const block : program.post_order_blocks) {
+    for (IR::Block* const block : program.post_order_blocks | std::views::reverse) {
         for (IR::Inst& inst : block->Instructions()) {
             ConstantPropagation(*block, inst);
         }
