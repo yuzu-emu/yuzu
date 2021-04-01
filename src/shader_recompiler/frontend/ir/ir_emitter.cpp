@@ -256,6 +256,13 @@ static U1 GetFlowTest(IREmitter& ir, FlowTest flow_test) {
         return ir.LogicalOr(ir.GetSFlag(), ir.GetZFlag());
     case FlowTest::RGT:
         return ir.LogicalAnd(ir.LogicalNot(ir.GetSFlag()), ir.LogicalNot(ir.GetZFlag()));
+    case FlowTest::CSM_TA:
+    case FlowTest::CSM_TR:
+    case FlowTest::CSM_MX:
+    case FlowTest::FCSM_TA:
+    case FlowTest::FCSM_TR:
+    case FlowTest::FCSM_MX:
+        return ir.Imm1(false);
     default:
         throw NotImplementedException("Flow test {}", flow_test);
     }

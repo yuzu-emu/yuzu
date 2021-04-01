@@ -329,10 +329,6 @@ void TranslatorVisitor::VADD(u64) {
     ThrowNotImplemented(Opcode::VADD);
 }
 
-void TranslatorVisitor::VOTE_vtg(u64) {
-    ThrowNotImplemented(Opcode::VOTE_vtg);
-}
-
 void TranslatorVisitor::VSET(u64) {
     ThrowNotImplemented(Opcode::VSET);
 }
