@@ -6,6 +6,7 @@
 #include <compare>
 #include <optional>
 #include <ranges>
+#include <map>
 
 #include <boost/container/flat_set.hpp>
 #include <boost/container/small_vector.hpp>
@@ -45,6 +46,7 @@ using StorageBufferSet =
 using StorageInstVector = boost::container::small_vector<StorageInst, 24>;
 using VisitedBlocks = boost::container::flat_set<IR::Block*, std::less<IR::Block*>,
                                                  boost::container::small_vector<IR::Block*, 4>>;
+using StorageWritesMap = std::map<StorageBufferAddr, bool>;
 
 /// Returns true when the instruction is a global memory instruction
 bool IsGlobalMemory(const IR::Inst& inst) {
@@ -56,6 +58,22 @@ bool IsGlobalMemory(const IR::Inst& inst) {
     case IR::Opcode::LoadGlobal32:
     case IR::Opcode::LoadGlobal64:
     case IR::Opcode::LoadGlobal128:
+    case IR::Opcode::WriteGlobalS8:
+    case IR::Opcode::WriteGlobalU8:
+    case IR::Opcode::WriteGlobalS16:
+    case IR::Opcode::WriteGlobalU16:
+    case IR::Opcode::WriteGlobal32:
+    case IR::Opcode::WriteGlobal64:
+    case IR::Opcode::WriteGlobal128:
+        return true;
+    default:
+        return false;
+    }
+}
+
+/// Returns true when the instruction is a global memory instruction
+bool IsGlobalMemoryWrite(const IR::Inst& inst) {
+    switch (inst.Opcode()) {
     case IR::Opcode::WriteGlobalS8:
     case IR::Opcode::WriteGlobalU8:
     case IR::Opcode::WriteGlobalS16:
@@ -248,7 +266,7 @@ std::optional<StorageBufferAddr> Track(IR::Block* block, const IR::Value& value,
 
 /// Collects the storage buffer used by a global memory instruction and the instruction itself
 void CollectStorageBuffers(IR::Block& block, IR::Inst& inst, StorageBufferSet& storage_buffer_set,
-                           StorageInstVector& to_replace) {
+                           StorageInstVector& to_replace, StorageWritesMap& writes_map) {
     // NVN puts storage buffers in a specific range, we have to bias towards these addresses to
     // avoid getting false positives
     static constexpr Bias nvn_bias{
@@ -277,6 +295,13 @@ void CollectStorageBuffers(IR::Block& block, IR::Inst& inst, StorageBufferSet& s
         }
     }
     // Collect storage buffer and the instruction
+    const bool is_a_write = IsGlobalMemoryWrite(inst);
+    auto it = writes_map.find(*storage_buffer);
+    if (it == writes_map.end()) {
+      writes_map[*storage_buffer] = is_a_write;
+    } else {
+      it->second = it->second || is_a_write;
+    }
     storage_buffer_set.insert(*storage_buffer);
     to_replace.push_back(StorageInst{
         .storage_buffer{*storage_buffer},
@@ -350,13 +375,14 @@ void Replace(IR::Block& block, IR::Inst& inst, const IR::U32& storage_index,
 void GlobalMemoryToStorageBufferPass(IR::Program& program) {
     StorageBufferSet storage_buffers;
     StorageInstVector to_replace;
+    StorageWritesMap writes_map;
 
     for (IR::Block* const block : program.post_order_blocks) {
         for (IR::Inst& inst : block->Instructions()) {
             if (!IsGlobalMemory(inst)) {
                 continue;
             }
-            CollectStorageBuffers(*block, inst, storage_buffers, to_replace);
+            CollectStorageBuffers(*block, inst, storage_buffers, to_replace, writes_map);
         }
     }
     Info& info{program.info};
@@ -366,6 +392,7 @@ void GlobalMemoryToStorageBufferPass(IR::Program& program) {
             .cbuf_index{storage_buffer.index},
             .cbuf_offset{storage_buffer.offset},
             .count{1},
+            .is_written{writes_map[storage_buffer]},
         });
         ++storage_index;
     }

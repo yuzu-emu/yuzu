@@ -59,6 +59,7 @@ struct StorageBufferDescriptor {
     u32 cbuf_index;
     u32 cbuf_offset;
     u32 count;
+    bool is_written;
 };
 
 struct Info {
