@@ -70,6 +70,16 @@ public:
     void SetCFlag(const U1& value);
     void SetOFlag(const U1& value);
 
+    [[nodiscard]] U1 GetFCSMFlag();
+    [[nodiscard]] U1 GetTAFlag();
+    [[nodiscard]] U1 GetTRFlag();
+    [[nodiscard]] U1 GetMXFlag();
+
+    void SetFCSMFlag(const U1& value);
+    void SetTAFlag(const U1& value);
+    void SetTRFlag(const U1& value);
+    void SetMXFlag(const U1& value);
+
     [[nodiscard]] U1 Condition(IR::Condition cond);
     [[nodiscard]] U1 GetFlowTestResult(FlowTest test);
 

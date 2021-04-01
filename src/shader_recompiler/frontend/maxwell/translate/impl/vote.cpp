@@ -50,7 +50,10 @@ void TranslatorVisitor::VOTE(u64 insn) {
 }
 
 void TranslatorVisitor::VOTE_vtg(u64) {
-    // Stub
+    // LOG_WARNING("VOTE.VTG: Stubbed!");
+    auto imm = ir.Imm1(false);
+    ir.SetFCSMFlag(imm);
+    ir.SetTRFlag(imm);
 }
 
 } // namespace Shader::Maxwell
