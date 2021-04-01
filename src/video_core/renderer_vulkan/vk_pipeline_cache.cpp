@@ -620,7 +620,8 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
       kepler_compute{kepler_compute_}, gpu_memory{gpu_memory_}, device{device_},
       scheduler{scheduler_}, descriptor_pool{descriptor_pool_},
       update_descriptor_queue{update_descriptor_queue_}, render_pass_cache{render_pass_cache_},
-      buffer_cache{buffer_cache_}, texture_cache{texture_cache_}, workers(11, "PipelineBuilder") {
+      buffer_cache{buffer_cache_}, texture_cache{texture_cache_},
+      workers(11, "yuzu:PipelineBuilder") {
     const auto& float_control{device.FloatControlProperties()};
     const VkDriverIdKHR driver_id{device.GetDriverID()};
     base_profile = Shader::Profile{

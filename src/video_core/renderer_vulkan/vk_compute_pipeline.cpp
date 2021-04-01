@@ -17,13 +17,6 @@
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Vulkan {
-namespace {
-DescriptorLayoutTuple CreateLayout(const Device& device, const Shader::Info& info) {
-    DescriptorLayoutBuilder builder;
-    builder.Add(info, VK_SHADER_STAGE_COMPUTE_BIT);
-    return builder.Create(device.GetLogical());
-}
-} // Anonymous namespace
 
 ComputePipeline::ComputePipeline(const Device& device, VKDescriptorPool& descriptor_pool,
                                  VKUpdateDescriptorQueue& update_descriptor_queue_,
@@ -31,10 +24,12 @@ ComputePipeline::ComputePipeline(const Device& device, VKDescriptorPool& descrip
                                  vk::ShaderModule spv_module_)
     : update_descriptor_queue{update_descriptor_queue_}, info{info_},
       spv_module(std::move(spv_module_)) {
-    DescriptorLayoutTuple tuple{CreateLayout(device, info)};
-    descriptor_set_layout = std::move(tuple.descriptor_set_layout);
-    pipeline_layout = std::move(tuple.pipeline_layout);
-    descriptor_update_template = std::move(tuple.descriptor_update_template);
+    DescriptorLayoutBuilder builder{device.GetLogical()};
+    builder.Add(info, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    descriptor_set_layout = builder.CreateDescriptorSetLayout();
+    pipeline_layout = builder.CreatePipelineLayout(*descriptor_set_layout);
+    descriptor_update_template = builder.CreateTemplate(*descriptor_set_layout, *pipeline_layout);
     descriptor_allocator = DescriptorAllocator(descriptor_pool, *descriptor_set_layout);
 
     auto func{[this, &device] {
@@ -128,7 +123,7 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
         return;
     }
     const VkDescriptorSet descriptor_set{descriptor_allocator.Commit()};
-    update_descriptor_queue.Send(*descriptor_update_template, descriptor_set);
+    update_descriptor_queue.Send(descriptor_update_template.address(), descriptor_set);
     scheduler.Record([this, descriptor_set](vk::CommandBuffer cmdbuf) {
         cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline_layout, 0,
                                   descriptor_set, nullptr);

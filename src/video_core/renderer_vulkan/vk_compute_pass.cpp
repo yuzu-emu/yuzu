@@ -237,7 +237,7 @@ VkDescriptorSet VKComputePass::CommitDescriptorSet(
         return nullptr;
     }
     const VkDescriptorSet set = descriptor_allocator->Commit();
-    update_descriptor_queue.Send(*descriptor_template, set);
+    update_descriptor_queue.Send(descriptor_template.address(), set);
     return set;
 }
 

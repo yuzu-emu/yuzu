@@ -27,8 +27,8 @@ using VideoCore::Surface::PixelFormat;
 using VideoCore::Surface::PixelFormatFromDepthFormat;
 using VideoCore::Surface::PixelFormatFromRenderTargetFormat;
 
-DescriptorLayoutTuple CreateLayout(const Device& device, std::span<const Shader::Info> infos) {
-    DescriptorLayoutBuilder builder;
+DescriptorLayoutBuilder MakeBuilder(const Device& device, std::span<const Shader::Info> infos) {
+    DescriptorLayoutBuilder builder{device.GetLogical()};
     for (size_t index = 0; index < infos.size(); ++index) {
         static constexpr std::array stages{
             VK_SHADER_STAGE_VERTEX_BIT,
@@ -39,7 +39,7 @@ DescriptorLayoutTuple CreateLayout(const Device& device, std::span<const Shader:
         };
         builder.Add(infos[index], stages.at(index));
     }
-    return builder.Create(device.GetLogical());
+    return builder;
 }
 
 template <class StencilFace>
@@ -124,13 +124,15 @@ GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
     std::ranges::transform(infos, stage_infos.begin(),
                            [](const Shader::Info* info) { return info ? *info : Shader::Info{}; });
 
-    DescriptorLayoutTuple tuple{CreateLayout(device, stage_infos)};
-    descriptor_set_layout = std::move(tuple.descriptor_set_layout);
-    pipeline_layout = std::move(tuple.pipeline_layout);
-    descriptor_update_template = std::move(tuple.descriptor_update_template);
+    DescriptorLayoutBuilder builder{MakeBuilder(device, stage_infos)};
+    descriptor_set_layout = builder.CreateDescriptorSetLayout();
     descriptor_allocator = DescriptorAllocator(descriptor_pool, *descriptor_set_layout);
 
-    auto func{[this, &device, &render_pass_cache] {
+    auto func{[this, &device, &render_pass_cache, builder] {
+        const VkDescriptorSetLayout set_layout{*descriptor_set_layout};
+        pipeline_layout = builder.CreatePipelineLayout(set_layout);
+        descriptor_update_template = builder.CreateTemplate(set_layout, *pipeline_layout);
+
         const VkRenderPass render_pass{render_pass_cache.Get(MakeRenderPassKey(state))};
         MakePipeline(device, render_pass);
         building_flag.test_and_set();
@@ -206,11 +208,11 @@ void GraphicsPipeline::Configure(bool is_indexed) {
         return;
     }
     const VkDescriptorSet descriptor_set{descriptor_allocator.Commit()};
-    update_descriptor_queue.Send(*descriptor_update_template, descriptor_set);
+    update_descriptor_queue.Send(descriptor_update_template.address(), descriptor_set);
 
-    scheduler.Record([descriptor_set, layout = *pipeline_layout](vk::CommandBuffer cmdbuf) {
-        cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, descriptor_set,
-                                  nullptr);
+    scheduler.Record([this, descriptor_set](vk::CommandBuffer cmdbuf) {
+        cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, 0,
+                                  descriptor_set, nullptr);
     });
 }
 
