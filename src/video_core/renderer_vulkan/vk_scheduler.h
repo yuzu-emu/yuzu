@@ -22,6 +22,7 @@ namespace Vulkan {
 class CommandPool;
 class Device;
 class Framebuffer;
+class GraphicsPipeline;
 class StateTracker;
 class VKQueryCache;
 
@@ -52,8 +53,8 @@ public:
     /// of a renderpass.
     void RequestOutsideRenderPassOperationContext();
 
-    /// Binds a pipeline to the current execution context.
-    void BindGraphicsPipeline(VkPipeline pipeline);
+    /// Update the pipeline to the current execution context.
+    bool UpdateGraphicsPipeline(GraphicsPipeline* pipeline);
 
     /// Invalidates current command buffer state except for render passes
     void InvalidateState();
@@ -170,7 +171,7 @@ private:
         VkRenderPass renderpass = nullptr;
         VkFramebuffer framebuffer = nullptr;
         VkExtent2D render_area = {0, 0};
-        VkPipeline graphics_pipeline = nullptr;
+        GraphicsPipeline* graphics_pipeline = nullptr;
     };
 
     void WorkerThread();

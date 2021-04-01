@@ -518,9 +518,8 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
     }
     pipeline_cache_filename = fmt::format("{}/{:016x}.bin", transferable_dir, title_id);
 
-    Common::ThreadWorker worker(11, "PipelineBuilder");
-    std::mutex cache_mutex;
     struct {
+        std::mutex mutex;
         size_t total{0};
         size_t built{0};
         bool has_loaded{false};
@@ -542,51 +541,53 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
         }
         u32 num_envs{};
         file.read(reinterpret_cast<char*>(&num_envs), sizeof(num_envs));
-        auto envs{std::make_shared<std::vector<FileEnvironment>>(num_envs)};
-        for (FileEnvironment& env : *envs) {
+        std::vector<FileEnvironment> envs(num_envs);
+        for (FileEnvironment& env : envs) {
             env.Deserialize(file);
         }
-        if (envs->front().ShaderStage() == Shader::Stage::Compute) {
+        if (envs.front().ShaderStage() == Shader::Stage::Compute) {
             ComputePipelineCacheKey key;
             file.read(reinterpret_cast<char*>(&key), sizeof(key));
 
-            worker.QueueWork([this, key, envs, &cache_mutex, &state, &callback] {
+            workers.QueueWork([this, key, envs = std::move(envs), &state, &callback]() mutable {
                 ShaderPools pools;
-                ComputePipeline pipeline{CreateComputePipeline(pools, key, envs->front())};
+                auto pipeline{CreateComputePipeline(pools, key, envs.front(), false)};
 
-                std::lock_guard lock{cache_mutex};
+                std::lock_guard lock{state.mutex};
                 compute_cache.emplace(key, std::move(pipeline));
+                ++state.built;
                 if (state.has_loaded) {
-                    callback(VideoCore::LoadCallbackStage::Build, ++state.built, state.total);
+                    callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
                 }
             });
         } else {
             GraphicsPipelineCacheKey key;
             file.read(reinterpret_cast<char*>(&key), sizeof(key));
 
-            worker.QueueWork([this, key, envs, &cache_mutex, &state, &callback] {
+            workers.QueueWork([this, key, envs = std::move(envs), &state, &callback]() mutable {
                 ShaderPools pools;
                 boost::container::static_vector<Shader::Environment*, 5> env_ptrs;
-                for (auto& env : *envs) {
+                for (auto& env : envs) {
                     env_ptrs.push_back(&env);
                 }
-                GraphicsPipeline pipeline{CreateGraphicsPipeline(pools, key, MakeSpan(env_ptrs))};
+                auto pipeline{CreateGraphicsPipeline(pools, key, MakeSpan(env_ptrs), false)};
 
-                std::lock_guard lock{cache_mutex};
+                std::lock_guard lock{state.mutex};
                 graphics_cache.emplace(key, std::move(pipeline));
+                ++state.built;
                 if (state.has_loaded) {
-                    callback(VideoCore::LoadCallbackStage::Build, ++state.built, state.total);
+                    callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
                 }
             });
         }
         ++state.total;
     }
     {
-        std::lock_guard lock{cache_mutex};
+        std::lock_guard lock{state.mutex};
         callback(VideoCore::LoadCallbackStage::Build, 0, state.total);
         state.has_loaded = true;
     }
-    worker.WaitForRequests();
+    workers.WaitForRequests();
 }
 
 size_t ComputePipelineCacheKey::Hash() const noexcept {
@@ -619,7 +620,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
       kepler_compute{kepler_compute_}, gpu_memory{gpu_memory_}, device{device_},
       scheduler{scheduler_}, descriptor_pool{descriptor_pool_},
       update_descriptor_queue{update_descriptor_queue_}, render_pass_cache{render_pass_cache_},
-      buffer_cache{buffer_cache_}, texture_cache{texture_cache_} {
+      buffer_cache{buffer_cache_}, texture_cache{texture_cache_}, workers(11, "PipelineBuilder") {
     const auto& float_control{device.FloatControlProperties()};
     const VkDriverIdKHR driver_id{device.GetDriverID()};
     base_profile = Shader::Profile{
@@ -662,10 +663,10 @@ GraphicsPipeline* PipelineCache::CurrentGraphicsPipeline() {
     const auto [pair, is_new]{graphics_cache.try_emplace(graphics_key)};
     auto& pipeline{pair->second};
     if (!is_new) {
-        return &pipeline;
+        return pipeline.get();
     }
     pipeline = CreateGraphicsPipeline();
-    return &pipeline;
+    return pipeline.get();
 }
 
 ComputePipeline* PipelineCache::CurrentComputePipeline() {
@@ -691,10 +692,10 @@ ComputePipeline* PipelineCache::CurrentComputePipeline() {
     const auto [pair, is_new]{compute_cache.try_emplace(key)};
     auto& pipeline{pair->second};
     if (!is_new) {
-        return &pipeline;
+        return pipeline.get();
     }
     pipeline = CreateComputePipeline(key, shader);
-    return &pipeline;
+    return pipeline.get();
 }
 
 bool PipelineCache::RefreshStages() {
@@ -743,9 +744,9 @@ const ShaderInfo* PipelineCache::MakeShaderInfo(GenericEnvironment& env, VAddr c
     return result;
 }
 
-GraphicsPipeline PipelineCache::CreateGraphicsPipeline(ShaderPools& pools,
-                                                       const GraphicsPipelineCacheKey& key,
-                                                       std::span<Shader::Environment* const> envs) {
+std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
+    ShaderPools& pools, const GraphicsPipelineCacheKey& key,
+    std::span<Shader::Environment* const> envs, bool build_in_parallel) {
     LOG_INFO(Render_Vulkan, "0x{:016x}", key.Hash());
     size_t env_index{0};
     std::array<Shader::IR::Program, Maxwell::MaxShaderProgram> programs;
@@ -783,12 +784,14 @@ GraphicsPipeline PipelineCache::CreateGraphicsPipeline(ShaderPools& pools,
             modules[stage_index].SetObjectNameEXT(name.c_str());
         }
     }
-    return GraphicsPipeline(maxwell3d, gpu_memory, scheduler, buffer_cache, texture_cache, device,
-                            descriptor_pool, update_descriptor_queue, render_pass_cache, key.state,
-                            std::move(modules), infos);
+    Common::ThreadWorker* const thread_worker{build_in_parallel ? &workers : nullptr};
+    return std::make_unique<GraphicsPipeline>(
+        maxwell3d, gpu_memory, scheduler, buffer_cache, texture_cache, device, descriptor_pool,
+        update_descriptor_queue, thread_worker, render_pass_cache, key.state, std::move(modules),
+        infos);
 }
 
-GraphicsPipeline PipelineCache::CreateGraphicsPipeline() {
+std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline() {
     main_pools.ReleaseContents();
 
     std::array<GraphicsEnvironment, Maxwell::MaxShaderProgram> graphics_envs;
@@ -809,22 +812,22 @@ GraphicsPipeline PipelineCache::CreateGraphicsPipeline() {
         generic_envs.push_back(&env);
         envs.push_back(&env);
     }
-    GraphicsPipeline pipeline{CreateGraphicsPipeline(main_pools, graphics_key, MakeSpan(envs))};
+    auto pipeline{CreateGraphicsPipeline(main_pools, graphics_key, MakeSpan(envs), true)};
     if (!pipeline_cache_filename.empty()) {
         SerializePipeline(graphics_key, generic_envs, pipeline_cache_filename);
     }
     return pipeline;
 }
 
-ComputePipeline PipelineCache::CreateComputePipeline(const ComputePipelineCacheKey& key,
-                                                     const ShaderInfo* shader) {
+std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
+    const ComputePipelineCacheKey& key, const ShaderInfo* shader) {
     const GPUVAddr program_base{kepler_compute.regs.code_loc.Address()};
     const auto& qmd{kepler_compute.launch_description};
     ComputeEnvironment env{kepler_compute, gpu_memory, program_base, qmd.program_start};
     env.SetCachedSize(shader->size_bytes);
 
     main_pools.ReleaseContents();
-    ComputePipeline pipeline{CreateComputePipeline(main_pools, key, env)};
+    auto pipeline{CreateComputePipeline(main_pools, key, env, true)};
     if (!pipeline_cache_filename.empty()) {
         SerializePipeline(key, std::array<const GenericEnvironment*, 1>{&env},
                           pipeline_cache_filename);
@@ -832,9 +835,9 @@ ComputePipeline PipelineCache::CreateComputePipeline(const ComputePipelineCacheK
     return pipeline;
 }
 
-ComputePipeline PipelineCache::CreateComputePipeline(ShaderPools& pools,
-                                                     const ComputePipelineCacheKey& key,
-                                                     Shader::Environment& env) const {
+std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
+    ShaderPools& pools, const ComputePipelineCacheKey& key, Shader::Environment& env,
+    bool build_in_parallel) {
     LOG_INFO(Render_Vulkan, "0x{:016x}", key.Hash());
 
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
@@ -846,8 +849,9 @@ ComputePipeline PipelineCache::CreateComputePipeline(ShaderPools& pools,
         const auto name{fmt::format("{:016x}{:016x}", key.unique_hash[0], key.unique_hash[1])};
         spv_module.SetObjectNameEXT(name.c_str());
     }
-    return ComputePipeline{device, descriptor_pool, update_descriptor_queue, program.info,
-                           std::move(spv_module)};
+    Common::ThreadWorker* const thread_worker{build_in_parallel ? &workers : nullptr};
+    return std::make_unique<ComputePipeline>(device, descriptor_pool, update_descriptor_queue,
+                                             thread_worker, program.info, std::move(spv_module));
 }
 
 static Shader::AttributeType CastAttributeType(const FixedPipelineState::VertexAttribute& attr) {

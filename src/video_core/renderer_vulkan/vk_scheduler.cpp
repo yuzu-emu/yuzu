@@ -124,18 +124,16 @@ void VKScheduler::RequestOutsideRenderPassOperationContext() {
     EndRenderPass();
 }
 
-void VKScheduler::BindGraphicsPipeline(VkPipeline pipeline) {
+bool VKScheduler::UpdateGraphicsPipeline(GraphicsPipeline* pipeline) {
     if (state.graphics_pipeline == pipeline) {
-        return;
+        return false;
     }
     state.graphics_pipeline = pipeline;
-    Record([pipeline](vk::CommandBuffer cmdbuf) {
-        cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    });
+    return true;
 }
 
 void VKScheduler::WorkerThread() {
-    Common::SetCurrentThreadPriority(Common::ThreadPriority::High);
+    Common::SetCurrentThreadName("yuzu:VulkanWorker");
     std::unique_lock lock{mutex};
     do {
         cv.wait(lock, [this] { return !chunk_queue.Empty() || quit; });
