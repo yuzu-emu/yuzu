@@ -250,7 +250,7 @@ Id PhiArgDef(EmitContext& ctx, IR::Inst* inst, size_t index) {
         // Let the context handle immediate definitions, as it already knows how
         return ctx.Def(arg);
     }
-    IR::Inst* const arg_inst{arg.Inst()};
+    IR::Inst* const arg_inst{arg.InstRecursive()};
     if (const Id def{arg_inst->Definition<Id>()}; Sirit::ValidId(def)) {
         // Return the current definition if it exists
         return def;
@@ -296,7 +296,12 @@ Id EmitPhi(EmitContext& ctx, IR::Inst* inst) {
 void EmitVoid(EmitContext&) {}
 
 Id EmitIdentity(EmitContext& ctx, const IR::Value& value) {
-    return ctx.Def(value);
+    if (const Id id = ctx.Def(value); Sirit::ValidId(id)) {
+        return id;
+    }
+    const Id def{ctx.ForwardDeclarationId()};
+    value.InstRecursive()->SetDefinition<Id>(def);
+    return def;
 }
 
 void EmitGetZeroFromOp(EmitContext&) {

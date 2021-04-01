@@ -114,7 +114,7 @@ EmitContext::~EmitContext() = default;
 
 Id EmitContext::Def(const IR::Value& value) {
     if (!value.IsImmediate()) {
-        return value.Inst()->Definition<Id>();
+        return value.InstRecursive()->Definition<Id>();
     }
     switch (value.Type()) {
     case IR::Type::Void:
