@@ -263,6 +263,38 @@ void EmitSetOFlag(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
+void EmitGetFCSMFlag(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+void EmitGetTAFlag(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+void EmitGetTRFlag(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+void EmitGetMXFlag(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+void EmitSetFCSMFlag(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+void EmitSetTAFlag(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+void EmitSetTRFlag(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
+void EmitSetMXFlag(EmitContext&) {
+    throw NotImplementedException("SPIR-V Instruction");
+}
+
 Id EmitWorkgroupId(EmitContext& ctx) {
     return ctx.OpLoad(ctx.U32[3], ctx.workgroup_id);
 }
