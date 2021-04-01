@@ -8,36 +8,30 @@
 namespace Common {
 
 ThreadWorker::ThreadWorker(std::size_t num_workers, const std::string& name) {
-    for (std::size_t i = 0; i < num_workers; ++i)
-        threads.emplace_back([this, thread_name{std::string{name}}] {
-            Common::SetCurrentThreadName(thread_name.c_str());
+    const auto lambda = [this, thread_name{std::string{name}}] {
+        Common::SetCurrentThreadName(thread_name.c_str());
 
-            // Wait for first request
+        while (!stop) {
+            UniqueFunction<void> task;
             {
                 std::unique_lock lock{queue_mutex};
-                condition.wait(lock, [this] { return stop || !requests.empty(); });
-            }
-
-            while (true) {
-                std::function<void()> task;
-
-                {
-                    std::unique_lock lock{queue_mutex};
-                    condition.wait(lock, [this] { return stop || !requests.empty(); });
-                    if (stop || requests.empty()) {
-                        return;
-                    }
-                    task = std::move(requests.front());
-                    requests.pop();
-
-                    if (requests.empty()) {
-                        wait_condition.notify_one();
-                    }
+                if (requests.empty()) {
+                    wait_condition.notify_all();
                 }
-
-                task();
+                condition.wait(lock, [this] { return stop || !requests.empty(); });
+                if (stop || requests.empty()) {
+                    break;
+                }
+                task = std::move(requests.front());
+                requests.pop();
             }
-        });
+            task();
+        }
+        wait_condition.notify_all();
+    };
+    for (size_t i = 0; i < num_workers; ++i) {
+        threads.emplace_back(lambda);
+    }
 }
 
 ThreadWorker::~ThreadWorker() {
@@ -51,10 +45,10 @@ ThreadWorker::~ThreadWorker() {
     }
 }
 
-void ThreadWorker::QueueWork(std::function<void()>&& work) {
+void ThreadWorker::QueueWork(UniqueFunction<void> work) {
     {
         std::unique_lock lock{queue_mutex};
-        requests.emplace(work);
+        requests.emplace(std::move(work));
     }
     condition.notify_one();
 }
