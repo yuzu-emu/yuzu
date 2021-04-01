@@ -61,6 +61,33 @@ public:
 
     ~GenericEnvironment() override = default;
 
+    u32 TextureBoundBuffer() const final {
+        return texture_bound;
+    }
+
+    u32 LocalMemorySize() const final {
+        return local_memory_size;
+    }
+
+    u32 SharedMemorySize() const final {
+        return shared_memory_size;
+    }
+
+    std::array<u32, 3> WorkgroupSize() const final {
+        return workgroup_size;
+    }
+
+    u64 ReadInstruction(u32 address) final {
+        read_lowest = std::min(read_lowest, address);
+        read_highest = std::max(read_highest, address);
+
+        if (address >= cached_lowest && address < cached_highest) {
+            return code[(address - cached_lowest) / INST_SIZE];
+        }
+        has_unbound_instructions = true;
+        return gpu_memory->Read<u64>(program_base + address);
+    }
+
     std::optional<u128> Analyze() {
         const std::optional<u64> size{TryFindSize()};
         if (!size) {
@@ -97,26 +124,10 @@ public:
         return Common::CityHash128(data.get(), size);
     }
 
-    u64 ReadInstruction(u32 address) final {
-        read_lowest = std::min(read_lowest, address);
-        read_highest = std::max(read_highest, address);
-
-        if (address >= cached_lowest && address < cached_highest) {
-            return code[(address - cached_lowest) / INST_SIZE];
-        }
-        has_unbound_instructions = true;
-        return gpu_memory->Read<u64>(program_base + address);
-    }
-
     void Serialize(std::ofstream& file) const {
-        const u64 code_size{static_cast<u64>(ReadSize())};
-        const auto data{std::make_unique<char[]>(code_size)};
-        gpu_memory->ReadBlock(program_base + read_lowest, data.get(), code_size);
-
+        const u64 code_size{static_cast<u64>(CachedSize())};
         const u64 num_texture_types{static_cast<u64>(texture_types.size())};
         const u64 num_cbuf_values{static_cast<u64>(cbuf_values.size())};
-        const u32 local_memory_size{LocalMemorySize()};
-        const u32 texture_bound{TextureBoundBuffer()};
 
         file.write(reinterpret_cast<const char*>(&code_size), sizeof(code_size))
             .write(reinterpret_cast<const char*>(&num_texture_types), sizeof(num_texture_types))
@@ -124,10 +135,10 @@ public:
             .write(reinterpret_cast<const char*>(&local_memory_size), sizeof(local_memory_size))
             .write(reinterpret_cast<const char*>(&texture_bound), sizeof(texture_bound))
             .write(reinterpret_cast<const char*>(&start_address), sizeof(start_address))
-            .write(reinterpret_cast<const char*>(&read_lowest), sizeof(read_lowest))
-            .write(reinterpret_cast<const char*>(&read_highest), sizeof(read_highest))
+            .write(reinterpret_cast<const char*>(&cached_lowest), sizeof(cached_lowest))
+            .write(reinterpret_cast<const char*>(&cached_highest), sizeof(cached_highest))
             .write(reinterpret_cast<const char*>(&stage), sizeof(stage))
-            .write(data.get(), code_size);
+            .write(reinterpret_cast<const char*>(code.data()), code_size);
         for (const auto [key, type] : texture_types) {
             file.write(reinterpret_cast<const char*>(&key), sizeof(key))
                 .write(reinterpret_cast<const char*>(&type), sizeof(type));
@@ -137,8 +148,6 @@ public:
                 .write(reinterpret_cast<const char*>(&type), sizeof(type));
         }
         if (stage == Shader::Stage::Compute) {
-            const std::array<u32, 3> workgroup_size{WorkgroupSize()};
-            const u32 shared_memory_size{SharedMemorySize()};
             file.write(reinterpret_cast<const char*>(&workgroup_size), sizeof(workgroup_size))
                 .write(reinterpret_cast<const char*>(&shared_memory_size),
                        sizeof(shared_memory_size));
@@ -220,6 +229,11 @@ protected:
     std::unordered_map<u64, Shader::TextureType> texture_types;
     std::unordered_map<u64, u32> cbuf_values;
 
+    u32 local_memory_size{};
+    u32 texture_bound{};
+    u32 shared_memory_size{};
+    std::array<u32, 3> workgroup_size{};
+
     u32 read_lowest = std::numeric_limits<u32>::max();
     u32 read_highest = 0;
 
@@ -270,6 +284,10 @@ public:
             UNREACHABLE_MSG("Invalid program={}", program);
             break;
         }
+        const u64 local_size{sph.LocalMemorySize()};
+        ASSERT(local_size <= std::numeric_limits<u32>::max());
+        local_memory_size = static_cast<u32>(local_size);
+        texture_bound = maxwell3d->regs.tex_cb_index;
     }
 
     ~GraphicsEnvironment() override = default;
@@ -294,24 +312,6 @@ public:
                                    cbuf.address, cbuf.size, cbuf_index, cbuf_offset);
     }
 
-    u32 TextureBoundBuffer() const override {
-        return maxwell3d->regs.tex_cb_index;
-    }
-
-    u32 LocalMemorySize() const override {
-        const u64 size{sph.LocalMemorySize()};
-        ASSERT(size <= std::numeric_limits<u32>::max());
-        return static_cast<u32>(size);
-    }
-
-    u32 SharedMemorySize() const override {
-        throw Shader::LogicError("Requesting shared memory size in graphics stage");
-    }
-
-    std::array<u32, 3> WorkgroupSize() const override {
-        throw Shader::LogicError("Requesting workgroup size in a graphics stage");
-    }
-
 private:
     Tegra::Engines::Maxwell3D* maxwell3d{};
     size_t stage_index{};
@@ -325,7 +325,12 @@ public:
                                 u32 start_address_)
         : GenericEnvironment{gpu_memory_, program_base_, start_address_}, kepler_compute{
                                                                               &kepler_compute_} {
+        const auto& qmd{kepler_compute->launch_description};
         stage = Shader::Stage::Compute;
+        local_memory_size = qmd.local_pos_alloc;
+        texture_bound = kepler_compute->regs.tex_cb_index;
+        shared_memory_size = qmd.shared_alloc;
+        workgroup_size = {qmd.block_dim_x, qmd.block_dim_y, qmd.block_dim_z};
     }
 
     ~ComputeEnvironment() override = default;
@@ -349,25 +354,6 @@ public:
         const auto& cbuf{qmd.const_buffer_config[cbuf_index]};
         return ReadTextureTypeImpl(regs.tic.Address(), regs.tic.limit, qmd.linked_tsc != 0,
                                    cbuf.Address(), cbuf.size, cbuf_index, cbuf_offset);
-    }
-
-    u32 TextureBoundBuffer() const override {
-        return kepler_compute->regs.tex_cb_index;
-    }
-
-    u32 LocalMemorySize() const override {
-        const auto& qmd{kepler_compute->launch_description};
-        return qmd.local_pos_alloc;
-    }
-
-    u32 SharedMemorySize() const override {
-        const auto& qmd{kepler_compute->launch_description};
-        return qmd.shared_alloc;
-    }
-
-    std::array<u32, 3> WorkgroupSize() const override {
-        const auto& qmd{kepler_compute->launch_description};
-        return {qmd.block_dim_x, qmd.block_dim_y, qmd.block_dim_z};
     }
 
 private:
@@ -621,7 +607,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
       scheduler{scheduler_}, descriptor_pool{descriptor_pool_},
       update_descriptor_queue{update_descriptor_queue_}, render_pass_cache{render_pass_cache_},
       buffer_cache{buffer_cache_}, texture_cache{texture_cache_},
-      workers(11, "yuzu:PipelineBuilder") {
+      workers(11, "yuzu:PipelineBuilder"), serialization_thread(1, "yuzu:PipelineSerialization") {
     const auto& float_control{device.FloatControlProperties()};
     const VkDriverIdKHR driver_id{device.GetDriverID()};
     base_profile = Shader::Profile{
@@ -796,7 +782,6 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline() {
     main_pools.ReleaseContents();
 
     std::array<GraphicsEnvironment, Maxwell::MaxShaderProgram> graphics_envs;
-    boost::container::static_vector<GenericEnvironment*, Maxwell::MaxShaderProgram> generic_envs;
     boost::container::static_vector<Shader::Environment*, Maxwell::MaxShaderProgram> envs;
 
     const GPUVAddr base_addr{maxwell3d.regs.code_address.CodeAddress()};
@@ -810,13 +795,22 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline() {
         env = GraphicsEnvironment{maxwell3d, gpu_memory, program, base_addr, start_address};
         env.SetCachedSize(shader_infos[index]->size_bytes);
 
-        generic_envs.push_back(&env);
         envs.push_back(&env);
     }
     auto pipeline{CreateGraphicsPipeline(main_pools, graphics_key, MakeSpan(envs), true)};
-    if (!pipeline_cache_filename.empty()) {
-        SerializePipeline(graphics_key, generic_envs, pipeline_cache_filename);
+    if (pipeline_cache_filename.empty()) {
+        return pipeline;
     }
+    serialization_thread.QueueWork([this, key = graphics_key, envs = std::move(graphics_envs)] {
+        boost::container::static_vector<const GenericEnvironment*, Maxwell::MaxShaderProgram>
+            env_ptrs;
+        for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
+            if (key.unique_hashes[index] != u128{}) {
+                env_ptrs.push_back(&envs[index]);
+            }
+        }
+        SerializePipeline(key, env_ptrs, pipeline_cache_filename);
+    });
     return pipeline;
 }
 
@@ -830,8 +824,10 @@ std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
     main_pools.ReleaseContents();
     auto pipeline{CreateComputePipeline(main_pools, key, env, true)};
     if (!pipeline_cache_filename.empty()) {
-        SerializePipeline(key, std::array<const GenericEnvironment*, 1>{&env},
-                          pipeline_cache_filename);
+        serialization_thread.QueueWork([this, key, env = std::move(env)] {
+            SerializePipeline(key, std::array<const GenericEnvironment*, 1>{&env},
+                              pipeline_cache_filename);
+        });
     }
     return pipeline;
 }

@@ -187,6 +187,7 @@ private:
     std::string pipeline_cache_filename;
 
     Common::ThreadWorker workers;
+    Common::ThreadWorker serialization_thread;
 };
 
 } // namespace Vulkan
