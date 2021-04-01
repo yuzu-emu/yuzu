@@ -35,49 +35,52 @@ struct TextureHandle {
     u32 sampler;
 };
 
-struct DescriptorLayoutTuple {
-    vk::DescriptorSetLayout descriptor_set_layout;
-    vk::PipelineLayout pipeline_layout;
-    vk::DescriptorUpdateTemplateKHR descriptor_update_template;
-};
-
 class DescriptorLayoutBuilder {
 public:
-    DescriptorLayoutTuple Create(const vk::Device& device) {
-        DescriptorLayoutTuple result;
-        if (!bindings.empty()) {
-            result.descriptor_set_layout = device.CreateDescriptorSetLayout({
-                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-                .pNext = nullptr,
-                .flags = 0,
-                .bindingCount = static_cast<u32>(bindings.size()),
-                .pBindings = bindings.data(),
-            });
+    DescriptorLayoutBuilder(const vk::Device& device_) : device{&device_} {}
+
+    vk::DescriptorSetLayout CreateDescriptorSetLayout() const {
+        if (bindings.empty()) {
+            return nullptr;
         }
-        result.pipeline_layout = device.CreatePipelineLayout({
+        return device->CreateDescriptorSetLayout({
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .bindingCount = static_cast<u32>(bindings.size()),
+            .pBindings = bindings.data(),
+        });
+    }
+
+    vk::DescriptorUpdateTemplateKHR CreateTemplate(VkDescriptorSetLayout descriptor_set_layout,
+                                                   VkPipelineLayout pipeline_layout) const {
+        if (entries.empty()) {
+            return nullptr;
+        }
+        return device->CreateDescriptorUpdateTemplateKHR({
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO_KHR,
+            .pNext = nullptr,
+            .flags = 0,
+            .descriptorUpdateEntryCount = static_cast<u32>(entries.size()),
+            .pDescriptorUpdateEntries = entries.data(),
+            .templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET_KHR,
+            .descriptorSetLayout = descriptor_set_layout,
+            .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+            .pipelineLayout = pipeline_layout,
+            .set = 0,
+        });
+    }
+
+    vk::PipelineLayout CreatePipelineLayout(VkDescriptorSetLayout descriptor_set_layout) const {
+        return device->CreatePipelineLayout({
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .setLayoutCount = result.descriptor_set_layout ? 1U : 0U,
-            .pSetLayouts = bindings.empty() ? nullptr : result.descriptor_set_layout.address(),
+            .setLayoutCount = descriptor_set_layout ? 1U : 0U,
+            .pSetLayouts = bindings.empty() ? nullptr : &descriptor_set_layout,
             .pushConstantRangeCount = 0,
             .pPushConstantRanges = nullptr,
         });
-        if (!entries.empty()) {
-            result.descriptor_update_template = device.CreateDescriptorUpdateTemplateKHR({
-                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO_KHR,
-                .pNext = nullptr,
-                .flags = 0,
-                .descriptorUpdateEntryCount = static_cast<u32>(entries.size()),
-                .pDescriptorUpdateEntries = entries.data(),
-                .templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET_KHR,
-                .descriptorSetLayout = *result.descriptor_set_layout,
-                .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-                .pipelineLayout = *result.pipeline_layout,
-                .set = 0,
-            });
-        }
-        return result;
     }
 
     void Add(const Shader::Info& info, VkShaderStageFlags stage) {
@@ -113,6 +116,7 @@ private:
         offset += sizeof(DescriptorUpdateEntry);
     }
 
+    const vk::Device* device{};
     boost::container::small_vector<VkDescriptorSetLayoutBinding, 32> bindings;
     boost::container::small_vector<VkDescriptorUpdateTemplateEntryKHR, 32> entries;
     u32 binding{};
