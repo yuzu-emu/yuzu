@@ -134,6 +134,7 @@ add_library(common STATIC
     tiny_mt.h
     tree.h
     uint128.h
+    unique_function.h
     uuid.cpp
     uuid.h
     vector_math.h
