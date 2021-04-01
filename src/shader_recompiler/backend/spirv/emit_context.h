@@ -106,6 +106,7 @@ public:
     Id front_face{};
     Id point_coord{};
     Id clip_distances{};
+    Id viewport_index{};
 
     Id fswzadd_lut_a{};
     Id fswzadd_lut_b{};
@@ -132,6 +133,8 @@ public:
     Id frag_depth{};
 
     std::vector<Id> interfaces;
+
+    bool ignore_viewport_layer{};
 
 private:
     void DefineCommonTypes(const Info& info);

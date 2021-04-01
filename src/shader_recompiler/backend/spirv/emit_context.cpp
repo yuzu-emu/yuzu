@@ -509,6 +509,12 @@ void EmitContext::DefineOutputs(const Info& info) {
         const Id type{TypeArray(F32[1], Constant(U32[1], 8U))};
         clip_distances = DefineOutput(*this, type, spv::BuiltIn::ClipDistance);
     }
+    if (info.stores_viewport_index && !ignore_viewport_layer) {
+        if (stage == Stage::Fragment) {
+            throw NotImplementedException("Storing ViewportIndex in Fragment stage");
+        }
+        viewport_index = DefineOutput(*this, U32[1], spv::BuiltIn::ViewportIndex);
+    }
     for (size_t i = 0; i < info.stores_generics.size(); ++i) {
         if (info.stores_generics[i]) {
             output_generics[i] = DefineOutput(*this, F32[4]);
