@@ -95,6 +95,10 @@ enum class SpecialRegister : u64 {
         return ir.WorkgroupIdY();
     case SpecialRegister::SR_CTAID_Z:
         return ir.WorkgroupIdZ();
+    case SpecialRegister::SR_WSCALEFACTOR_XY:
+        return ir.Imm32(Common::BitCast<u32>(1.0f));
+    case SpecialRegister::SR_WSCALEFACTOR_Z:
+        return ir.Imm32(Common::BitCast<u32>(1.0f));
     default:
         throw NotImplementedException("S2R special register {}", special_register);
     }

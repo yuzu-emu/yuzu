@@ -49,4 +49,8 @@ void TranslatorVisitor::VOTE(u64 insn) {
     Vote(*this, insn);
 }
 
+void TranslatorVisitor::VOTE_vtg(u64) {
+    // Stub
+}
+
 } // namespace Shader::Maxwell
