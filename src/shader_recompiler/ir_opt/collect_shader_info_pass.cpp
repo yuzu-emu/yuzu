@@ -81,6 +81,9 @@ void SetAttribute(Info& info, IR::Attribute attribute) {
     case IR::Attribute::ClipDistance7:
         info.stores_clip_distance = true;
         break;
+    case IR::Attribute::ViewportIndex:
+        info.stores_viewport_index = true;
+        break;
     default:
         throw NotImplementedException("Set attribute {}", attribute);
     }

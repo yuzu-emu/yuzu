@@ -29,7 +29,7 @@ std::optional<AttrInfo> AttrTypes(EmitContext& ctx, u32 index) {
     throw InvalidArgument("Invalid attribute type {}", type);
 }
 
-Id OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
+std::optional<Id> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
     const u32 element{static_cast<u32>(attr) % 4};
     const auto element_id{[&] { return ctx.Constant(ctx.U32[1], element); }};
     if (IR::IsGeneric(attr)) {
@@ -57,6 +57,8 @@ Id OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
         const Id clip_num{ctx.Constant(ctx.U32[1], index)};
         return ctx.OpAccessChain(ctx.output_f32, ctx.clip_distances, clip_num);
     }
+    case IR::Attribute::ViewportIndex:
+        return ctx.ignore_viewport_layer ? std::nullopt : std::optional<Id>{ctx.viewport_index};
     default:
         throw NotImplementedException("Read attribute {}", attr);
     }
@@ -204,7 +206,11 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr) {
 }
 
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value) {
-    ctx.OpStore(OutputAttrPointer(ctx, attr), value);
+    auto output = OutputAttrPointer(ctx, attr);
+    if (!output) {
+        return;
+    }
+    ctx.OpStore(*output, value);
 }
 
 void EmitGetAttributeIndexed(EmitContext&) {

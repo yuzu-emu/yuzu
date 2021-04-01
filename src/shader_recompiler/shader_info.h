@@ -82,6 +82,7 @@ struct Info {
     bool stores_position{};
     bool stores_point_size{};
     bool stores_clip_distance{};
+    bool stores_viewport_index{};
 
     bool uses_fp16{};
     bool uses_fp64{};
