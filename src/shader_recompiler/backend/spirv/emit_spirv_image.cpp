@@ -40,7 +40,8 @@ public:
         }
         const std::array values{offset.InstRecursive(), offset2.InstRecursive()};
         if (!values[0]->AreAllArgsImmediates() || !values[1]->AreAllArgsImmediates()) {
-            throw NotImplementedException("Not all arguments in PTP are immediate");
+            // LOG_WARNING("Not all arguments in PTP are immediate, STUBBING");
+            return;
         }
         const IR::Opcode opcode{values[0]->Opcode()};
         if (opcode != values[1]->Opcode() || opcode != IR::Opcode::CompositeConstructU32x4) {
