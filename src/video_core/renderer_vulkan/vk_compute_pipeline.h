@@ -4,7 +4,10 @@
 
 #pragma once
 
+#include <atomic>
+
 #include "common/common_types.h"
+#include "common/thread_worker.h"
 #include "shader_recompiler/shader_info.h"
 #include "video_core/memory_manager.h"
 #include "video_core/renderer_vulkan/vk_buffer_cache.h"
@@ -16,36 +19,26 @@
 namespace Vulkan {
 
 class Device;
+class VKScheduler;
 
 class ComputePipeline {
 public:
-    explicit ComputePipeline() = default;
     explicit ComputePipeline(const Device& device, VKDescriptorPool& descriptor_pool,
                              VKUpdateDescriptorQueue& update_descriptor_queue,
-                             const Shader::Info& info, vk::ShaderModule spv_module);
+                             Common::ThreadWorker* thread_worker, const Shader::Info& info,
+                             vk::ShaderModule spv_module);
 
-    ComputePipeline& operator=(ComputePipeline&&) noexcept = default;
-    ComputePipeline(ComputePipeline&&) noexcept = default;
+    ComputePipeline& operator=(ComputePipeline&&) noexcept = delete;
+    ComputePipeline(ComputePipeline&&) noexcept = delete;
 
     ComputePipeline& operator=(const ComputePipeline&) = delete;
     ComputePipeline(const ComputePipeline&) = delete;
 
-    void ConfigureBufferCache(BufferCache& buffer_cache);
-    void ConfigureTextureCache(Tegra::Engines::KeplerCompute& kepler_compute,
-                               Tegra::MemoryManager& gpu_memory, TextureCache& texture_cache);
-
-    [[nodiscard]] VkDescriptorSet UpdateDescriptorSet();
-
-    [[nodiscard]] VkPipeline Handle() const noexcept {
-        return *pipeline;
-    }
-
-    [[nodiscard]] VkPipelineLayout PipelineLayout() const noexcept {
-        return *pipeline_layout;
-    }
+    void Configure(Tegra::Engines::KeplerCompute& kepler_compute, Tegra::MemoryManager& gpu_memory,
+                   VKScheduler& scheduler, BufferCache& buffer_cache, TextureCache& texture_cache);
 
 private:
-    VKUpdateDescriptorQueue* update_descriptor_queue;
+    VKUpdateDescriptorQueue& update_descriptor_queue;
     Shader::Info info;
 
     vk::ShaderModule spv_module;
@@ -54,6 +47,7 @@ private:
     vk::PipelineLayout pipeline_layout;
     vk::DescriptorUpdateTemplateKHR descriptor_update_template;
     vk::Pipeline pipeline;
+    std::atomic_flag building_flag{};
 };
 
 } // namespace Vulkan

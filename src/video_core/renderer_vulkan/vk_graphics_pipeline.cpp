@@ -112,13 +112,15 @@ GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
                                    BufferCache& buffer_cache_, TextureCache& texture_cache_,
                                    const Device& device, VKDescriptorPool& descriptor_pool,
                                    VKUpdateDescriptorQueue& update_descriptor_queue_,
+                                   Common::ThreadWorker* worker_thread,
                                    RenderPassCache& render_pass_cache,
-                                   const FixedPipelineState& state,
+                                   const FixedPipelineState& state_,
                                    std::array<vk::ShaderModule, NUM_STAGES> stages,
                                    const std::array<const Shader::Info*, NUM_STAGES>& infos)
-    : maxwell3d{&maxwell3d_}, gpu_memory{&gpu_memory_}, texture_cache{&texture_cache_},
-      buffer_cache{&buffer_cache_}, scheduler{&scheduler_},
-      update_descriptor_queue{&update_descriptor_queue_}, spv_modules{std::move(stages)} {
+    : maxwell3d{maxwell3d_}, gpu_memory{gpu_memory_}, texture_cache{texture_cache_},
+      buffer_cache{buffer_cache_}, scheduler{scheduler_},
+      update_descriptor_queue{update_descriptor_queue_}, state{state_}, spv_modules{
+                                                                            std::move(stages)} {
     std::ranges::transform(infos, stage_infos.begin(),
                            [](const Shader::Info* info) { return info ? *info : Shader::Info{}; });
 
@@ -128,8 +130,17 @@ GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
     descriptor_update_template = std::move(tuple.descriptor_update_template);
     descriptor_allocator = DescriptorAllocator(descriptor_pool, *descriptor_set_layout);
 
-    const VkRenderPass render_pass{render_pass_cache.Get(MakeRenderPassKey(state))};
-    MakePipeline(device, state, render_pass);
+    auto func{[this, &device, &render_pass_cache] {
+        const VkRenderPass render_pass{render_pass_cache.Get(MakeRenderPassKey(state))};
+        MakePipeline(device, render_pass);
+        building_flag.test_and_set();
+        building_flag.notify_all();
+    }};
+    if (worker_thread) {
+        worker_thread->QueueWork(std::move(func));
+    } else {
+        func();
+    }
 }
 
 void GraphicsPipeline::Configure(bool is_indexed) {
@@ -138,67 +149,72 @@ void GraphicsPipeline::Configure(bool is_indexed) {
     static_vector<u32, max_images_elements> image_view_indices;
     static_vector<VkSampler, max_images_elements> samplers;
 
-    texture_cache->SynchronizeGraphicsDescriptors();
+    texture_cache.SynchronizeGraphicsDescriptors();
 
-    const auto& regs{maxwell3d->regs};
+    const auto& regs{maxwell3d.regs};
     const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};
     for (size_t stage = 0; stage < Maxwell::MaxShaderStage; ++stage) {
         const Shader::Info& info{stage_infos[stage]};
-        buffer_cache->SetEnabledUniformBuffers(stage, info.constant_buffer_mask);
-        buffer_cache->UnbindGraphicsStorageBuffers(stage);
+        buffer_cache.SetEnabledUniformBuffers(stage, info.constant_buffer_mask);
+        buffer_cache.UnbindGraphicsStorageBuffers(stage);
         size_t index{};
         for (const auto& desc : info.storage_buffers_descriptors) {
             ASSERT(desc.count == 1);
-            buffer_cache->BindGraphicsStorageBuffer(stage, index, desc.cbuf_index, desc.cbuf_offset,
-                                                    true);
+            buffer_cache.BindGraphicsStorageBuffer(stage, index, desc.cbuf_index, desc.cbuf_offset,
+                                                   true);
             ++index;
         }
-        const auto& cbufs{maxwell3d->state.shader_stages[stage].const_buffers};
+        const auto& cbufs{maxwell3d.state.shader_stages[stage].const_buffers};
         for (const auto& desc : info.texture_descriptors) {
             const u32 cbuf_index{desc.cbuf_index};
             const u32 cbuf_offset{desc.cbuf_offset};
             ASSERT(cbufs[cbuf_index].enabled);
             const GPUVAddr addr{cbufs[cbuf_index].address + cbuf_offset};
-            const u32 raw_handle{gpu_memory->Read<u32>(addr)};
+            const u32 raw_handle{gpu_memory.Read<u32>(addr)};
 
             const TextureHandle handle(raw_handle, via_header_index);
             image_view_indices.push_back(handle.image);
 
-            Sampler* const sampler{texture_cache->GetGraphicsSampler(handle.sampler)};
+            Sampler* const sampler{texture_cache.GetGraphicsSampler(handle.sampler)};
             samplers.push_back(sampler->Handle());
         }
     }
     const std::span indices_span(image_view_indices.data(), image_view_indices.size());
-    buffer_cache->UpdateGraphicsBuffers(is_indexed);
-    texture_cache->FillGraphicsImageViews(indices_span, image_view_ids);
+    buffer_cache.UpdateGraphicsBuffers(is_indexed);
+    texture_cache.FillGraphicsImageViews(indices_span, image_view_ids);
 
-    buffer_cache->BindHostGeometryBuffers(is_indexed);
+    buffer_cache.BindHostGeometryBuffers(is_indexed);
 
     size_t index{};
     for (size_t stage = 0; stage < Maxwell::MaxShaderStage; ++stage) {
-        buffer_cache->BindHostStageBuffers(stage);
+        buffer_cache.BindHostStageBuffers(stage);
         PushImageDescriptors(stage_infos[stage], samplers.data(), image_view_ids.data(),
-                             *texture_cache, *update_descriptor_queue, index);
+                             texture_cache, update_descriptor_queue, index);
     }
-    texture_cache->UpdateRenderTargets(false);
-    scheduler->RequestRenderpass(texture_cache->GetFramebuffer());
+    texture_cache.UpdateRenderTargets(false);
+    scheduler.RequestRenderpass(texture_cache.GetFramebuffer());
 
-    scheduler->BindGraphicsPipeline(*pipeline);
-
+    if (!building_flag.test()) {
+        scheduler.Record([this](vk::CommandBuffer) { building_flag.wait(false); });
+    }
+    if (scheduler.UpdateGraphicsPipeline(this)) {
+        scheduler.Record([this](vk::CommandBuffer cmdbuf) {
+            cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);
+        });
+    }
     if (!descriptor_set_layout) {
         return;
     }
     const VkDescriptorSet descriptor_set{descriptor_allocator.Commit()};
-    update_descriptor_queue->Send(*descriptor_update_template, descriptor_set);
+    update_descriptor_queue.Send(*descriptor_update_template, descriptor_set);
 
-    scheduler->Record([descriptor_set, layout = *pipeline_layout](vk::CommandBuffer cmdbuf) {
+    scheduler.Record([descriptor_set, layout = *pipeline_layout](vk::CommandBuffer cmdbuf) {
         cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, descriptor_set,
                                   nullptr);
     });
 }
 
-void GraphicsPipeline::MakePipeline(const Device& device, const FixedPipelineState& state,
-                                    VkRenderPass render_pass) {
+void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pass) {
     FixedPipelineState::DynamicState dynamic{};
     if (!device.IsExtExtendedDynamicStateSupported()) {
         dynamic = state.dynamic_state;

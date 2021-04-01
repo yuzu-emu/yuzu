@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "common/common_types.h"
+#include "common/thread_worker.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
@@ -145,16 +146,19 @@ private:
 
     const ShaderInfo* MakeShaderInfo(GenericEnvironment& env, VAddr cpu_addr);
 
-    GraphicsPipeline CreateGraphicsPipeline();
+    std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline();
 
-    GraphicsPipeline CreateGraphicsPipeline(ShaderPools& pools, const GraphicsPipelineCacheKey& key,
-                                            std::span<Shader::Environment* const> envs);
+    std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline(
+        ShaderPools& pools, const GraphicsPipelineCacheKey& key,
+        std::span<Shader::Environment* const> envs, bool build_in_parallel);
 
-    ComputePipeline CreateComputePipeline(const ComputePipelineCacheKey& key,
-                                          const ShaderInfo* shader);
+    std::unique_ptr<ComputePipeline> CreateComputePipeline(const ComputePipelineCacheKey& key,
+                                                           const ShaderInfo* shader);
 
-    ComputePipeline CreateComputePipeline(ShaderPools& pools, const ComputePipelineCacheKey& key,
-                                          Shader::Environment& env) const;
+    std::unique_ptr<ComputePipeline> CreateComputePipeline(ShaderPools& pools,
+                                                           const ComputePipelineCacheKey& key,
+                                                           Shader::Environment& env,
+                                                           bool build_in_parallel);
 
     Shader::Profile MakeProfile(const GraphicsPipelineCacheKey& key, Shader::Stage stage);
 
@@ -174,13 +178,15 @@ private:
     GraphicsPipelineCacheKey graphics_key{};
     std::array<const ShaderInfo*, 6> shader_infos{};
 
-    std::unordered_map<ComputePipelineCacheKey, ComputePipeline> compute_cache;
-    std::unordered_map<GraphicsPipelineCacheKey, GraphicsPipeline> graphics_cache;
+    std::unordered_map<ComputePipelineCacheKey, std::unique_ptr<ComputePipeline>> compute_cache;
+    std::unordered_map<GraphicsPipelineCacheKey, std::unique_ptr<GraphicsPipeline>> graphics_cache;
 
     ShaderPools main_pools;
 
     Shader::Profile base_profile;
     std::string pipeline_cache_filename;
+
+    Common::ThreadWorker workers;
 };
 
 } // namespace Vulkan
