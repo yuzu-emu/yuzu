@@ -355,6 +355,10 @@ U32 IREmitter::LocalInvocationIdZ() {
     return U32{CompositeExtract(Inst(Opcode::LocalInvocationId), 2)};
 }
 
+U32 IREmitter::LaneId() {
+    return Inst<U32>(Opcode::LaneId);
+}
+
 U32 IREmitter::LoadGlobalU8(const U64& address) {
     return Inst<U32>(Opcode::LoadGlobalU8, address);
 }
