@@ -38,10 +38,6 @@ struct ZeroFlagTag : FlagTag {};
 struct SignFlagTag : FlagTag {};
 struct CarryFlagTag : FlagTag {};
 struct OverflowFlagTag : FlagTag {};
-struct FCSMFlagTag : FlagTag {};
-struct TAFlagTag : FlagTag {};
-struct TRFlagTag : FlagTag {};
-struct MXFlagTag : FlagTag {};
 
 struct GotoVariable : FlagTag {
     GotoVariable() = default;
@@ -57,8 +53,7 @@ struct IndirectBranchVariable {
 };
 
 using Variant = std::variant<IR::Reg, IR::Pred, ZeroFlagTag, SignFlagTag, CarryFlagTag,
-                             OverflowFlagTag, FCSMFlagTag, TAFlagTag, TRFlagTag, MXFlagTag,
-                             GotoVariable, IndirectBranchVariable>;
+                             OverflowFlagTag, GotoVariable, IndirectBranchVariable>;
 using ValueMap = boost::container::flat_map<IR::Block*, IR::Value, std::less<IR::Block*>>;
 
 struct DefTable {
@@ -94,22 +89,6 @@ struct DefTable {
         return overflow_flag;
     }
 
-    [[nodiscard]] ValueMap& operator[](FCSMFlagTag) noexcept {
-        return fcsm_flag;
-    }
-
-    [[nodiscard]] ValueMap& operator[](TAFlagTag) noexcept {
-        return ta_flag;
-    }
-
-    [[nodiscard]] ValueMap& operator[](TRFlagTag) noexcept {
-        return tr_flag;
-    }
-
-    [[nodiscard]] ValueMap& operator[](MXFlagTag) noexcept {
-        return mr_flag;
-    }
-
     std::array<ValueMap, IR::NUM_USER_REGS> regs;
     std::array<ValueMap, IR::NUM_USER_PREDS> preds;
     boost::container::flat_map<u32, ValueMap> goto_vars;
@@ -118,10 +97,6 @@ struct DefTable {
     ValueMap sign_flag;
     ValueMap carry_flag;
     ValueMap overflow_flag;
-    ValueMap fcsm_flag;
-    ValueMap ta_flag;
-    ValueMap tr_flag;
-    ValueMap mr_flag;
 };
 
 IR::Opcode UndefOpcode(IR::Reg) noexcept {
@@ -272,18 +247,6 @@ void VisitInst(Pass& pass, IR::Block* block, IR::Inst& inst) {
     case IR::Opcode::SetOFlag:
         pass.WriteVariable(OverflowFlagTag{}, block, inst.Arg(0));
         break;
-    case IR::Opcode::SetFCSMFlag:
-        pass.WriteVariable(FCSMFlagTag{}, block, inst.Arg(0));
-        break;
-    case IR::Opcode::SetTAFlag:
-        pass.WriteVariable(TAFlagTag{}, block, inst.Arg(0));
-        break;
-    case IR::Opcode::SetTRFlag:
-        pass.WriteVariable(TRFlagTag{}, block, inst.Arg(0));
-        break;
-    case IR::Opcode::SetMXFlag:
-        pass.WriteVariable(MXFlagTag{}, block, inst.Arg(0));
-        break;
     case IR::Opcode::GetRegister:
         if (const IR::Reg reg{inst.Arg(0).Reg()}; reg != IR::Reg::RZ) {
             inst.ReplaceUsesWith(pass.ReadVariable(reg, block));
@@ -312,17 +275,6 @@ void VisitInst(Pass& pass, IR::Block* block, IR::Inst& inst) {
     case IR::Opcode::GetOFlag:
         inst.ReplaceUsesWith(pass.ReadVariable(OverflowFlagTag{}, block));
         break;
-    case IR::Opcode::GetFCSMFlag:
-        inst.ReplaceUsesWith(pass.ReadVariable(FCSMFlagTag{}, block));
-        break;
-    case IR::Opcode::GetTAFlag:
-        inst.ReplaceUsesWith(pass.ReadVariable(TAFlagTag{}, block));
-        break;
-    case IR::Opcode::GetTRFlag:
-        inst.ReplaceUsesWith(pass.ReadVariable(TRFlagTag{}, block));
-        break;
-    case IR::Opcode::GetMXFlag:
-        inst.ReplaceUsesWith(pass.ReadVariable(MXFlagTag{}, block));
         break;
     default:
         break;

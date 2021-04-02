@@ -58,7 +58,10 @@ std::optional<Id> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
         return ctx.OpAccessChain(ctx.output_f32, ctx.clip_distances, clip_num);
     }
     case IR::Attribute::ViewportIndex:
-        return ctx.ignore_viewport_layer ? std::nullopt : std::optional<Id>{ctx.viewport_index};
+        return (ctx.profile.support_viewport_index_layer_non_geometry ||
+                ctx.stage == Shader::Stage::Geometry)
+                   ? std::optional<Id>{ctx.viewport_index}
+                   : std::nullopt;
     default:
         throw NotImplementedException("Read attribute {}", attr);
     }
@@ -206,7 +209,7 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr) {
 }
 
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value) {
-    auto output = OutputAttrPointer(ctx, attr);
+    const std::optional<Id> output{OutputAttrPointer(ctx, attr)};
     if (!output) {
         return;
     }
@@ -260,38 +263,6 @@ void EmitSetCFlag(EmitContext&) {
 }
 
 void EmitSetOFlag(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitGetFCSMFlag(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitGetTAFlag(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitGetTRFlag(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitGetMXFlag(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitSetFCSMFlag(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitSetTAFlag(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitSetTRFlag(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
-}
-
-void EmitSetMXFlag(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 

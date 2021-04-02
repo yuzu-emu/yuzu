@@ -510,7 +510,8 @@ void EmitContext::DefineOutputs(const Info& info) {
         const Id type{TypeArray(F32[1], Constant(U32[1], 8U))};
         clip_distances = DefineOutput(*this, type, spv::BuiltIn::ClipDistance);
     }
-    if (info.stores_viewport_index && !ignore_viewport_layer) {
+    if (info.stores_viewport_index &&
+        (profile.support_viewport_index_layer_non_geometry || stage == Shader::Stage::Geometry)) {
         if (stage == Stage::Fragment) {
             throw NotImplementedException("Storing ViewportIndex in Fragment stage");
         }

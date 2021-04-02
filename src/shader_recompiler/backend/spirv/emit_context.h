@@ -134,8 +134,6 @@ public:
 
     std::vector<Id> interfaces;
 
-    bool ignore_viewport_layer{};
-
 private:
     void DefineCommonTypes(const Info& info);
     void DefineCommonConstants();

@@ -17,7 +17,9 @@ OPCODE(Unreachable,                                         Void,               
 OPCODE(DemoteToHelperInvocation,                            Void,           Label,                                                                          )
 
 // Barriers
-OPCODE(MemoryBarrier,                                       Void,                                                                                           )
+OPCODE(MemoryBarrierWorkgroupLevel,                         Void,                                                                                           )
+OPCODE(MemoryBarrierDeviceLevel,                            Void,                                                                                           )
+OPCODE(MemoryBarrierSystemLevel,                            Void,                                                                                           )
 
 // Special operations
 OPCODE(Prologue,                                            Void,                                                                                           )
@@ -49,18 +51,10 @@ OPCODE(GetZFlag,                                            U1,             Void
 OPCODE(GetSFlag,                                            U1,             Void,                                                                           )
 OPCODE(GetCFlag,                                            U1,             Void,                                                                           )
 OPCODE(GetOFlag,                                            U1,             Void,                                                                           )
-OPCODE(GetFCSMFlag,                                         U1,             Void,                                                                           )
-OPCODE(GetTAFlag,                                           U1,             Void,                                                                           )
-OPCODE(GetTRFlag,                                           U1,             Void,                                                                           )
-OPCODE(GetMXFlag,                                           U1,             Void,                                                                           )
 OPCODE(SetZFlag,                                            Void,           U1,                                                                             )
 OPCODE(SetSFlag,                                            Void,           U1,                                                                             )
 OPCODE(SetCFlag,                                            Void,           U1,                                                                             )
 OPCODE(SetOFlag,                                            Void,           U1,                                                                             )
-OPCODE(SetFCSMFlag,                                         Void,           U1,                                                                             )
-OPCODE(SetTAFlag,                                           Void,           U1,                                                                             )
-OPCODE(SetTRFlag,                                           Void,           U1,                                                                             )
-OPCODE(SetMXFlag,                                           Void,           U1,                                                                             )
 OPCODE(WorkgroupId,                                         U32x3,                                                                                          )
 OPCODE(LocalInvocationId,                                   U32x3,                                                                                          )
 OPCODE(LaneId,                                              U32,                                                                                            )

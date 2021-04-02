@@ -96,8 +96,10 @@ enum class SpecialRegister : u64 {
     case SpecialRegister::SR_CTAID_Z:
         return ir.WorkgroupIdZ();
     case SpecialRegister::SR_WSCALEFACTOR_XY:
+        // LOG_WARNING(ShaderDecompiler, "SR_WSCALEFACTOR_XY (Stubbed)");
         return ir.Imm32(Common::BitCast<u32>(1.0f));
     case SpecialRegister::SR_WSCALEFACTOR_Z:
+        // LOG_WARNING(ShaderDecompiler, "SR_WSCALEFACTOR_Z (Stubbed)");
         return ir.Imm32(Common::BitCast<u32>(1.0f));
     case SpecialRegister::SR_LANEID:
         return ir.LaneId();

@@ -374,17 +374,14 @@ std::optional<IR::Value> FoldCompositeExtractImpl(IR::Value inst_value, IR::Opco
     if (inst->Opcode() == construct) {
         return inst->Arg(first_index);
     }
-
     if (inst->Opcode() != insert) {
         return std::nullopt;
     }
-
     IR::Value value_index{inst->Arg(2)};
     if (!value_index.IsImmediate()) {
         return std::nullopt;
     }
-
-    const u32 second_index = value_index.U32();
+    const u32 second_index{value_index.U32()};
     if (first_index != second_index) {
         IR::Value value_composite{inst->Arg(0)};
         if (value_composite.IsImmediate()) {
@@ -404,8 +401,8 @@ void FoldCompositeExtract(IR::Inst& inst, IR::Opcode construct, IR::Opcode inser
     if (!value_2.IsImmediate()) {
         return;
     }
-    const u32 first_index = value_2.U32();
-    auto result = FoldCompositeExtractImpl(value_1, insert, construct, first_index);
+    const u32 first_index{value_2.U32()};
+    const std::optional result{FoldCompositeExtractImpl(value_1, insert, construct, first_index)};
     if (!result) {
         return;
     }
