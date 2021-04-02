@@ -25,12 +25,25 @@ enum class FpRounding : u8 {
     RZ,       // Round towards zero
 };
 
+enum class MemoryScope : u32 {
+  DontCare,
+  Warp,
+  Workgroup,
+  Device,
+  System
+};
+
 struct FpControl {
     bool no_contraction{false};
     FpRounding rounding{FpRounding::DontCare};
     FmzMode fmz_mode{FmzMode::DontCare};
 };
 static_assert(sizeof(FpControl) <= sizeof(u32));
+
+union BarrierInstInfo {
+    u32 raw;
+    BitField<0, 3, MemoryScope> scope;
+};
 
 union TextureInstInfo {
     u32 raw;

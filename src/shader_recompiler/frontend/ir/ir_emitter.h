@@ -136,6 +136,8 @@ public:
     [[nodiscard]] Value Select(const U1& condition, const Value& true_value,
                                const Value& false_value);
 
+    [[nodiscard]] void MemoryBarrier(BarrierInstInfo info);
+
     template <typename Dest, typename Source>
     [[nodiscard]] Dest BitCast(const Source& value);
 

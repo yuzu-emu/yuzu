@@ -16,6 +16,9 @@ OPCODE(Return,                                              Void,               
 OPCODE(Unreachable,                                         Void,                                                                                           )
 OPCODE(DemoteToHelperInvocation,                            Void,           Label,                                                                          )
 
+// Barriers
+OPCODE(MemoryBarrier,                                       Void,                                                                                           )
+
 // Special operations
 OPCODE(Prologue,                                            Void,                                                                                           )
 OPCODE(Epilogue,                                            Void,                                                                                           )
