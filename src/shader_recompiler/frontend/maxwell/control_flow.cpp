@@ -486,6 +486,16 @@ Block* CFG::AddLabel(Block* block, Stack stack, Location pc, FunctionId function
     }
     if (const auto it{function.blocks.find(pc, Compare{})}; it != function.blocks.end()) {
         // Block already exists and it has been visited
+        if (function.blocks.begin() != it) {
+            // Check if the previous node is the virtual variant of the label
+            // This won't exist if a virtual node is not needed or it hasn't been visited
+            // If it hasn't been visited and a virtual node is needed, this will still behave as
+            // expected because the node impersonated with its virtual node.
+            const auto prev{std::prev(it)};
+            if (it->begin.Virtual() == prev->begin) {
+                return &*prev;
+            }
+        }
         return &*it;
     }
     Block* const new_block{block_pool.Create(Block{
