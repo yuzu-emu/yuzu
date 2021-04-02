@@ -56,6 +56,8 @@ ArgType Arg(EmitContext& ctx, const IR::Value& arg) {
         return arg.Label();
     } else if constexpr (std::is_same_v<ArgType, IR::Attribute>) {
         return arg.Attribute();
+    } else if constexpr (std::is_same_v<ArgType, IR::Reg>) {
+        return arg.Reg();
     }
 }
 
