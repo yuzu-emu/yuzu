@@ -71,6 +71,7 @@ void EmitSetMXFlag(EmitContext& ctx);
 Id EmitWorkgroupId(EmitContext& ctx);
 Id EmitLocalInvocationId(EmitContext& ctx);
 Id EmitLoadLocal(EmitContext& ctx, Id word_offset);
+Id EmitLaneId(EmitContext& ctx);
 void EmitWriteLocal(EmitContext& ctx, Id word_offset, Id value);
 Id EmitUndefU1(EmitContext& ctx);
 Id EmitUndefU8(EmitContext& ctx);

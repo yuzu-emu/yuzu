@@ -99,6 +99,8 @@ enum class SpecialRegister : u64 {
         return ir.Imm32(Common::BitCast<u32>(1.0f));
     case SpecialRegister::SR_WSCALEFACTOR_Z:
         return ir.Imm32(Common::BitCast<u32>(1.0f));
+    case SpecialRegister::SR_LANEID:
+        return ir.LaneId();
     default:
         throw NotImplementedException("S2R special register {}", special_register);
     }

@@ -63,6 +63,7 @@ OPCODE(SetTRFlag,                                           Void,           U1, 
 OPCODE(SetMXFlag,                                           Void,           U1,                                                                             )
 OPCODE(WorkgroupId,                                         U32x3,                                                                                          )
 OPCODE(LocalInvocationId,                                   U32x3,                                                                                          )
+OPCODE(LaneId,                                              U32,                                                                                            )
 
 // Undefined
 OPCODE(UndefU1,                                             U1,                                                                                             )
