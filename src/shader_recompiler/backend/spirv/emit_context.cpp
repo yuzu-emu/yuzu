@@ -238,6 +238,7 @@ void EmitContext::DefineSharedMemory(const IR::Program& program) {
         std::tie(shared_memory_u32, shared_u32) = make(U32[1], 4);
         std::tie(shared_memory_u32x2, shared_u32x2) = make(U32[2], 8);
         std::tie(shared_memory_u32x4, shared_u32x4) = make(U32[4], 16);
+        return;
     }
     const u32 num_elements{Common::DivCeil(program.shared_memory_size, 4U)};
     const Id type{TypeArray(U32[1], Constant(U32[1], num_elements))};
