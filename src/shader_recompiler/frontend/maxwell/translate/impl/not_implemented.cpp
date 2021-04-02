@@ -37,10 +37,6 @@ void TranslatorVisitor::B2R(u64) {
     ThrowNotImplemented(Opcode::B2R);
 }
 
-void TranslatorVisitor::BAR(u64) {
-    ThrowNotImplemented(Opcode::BAR);
-}
-
 void TranslatorVisitor::BPT(u64) {
     ThrowNotImplemented(Opcode::BPT);
 }
@@ -73,9 +69,6 @@ void TranslatorVisitor::CS2R(u64) {
     ThrowNotImplemented(Opcode::CS2R);
 }
 
-void TranslatorVisitor::DEPBAR() {
-    // DEPBAR is a no-op
-}
 
 void TranslatorVisitor::FCHK_reg(u64) {
     ThrowNotImplemented(Opcode::FCHK_reg);
@@ -187,10 +180,6 @@ void TranslatorVisitor::LEPC(u64) {
 
 void TranslatorVisitor::LONGJMP(u64) {
     ThrowNotImplemented(Opcode::LONGJMP);
-}
-
-void TranslatorVisitor::MEMBAR(u64) {
-    ThrowNotImplemented(Opcode::MEMBAR);
 }
 
 void TranslatorVisitor::NOP(u64) {

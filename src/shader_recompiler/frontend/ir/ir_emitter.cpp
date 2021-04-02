@@ -82,6 +82,10 @@ void IREmitter::SelectionMerge(Block* merge_block) {
     Inst(Opcode::SelectionMerge, merge_block);
 }
 
+void IREmitter::MemoryBarrier(BarrierInstInfo info) {
+    Inst(Opcode::MemoryBarrier, Flags{info});
+}
+
 void IREmitter::Return() {
     block->SetReturn();
     Inst(Opcode::Return);

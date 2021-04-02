@@ -28,6 +28,7 @@ void EmitSelectionMerge(EmitContext& ctx, Id merge_label);
 void EmitReturn(EmitContext& ctx);
 void EmitUnreachable(EmitContext& ctx);
 void EmitDemoteToHelperInvocation(EmitContext& ctx, Id continue_label);
+void EmitMemoryBarrier(EmitContext& ctx, IR::Inst* inst);
 void EmitPrologue(EmitContext& ctx);
 void EmitEpilogue(EmitContext& ctx);
 void EmitGetRegister(EmitContext& ctx);

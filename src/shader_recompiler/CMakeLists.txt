@@ -3,6 +3,7 @@ add_library(shader_recompiler STATIC
     backend/spirv/emit_context.h
     backend/spirv/emit_spirv.cpp
     backend/spirv/emit_spirv.h
+    backend/spirv/emit_spirv_barriers.cpp
     backend/spirv/emit_spirv_bitwise_conversion.cpp
     backend/spirv/emit_spirv_composite.cpp
     backend/spirv/emit_spirv_context_get_set.cpp
@@ -63,6 +64,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/program.h
     frontend/maxwell/structured_control_flow.cpp
     frontend/maxwell/structured_control_flow.h
+    frontend/maxwell/translate/impl/barrier_operations.cpp
     frontend/maxwell/translate/impl/bitfield_extract.cpp
     frontend/maxwell/translate/impl/bitfield_insert.cpp
     frontend/maxwell/translate/impl/branch_indirect.cpp
