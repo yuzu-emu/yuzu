@@ -7,34 +7,27 @@
 
 namespace Shader::Backend::SPIRV {
 namespace {
-spv::Scope MemoryScopeToSpirVScope(IR::MemoryScope scope) {
-    switch (scope) {
-    case IR::MemoryScope::Warp:
-        return spv::Scope::Subgroup;
-    case IR::MemoryScope::Workgroup:
-        return spv::Scope::Workgroup;
-    case IR::MemoryScope::Device:
-        return spv::Scope::Device;
-    case IR::MemoryScope::System:
-        return spv::Scope::CrossDevice;
-    case IR::MemoryScope::DontCare:
-        return spv::Scope::Invocation;
-    default:
-        throw NotImplementedException("Unknown memory scope!");
-    }
-}
-
-} // namespace
-
-void EmitMemoryBarrier(EmitContext& ctx, IR::Inst* inst) {
-    const auto info{inst->Flags<IR::BarrierInstInfo>()};
+void EmitMemoryBarrierImpl(EmitContext& ctx, spv::Scope scope) {
     const auto semantics =
         spv::MemorySemanticsMask::AcquireRelease | spv::MemorySemanticsMask::UniformMemory |
         spv::MemorySemanticsMask::WorkgroupMemory | spv::MemorySemanticsMask::AtomicCounterMemory |
         spv::MemorySemanticsMask::ImageMemory;
-    const auto scope = MemoryScopeToSpirVScope(info.scope);
     ctx.OpMemoryBarrier(ctx.Constant(ctx.U32[1], static_cast<u32>(scope)),
                         ctx.Constant(ctx.U32[1], static_cast<u32>(semantics)));
+}
+
+} // Anonymous namespace
+
+void EmitMemoryBarrierWorkgroupLevel(EmitContext& ctx) {
+    EmitMemoryBarrierImpl(ctx, spv::Scope::Workgroup);
+}
+
+void EmitMemoryBarrierDeviceLevel(EmitContext& ctx) {
+    EmitMemoryBarrierImpl(ctx, spv::Scope::Device);
+}
+
+void EmitMemoryBarrierSystemLevel(EmitContext& ctx) {
+    EmitMemoryBarrierImpl(ctx, spv::Scope::CrossDevice);
 }
 
 } // namespace Shader::Backend::SPIRV

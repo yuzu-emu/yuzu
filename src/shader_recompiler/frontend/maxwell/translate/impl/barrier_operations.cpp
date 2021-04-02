@@ -5,8 +5,8 @@
 #include "common/bit_field.h"
 #include "common/common_types.h"
 #include "shader_recompiler/frontend/ir/modifiers.h"
-#include "shader_recompiler/frontend/maxwell/translate/impl/impl.h"
 #include "shader_recompiler/frontend/maxwell/opcodes.h"
+#include "shader_recompiler/frontend/maxwell/translate/impl/impl.h"
 
 namespace Shader::Maxwell {
 namespace {
@@ -21,28 +21,24 @@ enum class LocalScope : u64 {
 IR::MemoryScope LocalScopeToMemoryScope(LocalScope scope) {
     switch (scope) {
     case LocalScope::CTG:
-        return IR::MemoryScope::Warp;
+        return IR::MemoryScope::Workgroup;
     case LocalScope::GL:
         return IR::MemoryScope::Device;
     case LocalScope::SYS:
         return IR::MemoryScope::System;
-    case LocalScope::VC:
-        return IR::MemoryScope::Workgroup; // or should be device?
     default:
         throw NotImplementedException("Unimplemented Local Scope {}", scope);
     }
 }
 
-} // namespace
+} // Anonymous namespace
 
 void TranslatorVisitor::MEMBAR(u64 inst) {
     union {
         u64 raw;
         BitField<8, 2, LocalScope> scope;
     } membar{inst};
-    IR::BarrierInstInfo info{};
-    info.scope.Assign(LocalScopeToMemoryScope(membar.scope));
-    ir.MemoryBarrier(info);
+    ir.MemoryBarrier(LocalScopeToMemoryScope(membar.scope));
 }
 
 void TranslatorVisitor::DEPBAR() {

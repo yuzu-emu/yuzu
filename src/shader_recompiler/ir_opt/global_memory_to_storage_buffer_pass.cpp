@@ -4,9 +4,9 @@
 
 #include <algorithm>
 #include <compare>
+#include <map>
 #include <optional>
 #include <ranges>
-#include <map>
 
 #include <boost/container/flat_set.hpp>
 #include <boost/container/small_vector.hpp>
@@ -295,12 +295,12 @@ void CollectStorageBuffers(IR::Block& block, IR::Inst& inst, StorageBufferSet& s
         }
     }
     // Collect storage buffer and the instruction
-    const bool is_a_write = IsGlobalMemoryWrite(inst);
-    auto it = writes_map.find(*storage_buffer);
+    const bool is_a_write{IsGlobalMemoryWrite(inst)};
+    auto it{writes_map.find(*storage_buffer)};
     if (it == writes_map.end()) {
-      writes_map[*storage_buffer] = is_a_write;
+        writes_map[*storage_buffer] = is_a_write;
     } else {
-      it->second = it->second || is_a_write;
+        it->second = it->second || is_a_write;
     }
     storage_buffer_set.insert(*storage_buffer);
     to_replace.push_back(StorageInst{

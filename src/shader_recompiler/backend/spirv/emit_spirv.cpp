@@ -228,11 +228,9 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
     if (info.stores_viewport_index) {
         ctx.AddCapability(spv::Capability::MultiViewport);
         if (profile.support_viewport_index_layer_non_geometry &&
-            ctx.stage == Shader::Stage::VertexB) {
+            ctx.stage != Shader::Stage::Geometry) {
             ctx.AddExtension("SPV_EXT_shader_viewport_index_layer");
             ctx.AddCapability(spv::Capability::ShaderViewportIndexLayerEXT);
-        } else {
-            ctx.ignore_viewport_layer = true;
         }
     }
     if (!profile.support_vertex_instance_id && (info.loads_instance_id || info.loads_vertex_id)) {
