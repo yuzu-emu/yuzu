@@ -68,17 +68,15 @@ void TranslatorVisitor::FADD32I(u64 insn) {
     union {
         u64 raw;
         BitField<55, 1, u64> ftz;
-        BitField<53, 1, u64> neg_b;
+        BitField<56, 1, u64> neg_a;
         BitField<54, 1, u64> abs_a;
         BitField<52, 1, u64> cc;
-        BitField<56, 1, u64> neg_a;
+        BitField<53, 1, u64> neg_b;
         BitField<57, 1, u64> abs_b;
-        BitField<50, 1, u64> sat;
     } const fadd32i{insn};
 
-    FADD(*this, insn, fadd32i.sat != 0, fadd32i.cc != 0, fadd32i.ftz != 0, FpRounding::RN,
-         GetFloatImm32(insn), fadd32i.abs_a != 0, fadd32i.neg_a != 0, fadd32i.abs_b != 0,
-         fadd32i.neg_b != 0);
+    FADD(*this, insn, false, fadd32i.cc != 0, fadd32i.ftz != 0, FpRounding::RN, GetFloatImm32(insn),
+         fadd32i.abs_a != 0, fadd32i.neg_a != 0, fadd32i.abs_b != 0, fadd32i.neg_b != 0);
 }
 
 } // namespace Shader::Maxwell
