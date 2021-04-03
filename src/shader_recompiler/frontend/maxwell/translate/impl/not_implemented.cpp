@@ -183,7 +183,7 @@ void TranslatorVisitor::LONGJMP(u64) {
 }
 
 void TranslatorVisitor::NOP(u64) {
-    ThrowNotImplemented(Opcode::NOP);
+    // NOP is No-Op.
 }
 
 void TranslatorVisitor::OUT_reg(u64) {
