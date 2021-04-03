@@ -539,13 +539,11 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
                 ShaderPools pools;
                 auto pipeline{CreateComputePipeline(pools, key, envs.front(), false)};
 
-                {
-                    std::lock_guard lock{state.mutex};
-                    compute_cache.emplace(key, std::move(pipeline));
-                    ++state.built;
-                    if (state.has_loaded) {
-                        callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
-                    }
+                std::lock_guard lock{state.mutex};
+                compute_cache.emplace(key, std::move(pipeline));
+                ++state.built;
+                if (state.has_loaded) {
+                    callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
                 }
             });
         } else {
@@ -560,13 +558,11 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
                 }
                 auto pipeline{CreateGraphicsPipeline(pools, key, MakeSpan(env_ptrs), false)};
 
-                {
-                    std::lock_guard lock{state.mutex};
-                    graphics_cache.emplace(key, std::move(pipeline));
-                    ++state.built;
-                    if (state.has_loaded) {
-                        callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
-                    }
+                std::lock_guard lock{state.mutex};
+                graphics_cache.emplace(key, std::move(pipeline));
+                ++state.built;
+                if (state.has_loaded) {
+                    callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
                 }
             });
         }
@@ -635,7 +631,8 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
             float_control.shaderSignedZeroInfNanPreserveFloat64 != VK_FALSE,
         .support_explicit_workgroup_layout = device.IsKhrWorkgroupMemoryExplicitLayoutSupported(),
         .support_vote = true,
-        .support_viewport_index_layer_non_geometry = device.IsExtShaderViewportIndexLayerSupported(),
+        .support_viewport_index_layer_non_geometry =
+            device.IsExtShaderViewportIndexLayerSupported(),
         .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyBiggerThanGuest(),
         .has_broken_spirv_clamp = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS_KHR,
         .generic_input_types{},
