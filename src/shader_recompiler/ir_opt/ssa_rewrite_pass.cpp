@@ -275,7 +275,6 @@ void VisitInst(Pass& pass, IR::Block* block, IR::Inst& inst) {
     case IR::Opcode::GetOFlag:
         inst.ReplaceUsesWith(pass.ReadVariable(OverflowFlagTag{}, block));
         break;
-        break;
     default:
         break;
     }
