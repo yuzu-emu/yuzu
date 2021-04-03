@@ -51,9 +51,9 @@ IR::U32 MergeResult(IR::IREmitter& ir, IR::Reg dest, const IR::F16& lhs, const I
     case Merge::MRG_H0:
     case Merge::MRG_H1: {
         const IR::Value vector{ir.UnpackFloat2x16(ir.GetReg(dest))};
-        const bool h0{merge == Merge::MRG_H0};
-        const IR::F16& insert{h0 ? lhs : rhs};
-        return ir.PackFloat2x16(ir.CompositeInsert(vector, insert, h0 ? 0 : 1));
+        const bool is_h0{merge == Merge::MRG_H0};
+        const IR::F16 insert{ir.FPConvert(16, is_h0 ? lhs : rhs)};
+        return ir.PackFloat2x16(ir.CompositeInsert(vector, insert, is_h0 ? 0 : 1));
     }
     }
     throw InvalidArgument("Invalid merge {}", merge);
