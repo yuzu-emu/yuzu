@@ -25,7 +25,13 @@ enum class FpRounding : u8 {
     RZ,       // Round towards zero
 };
 
-enum class MemoryScope : u32 { DontCare, Warp, Workgroup, Device, System };
+enum class MemoryScope : u32 {
+    DontCare,
+    Warp,
+    Workgroup,
+    Device,
+    System,
+};
 
 struct FpControl {
     bool no_contraction{false};
