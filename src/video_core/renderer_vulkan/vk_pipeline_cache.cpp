@@ -539,11 +539,13 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
                 ShaderPools pools;
                 auto pipeline{CreateComputePipeline(pools, key, envs.front(), false)};
 
-                std::lock_guard lock{state.mutex};
-                compute_cache.emplace(key, std::move(pipeline));
-                ++state.built;
-                if (state.has_loaded) {
-                    callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
+                {
+                    std::lock_guard lock{state.mutex};
+                    compute_cache.emplace(key, std::move(pipeline));
+                    ++state.built;
+                    if (state.has_loaded) {
+                        callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
+                    }
                 }
             });
         } else {
@@ -558,11 +560,13 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
                 }
                 auto pipeline{CreateGraphicsPipeline(pools, key, MakeSpan(env_ptrs), false)};
 
-                std::lock_guard lock{state.mutex};
-                graphics_cache.emplace(key, std::move(pipeline));
-                ++state.built;
-                if (state.has_loaded) {
-                    callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
+                {
+                    std::lock_guard lock{state.mutex};
+                    graphics_cache.emplace(key, std::move(pipeline));
+                    ++state.built;
+                    if (state.has_loaded) {
+                        callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
+                    }
                 }
             });
         }
