@@ -148,6 +148,7 @@ inline VideoCommon::ImageViewType CastType(Shader::TextureType type) {
         return VideoCommon::ImageViewType::CubeArray;
     }
     UNREACHABLE_MSG("Invalid texture type {}", type);
+    return {};
 }
 
 inline void PushImageDescriptors(const Shader::Info& info, const VkSampler* samplers,
