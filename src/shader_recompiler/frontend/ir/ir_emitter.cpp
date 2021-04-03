@@ -86,10 +86,13 @@ void IREmitter::MemoryBarrier(MemoryScope scope) {
     switch (scope) {
     case MemoryScope::Workgroup:
         Inst(Opcode::MemoryBarrierWorkgroupLevel);
+        break;
     case MemoryScope::Device:
         Inst(Opcode::MemoryBarrierDeviceLevel);
+        break;
     case MemoryScope::System:
         Inst(Opcode::MemoryBarrierSystemLevel);
+        break;
     default:
         throw InvalidArgument("Invalid memory scope {}", scope);
     }
