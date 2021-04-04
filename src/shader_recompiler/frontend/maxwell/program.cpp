@@ -21,7 +21,7 @@ void RemoveUnreachableBlocks(IR::Program& program) {
     if (program.blocks.size() == program.post_order_blocks.size()) {
         return;
     }
-    const auto begin{std::next(program.blocks.begin())};
+    const auto begin{program.blocks.begin() + 1};
     const auto end{program.blocks.end()};
     const auto pred{[](IR::Block* block) { return block->ImmediatePredecessors().empty(); }};
     program.blocks.erase(std::remove_if(begin, end, pred), end);

@@ -79,18 +79,14 @@ struct Block : boost::intrusive::set_base_hook<
     Location begin;
     Location end;
     EndClass end_class;
-    Stack stack;
     IR::Condition cond;
-    union {
-        Block* branch_true;
-        FunctionId function_call;
-        IR::Reg branch_reg;
-    };
-    union {
-        Block* branch_false;
-        Block* return_block;
-        s32 branch_offset;
-    };
+    Stack stack;
+    Block* branch_true;
+    Block* branch_false;
+    FunctionId function_call;
+    Block* return_block;
+    IR::Reg branch_reg;
+    s32 branch_offset;
     std::vector<IndirectBranch> indirect_branches;
 };
 
