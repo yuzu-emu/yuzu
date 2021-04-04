@@ -31,7 +31,7 @@ enum class SampleMode : u64 {
     Offset,
 };
 
-int NumElements(Size size) {
+u32 NumElements(Size size) {
     switch (size) {
     case Size::B32:
         return 1;
@@ -65,15 +65,21 @@ void TranslatorVisitor::ALD(u64 insn) {
     if (ald.patch != 0) {
         throw NotImplementedException("P");
     }
-    if (ald.index_reg != IR::Reg::RZ) {
-        throw NotImplementedException("Indexed");
-    }
     const u64 offset{ald.absolute_offset.Value()};
     if (offset % 4 != 0) {
         throw NotImplementedException("Unaligned absolute offset {}", offset);
     }
-    const int num_elements{NumElements(ald.size)};
-    for (int element = 0; element < num_elements; ++element) {
+    const u32 num_elements{NumElements(ald.size)};
+    if (ald.index_reg != IR::Reg::RZ) {
+        const IR::U32 index_value = X(ald.index_reg);
+        for (u32 element = 0; element < num_elements; ++element) {
+            const IR::U32 final_offset =
+                element == 0 ? index_value : IR::U32{ir.IAdd(index_value, ir.Imm32(element * 4U))};
+            F(ald.dest_reg + element, ir.GetAttributeIndexed(final_offset));
+        }
+        return;
+    }
+    for (u32 element = 0; element < num_elements; ++element) {
         F(ald.dest_reg + element, ir.GetAttribute(IR::Attribute{offset / 4 + element}));
     }
 }
@@ -103,8 +109,17 @@ void TranslatorVisitor::AST(u64 insn) {
     if (offset % 4 != 0) {
         throw NotImplementedException("Unaligned absolute offset {}", offset);
     }
-    const int num_elements{NumElements(ast.size)};
-    for (int element = 0; element < num_elements; ++element) {
+    const u32 num_elements{NumElements(ast.size)};
+    if (ast.index_reg != IR::Reg::RZ) {
+        const IR::U32 index_value = X(ast.index_reg);
+        for (u32 element = 0; element < num_elements; ++element) {
+            const IR::U32 final_offset =
+                element == 0 ? index_value : IR::U32{ir.IAdd(index_value, ir.Imm32(element * 4U))};
+            ir.SetAttributeIndexed(final_offset, F(ast.src_reg + element));
+        }
+        return;
+    }
+    for (u32 element = 0; element < num_elements; ++element) {
         ir.SetAttribute(IR::Attribute{offset / 4 + element}, F(ast.src_reg + element));
     }
 }
@@ -134,12 +149,9 @@ void TranslatorVisitor::IPA(u64 insn) {
     //     gl_FragColor = colors[idx];
     // }
     const bool is_indexed{ipa.idx != 0 && ipa.index_reg != IR::Reg::RZ};
-    if (is_indexed) {
-        throw NotImplementedException("IDX");
-    }
-
     const IR::Attribute attribute{ipa.attribute};
-    IR::F32 value{ir.GetAttribute(attribute)};
+    IR::F32 value{is_indexed ? ir.GetAttributeIndexed(X(ipa.index_reg))
+                             : ir.GetAttribute(attribute)};
     if (IR::IsGeneric(attribute)) {
         const ProgramHeader& sph{env.SPH()};
         const u32 attr_index{IR::GenericAttributeIndex(attribute)};

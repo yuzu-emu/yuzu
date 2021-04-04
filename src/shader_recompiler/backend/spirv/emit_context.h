@@ -116,6 +116,9 @@ public:
     Id fswzadd_lut_a{};
     Id fswzadd_lut_b{};
 
+    Id indexed_load_func{};
+    Id indexed_store_func{};
+
     Id local_memory{};
 
     Id shared_memory_u8{};
@@ -148,6 +151,7 @@ private:
     void DefineConstantBuffers(const Info& info, u32& binding);
     void DefineStorageBuffers(const Info& info, u32& binding);
     void DefineTextures(const Info& info, u32& binding);
+    void DefineAttributeMemAccess(const Info& info);
     void DefineLabels(IR::Program& program);
 
     void DefineConstantBuffers(const Info& info, Id UniformDefinitions::*member_type, u32 binding,

@@ -76,6 +76,7 @@ struct Info {
     bool loads_vertex_id{};
     bool loads_front_face{};
     bool loads_point_coord{};
+    bool loads_indexed_attributes{};
 
     std::array<bool, 8> stores_frag_color{};
     bool stores_frag_depth{};
@@ -84,6 +85,7 @@ struct Info {
     bool stores_point_size{};
     bool stores_clip_distance{};
     bool stores_viewport_index{};
+    bool stores_indexed_attributes{};
 
     bool uses_fp16{};
     bool uses_fp64{};

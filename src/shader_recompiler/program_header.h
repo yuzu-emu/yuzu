@@ -68,10 +68,24 @@ struct ProgramHeader {
 
     union {
         struct {
-            INSERT_PADDING_BYTES_NOINIT(3);  // ImapSystemValuesA
-            INSERT_PADDING_BYTES_NOINIT(1);  // ImapSystemValuesB
-            INSERT_PADDING_BYTES_NOINIT(16); // ImapGenericVector[32]
-            INSERT_PADDING_BYTES_NOINIT(2);  // ImapColor
+            INSERT_PADDING_BYTES_NOINIT(3); // ImapSystemValuesA
+            INSERT_PADDING_BYTES_NOINIT(1); // ImapSystemValuesB
+
+            union {
+                BitField<0, 1, u8> x;
+                BitField<1, 1, u8> y;
+                BitField<2, 1, u8> z;
+                BitField<3, 1, u8> w;
+                BitField<4, 1, u8> x2;
+                BitField<5, 1, u8> y2;
+                BitField<6, 1, u8> z2;
+                BitField<7, 1, u8> w2;
+                BitField<0, 4, u8> first;
+                BitField<4, 4, u8> second;
+                u8 raw;
+            } imap_generic_vector[16];
+
+            INSERT_PADDING_BYTES_NOINIT(2); // ImapColor
             union {
                 BitField<0, 8, u16> clip_distances;
                 BitField<8, 1, u16> point_sprite_s;
@@ -82,15 +96,54 @@ struct ProgramHeader {
                 BitField<14, 1, u16> instance_id;
                 BitField<15, 1, u16> vertex_id;
             };
-            INSERT_PADDING_BYTES_NOINIT(5);  // ImapFixedFncTexture[10]
-            INSERT_PADDING_BYTES_NOINIT(1);  // ImapReserved
-            INSERT_PADDING_BYTES_NOINIT(3);  // OmapSystemValuesA
-            INSERT_PADDING_BYTES_NOINIT(1);  // OmapSystemValuesB
-            INSERT_PADDING_BYTES_NOINIT(16); // OmapGenericVector[32]
-            INSERT_PADDING_BYTES_NOINIT(2);  // OmapColor
-            INSERT_PADDING_BYTES_NOINIT(2);  // OmapSystemValuesC
-            INSERT_PADDING_BYTES_NOINIT(5);  // OmapFixedFncTexture[10]
-            INSERT_PADDING_BYTES_NOINIT(1);  // OmapReserved
+            INSERT_PADDING_BYTES_NOINIT(5); // ImapFixedFncTexture[10]
+            INSERT_PADDING_BYTES_NOINIT(1); // ImapReserved
+            INSERT_PADDING_BYTES_NOINIT(3); // OmapSystemValuesA
+            INSERT_PADDING_BYTES_NOINIT(1); // OmapSystemValuesB
+
+            union {
+                BitField<0, 1, u8> x;
+                BitField<1, 1, u8> y;
+                BitField<2, 1, u8> z;
+                BitField<3, 1, u8> w;
+                BitField<4, 1, u8> x2;
+                BitField<5, 1, u8> y2;
+                BitField<6, 1, u8> z2;
+                BitField<7, 1, u8> w2;
+                BitField<0, 4, u8> first;
+                BitField<4, 4, u8> second;
+                u8 raw;
+            } omap_generic_vector[16];
+
+            INSERT_PADDING_BYTES_NOINIT(2); // OmapColor
+
+            union {
+                BitField<0, 8, u16> clip_distances;
+                BitField<8, 1, u16> point_sprite_s;
+                BitField<9, 1, u16> point_sprite_t;
+                BitField<10, 1, u16> fog_coordinate;
+                BitField<12, 1, u16> tessellation_eval_point_u;
+                BitField<13, 1, u16> tessellation_eval_point_v;
+                BitField<14, 1, u16> instance_id;
+                BitField<15, 1, u16> vertex_id;
+            } omap_systemc;
+
+            INSERT_PADDING_BYTES_NOINIT(5); // OmapFixedFncTexture[10]
+            INSERT_PADDING_BYTES_NOINIT(1); // OmapReserved
+
+            [[nodiscard]] bool IsInputGenericVectorActive(size_t index) const {
+                if ((index & 1) == 0) {
+                    return imap_generic_vector[index >> 1].first != 0;
+                }
+                return imap_generic_vector[index >> 1].second != 0;
+            }
+
+            [[nodiscard]] bool IsOutputGenericVectorActive(size_t index) const {
+                if ((index & 1) == 0) {
+                    return omap_generic_vector[index >> 1].first != 0;
+                }
+                return omap_generic_vector[index >> 1].second != 0;
+            }
         } vtg;
 
         struct {
@@ -127,6 +180,10 @@ struct ProgramHeader {
             [[nodiscard]] std::array<PixelImap, 4> GenericInputMap(u32 attribute) const {
                 const auto& vector{imap_generic_vector[attribute]};
                 return {vector.x, vector.y, vector.z, vector.w};
+            }
+
+            [[nodiscard]] bool IsGenericVectorActive(size_t index) const {
+                return imap_generic_vector[index].raw != 0;
             }
         } ps;
 

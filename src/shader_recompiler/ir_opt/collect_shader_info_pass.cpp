@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/modifiers.h"
 #include "shader_recompiler/frontend/ir/program.h"
@@ -323,6 +324,12 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::SetAttribute:
         SetAttribute(info, inst.Arg(0).Attribute());
         break;
+    case IR::Opcode::GetAttributeIndexed:
+        info.loads_indexed_attributes = true;
+        break;
+    case IR::Opcode::SetAttributeIndexed:
+        info.stores_indexed_attributes = true;
+        break;
     case IR::Opcode::SetFragColor:
         info.stores_frag_color[inst.Arg(0).U32()] = true;
         break;
@@ -502,15 +509,42 @@ void Visit(Info& info, IR::Inst& inst) {
     VisitUsages(info, inst);
     VisitFpModifiers(info, inst);
 }
+
+void GatherInfoFromHeader(Environment& env, Info& info) {
+    auto stage = env.ShaderStage();
+    if (stage == Stage::Compute) {
+        return;
+    }
+    const auto& header = env.SPH();
+    if (stage == Stage::Fragment) {
+        for (size_t i = 0; i < info.input_generics.size(); i++) {
+            info.input_generics[i].used =
+                info.input_generics[i].used || header.ps.IsGenericVectorActive(i);
+        }
+        return;
+    }
+    for (size_t i = 0; i < info.input_generics.size(); i++) {
+        info.input_generics[i].used =
+            info.input_generics[i].used || header.vtg.IsInputGenericVectorActive(i);
+    }
+    for (size_t i = 0; i < info.stores_generics.size(); i++) {
+        info.stores_generics[i] =
+            info.stores_generics[i] || header.vtg.IsOutputGenericVectorActive(i);
+    }
+    info.stores_clip_distance =
+        info.stores_clip_distance || header.vtg.omap_systemc.clip_distances != 0;
+}
+
 } // Anonymous namespace
 
-void CollectShaderInfoPass(IR::Program& program) {
+void CollectShaderInfoPass(Environment& env, IR::Program& program) {
     Info& info{program.info};
     for (IR::Block* const block : program.post_order_blocks) {
         for (IR::Inst& inst : block->Instructions()) {
             Visit(info, inst);
         }
     }
+    GatherInfoFromHeader(env, info);
 }
 
 } // namespace Shader::Optimization

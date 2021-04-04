@@ -51,8 +51,8 @@ Id EmitGetCbufF32(EmitContext& ctx, const IR::Value& binding, const IR::Value& o
 Id EmitGetCbufU32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr);
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value);
-void EmitGetAttributeIndexed(EmitContext& ctx);
-void EmitSetAttributeIndexed(EmitContext& ctx);
+Id EmitGetAttributeIndexed(EmitContext& ctx, Id offset);
+void EmitSetAttributeIndexed(EmitContext& ctx, Id offset, Id value);
 void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, Id value);
 void EmitSetFragDepth(EmitContext& ctx, Id value);
 void EmitGetZFlag(EmitContext& ctx);

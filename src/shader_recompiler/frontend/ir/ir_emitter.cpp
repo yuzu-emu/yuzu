@@ -307,6 +307,14 @@ void IREmitter::SetAttribute(IR::Attribute attribute, const F32& value) {
     Inst(Opcode::SetAttribute, attribute, value);
 }
 
+F32 IREmitter::GetAttributeIndexed(IR::U32 phys_address) {
+    return Inst<F32>(Opcode::GetAttributeIndexed, phys_address);
+}
+
+void IREmitter::SetAttributeIndexed(IR::U32 phys_address, const F32& value) {
+    Inst(Opcode::SetAttributeIndexed, phys_address, value);
+}
+
 void IREmitter::SetFragColor(u32 index, u32 component, const F32& value) {
     Inst(Opcode::SetFragColor, Imm32(index), Imm32(component), value);
 }
