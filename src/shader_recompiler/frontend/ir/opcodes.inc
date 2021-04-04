@@ -17,6 +17,7 @@ OPCODE(Unreachable,                                         Void,               
 OPCODE(DemoteToHelperInvocation,                            Void,           Label,                                                                          )
 
 // Barriers
+OPCODE(Barrier,                                             Void,                                                                                           )
 OPCODE(MemoryBarrierWorkgroupLevel,                         Void,                                                                                           )
 OPCODE(MemoryBarrierDeviceLevel,                            Void,                                                                                           )
 OPCODE(MemoryBarrierSystemLevel,                            Void,                                                                                           )

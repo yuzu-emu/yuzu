@@ -82,6 +82,10 @@ void IREmitter::SelectionMerge(Block* merge_block) {
     Inst(Opcode::SelectionMerge, merge_block);
 }
 
+void IREmitter::Barrier() {
+    Inst(Opcode::Barrier);
+}
+
 void IREmitter::MemoryBarrier(MemoryScope scope) {
     switch (scope) {
     case MemoryScope::Workgroup:

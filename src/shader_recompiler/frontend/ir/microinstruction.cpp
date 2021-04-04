@@ -57,6 +57,10 @@ bool Inst::MayHaveSideEffects() const noexcept {
     case Opcode::Return:
     case Opcode::Unreachable:
     case Opcode::DemoteToHelperInvocation:
+    case Opcode::Barrier:
+    case Opcode::MemoryBarrierWorkgroupLevel:
+    case Opcode::MemoryBarrierDeviceLevel:
+    case Opcode::MemoryBarrierSystemLevel:
     case Opcode::Prologue:
     case Opcode::Epilogue:
     case Opcode::SetAttribute:

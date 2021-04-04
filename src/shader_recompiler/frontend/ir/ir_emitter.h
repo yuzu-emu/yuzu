@@ -128,6 +128,7 @@ public:
     [[nodiscard]] Value Select(const U1& condition, const Value& true_value,
                                const Value& false_value);
 
+    [[nodiscard]] void Barrier();
     [[nodiscard]] void MemoryBarrier(MemoryScope scope);
 
     template <typename Dest, typename Source>
