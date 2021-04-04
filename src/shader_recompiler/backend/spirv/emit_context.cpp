@@ -390,8 +390,16 @@ void EmitContext::DefineInputs(const Info& info) {
     if (info.uses_local_invocation_id) {
         local_invocation_id = DefineInput(*this, U32[3], spv::BuiltIn::LocalInvocationId);
     }
+    if (info.uses_subgroup_mask) {
+        subgroup_mask_eq = DefineInput(*this, U32[4], spv::BuiltIn::SubgroupEqMaskKHR);
+        subgroup_mask_lt = DefineInput(*this, U32[4], spv::BuiltIn::SubgroupLtMaskKHR);
+        subgroup_mask_le = DefineInput(*this, U32[4], spv::BuiltIn::SubgroupLeMaskKHR);
+        subgroup_mask_gt = DefineInput(*this, U32[4], spv::BuiltIn::SubgroupGtMaskKHR);
+        subgroup_mask_ge = DefineInput(*this, U32[4], spv::BuiltIn::SubgroupGeMaskKHR);
+    }
     if (info.uses_subgroup_invocation_id ||
-        (profile.warp_size_potentially_larger_than_guest && info.uses_subgroup_vote)) {
+        (profile.warp_size_potentially_larger_than_guest &&
+         (info.uses_subgroup_vote || info.uses_subgroup_mask))) {
         subgroup_local_invocation_id =
             DefineInput(*this, U32[1], spv::BuiltIn::SubgroupLocalInvocationId);
     }

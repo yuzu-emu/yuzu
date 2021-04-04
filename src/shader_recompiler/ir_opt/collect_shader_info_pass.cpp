@@ -414,6 +414,13 @@ void VisitUsages(Info& info, IR::Inst& inst) {
             inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp) != nullptr;
         break;
     }
+    case IR::Opcode::SubgroupEqMask:
+    case IR::Opcode::SubgroupLtMask:
+    case IR::Opcode::SubgroupLeMask:
+    case IR::Opcode::SubgroupGtMask:
+    case IR::Opcode::SubgroupGeMask:
+        info.uses_subgroup_mask = true;
+        break;
     case IR::Opcode::VoteAll:
     case IR::Opcode::VoteAny:
     case IR::Opcode::VoteEqual:

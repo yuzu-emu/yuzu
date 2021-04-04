@@ -1628,6 +1628,26 @@ U32 IREmitter::SubgroupBallot(const U1& value) {
     return Inst<U32>(Opcode::SubgroupBallot, value);
 }
 
+U32 IREmitter::SubgroupEqMask() {
+    return Inst<U32>(Opcode::SubgroupEqMask);
+}
+
+U32 IREmitter::SubgroupLtMask() {
+    return Inst<U32>(Opcode::SubgroupLtMask);
+}
+
+U32 IREmitter::SubgroupLeMask() {
+    return Inst<U32>(Opcode::SubgroupLeMask);
+}
+
+U32 IREmitter::SubgroupGtMask() {
+    return Inst<U32>(Opcode::SubgroupGtMask);
+}
+
+U32 IREmitter::SubgroupGeMask() {
+    return Inst<U32>(Opcode::SubgroupGeMask);
+}
+
 U32 IREmitter::ShuffleIndex(const IR::U32& value, const IR::U32& index, const IR::U32& clamp,
                             const IR::U32& seg_mask) {
     return Inst<U32>(Opcode::ShuffleIndex, value, index, clamp, seg_mask);
