@@ -206,27 +206,23 @@ VKComputePass::VKComputePass(const Device& device, VKDescriptorPool& descriptor_
         .codeSize = static_cast<u32>(code.size_bytes()),
         .pCode = code.data(),
     });
-    /*
-    FIXME
     pipeline = device.GetLogical().CreateComputePipeline({
         .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .stage =
-            {
-                .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-                .pNext = nullptr,
-                .flags = 0,
-                .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-                .module = *module,
-                .pName = "main",
-                .pSpecializationInfo = nullptr,
-            },
+        .stage{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+            .module = *module,
+            .pName = "main",
+            .pSpecializationInfo = nullptr,
+        },
         .layout = *layout,
         .basePipelineHandle = nullptr,
         .basePipelineIndex = 0,
     });
-    */
 }
 
 VKComputePass::~VKComputePass() = default;
@@ -262,8 +258,7 @@ std::pair<VkBuffer, VkDeviceSize> Uint8Pass::Assemble(u32 num_vertices, VkBuffer
     const VkDescriptorSet set = CommitDescriptorSet(update_descriptor_queue);
 
     scheduler.RequestOutsideRenderPassOperationContext();
-    scheduler.Record([layout = *layout, pipeline = *pipeline, buffer = staging.buffer, set,
-                      num_vertices](vk::CommandBuffer cmdbuf) {
+    scheduler.Record([this, buffer = staging.buffer, set, num_vertices](vk::CommandBuffer cmdbuf) {
         static constexpr u32 DISPATCH_SIZE = 1024;
         static constexpr VkMemoryBarrier WRITE_BARRIER{
             .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -271,8 +266,8 @@ std::pair<VkBuffer, VkDeviceSize> Uint8Pass::Assemble(u32 num_vertices, VkBuffer
             .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
             .dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
         };
-        cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
-        cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, set, {});
+        cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline);
+        cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, *layout, 0, set, {});
         cmdbuf.Dispatch(Common::DivCeil(num_vertices, DISPATCH_SIZE), 1, 1);
         cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                                VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, WRITE_BARRIER);
@@ -319,8 +314,8 @@ std::pair<VkBuffer, VkDeviceSize> QuadIndexedPass::Assemble(
     const VkDescriptorSet set = CommitDescriptorSet(update_descriptor_queue);
 
     scheduler.RequestOutsideRenderPassOperationContext();
-    scheduler.Record([layout = *layout, pipeline = *pipeline, buffer = staging.buffer, set,
-                      num_tri_vertices, base_vertex, index_shift](vk::CommandBuffer cmdbuf) {
+    scheduler.Record([this, buffer = staging.buffer, set, num_tri_vertices, base_vertex,
+                      index_shift](vk::CommandBuffer cmdbuf) {
         static constexpr u32 DISPATCH_SIZE = 1024;
         static constexpr VkMemoryBarrier WRITE_BARRIER{
             .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -329,9 +324,9 @@ std::pair<VkBuffer, VkDeviceSize> QuadIndexedPass::Assemble(
             .dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
         };
         const std::array push_constants = {base_vertex, index_shift};
-        cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
-        cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, set, {});
-        cmdbuf.PushConstants(layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants),
+        cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline);
+        cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, *layout, 0, set, {});
+        cmdbuf.PushConstants(*layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants),
                              &push_constants);
         cmdbuf.Dispatch(Common::DivCeil(num_tri_vertices, DISPATCH_SIZE), 1, 1);
         cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,

@@ -172,7 +172,6 @@ void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
     if (!pipeline) {
         return;
     }
-    update_descriptor_queue.Acquire();
     std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
     pipeline->Configure(is_indexed);
 
