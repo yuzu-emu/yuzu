@@ -189,6 +189,8 @@ void GraphicsPipeline::Configure(bool is_indexed) {
 
     buffer_cache.BindHostGeometryBuffers(is_indexed);
 
+    update_descriptor_queue.Acquire();
+
     size_t index{};
     for (size_t stage = 0; stage < Maxwell::MaxShaderStage; ++stage) {
         buffer_cache.BindHostStageBuffers(stage);
