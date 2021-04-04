@@ -27,6 +27,7 @@ add_library(shader_recompiler STATIC
     frontend/ir/attribute.h
     frontend/ir/basic_block.cpp
     frontend/ir/basic_block.h
+    frontend/ir/breadth_first_search.h
     frontend/ir/condition.cpp
     frontend/ir/condition.h
     frontend/ir/flow_test.cpp

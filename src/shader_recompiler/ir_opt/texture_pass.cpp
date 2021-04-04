@@ -2,13 +2,14 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
 #include <optional>
 
-#include <boost/container/flat_set.hpp>
 #include <boost/container/small_vector.hpp>
 
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
+#include "shader_recompiler/frontend/ir/breadth_first_search.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
 #include "shader_recompiler/ir_opt/passes.h"
 #include "shader_recompiler/shader_info.h"
@@ -27,9 +28,6 @@ struct TextureInst {
 };
 
 using TextureInstVector = boost::container::small_vector<TextureInst, 24>;
-
-using VisitedBlocks = boost::container::flat_set<IR::Block*, std::less<IR::Block*>,
-                                                 boost::container::small_vector<IR::Block*, 2>>;
 
 IR::Opcode IndexedInstruction(const IR::Inst& inst) {
     switch (inst.Opcode()) {
@@ -101,57 +99,35 @@ bool IsTextureInstruction(const IR::Inst& inst) {
     return IndexedInstruction(inst) != IR::Opcode::Void;
 }
 
-std::optional<ConstBufferAddr> Track(IR::Block* block, const IR::Value& value,
-                                     VisitedBlocks& visited) {
-    if (value.IsImmediate()) {
-        // Immediates can't be a storage buffer
+std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst) {
+    if (inst->Opcode() != IR::Opcode::GetCbufU32) {
         return std::nullopt;
     }
-    const IR::Inst* const inst{value.InstRecursive()};
-    if (inst->Opcode() == IR::Opcode::GetCbufU32) {
-        const IR::Value index{inst->Arg(0)};
-        const IR::Value offset{inst->Arg(1)};
-        if (!index.IsImmediate()) {
-            // Reading a bindless texture from variable indices is valid
-            // but not supported here at the moment
-            return std::nullopt;
-        }
-        if (!offset.IsImmediate()) {
-            // TODO: Support arrays of textures
-            return std::nullopt;
-        }
-        return ConstBufferAddr{
-            .index{index.U32()},
-            .offset{offset.U32()},
-        };
+    const IR::Value index{inst->Arg(0)};
+    const IR::Value offset{inst->Arg(1)};
+    if (!index.IsImmediate()) {
+        // Reading a bindless texture from variable indices is valid
+        // but not supported here at the moment
+        return std::nullopt;
     }
-    // Reversed loops are more likely to find the right result
-    for (size_t arg = inst->NumArgs(); arg--;) {
-        IR::Block* inst_block{block};
-        if (inst->Opcode() == IR::Opcode::Phi) {
-            // If we are going through a phi node, mark the current block as visited
-            visited.insert(block);
-            // and skip already visited blocks to avoid looping forever
-            IR::Block* const phi_block{inst->PhiBlock(arg)};
-            if (visited.contains(phi_block)) {
-                // Already visited, skip
-                continue;
-            }
-            inst_block = phi_block;
-        }
-        const std::optional storage_buffer{Track(inst_block, inst->Arg(arg), visited)};
-        if (storage_buffer) {
-            return *storage_buffer;
-        }
+    if (!offset.IsImmediate()) {
+        // TODO: Support arrays of textures
+        return std::nullopt;
     }
-    return std::nullopt;
+    return ConstBufferAddr{
+        .index{index.U32()},
+        .offset{offset.U32()},
+    };
+}
+
+std::optional<ConstBufferAddr> Track(const IR::Value& value) {
+    return IR::BreadthFirstSearch(value, TryGetConstBuffer);
 }
 
 TextureInst MakeInst(Environment& env, IR::Block* block, IR::Inst& inst) {
     ConstBufferAddr addr;
     if (IsBindless(inst)) {
-        VisitedBlocks visited;
-        const std::optional<ConstBufferAddr> track_addr{Track(block, inst.Arg(0), visited)};
+        const std::optional<ConstBufferAddr> track_addr{Track(inst.Arg(0))};
         if (!track_addr) {
             throw NotImplementedException("Failed to track bindless texture constant buffer");
         }
