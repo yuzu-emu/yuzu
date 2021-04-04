@@ -76,6 +76,9 @@ public:
     [[nodiscard]] F32 GetAttribute(IR::Attribute attribute);
     void SetAttribute(IR::Attribute attribute, const F32& value);
 
+    [[nodiscard]] F32 GetAttributeIndexed(IR::U32 phys_address);
+    void SetAttributeIndexed(IR::U32 phys_address, const F32& value);
+
     void SetFragColor(u32 index, u32 component, const F32& value);
     void SetFragDepth(const F32& value);
 

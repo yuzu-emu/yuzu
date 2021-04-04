@@ -12,7 +12,7 @@
 
 namespace Shader::Optimization {
 
-void CollectShaderInfoPass(IR::Program& program);
+void CollectShaderInfoPass(Environment& env, IR::Program& program);
 void ConstantPropagationPass(IR::Program& program);
 void DeadCodeEliminationPass(IR::Program& program);
 void GlobalMemoryToStorageBufferPass(IR::Program& program);

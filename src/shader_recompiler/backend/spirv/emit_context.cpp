@@ -82,6 +82,28 @@ Id GetAttributeType(EmitContext& ctx, AttributeType type) {
     }
     throw InvalidArgument("Invalid attribute type {}", type);
 }
+
+struct AttrInfo {
+    Id pointer;
+    Id id;
+    bool needs_cast;
+};
+
+std::optional<AttrInfo> AttrTypes(EmitContext& ctx, u32 index) {
+    const AttributeType type{ctx.profile.generic_input_types.at(index)};
+    switch (type) {
+    case AttributeType::Float:
+        return AttrInfo{ctx.input_f32, ctx.F32[1], false};
+    case AttributeType::UnsignedInt:
+        return AttrInfo{ctx.input_u32, ctx.U32[1], true};
+    case AttributeType::SignedInt:
+        return AttrInfo{ctx.input_s32, ctx.TypeInt(32, true), true};
+    case AttributeType::Disabled:
+        return std::nullopt;
+    }
+    throw InvalidArgument("Invalid attribute type {}", type);
+}
+
 } // Anonymous namespace
 
 void VectorTypes::Define(Sirit::Module& sirit_ctx, Id base_type, std::string_view name) {
@@ -107,6 +129,7 @@ EmitContext::EmitContext(const Profile& profile_, IR::Program& program, u32& bin
     DefineConstantBuffers(program.info, binding);
     DefineStorageBuffers(program.info, binding);
     DefineTextures(program.info, binding);
+    DefineAttributeMemAccess(program.info);
     DefineLabels(program);
 }
 
@@ -287,6 +310,107 @@ void EmitContext::DefineSharedMemory(const IR::Program& program) {
     }
     if (program.info.uses_int16) {
         shared_store_u16_func = make_function(16, 16);
+    }
+}
+
+void EmitContext::DefineAttributeMemAccess(const Info& info) {
+    const auto make_load{[&]() {
+        const Id end_block{OpLabel()};
+        const Id default_label{OpLabel()};
+
+        const Id func_type_load{TypeFunction(F32[1], U32[1])};
+        const Id func{OpFunction(F32[1], spv::FunctionControlMask::MaskNone, func_type_load)};
+        const Id offset{OpFunctionParameter(U32[1])};
+        AddLabel();
+        const Id base_index{OpShiftRightLogical(U32[1], offset, Constant(U32[1], 2U))};
+        const Id masked_index{OpBitwiseAnd(U32[1], base_index, Constant(U32[1], 3U))};
+        const Id compare_index{OpShiftRightLogical(U32[1], base_index, Constant(U32[1], 2U))};
+        std::vector<Sirit::Literal> literals;
+        std::vector<Id> labels;
+        const u32 base_attribute_value = static_cast<u32>(IR::Attribute::Generic0X) >> 2;
+        for (u32 i = 0; i < info.input_generics.size(); i++) {
+            if (!info.input_generics[i].used) {
+                continue;
+            }
+            literals.push_back(base_attribute_value + i);
+            labels.push_back(OpLabel());
+        }
+        OpSelectionMerge(end_block, spv::SelectionControlMask::MaskNone);
+        OpSwitch(compare_index, default_label, literals, labels);
+        AddLabel(default_label);
+        OpReturnValue(Constant(F32[1], 0.0f));
+        size_t label_index = 0;
+        for (u32 i = 0; i < info.input_generics.size(); i++) {
+            if (!info.input_generics[i].used) {
+                continue;
+            }
+            AddLabel(labels[label_index]);
+            const auto type{AttrTypes(*this, i)};
+            if (!type) {
+                OpReturnValue(Constant(F32[1], 0.0f));
+                label_index++;
+                continue;
+            }
+            const Id generic_id{input_generics.at(i)};
+            const Id pointer{OpAccessChain(type->pointer, generic_id, masked_index)};
+            const Id value{OpLoad(type->id, pointer)};
+            const Id result{type->needs_cast ? OpBitcast(F32[1], value) : value};
+            OpReturnValue(result);
+            label_index++;
+        }
+        AddLabel(end_block);
+        OpUnreachable();
+        OpFunctionEnd();
+        return func;
+    }};
+    const auto make_store{[&]() {
+        const Id end_block{OpLabel()};
+        const Id default_label{OpLabel()};
+
+        const Id func_type_store{TypeFunction(void_id, U32[1], F32[1])};
+        const Id func{OpFunction(void_id, spv::FunctionControlMask::MaskNone, func_type_store)};
+        const Id offset{OpFunctionParameter(U32[1])};
+        const Id store_value{OpFunctionParameter(F32[1])};
+        AddLabel();
+        const Id base_index{OpShiftRightLogical(U32[1], offset, Constant(U32[1], 2U))};
+        const Id masked_index{OpBitwiseAnd(U32[1], base_index, Constant(U32[1], 3U))};
+        const Id compare_index{OpShiftRightLogical(U32[1], base_index, Constant(U32[1], 2U))};
+        std::vector<Sirit::Literal> literals;
+        std::vector<Id> labels;
+        const u32 base_attribute_value = static_cast<u32>(IR::Attribute::Generic0X) >> 2;
+        for (u32 i = 0; i < info.stores_generics.size(); i++) {
+            if (!info.stores_generics[i]) {
+                continue;
+            }
+            literals.push_back(base_attribute_value + i);
+            labels.push_back(OpLabel());
+        }
+        OpSelectionMerge(end_block, spv::SelectionControlMask::MaskNone);
+        OpSwitch(compare_index, default_label, literals, labels);
+        AddLabel(default_label);
+        OpReturn();
+        size_t label_index = 0;
+        for (u32 i = 0; i < info.stores_generics.size(); i++) {
+            if (!info.stores_generics[i]) {
+                continue;
+            }
+            AddLabel(labels[label_index]);
+            const Id generic_id{output_generics.at(i)};
+            const Id pointer{OpAccessChain(output_f32, generic_id, masked_index)};
+            OpStore(pointer, store_value);
+            OpReturn();
+            label_index++;
+        }
+        AddLabel(end_block);
+        OpUnreachable();
+        OpFunctionEnd();
+        return func;
+    }};
+    if (info.loads_indexed_attributes) {
+        indexed_load_func = make_load();
+    }
+    if (info.stores_indexed_attributes) {
+        indexed_store_func = make_store();
     }
 }
 

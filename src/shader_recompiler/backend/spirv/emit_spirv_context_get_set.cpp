@@ -216,12 +216,12 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value) {
     ctx.OpStore(*output, value);
 }
 
-void EmitGetAttributeIndexed(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitGetAttributeIndexed(EmitContext& ctx, Id offset) {
+    return ctx.OpFunctionCall(ctx.F32[1], ctx.indexed_load_func, offset);
 }
 
-void EmitSetAttributeIndexed(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+void EmitSetAttributeIndexed(EmitContext& ctx, Id offset, Id value) {
+    ctx.OpFunctionCall(ctx.void_id, ctx.indexed_store_func, offset, value);
 }
 
 void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, Id value) {
