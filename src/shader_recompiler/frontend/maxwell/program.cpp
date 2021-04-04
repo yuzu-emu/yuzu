@@ -14,20 +14,20 @@
 #include "shader_recompiler/ir_opt/passes.h"
 
 namespace Shader::Maxwell {
-
-static void RemoveUnreachableBlocks(IR::Program& program) {
+namespace {
+void RemoveUnreachableBlocks(IR::Program& program) {
     // Some blocks might be unreachable if a function call exists unconditionally
     // If this happens the number of blocks and post order blocks will mismatch
     if (program.blocks.size() == program.post_order_blocks.size()) {
         return;
     }
-    const IR::BlockList& post_order{program.post_order_blocks};
-    std::erase_if(program.blocks, [&](IR::Block* block) {
-        return std::ranges::find(post_order, block) == post_order.end();
-    });
+    const auto begin{std::next(program.blocks.begin())};
+    const auto end{program.blocks.end()};
+    const auto pred{[](IR::Block* block) { return block->ImmediatePredecessors().empty(); }};
+    program.blocks.erase(std::remove_if(begin, end, pred), end);
 }
 
-static void CollectInterpolationInfo(Environment& env, IR::Program& program) {
+void CollectInterpolationInfo(Environment& env, IR::Program& program) {
     if (program.stage != Stage::Fragment) {
         return;
     }
@@ -60,6 +60,7 @@ static void CollectInterpolationInfo(Environment& env, IR::Program& program) {
         }();
     }
 }
+} // Anonymous namespace
 
 IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
                              Environment& env, Flow::CFG& cfg) {
