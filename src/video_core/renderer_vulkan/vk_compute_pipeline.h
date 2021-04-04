@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <mutex>
+#include <condition_variable>
 #include <atomic>
 
 #include "common/common_types.h"
@@ -47,7 +49,10 @@ private:
     vk::PipelineLayout pipeline_layout;
     vk::DescriptorUpdateTemplateKHR descriptor_update_template;
     vk::Pipeline pipeline;
-    std::atomic_flag building_flag{};
+
+    std::condition_variable build_condvar;
+    std::mutex build_mutex;
+    std::atomic_bool is_built{false};
 };
 
 } // namespace Vulkan

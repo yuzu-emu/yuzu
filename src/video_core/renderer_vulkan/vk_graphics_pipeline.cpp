@@ -135,8 +135,10 @@ GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
 
         const VkRenderPass render_pass{render_pass_cache.Get(MakeRenderPassKey(state))};
         MakePipeline(device, render_pass);
-        building_flag.test_and_set();
-        building_flag.notify_all();
+
+        std::lock_guard lock{build_mutex};
+        is_built = true;
+        build_condvar.notify_one();
     }};
     if (worker_thread) {
         worker_thread->QueueWork(std::move(func));
@@ -196,8 +198,12 @@ void GraphicsPipeline::Configure(bool is_indexed) {
     texture_cache.UpdateRenderTargets(false);
     scheduler.RequestRenderpass(texture_cache.GetFramebuffer());
 
-    if (!building_flag.test()) {
-        scheduler.Record([this](vk::CommandBuffer) { building_flag.wait(false); });
+    if (!is_built.load(std::memory_order::relaxed)) {
+        // Wait for the pipeline to be built
+        scheduler.Record([this](vk::CommandBuffer) {
+            std::unique_lock lock{build_mutex};
+            build_condvar.wait(lock, [this] { return is_built.load(std::memory_order::relaxed); });
+        });
     }
     if (scheduler.UpdateGraphicsPipeline(this)) {
         scheduler.Record([this](vk::CommandBuffer cmdbuf) {

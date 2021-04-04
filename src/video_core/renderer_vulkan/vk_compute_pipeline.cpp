@@ -55,8 +55,9 @@ ComputePipeline::ComputePipeline(const Device& device, VKDescriptorPool& descrip
             .basePipelineHandle = 0,
             .basePipelineIndex = 0,
         });
-        building_flag.test_and_set();
-        building_flag.notify_all();
+        std::lock_guard lock{build_mutex};
+        is_built = true;
+        build_condvar.notify_one();
     }};
     if (thread_worker) {
         thread_worker->QueueWork(std::move(func));
@@ -75,7 +76,8 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
     size_t ssbo_index{};
     for (const auto& desc : info.storage_buffers_descriptors) {
         ASSERT(desc.count == 1);
-        buffer_cache.BindComputeStorageBuffer(ssbo_index, desc.cbuf_index, desc.cbuf_offset, desc.is_written);
+        buffer_cache.BindComputeStorageBuffer(ssbo_index, desc.cbuf_index, desc.cbuf_offset,
+                                              desc.is_written);
         ++ssbo_index;
     }
     buffer_cache.UpdateComputeBuffers();
@@ -112,9 +114,12 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
     PushImageDescriptors(info, samplers.data(), image_view_ids.data(), texture_cache,
                          update_descriptor_queue, image_index);
 
-    if (!building_flag.test()) {
+    if (!is_built.load(std::memory_order::relaxed)) {
         // Wait for the pipeline to be built
-        scheduler.Record([this](vk::CommandBuffer) { building_flag.wait(false); });
+        scheduler.Record([this](vk::CommandBuffer) {
+            std::unique_lock lock{build_mutex};
+            build_condvar.wait(lock, [this] { return is_built.load(std::memory_order::relaxed); });
+        });
     }
     scheduler.Record([this](vk::CommandBuffer cmdbuf) {
         cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline);
