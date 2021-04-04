@@ -69,7 +69,20 @@ struct ProgramHeader {
     union {
         struct {
             INSERT_PADDING_BYTES_NOINIT(3); // ImapSystemValuesA
-            INSERT_PADDING_BYTES_NOINIT(1); // ImapSystemValuesB
+
+            union {
+                BitField<0, 1, u8> primitive_array_id;
+                BitField<1, 1, u8> rt_array_index;
+                BitField<2, 1, u8> viewport_index;
+                BitField<3, 1, u8> point_size;
+                BitField<4, 1, u8> position_x;
+                BitField<5, 1, u8> position_y;
+                BitField<6, 1, u8> position_z;
+                BitField<7, 1, u8> position_w;
+                BitField<0, 4, u8> first;
+                BitField<4, 4, u8> position;
+                u8 raw;
+            } imap_systemb;
 
             union {
                 BitField<0, 1, u8> x;
@@ -99,7 +112,20 @@ struct ProgramHeader {
             INSERT_PADDING_BYTES_NOINIT(5); // ImapFixedFncTexture[10]
             INSERT_PADDING_BYTES_NOINIT(1); // ImapReserved
             INSERT_PADDING_BYTES_NOINIT(3); // OmapSystemValuesA
-            INSERT_PADDING_BYTES_NOINIT(1); // OmapSystemValuesB
+
+            union {
+                BitField<0, 1, u8> primitive_array_id;
+                BitField<1, 1, u8> rt_array_index;
+                BitField<2, 1, u8> viewport_index;
+                BitField<3, 1, u8> point_size;
+                BitField<4, 1, u8> position_x;
+                BitField<5, 1, u8> position_y;
+                BitField<6, 1, u8> position_z;
+                BitField<7, 1, u8> position_w;
+                BitField<0, 4, u8> first;
+                BitField<4, 4, u8> position;
+                u8 raw;
+            } omap_systemb;
 
             union {
                 BitField<0, 1, u8> x;
@@ -148,7 +174,20 @@ struct ProgramHeader {
 
         struct {
             INSERT_PADDING_BYTES_NOINIT(3); // ImapSystemValuesA
-            INSERT_PADDING_BYTES_NOINIT(1); // ImapSystemValuesB
+
+            union {
+                BitField<0, 1, u8> primitive_array_id;
+                BitField<1, 1, u8> rt_array_index;
+                BitField<2, 1, u8> viewport_index;
+                BitField<3, 1, u8> point_size;
+                BitField<4, 1, u8> position_x;
+                BitField<5, 1, u8> position_y;
+                BitField<6, 1, u8> position_z;
+                BitField<7, 1, u8> position_w;
+                BitField<0, 4, u8> first;
+                BitField<4, 4, u8> position;
+                u8 raw;
+            } imap_systemb;
 
             union {
                 BitField<0, 2, PixelImap> x;

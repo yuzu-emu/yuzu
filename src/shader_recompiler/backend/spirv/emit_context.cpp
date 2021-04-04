@@ -327,6 +327,10 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
         const Id compare_index{OpShiftRightLogical(U32[1], base_index, Constant(U32[1], 2U))};
         std::vector<Sirit::Literal> literals;
         std::vector<Id> labels;
+        if (info.loads_position) {
+            literals.push_back(static_cast<u32>(IR::Attribute::PositionX) >> 2);
+            labels.push_back(OpLabel());
+        }
         const u32 base_attribute_value = static_cast<u32>(IR::Attribute::Generic0X) >> 2;
         for (u32 i = 0; i < info.input_generics.size(); i++) {
             if (!info.input_generics[i].used) {
@@ -340,6 +344,12 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
         AddLabel(default_label);
         OpReturnValue(Constant(F32[1], 0.0f));
         size_t label_index = 0;
+        if (info.loads_position) {
+            AddLabel(labels[label_index]);
+            const Id result{OpLoad(F32[1], OpAccessChain(input_f32, input_position, masked_index))};
+            OpReturnValue(result);
+            label_index++;
+        }
         for (u32 i = 0; i < info.input_generics.size(); i++) {
             if (!info.input_generics[i].used) {
                 continue;
@@ -377,6 +387,10 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
         const Id compare_index{OpShiftRightLogical(U32[1], base_index, Constant(U32[1], 2U))};
         std::vector<Sirit::Literal> literals;
         std::vector<Id> labels;
+        if (info.stores_position) {
+            literals.push_back(static_cast<u32>(IR::Attribute::PositionX) >> 2);
+            labels.push_back(OpLabel());
+        }
         const u32 base_attribute_value = static_cast<u32>(IR::Attribute::Generic0X) >> 2;
         for (u32 i = 0; i < info.stores_generics.size(); i++) {
             if (!info.stores_generics[i]) {
@@ -385,11 +399,24 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
             literals.push_back(base_attribute_value + i);
             labels.push_back(OpLabel());
         }
+        if (info.stores_clip_distance) {
+            literals.push_back(static_cast<u32>(IR::Attribute::ClipDistance0) >> 2);
+            labels.push_back(OpLabel());
+            literals.push_back(static_cast<u32>(IR::Attribute::ClipDistance4) >> 2);
+            labels.push_back(OpLabel());
+        }
         OpSelectionMerge(end_block, spv::SelectionControlMask::MaskNone);
         OpSwitch(compare_index, default_label, literals, labels);
         AddLabel(default_label);
         OpReturn();
         size_t label_index = 0;
+        if (info.stores_position) {
+            AddLabel(labels[label_index]);
+            const Id pointer{OpAccessChain(output_f32, output_position, masked_index)};
+            OpStore(pointer, store_value);
+            OpReturn();
+            label_index++;
+        }
         for (u32 i = 0; i < info.stores_generics.size(); i++) {
             if (!info.stores_generics[i]) {
                 continue;
@@ -398,6 +425,19 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
             const Id generic_id{output_generics.at(i)};
             const Id pointer{OpAccessChain(output_f32, generic_id, masked_index)};
             OpStore(pointer, store_value);
+            OpReturn();
+            label_index++;
+        }
+        if (info.stores_clip_distance) {
+            AddLabel(labels[label_index]);
+            const Id pointer{OpAccessChain(output_f32, clip_distances, masked_index)};
+            OpStore(pointer, store_value);
+            OpReturn();
+            label_index++;
+            AddLabel(labels[label_index]);
+            const Id fixed_index{OpIAdd(U32[1], masked_index, Constant(U32[1], 4))};
+            const Id pointer2{OpAccessChain(output_f32, clip_distances, fixed_index)};
+            OpStore(pointer2, store_value);
             OpReturn();
             label_index++;
         }
