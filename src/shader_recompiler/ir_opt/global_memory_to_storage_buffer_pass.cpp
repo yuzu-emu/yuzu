@@ -12,6 +12,7 @@
 #include <boost/container/small_vector.hpp>
 
 #include "shader_recompiler/frontend/ir/basic_block.h"
+#include "shader_recompiler/frontend/ir/breadth_first_search.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
 #include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/ir_opt/passes.h"
@@ -219,68 +220,35 @@ std::optional<LowAddrInfo> TrackLowAddress(IR::Inst* inst) {
     };
 }
 
-/// Tries to get the storage buffer out of a constant buffer read instruction
-std::optional<StorageBufferAddr> TryGetStorageBuffer(const IR::Inst* inst, const Bias* bias) {
-    if (inst->Opcode() != IR::Opcode::GetCbufU32) {
-        return std::nullopt;
-    }
-    const IR::Value index{inst->Arg(0)};
-    const IR::Value offset{inst->Arg(1)};
-    if (!index.IsImmediate()) {
-        // Definitely not a storage buffer if it's read from a non-immediate index
-        return std::nullopt;
-    }
-    if (!offset.IsImmediate()) {
-        // TODO: Support SSBO arrays
-        return std::nullopt;
-    }
-    const StorageBufferAddr storage_buffer{
-        .index{index.U32()},
-        .offset{offset.U32()},
-    };
-    if (bias && !MeetsBias(storage_buffer, *bias)) {
-        // We have to blacklist some addresses in case we wrongly point to them
-        return std::nullopt;
-    }
-    return storage_buffer;
-}
-
 /// Tries to track the storage buffer address used by a global memory instruction
 std::optional<StorageBufferAddr> Track(const IR::Value& value, const Bias* bias) {
-    if (value.IsImmediate()) {
-        // Nothing to do with immediates
-        return std::nullopt;
-    }
-    // Breadth-first search visiting the right most arguments first
-    // Small vector has been determined from shaders in Super Smash Bros. Ultimate
-    small_vector<const IR::Inst*, 2> visited;
-    std::queue<const IR::Inst*> queue;
-    queue.push(value.InstRecursive());
-
-    while (!queue.empty()) {
-        // Pop one instruction from the queue
-        const IR::Inst* const inst{queue.front()};
-        queue.pop();
-        if (const std::optional<StorageBufferAddr> result = TryGetStorageBuffer(inst, bias)) {
-            // This is the instruction we were looking for
-            return result;
+    const auto pred{[bias](const IR::Inst* inst) -> std::optional<StorageBufferAddr> {
+        if (inst->Opcode() != IR::Opcode::GetCbufU32) {
+            return std::nullopt;
         }
-        // Visit the right most arguments first
-        for (size_t arg = inst->NumArgs(); arg--;) {
-            const IR::Value arg_value{inst->Arg(arg)};
-            if (arg_value.IsImmediate()) {
-                continue;
-            }
-            // Queue instruction if it hasn't been visited
-            const IR::Inst* const arg_inst{arg_value.InstRecursive()};
-            if (std::ranges::find(visited, arg_inst) == visited.end()) {
-                visited.push_back(arg_inst);
-                queue.push(arg_inst);
-            }
+        const IR::Value index{inst->Arg(0)};
+        const IR::Value offset{inst->Arg(1)};
+        if (!index.IsImmediate()) {
+            // Definitely not a storage buffer if it's read from a
+            // non-immediate index
+            return std::nullopt;
         }
-    }
-    // SSA tree has been traversed and the origin hasn't been found
-    return std::nullopt;
+        if (!offset.IsImmediate()) {
+            // TODO: Support SSBO arrays
+            return std::nullopt;
+        }
+        const StorageBufferAddr storage_buffer{
+            .index{index.U32()},
+            .offset{offset.U32()},
+        };
+        if (bias && !MeetsBias(storage_buffer, *bias)) {
+            // We have to blacklist some addresses in case we wrongly
+            // point to them
+            return std::nullopt;
+        }
+        return storage_buffer;
+    }};
+    return BreadthFirstSearch(value, pred);
 }
 
 /// Collects the storage buffer used by a global memory instruction and the instruction itself
