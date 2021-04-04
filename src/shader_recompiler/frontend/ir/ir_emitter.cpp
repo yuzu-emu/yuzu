@@ -162,8 +162,8 @@ U32 IREmitter::GetCbuf(const U32& binding, const U32& byte_offset) {
     return Inst<U32>(Opcode::GetCbufU32, binding, byte_offset);
 }
 
-UAny IREmitter::GetCbuf(const U32& binding, const U32& byte_offset, size_t bitsize,
-                        bool is_signed) {
+Value IREmitter::GetCbuf(const U32& binding, const U32& byte_offset, size_t bitsize,
+                         bool is_signed) {
     switch (bitsize) {
     case 8:
         return Inst<U32>(is_signed ? Opcode::GetCbufS8 : Opcode::GetCbufU8, binding, byte_offset);
@@ -172,7 +172,7 @@ UAny IREmitter::GetCbuf(const U32& binding, const U32& byte_offset, size_t bitsi
     case 32:
         return Inst<U32>(Opcode::GetCbufU32, binding, byte_offset);
     case 64:
-        return Inst<U64>(Opcode::GetCbufU64, binding, byte_offset);
+        return Inst(Opcode::GetCbufU32x2, binding, byte_offset);
     default:
         throw InvalidArgument("Invalid bit size {}", bitsize);
     }

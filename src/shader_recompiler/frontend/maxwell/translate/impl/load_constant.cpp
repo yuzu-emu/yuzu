@@ -30,25 +30,25 @@ void TranslatorVisitor::LDC(u64 insn) {
     const auto [index, offset]{Slot(ir, ldc.mode, imm_index, reg, imm)};
     switch (ldc.size) {
     case Size::U8:
-        X(ldc.dest_reg, ir.GetCbuf(index, offset, 8, false));
+        X(ldc.dest_reg, IR::U32{ir.GetCbuf(index, offset, 8, false)});
         break;
     case Size::S8:
-        X(ldc.dest_reg, ir.GetCbuf(index, offset, 8, true));
+        X(ldc.dest_reg, IR::U32{ir.GetCbuf(index, offset, 8, true)});
         break;
     case Size::U16:
-        X(ldc.dest_reg, ir.GetCbuf(index, offset, 16, false));
+        X(ldc.dest_reg, IR::U32{ir.GetCbuf(index, offset, 16, false)});
         break;
     case Size::S16:
-        X(ldc.dest_reg, ir.GetCbuf(index, offset, 16, true));
+        X(ldc.dest_reg, IR::U32{ir.GetCbuf(index, offset, 16, true)});
         break;
     case Size::B32:
-        X(ldc.dest_reg, ir.GetCbuf(index, offset, 32, false));
+        X(ldc.dest_reg, IR::U32{ir.GetCbuf(index, offset, 32, false)});
         break;
     case Size::B64: {
         if (!IR::IsAligned(ldc.dest_reg, 2)) {
             throw NotImplementedException("Unaligned destination register");
         }
-        const IR::Value vector{ir.UnpackUint2x32(ir.GetCbuf(index, offset, 64, false))};
+        const IR::Value vector{ir.GetCbuf(index, offset, 64, false)};
         for (int i = 0; i < 2; ++i) {
             X(ldc.dest_reg + i, IR::U32{ir.CompositeExtract(vector, i)});
         }

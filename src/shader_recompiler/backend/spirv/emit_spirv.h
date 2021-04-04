@@ -47,7 +47,7 @@ Id EmitGetCbufU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& o
 Id EmitGetCbufS16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 Id EmitGetCbufU32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 Id EmitGetCbufF32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
-Id EmitGetCbufU64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
+Id EmitGetCbufU32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr);
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value);
 void EmitGetAttributeIndexed(EmitContext& ctx);

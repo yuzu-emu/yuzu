@@ -308,8 +308,8 @@ void EmitContext::DefineConstantBuffers(const Info& info, u32& binding) {
     if (True(info.used_constant_buffer_types & IR::Type::F32)) {
         DefineConstantBuffers(info, &UniformDefinitions::F32, binding, F32[1], 'f', sizeof(f32));
     }
-    if (True(info.used_constant_buffer_types & IR::Type::U64)) {
-        DefineConstantBuffers(info, &UniformDefinitions::U64, binding, U64, 'u', sizeof(u64));
+    if (True(info.used_constant_buffer_types & IR::Type::U32x2)) {
+        DefineConstantBuffers(info, &UniformDefinitions::U32x2, binding, U32[2], 'u', sizeof(u64));
     }
     for (const ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
         binding += desc.count;

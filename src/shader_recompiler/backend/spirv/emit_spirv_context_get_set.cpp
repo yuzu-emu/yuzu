@@ -153,8 +153,8 @@ Id EmitGetCbufF32(EmitContext& ctx, const IR::Value& binding, const IR::Value& o
     return GetCbuf(ctx, ctx.F32[1], &UniformDefinitions::F32, sizeof(f32), binding, offset);
 }
 
-Id EmitGetCbufU64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    return GetCbuf(ctx, ctx.U64, &UniformDefinitions::U64, sizeof(u64), binding, offset);
+Id EmitGetCbufU32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
+    return GetCbuf(ctx, ctx.U32[2], &UniformDefinitions::U32x2, sizeof(u32[2]), binding, offset);
 }
 
 Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr) {
