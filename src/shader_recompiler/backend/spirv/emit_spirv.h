@@ -401,6 +401,11 @@ Id EmitVoteAll(EmitContext& ctx, Id pred);
 Id EmitVoteAny(EmitContext& ctx, Id pred);
 Id EmitVoteEqual(EmitContext& ctx, Id pred);
 Id EmitSubgroupBallot(EmitContext& ctx, Id pred);
+Id EmitSubgroupEqMask(EmitContext& ctx);
+Id EmitSubgroupLtMask(EmitContext& ctx);
+Id EmitSubgroupLeMask(EmitContext& ctx);
+Id EmitSubgroupGtMask(EmitContext& ctx);
+Id EmitSubgroupGeMask(EmitContext& ctx);
 Id EmitShuffleIndex(EmitContext& ctx, IR::Inst* inst, Id value, Id index, Id clamp,
                     Id segmentation_mask);
 Id EmitShuffleUp(EmitContext& ctx, IR::Inst* inst, Id value, Id index, Id clamp,

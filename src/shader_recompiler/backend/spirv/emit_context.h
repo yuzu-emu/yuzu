@@ -97,6 +97,11 @@ public:
     Id workgroup_id{};
     Id local_invocation_id{};
     Id subgroup_local_invocation_id{};
+    Id subgroup_mask_eq{};
+    Id subgroup_mask_lt{};
+    Id subgroup_mask_le{};
+    Id subgroup_mask_gt{};
+    Id subgroup_mask_ge{};
     Id instance_id{};
     Id instance_index{};
     Id base_instance{};

@@ -281,6 +281,11 @@ public:
     [[nodiscard]] U1 VoteAny(const U1& value);
     [[nodiscard]] U1 VoteEqual(const U1& value);
     [[nodiscard]] U32 SubgroupBallot(const U1& value);
+    [[nodiscard]] U32 SubgroupEqMask();
+    [[nodiscard]] U32 SubgroupLtMask();
+    [[nodiscard]] U32 SubgroupLeMask();
+    [[nodiscard]] U32 SubgroupGtMask();
+    [[nodiscard]] U32 SubgroupGeMask();
     [[nodiscard]] U32 ShuffleIndex(const IR::U32& value, const IR::U32& index, const IR::U32& clamp,
                                    const IR::U32& seg_mask);
     [[nodiscard]] U32 ShuffleUp(const IR::U32& value, const IR::U32& index, const IR::U32& clamp,
