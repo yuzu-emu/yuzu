@@ -65,6 +65,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/program.h
     frontend/maxwell/structured_control_flow.cpp
     frontend/maxwell/structured_control_flow.h
+    frontend/maxwell/translate/impl/attribute_memory_to_physical.cpp
     frontend/maxwell/translate/impl/barrier_operations.cpp
     frontend/maxwell/translate/impl/bitfield_extract.cpp
     frontend/maxwell/translate/impl/bitfield_insert.cpp
