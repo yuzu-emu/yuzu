@@ -6,6 +6,8 @@
 
 #include <array>
 #include <atomic>
+#include <condition_variable>
+#include <mutex>
 
 #include "common/thread_worker.h"
 #include "shader_recompiler/shader_info.h"
@@ -63,7 +65,10 @@ private:
     vk::PipelineLayout pipeline_layout;
     vk::DescriptorUpdateTemplateKHR descriptor_update_template;
     vk::Pipeline pipeline;
-    std::atomic_flag building_flag{};
+
+    std::condition_variable build_condvar;
+    std::mutex build_mutex;
+    std::atomic_bool is_built{false};
 };
 
 } // namespace Vulkan
