@@ -271,7 +271,6 @@ void VisitUsages(Info& info, IR::Inst& inst) {
         break;
     }
     switch (inst.Opcode()) {
-    case IR::Opcode::GetCbufU64:
     case IR::Opcode::UndefU64:
     case IR::Opcode::LoadGlobalU8:
     case IR::Opcode::LoadGlobalS8:
@@ -349,7 +348,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::GetCbufS16:
     case IR::Opcode::GetCbufU32:
     case IR::Opcode::GetCbufF32:
-    case IR::Opcode::GetCbufU64: {
+    case IR::Opcode::GetCbufU32x2: {
         if (const IR::Value index{inst.Arg(0)}; index.IsImmediate()) {
             AddConstantBufferDescriptor(info, index.U32(), 1);
         } else {
@@ -370,8 +369,8 @@ void VisitUsages(Info& info, IR::Inst& inst) {
         case IR::Opcode::GetCbufF32:
             info.used_constant_buffer_types |= IR::Type::F32;
             break;
-        case IR::Opcode::GetCbufU64:
-            info.used_constant_buffer_types |= IR::Type::U64;
+        case IR::Opcode::GetCbufU32x2:
+            info.used_constant_buffer_types |= IR::Type::U32x2;
             break;
         default:
             break;

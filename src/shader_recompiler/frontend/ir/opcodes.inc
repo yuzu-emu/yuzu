@@ -40,7 +40,7 @@ OPCODE(GetCbufU16,                                          U32,            U32,
 OPCODE(GetCbufS16,                                          U32,            U32,            U32,                                                            )
 OPCODE(GetCbufU32,                                          U32,            U32,            U32,                                                            )
 OPCODE(GetCbufF32,                                          F32,            U32,            U32,                                                            )
-OPCODE(GetCbufU64,                                          U64,            U32,            U32,                                                            )
+OPCODE(GetCbufU32x2,                                        U32x2,          U32,            U32,                                                            )
 OPCODE(GetAttribute,                                        F32,            Attribute,                                                                      )
 OPCODE(SetAttribute,                                        Void,           Attribute,      F32,                                                            )
 OPCODE(GetAttributeIndexed,                                 F32,            U32,                                                                            )

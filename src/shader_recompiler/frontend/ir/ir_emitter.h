@@ -56,8 +56,8 @@ public:
     void SetIndirectBranchVariable(const U32& value);
 
     [[nodiscard]] U32 GetCbuf(const U32& binding, const U32& byte_offset);
-    [[nodiscard]] UAny GetCbuf(const U32& binding, const U32& byte_offset, size_t bitsize,
-                               bool is_signed);
+    [[nodiscard]] Value GetCbuf(const U32& binding, const U32& byte_offset, size_t bitsize,
+                                bool is_signed);
     [[nodiscard]] F32 GetFloatCbuf(const U32& binding, const U32& byte_offset);
 
     [[nodiscard]] U1 GetZFlag();

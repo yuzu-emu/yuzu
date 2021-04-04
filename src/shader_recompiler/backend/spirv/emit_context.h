@@ -42,7 +42,7 @@ struct UniformDefinitions {
     Id S16{};
     Id U32{};
     Id F32{};
-    Id U64{};
+    Id U32x2{};
 };
 
 class EmitContext final : public Sirit::Module {
