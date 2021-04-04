@@ -28,6 +28,7 @@ void EmitSelectionMerge(EmitContext& ctx, Id merge_label);
 void EmitReturn(EmitContext& ctx);
 void EmitUnreachable(EmitContext& ctx);
 void EmitDemoteToHelperInvocation(EmitContext& ctx, Id continue_label);
+void EmitBarrier(EmitContext& ctx);
 void EmitMemoryBarrierWorkgroupLevel(EmitContext& ctx);
 void EmitMemoryBarrierDeviceLevel(EmitContext& ctx);
 void EmitMemoryBarrierSystemLevel(EmitContext& ctx);
