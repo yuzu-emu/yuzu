@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <fstream>
 #include <memory>
+#include <thread>
 #include <vector>
 
 #include "common/bit_cast.h"
@@ -607,7 +608,8 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
       scheduler{scheduler_}, descriptor_pool{descriptor_pool_},
       update_descriptor_queue{update_descriptor_queue_}, render_pass_cache{render_pass_cache_},
       buffer_cache{buffer_cache_}, texture_cache{texture_cache_},
-      workers(11, "yuzu:PipelineBuilder"), serialization_thread(1, "yuzu:PipelineSerialization") {
+      workers(std::thread::hardware_concurrency() - 1, "yuzu:PipelineBuilder"),
+      serialization_thread(1, "yuzu:PipelineSerialization") {
     const auto& float_control{device.FloatControlProperties()};
     const VkDriverIdKHR driver_id{device.GetDriverID()};
     base_profile = Shader::Profile{
