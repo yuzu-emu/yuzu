@@ -119,6 +119,26 @@ IR::Opcode UndefOpcode(IndirectBranchVariable) noexcept {
     return inst.Opcode() == IR::Opcode::Phi;
 }
 
+enum class Status {
+    Start,
+    SetValue,
+    PreparePhiArgument,
+    PushPhiArgument,
+};
+
+template <typename Type>
+struct ReadState {
+    ReadState(IR::Block* block_) : block{block_} {}
+    ReadState() = default;
+
+    IR::Block* block{};
+    IR::Value result{};
+    IR::Inst* phi{};
+    IR::Block* const* pred_it{};
+    IR::Block* const* pred_end{};
+    Status pc{Status::Start};
+};
+
 class Pass {
 public:
     template <typename Type>
@@ -127,12 +147,75 @@ public:
     }
 
     template <typename Type>
-    IR::Value ReadVariable(Type variable, IR::Block* block) {
-        const ValueMap& def{current_def[variable]};
-        if (const auto it{def.find(block)}; it != def.end()) {
-            return it->second;
-        }
-        return ReadVariableRecursive(variable, block);
+    IR::Value ReadVariable(Type variable, IR::Block* root_block) {
+        boost::container::small_vector<ReadState<Type>, 64> stack{
+            ReadState<Type>(nullptr),
+            ReadState<Type>(root_block),
+        };
+        const auto prepare_phi_operand{[&] {
+            if (stack.back().pred_it == stack.back().pred_end) {
+                IR::Inst* const phi{stack.back().phi};
+                IR::Block* const block{stack.back().block};
+                const IR::Value result{TryRemoveTrivialPhi(*phi, block, UndefOpcode(variable))};
+                stack.pop_back();
+                stack.back().result = result;
+                WriteVariable(variable, block, result);
+            } else {
+                IR::Block* const imm_pred{*stack.back().pred_it};
+                stack.back().pc = Status::PushPhiArgument;
+                stack.emplace_back(imm_pred);
+            }
+        }};
+        do {
+            IR::Block* const block{stack.back().block};
+            switch (stack.back().pc) {
+            case Status::Start: {
+                const ValueMap& def{current_def[variable]};
+                if (const auto it{def.find(block)}; it != def.end()) {
+                    stack.back().result = it->second;
+                } else if (!sealed_blocks.contains(block)) {
+                    // Incomplete CFG
+                    IR::Inst* phi{&*block->PrependNewInst(block->begin(), IR::Opcode::Phi)};
+                    incomplete_phis[block].insert_or_assign(variable, phi);
+                    stack.back().result = IR::Value{&*phi};
+                } else if (const std::span imm_preds{block->ImmediatePredecessors()};
+                           imm_preds.size() == 1) {
+                    // Optimize the common case of one predecessor: no phi needed
+                    stack.back().pc = Status::SetValue;
+                    stack.emplace_back(imm_preds.front());
+                    break;
+                } else {
+                    // Break potential cycles with operandless phi
+                    IR::Inst* const phi{&*block->PrependNewInst(block->begin(), IR::Opcode::Phi)};
+                    WriteVariable(variable, block, IR::Value{phi});
+
+                    stack.back().phi = phi;
+                    stack.back().pred_it = imm_preds.data();
+                    stack.back().pred_end = imm_preds.data() + imm_preds.size();
+                    prepare_phi_operand();
+                    break;
+                }
+            }
+                [[fallthrough]];
+            case Status::SetValue: {
+                const IR::Value result{stack.back().result};
+                WriteVariable(variable, block, result);
+                stack.pop_back();
+                stack.back().result = result;
+                break;
+            }
+            case Status::PushPhiArgument: {
+                IR::Inst* const phi{stack.back().phi};
+                phi->AddPhiOperand(*stack.back().pred_it, stack.back().result);
+                ++stack.back().pred_it;
+            }
+                [[fallthrough]];
+            case Status::PreparePhiArgument:
+                prepare_phi_operand();
+                break;
+            }
+        } while (stack.size() > 1);
+        return stack.back().result;
     }
 
     void SealBlock(IR::Block* block) {
@@ -146,29 +229,6 @@ public:
     }
 
 private:
-    template <typename Type>
-    IR::Value ReadVariableRecursive(Type variable, IR::Block* block) {
-        IR::Value val;
-        if (!sealed_blocks.contains(block)) {
-            // Incomplete CFG
-            IR::Inst* phi{&*block->PrependNewInst(block->begin(), IR::Opcode::Phi)};
-            incomplete_phis[block].insert_or_assign(variable, phi);
-            val = IR::Value{&*phi};
-        } else if (const std::span imm_preds{block->ImmediatePredecessors()};
-                   imm_preds.size() == 1) {
-            // Optimize the common case of one predecessor: no phi needed
-            val = ReadVariable(variable, imm_preds.front());
-        } else {
-            // Break potential cycles with operandless phi
-            IR::Inst& phi_inst{*block->PrependNewInst(block->begin(), IR::Opcode::Phi)};
-            val = IR::Value{&phi_inst};
-            WriteVariable(variable, block, val);
-            val = AddPhiOperands(variable, phi_inst, block);
-        }
-        WriteVariable(variable, block, val);
-        return val;
-    }
-
     template <typename Type>
     IR::Value AddPhiOperands(Type variable, IR::Inst& phi, IR::Block* block) {
         for (IR::Block* const imm_pred : block->ImmediatePredecessors()) {
