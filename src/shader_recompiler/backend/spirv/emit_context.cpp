@@ -45,7 +45,7 @@ Id ImageType(EmitContext& ctx, const TextureDescriptor& desc) {
     case TextureType::ShadowCube:
         return ctx.TypeImage(type, spv::Dim::Cube, true, false, false, 1, format);
     case TextureType::ShadowArrayCube:
-        return ctx.TypeImage(type, spv::Dim::Cube, false, true, false, 1, format);
+        return ctx.TypeImage(type, spv::Dim::Cube, true, true, false, 1, format);
     }
     throw InvalidArgument("Invalid texture type {}", desc.type);
 }
