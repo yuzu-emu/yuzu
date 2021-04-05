@@ -511,37 +511,33 @@ void Visit(Info& info, IR::Inst& inst) {
 }
 
 void GatherInfoFromHeader(Environment& env, Info& info) {
-    auto stage = env.ShaderStage();
+    Stage stage{env.ShaderStage()};
     if (stage == Stage::Compute) {
         return;
     }
-    const auto& header = env.SPH();
+    const auto& header{env.SPH()};
     if (stage == Stage::Fragment) {
         if (!info.loads_indexed_attributes) {
             return;
         }
         for (size_t i = 0; i < info.input_generics.size(); i++) {
-            info.input_generics[i].used =
-                info.input_generics[i].used || header.ps.IsGenericVectorActive(i);
+            info.input_generics[i].used |= header.ps.IsGenericVectorActive(i);
         }
-        info.loads_position = info.loads_position || header.ps.imap_systemb.position != 0;
+        info.loads_position |= header.ps.imap_systemb.position != 0;
         return;
     }
     if (info.loads_indexed_attributes) {
         for (size_t i = 0; i < info.input_generics.size(); i++) {
-            info.input_generics[i].used =
-                info.input_generics[i].used || header.vtg.IsInputGenericVectorActive(i);
+            info.input_generics[i].used |= header.vtg.IsInputGenericVectorActive(i);
         }
+        info.loads_position |= header.vtg.imap_systemb.position != 0;
     }
     if (info.stores_indexed_attributes) {
-        info.loads_position = info.loads_position || header.vtg.imap_systemb.position != 0;
         for (size_t i = 0; i < info.stores_generics.size(); i++) {
-            info.stores_generics[i] =
-                info.stores_generics[i] || header.vtg.IsOutputGenericVectorActive(i);
+            info.stores_generics[i] |= header.vtg.IsOutputGenericVectorActive(i);
         }
-        info.stores_clip_distance =
-            info.stores_clip_distance || header.vtg.omap_systemc.clip_distances != 0;
-        info.stores_position = info.stores_position || header.vtg.omap_systemb.position != 0;
+        info.stores_clip_distance |= header.vtg.omap_systemc.clip_distances != 0;
+        info.stores_position |= header.vtg.omap_systemb.position != 0;
     }
 }
 

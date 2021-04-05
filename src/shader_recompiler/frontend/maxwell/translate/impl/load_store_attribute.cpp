@@ -44,6 +44,17 @@ u32 NumElements(Size size) {
     }
     throw InvalidArgument("Invalid size {}", size);
 }
+
+template <typename F>
+void HandleIndexed(TranslatorVisitor& v, IR::Reg index_reg, u32 num_elements, F&& f) {
+    const IR::U32 index_value{v.X(index_reg)};
+    for (u32 element = 0; element < num_elements; ++element) {
+        const IR::U32 final_offset{
+            element == 0 ? index_value : IR::U32{v.ir.IAdd(index_value, v.ir.Imm32(element * 4U))}};
+        f(element, final_offset);
+    }
+}
+
 } // Anonymous namespace
 
 void TranslatorVisitor::ALD(u64 insn) {
@@ -70,18 +81,15 @@ void TranslatorVisitor::ALD(u64 insn) {
         throw NotImplementedException("Unaligned absolute offset {}", offset);
     }
     const u32 num_elements{NumElements(ald.size)};
-    if (ald.index_reg != IR::Reg::RZ) {
-        const IR::U32 index_value = X(ald.index_reg);
+    if (ald.index_reg == IR::Reg::RZ) {
         for (u32 element = 0; element < num_elements; ++element) {
-            const IR::U32 final_offset =
-                element == 0 ? index_value : IR::U32{ir.IAdd(index_value, ir.Imm32(element * 4U))};
-            F(ald.dest_reg + element, ir.GetAttributeIndexed(final_offset));
+            F(ald.dest_reg + element, ir.GetAttribute(IR::Attribute{offset / 4 + element}));
         }
         return;
     }
-    for (u32 element = 0; element < num_elements; ++element) {
-        F(ald.dest_reg + element, ir.GetAttribute(IR::Attribute{offset / 4 + element}));
-    }
+    HandleIndexed(*this, ald.index_reg, num_elements, [&](u32 element, IR::U32 final_offset) {
+        F(ald.dest_reg + element, ir.GetAttributeIndexed(final_offset));
+    });
 }
 
 void TranslatorVisitor::AST(u64 insn) {
@@ -110,18 +118,15 @@ void TranslatorVisitor::AST(u64 insn) {
         throw NotImplementedException("Unaligned absolute offset {}", offset);
     }
     const u32 num_elements{NumElements(ast.size)};
-    if (ast.index_reg != IR::Reg::RZ) {
-        const IR::U32 index_value = X(ast.index_reg);
+    if (ast.index_reg == IR::Reg::RZ) {
         for (u32 element = 0; element < num_elements; ++element) {
-            const IR::U32 final_offset =
-                element == 0 ? index_value : IR::U32{ir.IAdd(index_value, ir.Imm32(element * 4U))};
-            ir.SetAttributeIndexed(final_offset, F(ast.src_reg + element));
+            ir.SetAttribute(IR::Attribute{offset / 4 + element}, F(ast.src_reg + element));
         }
         return;
     }
-    for (u32 element = 0; element < num_elements; ++element) {
-        ir.SetAttribute(IR::Attribute{offset / 4 + element}, F(ast.src_reg + element));
-    }
+    HandleIndexed(*this, ast.index_reg, num_elements, [&](u32 element, IR::U32 final_offset) {
+        ir.SetAttributeIndexed(final_offset, F(ast.src_reg + element));
+    });
 }
 
 void TranslatorVisitor::IPA(u64 insn) {
