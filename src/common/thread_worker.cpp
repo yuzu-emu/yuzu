@@ -8,8 +8,16 @@
 namespace Common {
 
 ThreadWorker::ThreadWorker(std::size_t num_workers, const std::string& name) {
+    workers_queued.store(static_cast<u64>(num_workers), std::memory_order_release);
     const auto lambda = [this, thread_name{std::string{name}}] {
         Common::SetCurrentThreadName(thread_name.c_str());
+
+        // TODO(Blinkhawk): Change the design, this is very prone to data races
+        // Wait for first request
+        {
+            std::unique_lock lock{queue_mutex};
+            condition.wait(lock, [this] { return stop || !requests.empty(); });
+        }
 
         while (!stop) {
             UniqueFunction<void> task;
@@ -26,7 +34,9 @@ ThreadWorker::ThreadWorker(std::size_t num_workers, const std::string& name) {
                 requests.pop();
             }
             task();
+            work_done++;
         }
+        workers_stopped++;
         wait_condition.notify_all();
     };
     for (size_t i = 0; i < num_workers; ++i) {
@@ -49,13 +59,15 @@ void ThreadWorker::QueueWork(UniqueFunction<void> work) {
     {
         std::unique_lock lock{queue_mutex};
         requests.emplace(std::move(work));
+        work_scherduled++;
     }
     condition.notify_one();
 }
 
 void ThreadWorker::WaitForRequests() {
     std::unique_lock lock{queue_mutex};
-    wait_condition.wait(lock, [this] { return stop || requests.empty(); });
+    wait_condition.wait(
+        lock, [this] { return workers_stopped >= workers_queued || work_done >= work_scherduled; });
 }
 
 } // namespace Common

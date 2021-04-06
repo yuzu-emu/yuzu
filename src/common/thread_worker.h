@@ -11,6 +11,7 @@
 #include <vector>
 #include <queue>
 
+#include "common/common_types.h"
 #include "common/unique_function.h"
 
 namespace Common {
@@ -29,6 +30,10 @@ private:
     std::condition_variable condition;
     std::condition_variable wait_condition;
     std::atomic_bool stop{};
+    std::atomic<u64> work_scherduled{};
+    std::atomic<u64> work_done{};
+    std::atomic<u64> workers_stopped{};
+    std::atomic<u64> workers_queued{};
 };
 
 } // namespace Common
