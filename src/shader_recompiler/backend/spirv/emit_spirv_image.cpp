@@ -128,12 +128,18 @@ Id Texture(EmitContext& ctx, const IR::Value& index) {
     throw NotImplementedException("Indirect texture sample");
 }
 
-Id TextureImage(EmitContext& ctx, const IR::Value& index) {
-    if (index.IsImmediate()) {
+Id TextureImage(EmitContext& ctx, const IR::Value& index, IR::TextureInstInfo info) {
+    if (!index.IsImmediate()) {
+        throw NotImplementedException("Indirect texture sample");
+    }
+    if (info.type == TextureType::Buffer) {
+        const Id sampler_id{ctx.texture_buffers.at(index.U32())};
+        const Id id{ctx.OpLoad(ctx.sampled_texture_buffer_type, sampler_id)};
+        return ctx.OpImage(ctx.image_buffer_type, id);
+    } else {
         const TextureDefinition def{ctx.textures.at(index.U32())};
         return ctx.OpImage(def.image_type, ctx.OpLoad(def.sampled_type, def.id));
     }
-    throw NotImplementedException("Indirect texture sample");
 }
 
 Id Decorate(EmitContext& ctx, IR::Inst* inst, Id sample) {
@@ -297,17 +303,22 @@ Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
                 ctx.F32[4], Texture(ctx, index), coords, dref, operands.Mask(), operands.Span());
 }
 
+#pragma optimize("", off)
+
 Id EmitImageFetch(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords, Id offset,
                   Id lod, Id ms) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
+    if (info.type == TextureType::Buffer) {
+        lod = Id{};
+    }
     const ImageOperands operands(offset, lod, ms);
     return Emit(&EmitContext::OpImageSparseFetch, &EmitContext::OpImageFetch, ctx, inst, ctx.F32[4],
-                TextureImage(ctx, index), coords, operands.Mask(), operands.Span());
+                TextureImage(ctx, index, info), coords, operands.Mask(), operands.Span());
 }
 
 Id EmitImageQueryDimensions(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id lod) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
-    const Id image{TextureImage(ctx, index)};
+    const Id image{TextureImage(ctx, index, info)};
     const Id zero{ctx.u32_zero_value};
     const auto mips{[&] { return ctx.OpImageQueryLevels(ctx.U32[1], image); }};
     switch (info.type) {
@@ -331,6 +342,9 @@ Id EmitImageQueryDimensions(EmitContext& ctx, IR::Inst* inst, const IR::Value& i
     case TextureType::ShadowArrayCube:
         return ctx.OpCompositeConstruct(ctx.U32[4], ctx.OpImageQuerySizeLod(ctx.U32[3], image, lod),
                                         mips());
+    case TextureType::Buffer:
+        return ctx.OpCompositeConstruct(ctx.U32[4], ctx.OpImageQuerySize(ctx.U32[1], image), zero,
+                                        zero, mips());
     }
     throw LogicError("Unspecified image type {}", info.type.Value());
 }

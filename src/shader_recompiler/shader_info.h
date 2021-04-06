@@ -29,6 +29,7 @@ enum class TextureType : u32 {
     Shadow3D,
     ShadowCube,
     ShadowArrayCube,
+    Buffer,
 };
 
 enum class Interpolation {
@@ -49,6 +50,13 @@ struct TextureDescriptor {
     u32 count;
 };
 using TextureDescriptors = boost::container::small_vector<TextureDescriptor, 12>;
+
+struct TextureBufferDescriptor {
+    u32 cbuf_index;
+    u32 cbuf_offset;
+    u32 count;
+};
+using TextureBufferDescriptors = boost::container::small_vector<TextureBufferDescriptor, 2>;
 
 struct ConstantBufferDescriptor {
     u32 index;
@@ -112,6 +120,7 @@ struct Info {
         constant_buffer_descriptors;
     boost::container::static_vector<StorageBufferDescriptor, MAX_SSBOS> storage_buffers_descriptors;
     TextureDescriptors texture_descriptors;
+    TextureBufferDescriptors texture_buffer_descriptors;
 };
 
 } // namespace Shader
