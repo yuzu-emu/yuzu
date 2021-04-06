@@ -93,6 +93,9 @@ public:
         for ([[maybe_unused]] const auto& desc : info.texture_descriptors) {
             Add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage);
         }
+        for (const auto& desc : info.texture_buffer_descriptors) {
+            Add(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, stage);
+        }
     }
 
 private:
@@ -146,6 +149,8 @@ inline VideoCommon::ImageViewType CastType(Shader::TextureType type) {
     case Shader::TextureType::ColorArrayCube:
     case Shader::TextureType::ShadowArrayCube:
         return VideoCommon::ImageViewType::CubeArray;
+    case Shader::TextureType::Buffer:
+        break;
     }
     UNREACHABLE_MSG("Invalid texture type {}", type);
     return {};
@@ -159,6 +164,11 @@ inline void PushImageDescriptors(const Shader::Info& info, const VkSampler* samp
         ImageView& image_view{texture_cache.GetImageView(image_view_ids[index])};
         const VkImageView vk_image_view{image_view.Handle(CastType(desc.type))};
         update_descriptor_queue.AddSampledImage(vk_image_view, sampler);
+        ++index;
+    }
+    for (const auto& desc : info.texture_buffer_descriptors) {
+        ImageView& image_view{texture_cache.GetImageView(image_view_ids[index])};
+        update_descriptor_queue.AddTexelBuffer(image_view.BufferView());
         ++index;
     }
 }

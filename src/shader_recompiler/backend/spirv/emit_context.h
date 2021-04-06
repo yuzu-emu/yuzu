@@ -90,9 +90,13 @@ public:
 
     Id storage_u32{};
 
+    Id image_buffer_type{};
+    Id sampled_texture_buffer_type{};
+
     std::array<UniformDefinitions, Info::MAX_CBUFS> cbufs{};
     std::array<Id, Info::MAX_SSBOS> ssbos{};
     std::vector<TextureDefinition> textures;
+    std::vector<Id> texture_buffers;
 
     Id workgroup_id{};
     Id local_invocation_id{};
@@ -151,6 +155,7 @@ private:
     void DefineConstantBuffers(const Info& info, u32& binding);
     void DefineStorageBuffers(const Info& info, u32& binding);
     void DefineTextures(const Info& info, u32& binding);
+    void DefineTextureBuffers(const Info& info, u32& binding);
     void DefineAttributeMemAccess(const Info& info);
     void DefineLabels(IR::Program& program);
 

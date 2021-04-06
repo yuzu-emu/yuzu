@@ -249,6 +249,7 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
     // TODO: Track this usage
     ctx.AddCapability(spv::Capability::ImageGatherExtended);
     ctx.AddCapability(spv::Capability::ImageQuery);
+    ctx.AddCapability(spv::Capability::SampledBuffer);
 }
 
 Id PhiArgDef(EmitContext& ctx, IR::Inst* inst, size_t index) {

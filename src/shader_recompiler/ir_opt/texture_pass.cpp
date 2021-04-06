@@ -147,24 +147,39 @@ TextureInst MakeInst(Environment& env, IR::Block* block, IR::Inst& inst) {
 
 class Descriptors {
 public:
-    explicit Descriptors(TextureDescriptors& descriptors_) : descriptors{descriptors_} {}
+    explicit Descriptors(TextureDescriptors& texture_descriptors_,
+                         TextureBufferDescriptors& texture_buffer_descriptors_)
+        : texture_descriptors{texture_descriptors_}, texture_buffer_descriptors{
+                                                         texture_buffer_descriptors_} {}
 
-    u32 Add(const TextureDescriptor& descriptor) {
-        // TODO: Handle arrays
-        auto it{std::ranges::find_if(descriptors, [&descriptor](const TextureDescriptor& existing) {
-            return descriptor.cbuf_index == existing.cbuf_index &&
-                   descriptor.cbuf_offset == existing.cbuf_offset &&
-                   descriptor.type == existing.type;
-        })};
-        if (it != descriptors.end()) {
-            return static_cast<u32>(std::distance(descriptors.begin(), it));
-        }
-        descriptors.push_back(descriptor);
-        return static_cast<u32>(descriptors.size()) - 1;
+    u32 Add(const TextureDescriptor& desc) {
+        return Add(texture_descriptors, desc, [&desc](const auto& existing) {
+            return desc.cbuf_index == existing.cbuf_index &&
+                   desc.cbuf_offset == existing.cbuf_offset && desc.type == existing.type;
+        });
+    }
+
+    u32 Add(const TextureBufferDescriptor& desc) {
+        return Add(texture_buffer_descriptors, desc, [&desc](const auto& existing) {
+            return desc.cbuf_index == existing.cbuf_index &&
+                   desc.cbuf_offset == existing.cbuf_offset;
+        });
     }
 
 private:
-    TextureDescriptors& descriptors;
+    template <typename Descriptors, typename Descriptor, typename Func>
+    static u32 Add(Descriptors& descriptors, const Descriptor& desc, Func&& pred) {
+        // TODO: Handle arrays
+        const auto it{std::ranges::find_if(descriptors, pred)};
+        if (it != descriptors.end()) {
+            return static_cast<u32>(std::distance(descriptors.begin(), it));
+        }
+        descriptors.push_back(desc);
+        return static_cast<u32>(descriptors.size()) - 1;
+    }
+
+    TextureDescriptors& texture_descriptors;
+    TextureBufferDescriptors& texture_buffer_descriptors;
 };
 } // Anonymous namespace
 
@@ -185,7 +200,10 @@ void TexturePass(Environment& env, IR::Program& program) {
     std::stable_sort(to_replace.begin(), to_replace.end(), [](const auto& lhs, const auto& rhs) {
         return lhs.cbuf.index < rhs.cbuf.index;
     });
-    Descriptors descriptors{program.info.texture_descriptors};
+    Descriptors descriptors{
+        program.info.texture_descriptors,
+        program.info.texture_buffer_descriptors,
+    };
     for (TextureInst& texture_inst : to_replace) {
         // TODO: Handle arrays
         IR::Inst* const inst{texture_inst.inst};
@@ -193,16 +211,42 @@ void TexturePass(Environment& env, IR::Program& program) {
 
         const auto& cbuf{texture_inst.cbuf};
         auto flags{inst->Flags<IR::TextureInstInfo>()};
-        if (inst->Opcode() == IR::Opcode::ImageQueryDimensions) {
+        switch (inst->Opcode()) {
+        case IR::Opcode::ImageQueryDimensions:
             flags.type.Assign(env.ReadTextureType(cbuf.index, cbuf.offset));
             inst->SetFlags(flags);
+            break;
+        case IR::Opcode::ImageFetch:
+            if (flags.type != TextureType::Color1D) {
+                break;
+            }
+            if (env.ReadTextureType(cbuf.index, cbuf.offset) == TextureType::Buffer) {
+                // Replace with the bound texture type only when it's a texture buffer
+                // If the instruction is 1D and the bound type is 2D, don't change the code and let
+                // the rasterizer robustness handle it
+                // This happens on Fire Emblem: Three Houses
+                flags.type.Assign(TextureType::Buffer);
+            }
+            inst->SetFlags(flags);
+            break;
+        default:
+            break;
         }
-        const u32 index{descriptors.Add(TextureDescriptor{
-            .type{flags.type},
-            .cbuf_index{cbuf.index},
-            .cbuf_offset{cbuf.offset},
-            .count{1},
-        })};
+        u32 index;
+        if (flags.type == TextureType::Buffer) {
+            index = descriptors.Add(TextureBufferDescriptor{
+                .cbuf_index{cbuf.index},
+                .cbuf_offset{cbuf.offset},
+                .count{1},
+            });
+        } else {
+            index = descriptors.Add(TextureDescriptor{
+                .type{flags.type},
+                .cbuf_index{cbuf.index},
+                .cbuf_offset{cbuf.offset},
+                .count{1},
+            });
+        }
         inst->SetArg(0, IR::Value{index});
     }
 }

@@ -212,7 +212,7 @@ protected:
             case Tegra::Texture::TextureType::Texture2DArray:
                 return Shader::TextureType::ColorArray2D;
             case Tegra::Texture::TextureType::Texture1DBuffer:
-                throw Shader::NotImplementedException("Texture buffer");
+                return Shader::TextureType::Buffer;
             case Tegra::Texture::TextureType::TextureCubeArray:
                 return Shader::TextureType::ColorArrayCube;
             default:

@@ -169,18 +169,22 @@ void GraphicsPipeline::Configure(bool is_indexed) {
             ++index;
         }
         const auto& cbufs{maxwell3d.state.shader_stages[stage].const_buffers};
-        for (const auto& desc : info.texture_descriptors) {
-            const u32 cbuf_index{desc.cbuf_index};
-            const u32 cbuf_offset{desc.cbuf_offset};
+        const auto read_handle{[&](u32 cbuf_index, u32 cbuf_offset) {
             ASSERT(cbufs[cbuf_index].enabled);
             const GPUVAddr addr{cbufs[cbuf_index].address + cbuf_offset};
             const u32 raw_handle{gpu_memory.Read<u32>(addr)};
-
-            const TextureHandle handle(raw_handle, via_header_index);
+            return TextureHandle(raw_handle, via_header_index);
+        }};
+        for (const auto& desc : info.texture_descriptors) {
+            const TextureHandle handle{read_handle(desc.cbuf_index, desc.cbuf_offset)};
             image_view_indices.push_back(handle.image);
 
             Sampler* const sampler{texture_cache.GetGraphicsSampler(handle.sampler)};
             samplers.push_back(sampler->Handle());
+        }
+        for (const auto& desc : info.texture_buffer_descriptors) {
+            const TextureHandle handle{read_handle(desc.cbuf_index, desc.cbuf_offset)};
+            image_view_indices.push_back(handle.image);
         }
     }
     const std::span indices_span(image_view_indices.data(), image_view_indices.size());
