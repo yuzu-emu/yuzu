@@ -77,7 +77,7 @@ public:
         }
         boost::container::static_vector<Id, 3> deriv_x_accum;
         boost::container::static_vector<Id, 3> deriv_y_accum;
-        for (size_t i = 0; i < num_derivates; i++) {
+        for (u32 i = 0; i < num_derivates; ++i) {
             deriv_x_accum.push_back(ctx.OpCompositeExtract(ctx.F32[1], derivates, i * 2));
             deriv_y_accum.push_back(ctx.OpCompositeExtract(ctx.F32[1], derivates, i * 2 + 1));
         }
