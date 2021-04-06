@@ -197,7 +197,7 @@ Function::Function(ObjectPool<Block>& block_pool, Location start_address)
                                  }} {}
 
 CFG::CFG(Environment& env_, ObjectPool<Block>& block_pool_, Location start_address)
-    : env{env_}, block_pool{block_pool_} {
+    : env{env_}, block_pool{block_pool_}, program_start{start_address} {
     functions.emplace_back(block_pool, start_address);
     for (FunctionId function_id = 0; function_id < functions.size(); ++function_id) {
         while (!functions[function_id].labels.empty()) {
@@ -427,9 +427,9 @@ void CFG::AnalyzeBRA(Block* block, FunctionId function_id, Location pc, Instruct
 
 CFG::AnalysisState CFG::AnalyzeBRX(Block* block, Location pc, Instruction inst, bool is_absolute,
                                    FunctionId function_id) {
-    const std::optional brx_table{TrackIndirectBranchTable(env, pc, block->begin)};
+    const std::optional brx_table{TrackIndirectBranchTable(env, pc, program_start)};
     if (!brx_table) {
-        TrackIndirectBranchTable(env, pc, block->begin);
+        TrackIndirectBranchTable(env, pc, program_start);
         throw NotImplementedException("Failed to track indirect branch");
     }
     const IR::FlowTest flow_test{inst.branch.flow_test};
