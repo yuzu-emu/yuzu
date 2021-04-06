@@ -19,8 +19,7 @@ void FCMP(TranslatorVisitor& v, u64 insn, const IR::U32& src_a, const IR::F32& o
     } const fcmp{insn};
 
     const IR::F32 zero{v.ir.Imm32(0.0f)};
-    const IR::F32 neg_zero{v.ir.Imm32(-0.0f)};
-    const IR::FpControl control{.fmz_mode{fcmp.ftz != 0 ? IR::FmzMode::FTZ : IR::FmzMode::None}};
+    const IR::FpControl control{.fmz_mode = (fcmp.ftz != 0 ? IR::FmzMode::FTZ : IR::FmzMode::None)};
     const IR::U1 cmp_result{FloatingPointCompare(v.ir, operand, zero, fcmp.compare_op, control)};
     const IR::U32 src_reg{v.X(fcmp.src_reg)};
     const IR::U32 result{v.ir.Select(cmp_result, src_reg, src_a)};

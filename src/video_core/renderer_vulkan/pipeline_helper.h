@@ -85,16 +85,16 @@ public:
     }
 
     void Add(const Shader::Info& info, VkShaderStageFlags stage) {
-        for (const auto& desc : info.constant_buffer_descriptors) {
+        for ([[maybe_unused]] const auto& desc : info.constant_buffer_descriptors) {
             Add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stage);
         }
-        for (const auto& desc : info.storage_buffers_descriptors) {
+        for ([[maybe_unused]] const auto& desc : info.storage_buffers_descriptors) {
             Add(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, stage);
         }
-        for (const auto& desc : info.texture_buffer_descriptors) {
+        for ([[maybe_unused]] const auto& desc : info.texture_buffer_descriptors) {
             Add(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, stage);
         }
-        for (const auto& desc : info.texture_descriptors) {
+        for ([[maybe_unused]] const auto& desc : info.texture_descriptors) {
             Add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage);
         }
     }

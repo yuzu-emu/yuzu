@@ -40,7 +40,6 @@ std::pair<int, bool> GetSize(u64 insn) {
         BitField<48, 3, Size> size;
     } const encoding{insn};
 
-    const Size nnn = encoding.size;
     switch (encoding.size) {
     case Size::U8:
         return {8, false};
@@ -99,7 +98,7 @@ void TranslatorVisitor::LDL(u64 insn) {
     case 32:
     case 64:
     case 128:
-        if (!IR::IsAligned(dest, bit_size / 32)) {
+        if (!IR::IsAligned(dest, static_cast<size_t>(bit_size / 32))) {
             throw NotImplementedException("Unaligned destination register {}", dest);
         }
         X(dest, ir.LoadLocal(word_offset));
@@ -123,11 +122,11 @@ void TranslatorVisitor::LDS(u64 insn) {
         break;
     case 64:
     case 128:
-        if (!IR::IsAligned(dest, bit_size / 32)) {
+        if (!IR::IsAligned(dest, static_cast<size_t>(bit_size / 32))) {
             throw NotImplementedException("Unaligned destination register {}", dest);
         }
         for (int element = 0; element < bit_size / 32; ++element) {
-            X(dest + element, IR::U32{ir.CompositeExtract(value, element)});
+            X(dest + element, IR::U32{ir.CompositeExtract(value, static_cast<size_t>(element))});
         }
         break;
     }
@@ -156,7 +155,7 @@ void TranslatorVisitor::STL(u64 insn) {
     case 32:
     case 64:
     case 128:
-        if (!IR::IsAligned(reg, bit_size / 32)) {
+        if (!IR::IsAligned(reg, static_cast<size_t>(bit_size / 32))) {
             throw NotImplementedException("Unaligned source register");
         }
         ir.WriteLocal(word_offset, src);

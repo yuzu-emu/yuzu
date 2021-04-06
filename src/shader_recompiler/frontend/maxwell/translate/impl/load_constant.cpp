@@ -50,7 +50,7 @@ void TranslatorVisitor::LDC(u64 insn) {
         }
         const IR::Value vector{ir.GetCbuf(index, offset, 64, false)};
         for (int i = 0; i < 2; ++i) {
-            X(ldc.dest_reg + i, IR::U32{ir.CompositeExtract(vector, i)});
+            X(ldc.dest_reg + i, IR::U32{ir.CompositeExtract(vector, static_cast<size_t>(i))});
         }
         break;
     }

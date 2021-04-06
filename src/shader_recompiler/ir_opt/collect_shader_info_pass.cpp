@@ -6,6 +6,7 @@
 #include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/modifiers.h"
 #include "shader_recompiler/frontend/ir/program.h"
+#include "shader_recompiler/ir_opt/passes.h"
 #include "shader_recompiler/shader_info.h"
 
 namespace Shader::Optimization {
@@ -22,8 +23,8 @@ void AddConstantBufferDescriptor(Info& info, u32 index, u32 count) {
     auto& cbufs{info.constant_buffer_descriptors};
     cbufs.insert(std::ranges::lower_bound(cbufs, index, {}, &ConstantBufferDescriptor::index),
                  ConstantBufferDescriptor{
-                     .index{index},
-                     .count{1},
+                     .index = index,
+                     .count = 1,
                  });
 }
 
@@ -91,7 +92,7 @@ void SetAttribute(Info& info, IR::Attribute attribute) {
 }
 
 void VisitUsages(Info& info, IR::Inst& inst) {
-    switch (inst.Opcode()) {
+    switch (inst.GetOpcode()) {
     case IR::Opcode::CompositeConstructF16x2:
     case IR::Opcode::CompositeConstructF16x3:
     case IR::Opcode::CompositeConstructF16x4:
@@ -209,7 +210,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     default:
         break;
     }
-    switch (inst.Opcode()) {
+    switch (inst.GetOpcode()) {
     case IR::Opcode::GetCbufU8:
     case IR::Opcode::GetCbufS8:
     case IR::Opcode::UndefU8:
@@ -236,7 +237,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     default:
         break;
     }
-    switch (inst.Opcode()) {
+    switch (inst.GetOpcode()) {
     case IR::Opcode::GetCbufU16:
     case IR::Opcode::GetCbufS16:
     case IR::Opcode::UndefU16:
@@ -271,7 +272,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     default:
         break;
     }
-    switch (inst.Opcode()) {
+    switch (inst.GetOpcode()) {
     case IR::Opcode::UndefU64:
     case IR::Opcode::LoadGlobalU8:
     case IR::Opcode::LoadGlobalS8:
@@ -314,7 +315,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     default:
         break;
     }
-    switch (inst.Opcode()) {
+    switch (inst.GetOpcode()) {
     case IR::Opcode::DemoteToHelperInvocation:
         info.uses_demote_to_helper_invocation = true;
         break;
@@ -361,7 +362,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
         } else {
             throw NotImplementedException("Constant buffer with non-immediate index");
         }
-        switch (inst.Opcode()) {
+        switch (inst.GetOpcode()) {
         case IR::Opcode::GetCbufU8:
         case IR::Opcode::GetCbufS8:
             info.used_constant_buffer_types |= IR::Type::U8;
@@ -443,7 +444,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
 }
 
 void VisitFpModifiers(Info& info, IR::Inst& inst) {
-    switch (inst.Opcode()) {
+    switch (inst.GetOpcode()) {
     case IR::Opcode::FPAdd16:
     case IR::Opcode::FPFma16:
     case IR::Opcode::FPMul16:
@@ -540,7 +541,6 @@ void GatherInfoFromHeader(Environment& env, Info& info) {
         info.stores_position |= header.vtg.omap_systemb.position != 0;
     }
 }
-
 } // Anonymous namespace
 
 void CollectShaderInfoPass(Environment& env, IR::Program& program) {

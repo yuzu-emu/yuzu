@@ -41,9 +41,9 @@ void HSET2(TranslatorVisitor& v, u64 insn, const IR::U32& src_b, bool bf, bool f
     rhs_b = v.ir.FPAbsNeg(rhs_b, abs_b, neg_b);
 
     const IR::FpControl control{
-        .no_contraction{false},
-        .rounding{IR::FpRounding::DontCare},
-        .fmz_mode{ftz ? IR::FmzMode::FTZ : IR::FmzMode::None},
+        .no_contraction = false,
+        .rounding = IR::FpRounding::DontCare,
+        .fmz_mode = (ftz ? IR::FmzMode::FTZ : IR::FmzMode::None),
     };
 
     IR::U1 pred{v.ir.GetPred(hset2.pred)};
@@ -106,8 +106,9 @@ void TranslatorVisitor::HSET2_imm(u64 insn) {
         BitField<20, 9, u64> low;
     } const hset2{insn};
 
-    const u32 imm{static_cast<u32>(hset2.low << 6) | ((hset2.neg_low != 0 ? 1 : 0) << 15) |
-                  static_cast<u32>(hset2.high << 22) | ((hset2.neg_high != 0 ? 1 : 0) << 31)};
+    const u32 imm{
+        static_cast<u32>(hset2.low << 6) | static_cast<u32>((hset2.neg_low != 0 ? 1 : 0) << 15) |
+        static_cast<u32>(hset2.high << 22) | static_cast<u32>((hset2.neg_high != 0 ? 1 : 0) << 31)};
 
     HSET2(*this, insn, ir.Imm32(imm), hset2.bf != 0, hset2.ftz != 0, false, false, hset2.compare_op,
           Swizzle::H1_H0);

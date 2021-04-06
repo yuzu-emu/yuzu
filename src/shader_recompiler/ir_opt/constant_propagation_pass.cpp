@@ -58,7 +58,7 @@ bool FoldCommutative(IR::Inst& inst, ImmFn&& imm_fn) {
     }
     if (is_lhs_immediate && !is_rhs_immediate) {
         IR::Inst* const rhs_inst{rhs.InstRecursive()};
-        if (rhs_inst->Opcode() == inst.Opcode() && rhs_inst->Arg(1).IsImmediate()) {
+        if (rhs_inst->GetOpcode() == inst.GetOpcode() && rhs_inst->Arg(1).IsImmediate()) {
             const auto combined{imm_fn(Arg<T>(lhs), Arg<T>(rhs_inst->Arg(1)))};
             inst.SetArg(0, rhs_inst->Arg(0));
             inst.SetArg(1, IR::Value{combined});
@@ -70,7 +70,7 @@ bool FoldCommutative(IR::Inst& inst, ImmFn&& imm_fn) {
     }
     if (!is_lhs_immediate && is_rhs_immediate) {
         const IR::Inst* const lhs_inst{lhs.InstRecursive()};
-        if (lhs_inst->Opcode() == inst.Opcode() && lhs_inst->Arg(1).IsImmediate()) {
+        if (lhs_inst->GetOpcode() == inst.GetOpcode() && lhs_inst->Arg(1).IsImmediate()) {
             const auto combined{imm_fn(Arg<T>(rhs), Arg<T>(lhs_inst->Arg(1)))};
             inst.SetArg(0, lhs_inst->Arg(0));
             inst.SetArg(1, IR::Value{combined});
@@ -123,7 +123,8 @@ bool FoldXmadMultiply(IR::Block& block, IR::Inst& inst) {
         return false;
     }
     IR::Inst* const lhs_shl{lhs_arg.InstRecursive()};
-    if (lhs_shl->Opcode() != IR::Opcode::ShiftLeftLogical32 || lhs_shl->Arg(1) != IR::Value{16U}) {
+    if (lhs_shl->GetOpcode() != IR::Opcode::ShiftLeftLogical32 ||
+        lhs_shl->Arg(1) != IR::Value{16U}) {
         return false;
     }
     if (lhs_shl->Arg(0).IsImmediate()) {
@@ -131,7 +132,7 @@ bool FoldXmadMultiply(IR::Block& block, IR::Inst& inst) {
     }
     IR::Inst* const lhs_mul{lhs_shl->Arg(0).InstRecursive()};
     IR::Inst* const rhs_mul{rhs_arg.InstRecursive()};
-    if (lhs_mul->Opcode() != IR::Opcode::IMul32 || rhs_mul->Opcode() != IR::Opcode::IMul32) {
+    if (lhs_mul->GetOpcode() != IR::Opcode::IMul32 || rhs_mul->GetOpcode() != IR::Opcode::IMul32) {
         return false;
     }
     if (lhs_mul->Arg(1).Resolve() != rhs_mul->Arg(1).Resolve()) {
@@ -143,10 +144,10 @@ bool FoldXmadMultiply(IR::Block& block, IR::Inst& inst) {
     }
     IR::Inst* const lhs_bfe{lhs_mul->Arg(0).InstRecursive()};
     IR::Inst* const rhs_bfe{rhs_mul->Arg(0).InstRecursive()};
-    if (lhs_bfe->Opcode() != IR::Opcode::BitFieldUExtract) {
+    if (lhs_bfe->GetOpcode() != IR::Opcode::BitFieldUExtract) {
         return false;
     }
-    if (rhs_bfe->Opcode() != IR::Opcode::BitFieldUExtract) {
+    if (rhs_bfe->GetOpcode() != IR::Opcode::BitFieldUExtract) {
         return false;
     }
     if (lhs_bfe->Arg(1) != IR::Value{16U} || lhs_bfe->Arg(2) != IR::Value{16U}) {
@@ -194,8 +195,9 @@ void FoldISub32(IR::Inst& inst) {
     // ISub32 is generally used to subtract two constant buffers, compare and replace this with
     // zero if they equal.
     const auto equal_cbuf{[](IR::Inst* a, IR::Inst* b) {
-        return a->Opcode() == IR::Opcode::GetCbufU32 && b->Opcode() == IR::Opcode::GetCbufU32 &&
-               a->Arg(0) == b->Arg(0) && a->Arg(1) == b->Arg(1);
+        return a->GetOpcode() == IR::Opcode::GetCbufU32 &&
+               b->GetOpcode() == IR::Opcode::GetCbufU32 && a->Arg(0) == b->Arg(0) &&
+               a->Arg(1) == b->Arg(1);
     }};
     IR::Inst* op_a{inst.Arg(0).InstRecursive()};
     IR::Inst* op_b{inst.Arg(1).InstRecursive()};
@@ -204,15 +206,15 @@ void FoldISub32(IR::Inst& inst) {
         return;
     }
     // It's also possible a value is being added to a cbuf and then subtracted
-    if (op_b->Opcode() == IR::Opcode::IAdd32) {
+    if (op_b->GetOpcode() == IR::Opcode::IAdd32) {
         // Canonicalize local variables to simplify the following logic
         std::swap(op_a, op_b);
     }
-    if (op_b->Opcode() != IR::Opcode::GetCbufU32) {
+    if (op_b->GetOpcode() != IR::Opcode::GetCbufU32) {
         return;
     }
     IR::Inst* const inst_cbuf{op_b};
-    if (op_a->Opcode() != IR::Opcode::IAdd32) {
+    if (op_a->GetOpcode() != IR::Opcode::IAdd32) {
         return;
     }
     IR::Value add_op_a{op_a->Arg(0)};
@@ -250,7 +252,8 @@ void FoldFPMul32(IR::Inst& inst) {
     }
     IR::Inst* const lhs_op{lhs_value.InstRecursive()};
     IR::Inst* const rhs_op{rhs_value.InstRecursive()};
-    if (lhs_op->Opcode() != IR::Opcode::FPMul32 || rhs_op->Opcode() != IR::Opcode::FPRecip32) {
+    if (lhs_op->GetOpcode() != IR::Opcode::FPMul32 ||
+        rhs_op->GetOpcode() != IR::Opcode::FPRecip32) {
         return;
     }
     const IR::Value recip_source{rhs_op->Arg(0)};
@@ -260,8 +263,8 @@ void FoldFPMul32(IR::Inst& inst) {
     }
     IR::Inst* const attr_a{recip_source.InstRecursive()};
     IR::Inst* const attr_b{lhs_mul_source.InstRecursive()};
-    if (attr_a->Opcode() != IR::Opcode::GetAttribute ||
-        attr_b->Opcode() != IR::Opcode::GetAttribute) {
+    if (attr_a->GetOpcode() != IR::Opcode::GetAttribute ||
+        attr_b->GetOpcode() != IR::Opcode::GetAttribute) {
         return;
     }
     if (attr_a->Arg(0).Attribute() == attr_b->Arg(0).Attribute()) {
@@ -304,7 +307,7 @@ void FoldLogicalNot(IR::Inst& inst) {
         return;
     }
     IR::Inst* const arg{value.InstRecursive()};
-    if (arg->Opcode() == IR::Opcode::LogicalNot) {
+    if (arg->GetOpcode() == IR::Opcode::LogicalNot) {
         inst.ReplaceUsesWith(arg->Arg(0));
     }
 }
@@ -317,12 +320,12 @@ void FoldBitCast(IR::Inst& inst, IR::Opcode reverse) {
         return;
     }
     IR::Inst* const arg_inst{value.InstRecursive()};
-    if (arg_inst->Opcode() == reverse) {
+    if (arg_inst->GetOpcode() == reverse) {
         inst.ReplaceUsesWith(arg_inst->Arg(0));
         return;
     }
     if constexpr (op == IR::Opcode::BitCastF32U32) {
-        if (arg_inst->Opcode() == IR::Opcode::GetCbufU32) {
+        if (arg_inst->GetOpcode() == IR::Opcode::GetCbufU32) {
             // Replace the bitcast with a typed constant buffer read
             inst.ReplaceOpcode(IR::Opcode::GetCbufF32);
             inst.SetArg(0, arg_inst->Arg(0));
@@ -338,7 +341,7 @@ void FoldInverseFunc(IR::Inst& inst, IR::Opcode reverse) {
         return;
     }
     IR::Inst* const arg_inst{value.InstRecursive()};
-    if (arg_inst->Opcode() == reverse) {
+    if (arg_inst->GetOpcode() == reverse) {
         inst.ReplaceUsesWith(arg_inst->Arg(0));
         return;
     }
@@ -347,7 +350,7 @@ void FoldInverseFunc(IR::Inst& inst, IR::Opcode reverse) {
 template <typename Func, size_t... I>
 IR::Value EvalImmediates(const IR::Inst& inst, Func&& func, std::index_sequence<I...>) {
     using Traits = LambdaTraits<decltype(func)>;
-    return IR::Value{func(Arg<Traits::ArgType<I>>(inst.Arg(I))...)};
+    return IR::Value{func(Arg<typename Traits::template ArgType<I>>(inst.Arg(I))...)};
 }
 
 void FoldBranchConditional(IR::Inst& inst) {
@@ -357,7 +360,7 @@ void FoldBranchConditional(IR::Inst& inst) {
         return;
     }
     const IR::Inst* cond_inst{cond.InstRecursive()};
-    if (cond_inst->Opcode() == IR::Opcode::LogicalNot) {
+    if (cond_inst->GetOpcode() == IR::Opcode::LogicalNot) {
         const IR::Value true_label{inst.Arg(1)};
         const IR::Value false_label{inst.Arg(2)};
         // Remove negation on the conditional (take the parameter out of LogicalNot) and swap
@@ -371,10 +374,10 @@ void FoldBranchConditional(IR::Inst& inst) {
 std::optional<IR::Value> FoldCompositeExtractImpl(IR::Value inst_value, IR::Opcode insert,
                                                   IR::Opcode construct, u32 first_index) {
     IR::Inst* const inst{inst_value.InstRecursive()};
-    if (inst->Opcode() == construct) {
+    if (inst->GetOpcode() == construct) {
         return inst->Arg(first_index);
     }
-    if (inst->Opcode() != insert) {
+    if (inst->GetOpcode() != insert) {
         return std::nullopt;
     }
     IR::Value value_index{inst->Arg(2)};
@@ -410,7 +413,7 @@ void FoldCompositeExtract(IR::Inst& inst, IR::Opcode construct, IR::Opcode inser
 }
 
 void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
-    switch (inst.Opcode()) {
+    switch (inst.GetOpcode()) {
     case IR::Opcode::GetRegister:
         return FoldGetRegister(inst);
     case IR::Opcode::GetPred:

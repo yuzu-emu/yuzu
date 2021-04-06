@@ -43,11 +43,13 @@ public:
             // LOG_WARNING("Not all arguments in PTP are immediate, STUBBING");
             return;
         }
-        const IR::Opcode opcode{values[0]->Opcode()};
-        if (opcode != values[1]->Opcode() || opcode != IR::Opcode::CompositeConstructU32x4) {
+        const IR::Opcode opcode{values[0]->GetOpcode()};
+        if (opcode != values[1]->GetOpcode() || opcode != IR::Opcode::CompositeConstructU32x4) {
             throw LogicError("Invalid PTP arguments");
         }
-        auto read{[&](int a, int b) { return ctx.Constant(ctx.U32[1], values[a]->Arg(b).U32()); }};
+        auto read{[&](unsigned int a, unsigned int b) {
+            return ctx.Constant(ctx.U32[1], values[a]->Arg(b).U32());
+        }};
 
         const Id offsets{
             ctx.ConstantComposite(ctx.TypeArray(ctx.U32[2], ctx.Constant(ctx.U32[1], 4)),
@@ -297,13 +299,14 @@ Id EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id 
 
 Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
                        const IR::Value& offset, const IR::Value& offset2, Id dref) {
-    const auto info{inst->Flags<IR::TextureInstInfo>()};
     const ImageOperands operands(ctx, offset, offset2);
     return Emit(&EmitContext::OpImageSparseDrefGather, &EmitContext::OpImageDrefGather, ctx, inst,
                 ctx.F32[4], Texture(ctx, index), coords, dref, operands.Mask(), operands.Span());
 }
 
+#ifdef _WIN32
 #pragma optimize("", off)
+#endif
 
 Id EmitImageFetch(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords, Id offset,
                   Id lod, Id ms) {

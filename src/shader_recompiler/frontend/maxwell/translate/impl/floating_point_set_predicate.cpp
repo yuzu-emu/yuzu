@@ -29,9 +29,9 @@ void FSETP(TranslatorVisitor& v, u64 insn, const IR::F32& src_b) {
     const IR::F32 op_a{v.ir.FPAbsNeg(v.F(fsetp.src_a_reg), fsetp.abs_a != 0, fsetp.negate_a != 0)};
     const IR::F32 op_b = v.ir.FPAbsNeg(src_b, fsetp.abs_b != 0, fsetp.negate_b != 0);
     const IR::FpControl control{
-        .no_contraction{false},
-        .rounding{IR::FpRounding::DontCare},
-        .fmz_mode{fsetp.ftz != 0 ? IR::FmzMode::FTZ : IR::FmzMode::None},
+        .no_contraction = false,
+        .rounding = IR::FpRounding::DontCare,
+        .fmz_mode = (fsetp.ftz != 0 ? IR::FmzMode::FTZ : IR::FmzMode::None),
     };
 
     const BooleanOp bop{fsetp.bop};

@@ -57,9 +57,9 @@ void F2F(TranslatorVisitor& v, u64 insn, const IR::F16F32F64& src_a, bool abs) {
 
     const bool any_fp64{f2f.src_size == FloatFormat::F64 || f2f.dst_size == FloatFormat::F64};
     IR::FpControl fp_control{
-        .no_contraction{false},
-        .rounding{IR::FpRounding::DontCare},
-        .fmz_mode{f2f.ftz != 0 && !any_fp64 ? IR::FmzMode::FTZ : IR::FmzMode::None},
+        .no_contraction = false,
+        .rounding = IR::FpRounding::DontCare,
+        .fmz_mode = (f2f.ftz != 0 && !any_fp64 ? IR::FmzMode::FTZ : IR::FmzMode::None),
     };
     if (f2f.src_size != f2f.dst_size) {
         fp_control.rounding = CastFpRounding(f2f.rounding);

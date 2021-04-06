@@ -47,7 +47,7 @@ auto MakeSpan(Container& container) {
     return std::span(container.data(), container.size());
 }
 
-u64 MakeCbufKey(u32 index, u32 offset) {
+static u64 MakeCbufKey(u32 index, u32 offset) {
     return (static_cast<u64>(index) << 32) | offset;
 }
 
@@ -638,6 +638,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
         .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyBiggerThanGuest(),
         .has_broken_spirv_clamp = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS_KHR,
         .generic_input_types{},
+        .fixed_state_point_size{},
     };
 }
 
@@ -748,7 +749,7 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
         Shader::Environment& env{*envs[env_index]};
         ++env_index;
 
-        const u32 cfg_offset{env.StartAddress() + sizeof(Shader::ProgramHeader)};
+        const u32 cfg_offset{static_cast<u32>(env.StartAddress() + sizeof(Shader::ProgramHeader))};
         Shader::Maxwell::Flow::CFG cfg(env, pools.flow_block, cfg_offset);
         programs[index] = TranslateProgram(pools.inst, pools.block, env, cfg);
     }

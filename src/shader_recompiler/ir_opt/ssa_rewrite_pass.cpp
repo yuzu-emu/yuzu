@@ -116,7 +116,7 @@ IR::Opcode UndefOpcode(IndirectBranchVariable) noexcept {
 }
 
 [[nodiscard]] bool IsPhi(const IR::Inst& inst) noexcept {
-    return inst.Opcode() == IR::Opcode::Phi;
+    return inst.GetOpcode() == IR::Opcode::Phi;
 }
 
 enum class Status {
@@ -278,7 +278,7 @@ private:
 };
 
 void VisitInst(Pass& pass, IR::Block* block, IR::Inst& inst) {
-    switch (inst.Opcode()) {
+    switch (inst.GetOpcode()) {
     case IR::Opcode::SetRegister:
         if (const IR::Reg reg{inst.Arg(0).Reg()}; reg != IR::Reg::RZ) {
             pass.WriteVariable(reg, block, inst.Arg(1));

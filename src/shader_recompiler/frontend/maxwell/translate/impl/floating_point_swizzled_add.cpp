@@ -28,9 +28,9 @@ void TranslatorVisitor::FSWZADD(u64 insn) {
     const IR::U32 swizzle{ir.Imm32(static_cast<u32>(fswzadd.swizzle))};
 
     const IR::FpControl fp_control{
-        .no_contraction{false},
-        .rounding{CastFpRounding(fswzadd.round)},
-        .fmz_mode{fswzadd.ftz != 0 ? IR::FmzMode::FTZ : IR::FmzMode::None},
+        .no_contraction = false,
+        .rounding = CastFpRounding(fswzadd.round),
+        .fmz_mode = (fswzadd.ftz != 0 ? IR::FmzMode::FTZ : IR::FmzMode::None),
     };
 
     const IR::F32 result{ir.FSwizzleAdd(src_a, src_b, swizzle, fp_control)};

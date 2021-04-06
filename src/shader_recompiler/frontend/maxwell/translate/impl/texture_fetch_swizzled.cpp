@@ -53,7 +53,7 @@ constexpr std::array RGBA_LUT{
     R | G | B | A, //
 };
 
-void CheckAlignment(IR::Reg reg, int alignment) {
+void CheckAlignment(IR::Reg reg, size_t alignment) {
     if (!IR::IsAligned(reg, alignment)) {
         throw NotImplementedException("Unaligned source register {}", reg);
     }

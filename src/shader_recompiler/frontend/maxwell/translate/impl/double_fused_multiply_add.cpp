@@ -25,9 +25,9 @@ void DFMA(TranslatorVisitor& v, u64 insn, const IR::F64& src_b, const IR::F64& s
     const IR::F64 op_c{v.ir.FPAbsNeg(src_c, false, dfma.neg_c != 0)};
 
     const IR::FpControl control{
-        .no_contraction{true},
-        .rounding{CastFpRounding(dfma.fp_rounding)},
-        .fmz_mode{IR::FmzMode::None},
+        .no_contraction = true,
+        .rounding = CastFpRounding(dfma.fp_rounding),
+        .fmz_mode = IR::FmzMode::None,
     };
 
     v.D(dfma.dest_reg, v.ir.FPFma(src_a, op_b, op_c, control));

@@ -45,7 +45,7 @@ constexpr MaskValue MaskValueFromEncoding(const char* encoding) {
             bit >>= 1;
         }
     }
-    return MaskValue{.mask{mask}, .value{value}};
+    return MaskValue{.mask = mask, .value = value};
 }
 
 struct InstEncoding {
@@ -56,7 +56,7 @@ constexpr std::array UNORDERED_ENCODINGS{
 #define INST(name, cute, encode)                                                                   \
     InstEncoding{                                                                                  \
         .mask_value{MaskValueFromEncoding(encode)},                                                \
-        .opcode{Opcode::name},                                                                     \
+        .opcode = Opcode::name,                                                                     \
     },
 #include "maxwell.inc"
 #undef INST
@@ -116,9 +116,9 @@ constexpr auto MakeFastLookupTableIndex(size_t index) {
         const size_t value{ToFastLookupIndex(encoding.mask_value.value)};
         if ((index & mask) == value) {
             encodings.at(element) = InstInfo{
-                .high_mask{static_cast<u16>(encoding.mask_value.mask >> MASK_SHIFT)},
-                .high_value{static_cast<u16>(encoding.mask_value.value >> MASK_SHIFT)},
-                .opcode{encoding.opcode},
+                .high_mask = static_cast<u16>(encoding.mask_value.mask >> MASK_SHIFT),
+                .high_value = static_cast<u16>(encoding.mask_value.value >> MASK_SHIFT),
+                .opcode = encoding.opcode,
             };
             ++element;
         }

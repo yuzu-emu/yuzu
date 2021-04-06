@@ -16,7 +16,7 @@
 namespace Shader::Backend::SPIRV {
 namespace {
 template <class Func>
-struct FuncTraits : FuncTraits<Func> {};
+struct FuncTraits {};
 
 template <class ReturnType_, class... Args>
 struct FuncTraits<ReturnType_ (*)(Args...)> {
@@ -64,17 +64,20 @@ ArgType Arg(EmitContext& ctx, const IR::Value& arg) {
 template <auto func, bool is_first_arg_inst, size_t... I>
 void Invoke(EmitContext& ctx, IR::Inst* inst, std::index_sequence<I...>) {
     using Traits = FuncTraits<decltype(func)>;
-    if constexpr (std::is_same_v<Traits::ReturnType, Id>) {
+    if constexpr (std::is_same_v<typename Traits::ReturnType, Id>) {
         if constexpr (is_first_arg_inst) {
-            SetDefinition<func>(ctx, inst, inst, Arg<Traits::ArgType<I + 2>>(ctx, inst->Arg(I))...);
+            SetDefinition<func>(
+                ctx, inst, inst,
+                Arg<typename Traits::template ArgType<I + 2>>(ctx, inst->Arg(I))...);
         } else {
-            SetDefinition<func>(ctx, inst, Arg<Traits::ArgType<I + 1>>(ctx, inst->Arg(I))...);
+            SetDefinition<func>(
+                ctx, inst, Arg<typename Traits::template ArgType<I + 1>>(ctx, inst->Arg(I))...);
         }
     } else {
         if constexpr (is_first_arg_inst) {
-            func(ctx, inst, Arg<Traits::ArgType<I + 2>>(ctx, inst->Arg(I))...);
+            func(ctx, inst, Arg<typename Traits::template ArgType<I + 2>>(ctx, inst->Arg(I))...);
         } else {
-            func(ctx, Arg<Traits::ArgType<I + 1>>(ctx, inst->Arg(I))...);
+            func(ctx, Arg<typename Traits::template ArgType<I + 1>>(ctx, inst->Arg(I))...);
         }
     }
 }
@@ -94,14 +97,14 @@ void Invoke(EmitContext& ctx, IR::Inst* inst) {
 }
 
 void EmitInst(EmitContext& ctx, IR::Inst* inst) {
-    switch (inst->Opcode()) {
+    switch (inst->GetOpcode()) {
 #define OPCODE(name, result_type, ...)                                                             \
     case IR::Opcode::name:                                                                         \
         return Invoke<&Emit##name>(ctx, inst);
 #include "shader_recompiler/frontend/ir/opcodes.inc"
 #undef OPCODE
     }
-    throw LogicError("Invalid opcode {}", inst->Opcode());
+    throw LogicError("Invalid opcode {}", inst->GetOpcode());
 }
 
 Id TypeId(const EmitContext& ctx, IR::Type type) {

@@ -558,7 +558,6 @@ private:
         const Node label{goto_stmt->label};
         const u32 label_id{label->id};
         const Node label_nested_stmt{FindStatementWithLabel(body, goto_stmt)};
-        const auto type{label_nested_stmt->type};
 
         Tree loop_body;
         loop_body.splice(loop_body.begin(), body, label_nested_stmt, goto_stmt);
@@ -566,7 +565,7 @@ private:
         Statement* const variable{pool.Create(Variable{}, label_id)};
         Statement* const loop_stmt{pool.Create(Loop{}, variable, std::move(loop_body), parent)};
         UpdateTreeUp(loop_stmt);
-        const Node loop_node{body.insert(goto_stmt, *loop_stmt)};
+        body.insert(goto_stmt, *loop_stmt);
 
         Statement* const new_goto{pool.Create(Goto{}, variable, label, loop_stmt)};
         loop_stmt->children.push_front(*new_goto);

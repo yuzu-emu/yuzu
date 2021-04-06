@@ -17,10 +17,12 @@ struct Noisy {
     Noisy& operator=(Noisy&& rhs) noexcept {
         state = "Move assigned";
         rhs.state = "Moved away";
+        return *this;
     }
     Noisy(const Noisy&) : state{"Copied constructed"} {}
     Noisy& operator=(const Noisy&) {
         state = "Copied assigned";
+        return *this;
     }
 
     std::string state;

@@ -27,9 +27,9 @@ void FMNMX(TranslatorVisitor& v, u64 insn, const IR::F32& src_b) {
     const IR::F32 op_b{v.ir.FPAbsNeg(src_b, fmnmx.abs_b != 0, fmnmx.negate_b != 0)};
 
     const IR::FpControl control{
-        .no_contraction{false},
-        .rounding{IR::FpRounding::DontCare},
-        .fmz_mode{fmnmx.ftz != 0 ? IR::FmzMode::FTZ : IR::FmzMode::None},
+        .no_contraction = false,
+        .rounding = IR::FpRounding::DontCare,
+        .fmz_mode = (fmnmx.ftz != 0 ? IR::FmzMode::FTZ : IR::FmzMode::None),
     };
     IR::F32 max{v.ir.FPMax(op_a, op_b, control)};
     IR::F32 min{v.ir.FPMin(op_a, op_b, control)};

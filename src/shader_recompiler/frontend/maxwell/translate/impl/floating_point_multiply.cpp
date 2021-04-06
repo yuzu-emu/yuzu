@@ -64,9 +64,9 @@ void FMUL(TranslatorVisitor& v, u64 insn, const IR::F32& src_b, FmzMode fmz_mode
     }
     const IR::F32 op_b{v.ir.FPAbsNeg(src_b, false, neg_b)};
     const IR::FpControl fp_control{
-        .no_contraction{true},
-        .rounding{CastFpRounding(fp_rounding)},
-        .fmz_mode{CastFmzMode(fmz_mode)},
+        .no_contraction = true,
+        .rounding = CastFpRounding(fp_rounding),
+        .fmz_mode = CastFmzMode(fmz_mode),
     };
     IR::F32 value{v.ir.FPMul(op_a, op_b, fp_control)};
     if (fmz_mode == FmzMode::FMZ && !sat) {

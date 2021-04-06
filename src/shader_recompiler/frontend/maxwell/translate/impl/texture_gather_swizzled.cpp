@@ -37,7 +37,7 @@ union Encoding {
     BitField<36, 13, u64> cbuf_offset;
 };
 
-void CheckAlignment(IR::Reg reg, int alignment) {
+void CheckAlignment(IR::Reg reg, size_t alignment) {
     if (!IR::IsAligned(reg, alignment)) {
         throw NotImplementedException("Unaligned source register {}", reg);
     }

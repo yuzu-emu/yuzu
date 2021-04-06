@@ -12,7 +12,7 @@
 namespace Shader::IR {
 namespace {
 void CheckPseudoInstruction(IR::Inst* inst, IR::Opcode opcode) {
-    if (inst && inst->Opcode() != opcode) {
+    if (inst && inst->GetOpcode() != opcode) {
         throw LogicError("Invalid pseudo-instruction");
     }
 }
@@ -25,10 +25,16 @@ void SetPseudoInstruction(IR::Inst*& dest_inst, IR::Inst* pseudo_inst) {
 }
 
 void RemovePseudoInstruction(IR::Inst*& inst, IR::Opcode expected_opcode) {
-    if (inst->Opcode() != expected_opcode) {
+    if (inst->GetOpcode() != expected_opcode) {
         throw LogicError("Undoing use of invalid pseudo-op");
     }
     inst = nullptr;
+}
+
+void AllocAssociatedInsts(std::unique_ptr<AssociatedInsts>& associated_insts) {
+    if (!associated_insts) {
+        associated_insts = std::make_unique<AssociatedInsts>();
+    }
 }
 } // Anonymous namespace
 
@@ -247,12 +253,6 @@ void Inst::ReplaceOpcode(IR::Opcode opcode) {
         std::construct_at(&args);
     }
     op = opcode;
-}
-
-void AllocAssociatedInsts(std::unique_ptr<AssociatedInsts>& associated_insts) {
-    if (!associated_insts) {
-        associated_insts = std::make_unique<AssociatedInsts>();
-    }
 }
 
 void Inst::Use(const Value& value) {

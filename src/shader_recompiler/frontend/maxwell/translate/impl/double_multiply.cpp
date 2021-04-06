@@ -21,9 +21,9 @@ void DMUL(TranslatorVisitor& v, u64 insn, const IR::F64& src_b) {
 
     const IR::F64 src_a{v.ir.FPAbsNeg(v.D(dmul.src_a_reg), false, dmul.neg != 0)};
     const IR::FpControl control{
-        .no_contraction{true},
-        .rounding{CastFpRounding(dmul.fp_rounding)},
-        .fmz_mode{IR::FmzMode::None},
+        .no_contraction = true,
+        .rounding = CastFpRounding(dmul.fp_rounding),
+        .fmz_mode = IR::FmzMode::None,
     };
 
     v.D(dmul.dest_reg, v.ir.FPMul(src_a, src_b, control));

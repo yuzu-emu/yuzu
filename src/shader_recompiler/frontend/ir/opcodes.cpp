@@ -49,7 +49,7 @@ constexpr std::array META_TABLE{
 #define OPCODE(name_token, type_token, ...)                                                        \
     OpcodeMeta{                                                                                    \
         .name{#name_token},                                                                        \
-        .type{type_token},                                                                         \
+        .type = type_token,                                                                         \
         .arg_types{__VA_ARGS__},                                                                   \
     },
 #include "opcodes.inc"

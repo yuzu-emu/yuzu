@@ -7,7 +7,7 @@
 
 namespace Shader {
 
-class FileEnvironment final : public Environment {
+class FileEnvironment : public Environment {
 public:
     explicit FileEnvironment(const char* path);
     ~FileEnvironment() override;

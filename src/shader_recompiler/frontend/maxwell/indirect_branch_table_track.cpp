@@ -97,11 +97,11 @@ std::optional<IndirectBranchTableInfo> TrackIndirectBranchTable(Environment& env
     }
     const u32 imnmx_immediate{static_cast<u32>(imnmx.immediate.Value())};
     return IndirectBranchTableInfo{
-        .cbuf_index{cbuf_index},
-        .cbuf_offset{cbuf_offset},
-        .num_entries{imnmx_immediate + 1},
-        .branch_offset{brx_offset},
-        .branch_reg{brx_reg},
+        .cbuf_index = cbuf_index,
+        .cbuf_offset = cbuf_offset,
+        .num_entries = imnmx_immediate + 1,
+        .branch_offset = brx_offset,
+        .branch_reg = brx_reg,
     };
 }
 

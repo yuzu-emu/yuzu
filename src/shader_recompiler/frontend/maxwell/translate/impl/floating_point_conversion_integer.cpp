@@ -123,9 +123,9 @@ void TranslateF2I(TranslatorVisitor& v, u64 insn, const IR::F16F32F64& src_a) {
         fmz_mode = f2i.ftz != 0 ? IR::FmzMode::FTZ : IR::FmzMode::None;
     }
     const IR::FpControl fp_control{
-        .no_contraction{true},
-        .rounding{IR::FpRounding::DontCare},
-        .fmz_mode{fmz_mode},
+        .no_contraction = true,
+        .rounding = IR::FpRounding::DontCare,
+        .fmz_mode = fmz_mode,
     };
     const IR::F16F32F64 op_a{v.ir.FPAbsNeg(src_a, f2i.abs != 0, f2i.neg != 0)};
     const IR::F16F32F64 rounded_value{[&] {
@@ -186,14 +186,14 @@ void TranslateF2I(TranslatorVisitor& v, u64 insn, const IR::F16F32F64& src_a) {
         } else if (f2i.dest_format == DestFormat::I64) {
             handled_special_case = true;
             result = IR::U64{
-                v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm64(0x8000'0000'0000'0000ULL), result)};
+                v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm64(0x8000'0000'0000'0000UL), result)};
         }
     }
     if (!handled_special_case && is_signed) {
         if (bitsize != 64) {
             result = IR::U32{v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm32(0U), result)};
         } else {
-            result = IR::U64{v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm64(0ULL), result)};
+            result = IR::U64{v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm64(0UL), result)};
         }
     }
 
@@ -211,6 +211,7 @@ void TranslateF2I(TranslatorVisitor& v, u64 insn, const IR::F16F32F64& src_a) {
 
 void TranslatorVisitor::F2I_reg(u64 insn) {
     union {
+        u64 raw;
         F2I base;
         BitField<20, 8, IR::Reg> src_reg;
     } const f2i{insn};

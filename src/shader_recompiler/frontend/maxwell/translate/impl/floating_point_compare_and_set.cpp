@@ -29,9 +29,9 @@ void FSET(TranslatorVisitor& v, u64 insn, const IR::F32& src_b) {
     const IR::F32 op_a{v.ir.FPAbsNeg(v.F(fset.src_a_reg), fset.abs_a != 0, fset.negate_a != 0)};
     const IR::F32 op_b = v.ir.FPAbsNeg(src_b, fset.abs_b != 0, fset.negate_b != 0);
     const IR::FpControl control{
-        .no_contraction{false},
-        .rounding{IR::FpRounding::DontCare},
-        .fmz_mode{fset.ftz != 0 ? IR::FmzMode::FTZ : IR::FmzMode::None},
+        .no_contraction = false,
+        .rounding = IR::FpRounding::DontCare,
+        .fmz_mode = (fset.ftz != 0 ? IR::FmzMode::FTZ : IR::FmzMode::None),
     };
 
     IR::U1 pred{v.ir.GetPred(fset.pred)};
