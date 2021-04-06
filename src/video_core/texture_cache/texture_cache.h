@@ -1003,9 +1003,6 @@ void TextureCache<P>::UploadImageContents(Image& image, StagingBuffer& staging) 
         auto copies = UnswizzleImage(gpu_memory, gpu_addr, image.info, unswizzled_data);
         ConvertImage(unswizzled_data, image.info, mapped_span, copies);
         image.UploadMemory(staging, copies);
-    } else if (image.info.type == ImageType::Buffer) {
-        const std::array copies{UploadBufferCopy(gpu_memory, gpu_addr, image, mapped_span)};
-        image.UploadMemory(staging, copies);
     } else {
         const auto copies = UnswizzleImage(gpu_memory, gpu_addr, image.info, mapped_span);
         image.UploadMemory(staging, copies);
@@ -1028,7 +1025,12 @@ ImageViewId TextureCache<P>::FindImageView(const TICEntry& config) {
 template <class P>
 ImageViewId TextureCache<P>::CreateImageView(const TICEntry& config) {
     const ImageInfo info(config);
-    const GPUVAddr image_gpu_addr = config.Address() - config.BaseLayer() * info.layer_stride;
+    if (info.type == ImageType::Buffer) {
+        const ImageViewInfo view_info(config, 0);
+        return slot_image_views.insert(runtime, info, view_info, config.Address());
+    }
+    const u32 layer_offset = config.BaseLayer() * info.layer_stride;
+    const GPUVAddr image_gpu_addr = config.Address() - layer_offset;
     const ImageId image_id = FindOrInsertImage(info, image_gpu_addr);
     if (!image_id) {
         return NULL_IMAGE_VIEW_ID;
@@ -1836,6 +1838,9 @@ void TextureCache<P>::PrepareImageView(ImageViewId image_view_id, bool is_modifi
         return;
     }
     const ImageViewBase& image_view = slot_image_views[image_view_id];
+    if (image_view.IsBuffer()) {
+        return;
+    }
     PrepareImage(image_view.image_id, is_modification, invalidate);
 }
 

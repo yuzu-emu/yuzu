@@ -80,8 +80,6 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
                                               desc.is_written);
         ++ssbo_index;
     }
-    buffer_cache.UpdateComputeBuffers();
-    buffer_cache.BindHostComputeBuffers();
 
     texture_cache.SynchronizeComputeDescriptors();
 
@@ -99,6 +97,10 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
         const u32 raw_handle{gpu_memory.Read<u32>(addr)};
         return TextureHandle(raw_handle, via_header_index);
     }};
+    for (const auto& desc : info.texture_buffer_descriptors) {
+        const TextureHandle handle{read_handle(desc.cbuf_index, desc.cbuf_offset)};
+        image_view_indices.push_back(handle.image);
+    }
     for (const auto& desc : info.texture_descriptors) {
         const TextureHandle handle{read_handle(desc.cbuf_index, desc.cbuf_offset)};
         image_view_indices.push_back(handle.image);
@@ -106,16 +108,26 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
         Sampler* const sampler = texture_cache.GetComputeSampler(handle.sampler);
         samplers.push_back(sampler->Handle());
     }
-    for (const auto& desc : info.texture_buffer_descriptors) {
-        const TextureHandle handle{read_handle(desc.cbuf_index, desc.cbuf_offset)};
-        image_view_indices.push_back(handle.image);
-    }
     const std::span indices_span(image_view_indices.data(), image_view_indices.size());
     texture_cache.FillComputeImageViews(indices_span, image_view_ids);
 
-    size_t image_index{};
-    PushImageDescriptors(info, samplers.data(), image_view_ids.data(), texture_cache,
-                         update_descriptor_queue, image_index);
+    buffer_cache.UnbindComputeTextureBuffers();
+    ImageId* texture_buffer_ids{image_view_ids.data()};
+    size_t index{};
+    for (const auto& desc : info.texture_buffer_descriptors) {
+        ASSERT(desc.count == 1);
+        ImageView& image_view = texture_cache.GetImageView(*texture_buffer_ids);
+        buffer_cache.BindComputeTextureBuffer(index, image_view.GpuAddr(), image_view.BufferSize(),
+                                              image_view.format);
+        ++texture_buffer_ids;
+        ++index;
+    }
+    buffer_cache.UpdateComputeBuffers();
+    buffer_cache.BindHostComputeBuffers();
+
+    const VkSampler* samplers_it{samplers.data()};
+    const ImageId* views_it{image_view_ids.data()};
+    PushImageDescriptors(info, samplers_it, views_it, texture_cache, update_descriptor_queue);
 
     if (!is_built.load(std::memory_order::relaxed)) {
         // Wait for the pipeline to be built

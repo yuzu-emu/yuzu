@@ -15,10 +15,10 @@
 #include "video_core/renderer_vulkan/maxwell_to_vk.h"
 #include "video_core/renderer_vulkan/vk_compute_pass.h"
 #include "video_core/renderer_vulkan/vk_rasterizer.h"
+#include "video_core/renderer_vulkan/vk_render_pass_cache.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
-#include "video_core/renderer_vulkan/vk_render_pass_cache.h"
 #include "video_core/vulkan_common/vulkan_device.h"
 #include "video_core/vulkan_common/vulkan_memory_allocator.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
@@ -160,25 +160,6 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
         return vk::Image{};
     }
     return device.GetLogical().CreateImage(MakeImageCreateInfo(device, info));
-}
-
-[[nodiscard]] vk::Buffer MakeBuffer(const Device& device, const ImageInfo& info) {
-    if (info.type != ImageType::Buffer) {
-        return vk::Buffer{};
-    }
-    const size_t bytes_per_block = VideoCore::Surface::BytesPerBlock(info.format);
-    return device.GetLogical().CreateBuffer(VkBufferCreateInfo{
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .size = info.size.width * bytes_per_block,
-        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                 VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT |
-                 VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .queueFamilyIndexCount = 0,
-        .pQueueFamilyIndices = nullptr,
-    });
 }
 
 [[nodiscard]] VkImageAspectFlags ImageAspectMask(PixelFormat format) {
@@ -796,13 +777,9 @@ u64 TextureCacheRuntime::GetDeviceLocalMemory() const {
 Image::Image(TextureCacheRuntime& runtime, const ImageInfo& info_, GPUVAddr gpu_addr_,
              VAddr cpu_addr_)
     : VideoCommon::ImageBase(info_, gpu_addr_, cpu_addr_), scheduler{&runtime.scheduler},
-      image(MakeImage(runtime.device, info)), buffer(MakeBuffer(runtime.device, info)),
+      image(MakeImage(runtime.device, info)),
+      commit(runtime.memory_allocator.Commit(image, MemoryUsage::DeviceLocal)),
       aspect_mask(ImageAspectMask(info.format)) {
-    if (image) {
-        commit = runtime.memory_allocator.Commit(image, MemoryUsage::DeviceLocal);
-    } else {
-        commit = runtime.memory_allocator.Commit(buffer, MemoryUsage::DeviceLocal);
-    }
     if (IsPixelFormatASTC(info.format) && !runtime.device.IsOptimalAstcSupported()) {
         if (Settings::values.accelerate_astc.GetValue()) {
             flags |= VideoCommon::ImageFlagBits::AcceleratedUpload;
@@ -811,11 +788,7 @@ Image::Image(TextureCacheRuntime& runtime, const ImageInfo& info_, GPUVAddr gpu_
         }
     }
     if (runtime.device.HasDebuggingToolAttached()) {
-        if (image) {
-            image.SetObjectNameEXT(VideoCommon::Name(*this).c_str());
-        } else {
-            buffer.SetObjectNameEXT(VideoCommon::Name(*this).c_str());
-        }
+        image.SetObjectNameEXT(VideoCommon::Name(*this).c_str());
     }
     static constexpr VkImageViewUsageCreateInfo storage_image_view_usage_create_info{
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
@@ -864,19 +837,6 @@ void Image::UploadMemory(const StagingBufferRef& map, std::span<const BufferImag
     scheduler->Record([src_buffer, vk_image, vk_aspect_mask, is_initialized,
                        vk_copies](vk::CommandBuffer cmdbuf) {
         CopyBufferToImage(cmdbuf, src_buffer, vk_image, vk_aspect_mask, is_initialized, vk_copies);
-    });
-}
-
-void Image::UploadMemory(const StagingBufferRef& map,
-                         std::span<const VideoCommon::BufferCopy> copies) {
-    // TODO: Move this to another API
-    scheduler->RequestOutsideRenderPassOperationContext();
-    std::vector vk_copies = TransformBufferCopies(copies, map.offset);
-    const VkBuffer src_buffer = map.buffer;
-    const VkBuffer dst_buffer = *buffer;
-    scheduler->Record([src_buffer, dst_buffer, vk_copies](vk::CommandBuffer cmdbuf) {
-        // TODO: Barriers
-        cmdbuf.CopyBuffer(src_buffer, dst_buffer, vk_copies);
     });
 }
 
@@ -1014,18 +974,15 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
         UNIMPLEMENTED();
         break;
     case VideoCommon::ImageViewType::Buffer:
-        buffer_view = device->GetLogical().CreateBufferView(VkBufferViewCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .buffer = image.Buffer(),
-            .format = format_info.format,
-            .offset = 0, // TODO: Redesign buffer cache to support this
-            .range = image.guest_size_bytes,
-        });
+        UNREACHABLE();
         break;
     }
 }
+
+ImageView::ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo& info,
+                     const VideoCommon::ImageViewInfo& view_info, GPUVAddr gpu_addr_)
+    : VideoCommon::ImageViewBase{info, view_info}, gpu_addr{gpu_addr_},
+      buffer_size{VideoCommon::CalculateGuestSizeInBytes(info)} {}
 
 ImageView::ImageView(TextureCacheRuntime&, const VideoCommon::NullImageParams& params)
     : VideoCommon::ImageViewBase{params} {}

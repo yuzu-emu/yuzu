@@ -154,8 +154,8 @@ private:
     void DefineSharedMemory(const IR::Program& program);
     void DefineConstantBuffers(const Info& info, u32& binding);
     void DefineStorageBuffers(const Info& info, u32& binding);
-    void DefineTextures(const Info& info, u32& binding);
     void DefineTextureBuffers(const Info& info, u32& binding);
+    void DefineTextures(const Info& info, u32& binding);
     void DefineAttributeMemAccess(const Info& info);
     void DefineLabels(IR::Program& program);
 

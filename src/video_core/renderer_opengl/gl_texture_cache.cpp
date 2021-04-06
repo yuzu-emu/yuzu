@@ -1016,6 +1016,10 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
     default_handle = Handle(info.type);
 }
 
+ImageView::ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo& info,
+                     const VideoCommon::ImageViewInfo& view_info)
+    : VideoCommon::ImageViewBase{info, view_info} {}
+
 ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::NullImageParams& params)
     : VideoCommon::ImageViewBase{params}, views{runtime.null_image_views} {}
 

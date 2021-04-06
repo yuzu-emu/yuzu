@@ -36,6 +36,15 @@ ImageViewBase::ImageViewBase(const ImageViewInfo& info, const ImageInfo& image_i
     }
 }
 
+ImageViewBase::ImageViewBase(const ImageInfo& info, const ImageViewInfo& view_info)
+    : format{info.format}, type{ImageViewType::Buffer}, size{
+                                                            .width = info.size.width,
+                                                            .height = 1,
+                                                            .depth = 1,
+                                                        } {
+    ASSERT_MSG(view_info.type == ImageViewType::Buffer, "Expected texture buffer");
+}
+
 ImageViewBase::ImageViewBase(const NullImageParams&) {}
 
 } // namespace VideoCommon

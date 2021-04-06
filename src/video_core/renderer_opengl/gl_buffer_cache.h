@@ -153,6 +153,7 @@ struct BufferCacheParams {
     static constexpr bool HAS_FULL_INDEX_AND_PRIMITIVE_SUPPORT = true;
     static constexpr bool NEEDS_BIND_UNIFORM_INDEX = true;
     static constexpr bool NEEDS_BIND_STORAGE_INDEX = true;
+    static constexpr bool NEEDS_BIND_TEXTURE_BUFFER_INDEX = true;
     static constexpr bool USE_MEMORY_MAPS = false;
 };
 

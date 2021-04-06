@@ -41,9 +41,9 @@ struct TextureCacheRuntime {
 
     void Finish();
 
-    [[nodiscard]] StagingBufferRef UploadStagingBuffer(size_t size);
+    StagingBufferRef UploadStagingBuffer(size_t size);
 
-    [[nodiscard]] StagingBufferRef DownloadStagingBuffer(size_t size);
+    StagingBufferRef DownloadStagingBuffer(size_t size);
 
     void BlitImage(Framebuffer* dst_framebuffer, ImageView& dst, ImageView& src,
                    const Region2D& dst_region, const Region2D& src_region,
@@ -54,7 +54,7 @@ struct TextureCacheRuntime {
 
     void ConvertImage(Framebuffer* dst, ImageView& dst_view, ImageView& src_view);
 
-    [[nodiscard]] bool CanAccelerateImageUpload(Image&) const noexcept {
+    bool CanAccelerateImageUpload(Image&) const noexcept {
         return false;
     }
 
@@ -92,17 +92,11 @@ public:
     void UploadMemory(const StagingBufferRef& map,
                       std::span<const VideoCommon::BufferImageCopy> copies);
 
-    void UploadMemory(const StagingBufferRef& map, std::span<const VideoCommon::BufferCopy> copies);
-
     void DownloadMemory(const StagingBufferRef& map,
                         std::span<const VideoCommon::BufferImageCopy> copies);
 
     [[nodiscard]] VkImage Handle() const noexcept {
         return *image;
-    }
-
-    [[nodiscard]] VkBuffer Buffer() const noexcept {
-        return *buffer;
     }
 
     [[nodiscard]] VkImageAspectFlags AspectMask() const noexcept {
@@ -121,7 +115,6 @@ public:
 private:
     VKScheduler* scheduler;
     vk::Image image;
-    vk::Buffer buffer;
     MemoryCommit commit;
     vk::ImageView image_view;
     std::vector<vk::ImageView> storage_image_views;
@@ -132,6 +125,8 @@ private:
 class ImageView : public VideoCommon::ImageViewBase {
 public:
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageViewInfo&, ImageId, Image&);
+    explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo&,
+                       const VideoCommon::ImageViewInfo&, GPUVAddr);
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::NullImageParams&);
 
     [[nodiscard]] VkImageView DepthView();
@@ -140,10 +135,6 @@ public:
 
     [[nodiscard]] VkImageView Handle(VideoCommon::ImageViewType query_type) const noexcept {
         return *image_views[static_cast<size_t>(query_type)];
-    }
-
-    [[nodiscard]] VkBufferView BufferView() const noexcept {
-        return *buffer_view;
     }
 
     [[nodiscard]] VkImage ImageHandle() const noexcept {
@@ -162,6 +153,14 @@ public:
         return samples;
     }
 
+    [[nodiscard]] GPUVAddr GpuAddr() const noexcept {
+        return gpu_addr;
+    }
+
+    [[nodiscard]] u32 BufferSize() const noexcept {
+        return buffer_size;
+    }
+
 private:
     [[nodiscard]] vk::ImageView MakeDepthStencilView(VkImageAspectFlags aspect_mask);
 
@@ -169,11 +168,12 @@ private:
     std::array<vk::ImageView, VideoCommon::NUM_IMAGE_VIEW_TYPES> image_views;
     vk::ImageView depth_view;
     vk::ImageView stencil_view;
-    vk::BufferView buffer_view;
     VkImage image_handle = VK_NULL_HANDLE;
     VkImageView render_target = VK_NULL_HANDLE;
     PixelFormat image_format = PixelFormat::Invalid;
     VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
+    GPUVAddr gpu_addr = 0;
+    u32 buffer_size = 0;
 };
 
 class ImageAlloc : public VideoCommon::ImageAllocBase {};

@@ -175,6 +175,10 @@ void GraphicsPipeline::Configure(bool is_indexed) {
             const u32 raw_handle{gpu_memory.Read<u32>(addr)};
             return TextureHandle(raw_handle, via_header_index);
         }};
+        for (const auto& desc : info.texture_buffer_descriptors) {
+            const TextureHandle handle{read_handle(desc.cbuf_index, desc.cbuf_offset)};
+            image_view_indices.push_back(handle.image);
+        }
         for (const auto& desc : info.texture_descriptors) {
             const TextureHandle handle{read_handle(desc.cbuf_index, desc.cbuf_offset)};
             image_view_indices.push_back(handle.image);
@@ -182,24 +186,37 @@ void GraphicsPipeline::Configure(bool is_indexed) {
             Sampler* const sampler{texture_cache.GetGraphicsSampler(handle.sampler)};
             samplers.push_back(sampler->Handle());
         }
-        for (const auto& desc : info.texture_buffer_descriptors) {
-            const TextureHandle handle{read_handle(desc.cbuf_index, desc.cbuf_offset)};
-            image_view_indices.push_back(handle.image);
-        }
     }
     const std::span indices_span(image_view_indices.data(), image_view_indices.size());
-    buffer_cache.UpdateGraphicsBuffers(is_indexed);
     texture_cache.FillGraphicsImageViews(indices_span, image_view_ids);
+
+    ImageId* texture_buffer_index{image_view_ids.data()};
+    for (size_t stage = 0; stage < Maxwell::MaxShaderStage; ++stage) {
+        const Shader::Info& info{stage_infos[stage]};
+        buffer_cache.UnbindGraphicsTextureBuffers(stage);
+        size_t index{};
+        for (const auto& desc : info.texture_buffer_descriptors) {
+            ASSERT(desc.count == 1);
+            ImageView& image_view = texture_cache.GetImageView(*texture_buffer_index);
+            buffer_cache.BindGraphicsTextureBuffer(stage, index, image_view.GpuAddr(),
+                                                   image_view.BufferSize(), image_view.format);
+            ++index;
+            ++texture_buffer_index;
+        }
+        texture_buffer_index += info.texture_descriptors.size();
+    }
+    buffer_cache.UpdateGraphicsBuffers(is_indexed);
 
     buffer_cache.BindHostGeometryBuffers(is_indexed);
 
     update_descriptor_queue.Acquire();
 
-    size_t index{};
+    const VkSampler* samplers_it{samplers.data()};
+    const ImageId* views_it{image_view_ids.data()};
     for (size_t stage = 0; stage < Maxwell::MaxShaderStage; ++stage) {
         buffer_cache.BindHostStageBuffers(stage);
-        PushImageDescriptors(stage_infos[stage], samplers.data(), image_view_ids.data(),
-                             texture_cache, update_descriptor_queue, index);
+        PushImageDescriptors(stage_infos[stage], samplers_it, views_it, texture_cache,
+                             update_descriptor_queue);
     }
     texture_cache.UpdateRenderTargets(false);
     scheduler.RequestRenderpass(texture_cache.GetFramebuffer());

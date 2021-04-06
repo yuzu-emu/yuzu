@@ -182,6 +182,8 @@ class ImageView : public VideoCommon::ImageViewBase {
 
 public:
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageViewInfo&, ImageId, Image&);
+    explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo& info,
+                       const VideoCommon::ImageViewInfo& view_info);
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::NullImageParams&);
 
     [[nodiscard]] GLuint Handle(ImageViewType query_type) const noexcept {

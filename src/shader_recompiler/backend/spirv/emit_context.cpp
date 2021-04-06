@@ -130,8 +130,8 @@ EmitContext::EmitContext(const Profile& profile_, IR::Program& program, u32& bin
     DefineSharedMemory(program);
     DefineConstantBuffers(program.info, binding);
     DefineStorageBuffers(program.info, binding);
-    DefineTextures(program.info, binding);
     DefineTextureBuffers(program.info, binding);
+    DefineTextures(program.info, binding);
     DefineAttributeMemAccess(program.info);
     DefineLabels(program);
 }
@@ -516,6 +516,32 @@ void EmitContext::DefineStorageBuffers(const Info& info, u32& binding) {
     }
 }
 
+void EmitContext::DefineTextureBuffers(const Info& info, u32& binding) {
+    if (info.texture_buffer_descriptors.empty()) {
+        return;
+    }
+    const spv::ImageFormat format{spv::ImageFormat::Unknown};
+    image_buffer_type = TypeImage(F32[1], spv::Dim::Buffer, 0U, false, false, 1, format);
+    sampled_texture_buffer_type = TypeSampledImage(image_buffer_type);
+
+    const Id type{TypePointer(spv::StorageClass::UniformConstant, sampled_texture_buffer_type)};
+    texture_buffers.reserve(info.texture_buffer_descriptors.size());
+    for (const TextureBufferDescriptor& desc : info.texture_buffer_descriptors) {
+        if (desc.count != 1) {
+            throw NotImplementedException("Array of texture buffers");
+        }
+        const Id id{AddGlobalVariable(type, spv::StorageClass::UniformConstant)};
+        Decorate(id, spv::Decoration::Binding, binding);
+        Decorate(id, spv::Decoration::DescriptorSet, 0U);
+        Name(id, fmt::format("texbuf{}_{:02x}", desc.cbuf_index, desc.cbuf_offset));
+        texture_buffers.insert(texture_buffers.end(), desc.count, id);
+        if (profile.supported_spirv >= 0x00010400) {
+            interfaces.push_back(id);
+        }
+        binding += desc.count;
+    }
+}
+
 void EmitContext::DefineTextures(const Info& info, u32& binding) {
     textures.reserve(info.texture_descriptors.size());
     for (const TextureDescriptor& desc : info.texture_descriptors) {
@@ -537,32 +563,6 @@ void EmitContext::DefineTextures(const Info& info, u32& binding) {
                 .image_type{image_type},
             });
         }
-        if (profile.supported_spirv >= 0x00010400) {
-            interfaces.push_back(id);
-        }
-        binding += desc.count;
-    }
-}
-
-void EmitContext::DefineTextureBuffers(const Info& info, u32& binding) {
-    if (info.texture_buffer_descriptors.empty()) {
-        return;
-    }
-    const spv::ImageFormat format{spv::ImageFormat::Unknown};
-    image_buffer_type = TypeImage(F32[1], spv::Dim::Buffer, 0U, false, false, 1, format);
-    sampled_texture_buffer_type = TypeSampledImage(image_buffer_type);
-
-    const Id type{TypePointer(spv::StorageClass::UniformConstant, sampled_texture_buffer_type)};
-    texture_buffers.reserve(info.texture_buffer_descriptors.size());
-    for (const TextureBufferDescriptor& desc : info.texture_buffer_descriptors) {
-        if (desc.count != 1) {
-            throw NotImplementedException("Array of texture buffers");
-        }
-        const Id id{AddGlobalVariable(type, spv::StorageClass::UniformConstant)};
-        Decorate(id, spv::Decoration::Binding, binding);
-        Decorate(id, spv::Decoration::DescriptorSet, 0U);
-        Name(id, fmt::format("texbuf{}_{:02x}", desc.cbuf_index, desc.cbuf_offset));
-        texture_buffers.insert(texture_buffers.end(), desc.count, id);
         if (profile.supported_spirv >= 0x00010400) {
             interfaces.push_back(id);
         }

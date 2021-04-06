@@ -30,6 +30,7 @@
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/memory_manager.h"
 #include "video_core/rasterizer_interface.h"
+#include "video_core/surface.h"
 #include "video_core/texture_cache/slot_vector.h"
 #include "video_core/texture_cache/types.h"
 
@@ -41,11 +42,14 @@ MICROPROFILE_DECLARE(GPU_DownloadMemory);
 
 using BufferId = SlotId;
 
+using VideoCore::Surface::PixelFormat;
+
 constexpr u32 NUM_VERTEX_BUFFERS = 32;
 constexpr u32 NUM_TRANSFORM_FEEDBACK_BUFFERS = 4;
 constexpr u32 NUM_GRAPHICS_UNIFORM_BUFFERS = 18;
 constexpr u32 NUM_COMPUTE_UNIFORM_BUFFERS = 8;
 constexpr u32 NUM_STORAGE_BUFFERS = 16;
+constexpr u32 NUM_TEXTURE_BUFFERS = 16;
 constexpr u32 NUM_STAGES = 5;
 
 using namespace Common::Literals;
@@ -65,6 +69,7 @@ class BufferCache {
         P::HAS_FULL_INDEX_AND_PRIMITIVE_SUPPORT;
     static constexpr bool NEEDS_BIND_UNIFORM_INDEX = P::NEEDS_BIND_UNIFORM_INDEX;
     static constexpr bool NEEDS_BIND_STORAGE_INDEX = P::NEEDS_BIND_STORAGE_INDEX;
+    static constexpr bool NEEDS_BIND_TEXTURE_BUFFER_INDEX = P::NEEDS_BIND_TEXTURE_BUFFER_INDEX;
     static constexpr bool USE_MEMORY_MAPS = P::USE_MEMORY_MAPS;
 
     static constexpr BufferId NULL_BUFFER_ID{0};
@@ -90,6 +95,10 @@ class BufferCache {
         VAddr cpu_addr{};
         u32 size{};
         BufferId buffer_id;
+    };
+
+    struct TextureBufferBinding : Binding {
+        PixelFormat format;
     };
 
     static constexpr Binding NULL_BINDING{
@@ -138,10 +147,20 @@ public:
     void BindGraphicsStorageBuffer(size_t stage, size_t ssbo_index, u32 cbuf_index, u32 cbuf_offset,
                                    bool is_written);
 
+    void UnbindGraphicsTextureBuffers(size_t stage);
+
+    void BindGraphicsTextureBuffer(size_t stage, size_t tbo_index, GPUVAddr gpu_addr, u32 size,
+                                   PixelFormat format);
+
     void UnbindComputeStorageBuffers();
 
     void BindComputeStorageBuffer(size_t ssbo_index, u32 cbuf_index, u32 cbuf_offset,
                                   bool is_written);
+
+    void UnbindComputeTextureBuffers();
+
+    void BindComputeTextureBuffer(size_t tbo_index, GPUVAddr gpu_addr, u32 size,
+                                  PixelFormat format);
 
     void FlushCachedWrites();
 
@@ -207,11 +226,15 @@ private:
 
     void BindHostGraphicsStorageBuffers(size_t stage);
 
+    void BindHostGraphicsTextureBuffers(size_t stage);
+
     void BindHostTransformFeedbackBuffers();
 
     void BindHostComputeUniformBuffers();
 
     void BindHostComputeStorageBuffers();
+
+    void BindHostComputeTextureBuffers();
 
     void DoUpdateGraphicsBuffers(bool is_indexed);
 
@@ -227,6 +250,8 @@ private:
 
     void UpdateStorageBuffers(size_t stage);
 
+    void UpdateTextureBuffers(size_t stage);
+
     void UpdateTransformFeedbackBuffers();
 
     void UpdateTransformFeedbackBuffer(u32 index);
@@ -234,6 +259,8 @@ private:
     void UpdateComputeUniformBuffers();
 
     void UpdateComputeStorageBuffers();
+
+    void UpdateComputeTextureBuffers();
 
     void MarkWrittenBuffer(BufferId buffer_id, VAddr cpu_addr, u32 size);
 
@@ -278,6 +305,9 @@ private:
 
     [[nodiscard]] Binding StorageBufferBinding(GPUVAddr ssbo_addr) const;
 
+    [[nodiscard]] TextureBufferBinding GetTextureBufferBinding(GPUVAddr gpu_addr, u32 size,
+                                                               PixelFormat format);
+
     [[nodiscard]] std::span<const u8> ImmediateBufferWithData(VAddr cpu_addr, size_t size);
 
     [[nodiscard]] std::span<u8> ImmediateBuffer(size_t wanted_capacity);
@@ -300,10 +330,12 @@ private:
     std::array<Binding, NUM_VERTEX_BUFFERS> vertex_buffers;
     std::array<std::array<Binding, NUM_GRAPHICS_UNIFORM_BUFFERS>, NUM_STAGES> uniform_buffers;
     std::array<std::array<Binding, NUM_STORAGE_BUFFERS>, NUM_STAGES> storage_buffers;
+    std::array<std::array<TextureBufferBinding, NUM_TEXTURE_BUFFERS>, NUM_STAGES> texture_buffers;
     std::array<Binding, NUM_TRANSFORM_FEEDBACK_BUFFERS> transform_feedback_buffers;
 
     std::array<Binding, NUM_COMPUTE_UNIFORM_BUFFERS> compute_uniform_buffers;
     std::array<Binding, NUM_STORAGE_BUFFERS> compute_storage_buffers;
+    std::array<TextureBufferBinding, NUM_TEXTURE_BUFFERS> compute_texture_buffers;
 
     std::array<u32, NUM_STAGES> enabled_uniform_buffers{};
     u32 enabled_compute_uniform_buffers = 0;
@@ -312,6 +344,9 @@ private:
     std::array<u32, NUM_STAGES> written_storage_buffers{};
     u32 enabled_compute_storage_buffers = 0;
     u32 written_compute_storage_buffers = 0;
+
+    std::array<u32, NUM_STAGES> enabled_texture_buffers{};
+    u32 enabled_compute_texture_buffers = 0;
 
     std::array<u32, NUM_STAGES> fast_bound_uniform_buffers{};
 
@@ -476,6 +511,7 @@ void BufferCache<P>::BindHostStageBuffers(size_t stage) {
     MICROPROFILE_SCOPE(GPU_BindUploadBuffers);
     BindHostGraphicsUniformBuffers(stage);
     BindHostGraphicsStorageBuffers(stage);
+    BindHostGraphicsTextureBuffers(stage);
 }
 
 template <class P>
@@ -483,6 +519,7 @@ void BufferCache<P>::BindHostComputeBuffers() {
     MICROPROFILE_SCOPE(GPU_BindUploadBuffers);
     BindHostComputeUniformBuffers();
     BindHostComputeStorageBuffers();
+    BindHostComputeTextureBuffers();
 }
 
 template <class P>
@@ -518,6 +555,18 @@ void BufferCache<P>::BindGraphicsStorageBuffer(size_t stage, size_t ssbo_index, 
 }
 
 template <class P>
+void BufferCache<P>::UnbindGraphicsTextureBuffers(size_t stage) {
+    enabled_texture_buffers[stage] = 0;
+}
+
+template <class P>
+void BufferCache<P>::BindGraphicsTextureBuffer(size_t stage, size_t tbo_index, GPUVAddr gpu_addr,
+                                               u32 size, PixelFormat format) {
+    enabled_texture_buffers[stage] |= 1U << tbo_index;
+    texture_buffers[stage][tbo_index] = GetTextureBufferBinding(gpu_addr, size, format);
+}
+
+template <class P>
 void BufferCache<P>::UnbindComputeStorageBuffers() {
     enabled_compute_storage_buffers = 0;
     written_compute_storage_buffers = 0;
@@ -535,6 +584,18 @@ void BufferCache<P>::BindComputeStorageBuffer(size_t ssbo_index, u32 cbuf_index,
     const auto& cbufs = launch_desc.const_buffer_config;
     const GPUVAddr ssbo_addr = cbufs[cbuf_index].Address() + cbuf_offset;
     compute_storage_buffers[ssbo_index] = StorageBufferBinding(ssbo_addr);
+}
+
+template <class P>
+void BufferCache<P>::UnbindComputeTextureBuffers() {
+    enabled_compute_texture_buffers = 0;
+}
+
+template <class P>
+void BufferCache<P>::BindComputeTextureBuffer(size_t tbo_index, GPUVAddr gpu_addr, u32 size,
+                                              PixelFormat format) {
+    enabled_compute_texture_buffers |= 1U << tbo_index;
+    compute_texture_buffers[tbo_index] = GetTextureBufferBinding(gpu_addr, size, format);
 }
 
 template <class P>
@@ -767,6 +828,26 @@ void BufferCache<P>::BindHostGraphicsStorageBuffers(size_t stage) {
 }
 
 template <class P>
+void BufferCache<P>::BindHostGraphicsTextureBuffers(size_t stage) {
+    u32 binding_index = 0;
+    ForEachEnabledBit(enabled_texture_buffers[stage], [&](u32 index) {
+        const TextureBufferBinding& binding = texture_buffers[stage][index];
+        Buffer& buffer = slot_buffers[binding.buffer_id];
+        const u32 size = binding.size;
+        SynchronizeBuffer(buffer, binding.cpu_addr, size);
+
+        const u32 offset = buffer.Offset(binding.cpu_addr);
+        const PixelFormat format = binding.format;
+        if constexpr (NEEDS_BIND_TEXTURE_BUFFER_INDEX) {
+            runtime.BindTextureBuffer(binding_index, buffer, offset, size, format);
+            ++binding_index;
+        } else {
+            runtime.BindTextureBuffer(buffer, offset, size, format);
+        }
+    });
+}
+
+template <class P>
 void BufferCache<P>::BindHostTransformFeedbackBuffers() {
     if (maxwell3d.regs.tfb_enabled == 0) {
         return;
@@ -829,6 +910,26 @@ void BufferCache<P>::BindHostComputeStorageBuffers() {
 }
 
 template <class P>
+void BufferCache<P>::BindHostComputeTextureBuffers() {
+    u32 binding_index = 0;
+    ForEachEnabledBit(enabled_compute_texture_buffers, [&](u32 index) {
+        const TextureBufferBinding& binding = compute_texture_buffers[index];
+        Buffer& buffer = slot_buffers[binding.buffer_id];
+        const u32 size = binding.size;
+        SynchronizeBuffer(buffer, binding.cpu_addr, size);
+
+        const u32 offset = buffer.Offset(binding.cpu_addr);
+        const PixelFormat format = binding.format;
+        if constexpr (NEEDS_BIND_TEXTURE_BUFFER_INDEX) {
+            runtime.BindTextureBuffer(binding_index, buffer, offset, size, format);
+            ++binding_index;
+        } else {
+            runtime.BindTextureBuffer(buffer, offset, size, format);
+        }
+    });
+}
+
+template <class P>
 void BufferCache<P>::DoUpdateGraphicsBuffers(bool is_indexed) {
     if (is_indexed) {
         UpdateIndexBuffer();
@@ -838,6 +939,7 @@ void BufferCache<P>::DoUpdateGraphicsBuffers(bool is_indexed) {
     for (size_t stage = 0; stage < NUM_STAGES; ++stage) {
         UpdateUniformBuffers(stage);
         UpdateStorageBuffers(stage);
+        UpdateTextureBuffers(stage);
     }
 }
 
@@ -845,6 +947,7 @@ template <class P>
 void BufferCache<P>::DoUpdateComputeBuffers() {
     UpdateComputeUniformBuffers();
     UpdateComputeStorageBuffers();
+    UpdateComputeTextureBuffers();
 }
 
 template <class P>
@@ -945,6 +1048,14 @@ void BufferCache<P>::UpdateStorageBuffers(size_t stage) {
 }
 
 template <class P>
+void BufferCache<P>::UpdateTextureBuffers(size_t stage) {
+    ForEachEnabledBit(enabled_texture_buffers[stage], [&](u32 index) {
+        Binding& binding = texture_buffers[stage][index];
+        binding.buffer_id = FindBuffer(binding.cpu_addr, binding.size);
+    });
+}
+
+template <class P>
 void BufferCache<P>::UpdateTransformFeedbackBuffers() {
     if (maxwell3d.regs.tfb_enabled == 0) {
         return;
@@ -1002,6 +1113,14 @@ void BufferCache<P>::UpdateComputeStorageBuffers() {
         if (((written_compute_storage_buffers >> index) & 1) != 0) {
             MarkWrittenBuffer(buffer_id, binding.cpu_addr, binding.size);
         }
+    });
+}
+
+template <class P>
+void BufferCache<P>::UpdateComputeTextureBuffers() {
+    ForEachEnabledBit(enabled_compute_texture_buffers, [&](u32 index) {
+        Binding& binding = compute_texture_buffers[index];
+        binding.buffer_id = FindBuffer(binding.cpu_addr, binding.size);
     });
 }
 
@@ -1360,6 +1479,25 @@ typename BufferCache<P>::Binding BufferCache<P>::StorageBufferBinding(GPUVAddr s
         .size = std::min(size + arbitrary_extra_bytes, bytes_to_map_end),
         .buffer_id = BufferId{},
     };
+    return binding;
+}
+
+template <class P>
+typename BufferCache<P>::TextureBufferBinding BufferCache<P>::GetTextureBufferBinding(
+    GPUVAddr gpu_addr, u32 size, PixelFormat format) {
+    const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr);
+    TextureBufferBinding binding;
+    if (!cpu_addr || size == 0) {
+        binding.cpu_addr = 0;
+        binding.size = 0;
+        binding.buffer_id = NULL_BUFFER_ID;
+        binding.format = PixelFormat::Invalid;
+    } else {
+        binding.cpu_addr = *cpu_addr;
+        binding.size = size;
+        binding.buffer_id = BufferId{};
+        binding.format = format;
+    }
     return binding;
 }
 

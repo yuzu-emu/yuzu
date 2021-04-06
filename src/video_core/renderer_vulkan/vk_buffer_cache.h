@@ -9,6 +9,7 @@
 #include "video_core/renderer_vulkan/vk_compute_pass.h"
 #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
+#include "video_core/surface.h"
 #include "video_core/vulkan_common/vulkan_memory_allocator.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
@@ -26,6 +27,8 @@ public:
     explicit Buffer(BufferCacheRuntime& runtime, VideoCore::RasterizerInterface& rasterizer_,
                     VAddr cpu_addr_, u64 size_bytes_);
 
+    [[nodiscard]] VkBufferView View(u32 offset, u32 size, VideoCore::Surface::PixelFormat format);
+
     [[nodiscard]] VkBuffer Handle() const noexcept {
         return *buffer;
     }
@@ -35,8 +38,17 @@ public:
     }
 
 private:
+    struct BufferView {
+        u32 offset;
+        u32 size;
+        VideoCore::Surface::PixelFormat format;
+        vk::BufferView handle;
+    };
+
+    const Device* device{};
     vk::Buffer buffer;
     MemoryCommit commit;
+    std::vector<BufferView> views;
 };
 
 class BufferCacheRuntime {
@@ -85,6 +97,11 @@ public:
         BindBuffer(buffer, offset, size);
     }
 
+    void BindTextureBuffer(Buffer& buffer, u32 offset, u32 size,
+                           VideoCore::Surface::PixelFormat format) {
+        update_descriptor_queue.AddTexelBuffer(buffer.View(offset, size, format));
+    }
+
 private:
     void BindBuffer(VkBuffer buffer, u32 offset, u32 size) {
         update_descriptor_queue.AddBuffer(buffer, offset, size);
@@ -121,6 +138,7 @@ struct BufferCacheParams {
     static constexpr bool HAS_FULL_INDEX_AND_PRIMITIVE_SUPPORT = false;
     static constexpr bool NEEDS_BIND_UNIFORM_INDEX = false;
     static constexpr bool NEEDS_BIND_STORAGE_INDEX = false;
+    static constexpr bool NEEDS_BIND_TEXTURE_BUFFER_INDEX = false;
     static constexpr bool USE_MEMORY_MAPS = true;
 };
 
