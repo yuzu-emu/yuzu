@@ -157,6 +157,7 @@ private:
     ObjectPool<Block>& block_pool;
     boost::container::small_vector<Function, 1> functions;
     FunctionId current_function_id{0};
+    Location program_start;
 };
 
 } // namespace Shader::Maxwell::Flow
