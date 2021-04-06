@@ -37,7 +37,7 @@ union F2I {
     BitField<10, 2, SrcFormat> src_format;
     BitField<12, 1, u64> is_signed;
     BitField<39, 2, Rounding> rounding;
-    BitField<49, 1, u64> half;
+    BitField<41, 1, u64> half;
     BitField<44, 1, u64> ftz;
     BitField<45, 1, u64> abs;
     BitField<47, 1, u64> cc;
