@@ -12,13 +12,6 @@ ThreadWorker::ThreadWorker(std::size_t num_workers, const std::string& name) {
     const auto lambda = [this, thread_name{std::string{name}}] {
         Common::SetCurrentThreadName(thread_name.c_str());
 
-        // TODO(Blinkhawk): Change the design, this is very prone to data races
-        // Wait for first request
-        {
-            std::unique_lock lock{queue_mutex};
-            condition.wait(lock, [this] { return stop || !requests.empty(); });
-        }
-
         while (!stop) {
             UniqueFunction<void> task;
             {
@@ -27,7 +20,7 @@ ThreadWorker::ThreadWorker(std::size_t num_workers, const std::string& name) {
                     wait_condition.notify_all();
                 }
                 condition.wait(lock, [this] { return stop || !requests.empty(); });
-                if (stop || requests.empty()) {
+                if (stop) {
                     break;
                 }
                 task = std::move(requests.front());
