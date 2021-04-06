@@ -447,7 +447,7 @@ void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pa
         .dynamicStateCount = static_cast<u32>(dynamic_states.size()),
         .pDynamicStates = dynamic_states.data(),
     };
-    const VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT subgroup_size_ci{
+    [[maybe_unused]] const VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT subgroup_size_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO_EXT,
         .pNext = nullptr,
         .requiredSubgroupSize = GuestWarpSize,
@@ -457,15 +457,16 @@ void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pa
         if (!spv_modules[stage]) {
             continue;
         }
-        [[maybe_unused]] auto& stage_ci = shader_stages.emplace_back(VkPipelineShaderStageCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .stage = MaxwellToVK::ShaderStage(static_cast<Tegra::Engines::ShaderType>(stage)),
-            .module = *spv_modules[stage],
-            .pName = "main",
-            .pSpecializationInfo = nullptr,
-        });
+        [[maybe_unused]] auto& stage_ci =
+            shader_stages.emplace_back(VkPipelineShaderStageCreateInfo{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                .pNext = nullptr,
+                .flags = 0,
+                .stage = MaxwellToVK::ShaderStage(static_cast<Tegra::Engines::ShaderType>(stage)),
+                .module = *spv_modules[stage],
+                .pName = "main",
+                .pSpecializationInfo = nullptr,
+            });
         /*
         if (program[stage]->entries.uses_warps && device.IsGuestWarpSizeSupported(stage_ci.stage)) {
             stage_ci.pNext = &subgroup_size_ci;

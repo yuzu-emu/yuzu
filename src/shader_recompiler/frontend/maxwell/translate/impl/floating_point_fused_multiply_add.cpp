@@ -24,9 +24,9 @@ void FFMA(TranslatorVisitor& v, u64 insn, const IR::F32& src_b, const IR::F32& s
     const IR::F32 op_b{v.ir.FPAbsNeg(src_b, false, neg_b)};
     const IR::F32 op_c{v.ir.FPAbsNeg(src_c, false, neg_c)};
     const IR::FpControl fp_control{
-        .no_contraction{true},
-        .rounding{CastFpRounding(fp_rounding)},
-        .fmz_mode{CastFmzMode(fmz_mode)},
+        .no_contraction = true,
+        .rounding = CastFpRounding(fp_rounding),
+        .fmz_mode = CastFmzMode(fmz_mode),
     };
     IR::F32 value{v.ir.FPFma(op_a, op_b, op_c, fp_control)};
     if (fmz_mode == FmzMode::FMZ && !sat) {

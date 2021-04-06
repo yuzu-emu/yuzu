@@ -12,10 +12,10 @@ namespace Shader::IR {
 
 std::string NameOf(Condition condition) {
     std::string ret;
-    if (condition.FlowTest() != FlowTest::T) {
-        ret = fmt::to_string(condition.FlowTest());
+    if (condition.GetFlowTest() != FlowTest::T) {
+        ret = fmt::to_string(condition.GetFlowTest());
     }
-    const auto [pred, negated]{condition.Pred()};
+    const auto [pred, negated]{condition.GetPred()};
     if (!ret.empty()) {
         ret += '&';
     }

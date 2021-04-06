@@ -279,7 +279,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     };
 }
 
-[[nodiscard]] std::vector<VkBufferCopy> TransformBufferCopies(
+[[maybe_unused]] [[nodiscard]] std::vector<VkBufferCopy> TransformBufferCopies(
     std::span<const VideoCommon::BufferCopy> copies, size_t buffer_offset) {
     std::vector<VkBufferCopy> result(copies.size());
     std::ranges::transform(

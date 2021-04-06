@@ -49,7 +49,7 @@ void TranslatorVisitor::L(IR::Reg dest_reg, const IR::U64& value) {
     }
     const IR::Value result{ir.UnpackUint2x32(value)};
     for (int i = 0; i < 2; i++) {
-        X(dest_reg + i, IR::U32{ir.CompositeExtract(result, i)});
+        X(dest_reg + i, IR::U32{ir.CompositeExtract(result, static_cast<size_t>(i))});
     }
 }
 
@@ -63,7 +63,7 @@ void TranslatorVisitor::D(IR::Reg dest_reg, const IR::F64& value) {
     }
     const IR::Value result{ir.UnpackDouble2x32(value)};
     for (int i = 0; i < 2; i++) {
-        X(dest_reg + i, IR::U32{ir.CompositeExtract(result, i)});
+        X(dest_reg + i, IR::U32{ir.CompositeExtract(result, static_cast<size_t>(i))});
     }
 }
 
@@ -156,7 +156,7 @@ IR::F64 TranslatorVisitor::GetDoubleCbuf(u64 insn) {
     const auto [binding, offset_value]{CbufAddr(insn)};
     const bool unaligned{cbuf.unaligned != 0};
     const u32 offset{offset_value.U32()};
-    const IR::Value addr{unaligned ? offset | 4 : (offset & ~7) | 4};
+    const IR::Value addr{unaligned ? offset | 4u : (offset & ~7u) | 4u};
 
     const IR::U32 value{ir.GetCbuf(binding, IR::U32{addr})};
     const IR::U32 lower_bits{CbufLowerBits(ir, unaligned, binding, offset)};
@@ -200,7 +200,7 @@ IR::F32 TranslatorVisitor::GetFloatImm20(u64 insn) {
         BitField<20, 19, u64> value;
         BitField<56, 1, u64> is_negative;
     } const imm{insn};
-    const u32 sign_bit{imm.is_negative != 0 ? (1ULL << 31) : 0};
+    const u32 sign_bit{static_cast<u32>(imm.is_negative != 0 ? (1ULL << 31) : 0)};
     const u32 value{static_cast<u32>(imm.value) << 12};
     return ir.Imm32(Common::BitCast<f32>(value | sign_bit));
 }

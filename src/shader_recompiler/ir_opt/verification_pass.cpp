@@ -14,14 +14,14 @@ namespace Shader::Optimization {
 static void ValidateTypes(const IR::Program& program) {
     for (const auto& block : program.blocks) {
         for (const IR::Inst& inst : *block) {
-            if (inst.Opcode() == IR::Opcode::Phi) {
+            if (inst.GetOpcode() == IR::Opcode::Phi) {
                 // Skip validation on phi nodes
                 continue;
             }
             const size_t num_args{inst.NumArgs()};
             for (size_t i = 0; i < num_args; ++i) {
                 const IR::Type t1{inst.Arg(i).Type()};
-                const IR::Type t2{IR::ArgTypeOf(inst.Opcode(), i)};
+                const IR::Type t2{IR::ArgTypeOf(inst.GetOpcode(), i)};
                 if (!IR::AreTypesCompatible(t1, t2)) {
                     throw LogicError("Invalid types in block:\n{}", IR::DumpBlock(*block));
                 }

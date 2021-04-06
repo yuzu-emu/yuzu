@@ -68,7 +68,6 @@ void IADD(TranslatorVisitor& v, u64 insn, IR::U32 op_b) {
     } const iadd{insn};
 
     const bool po{iadd.three_for_po == 3};
-    const bool neg_a{!po && iadd.neg_a != 0};
     if (!po && iadd.neg_b != 0) {
         op_b = v.ir.INeg(op_b);
     }

@@ -69,7 +69,6 @@ void TranslatorVisitor::VSETP(u64 insn) {
     const IR::U32 src_b{is_b_imm ? ir.Imm32(static_cast<u32>(vsetp.src_b_imm)) : GetReg20(insn)};
 
     const u32 a_selector{static_cast<u32>(vsetp.src_a_selector)};
-    const u32 b_selector{is_b_imm ? 0U : static_cast<u32>(vsetp.src_b_selector)};
     const VideoWidth a_width{vsetp.src_a_width};
     const VideoWidth b_width{GetVideoSourceWidth(vsetp.src_b_width, is_b_imm)};
 

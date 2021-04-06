@@ -34,41 +34,37 @@ struct Compare {
 };
 
 u32 BranchOffset(Location pc, Instruction inst) {
-    return pc.Offset() + inst.branch.Offset() + 8;
+    return pc.Offset() + static_cast<u32>(inst.branch.Offset()) + 8u;
 }
 
 void Split(Block* old_block, Block* new_block, Location pc) {
     if (pc <= old_block->begin || pc >= old_block->end) {
         throw InvalidArgument("Invalid address to split={}", pc);
     }
-    *new_block = Block{
-        .begin{pc},
-        .end{old_block->end},
-        .end_class{old_block->end_class},
-        .cond{old_block->cond},
-        .stack{old_block->stack},
-        .branch_true{old_block->branch_true},
-        .branch_false{old_block->branch_false},
-        .function_call{old_block->function_call},
-        .return_block{old_block->return_block},
-        .branch_reg{old_block->branch_reg},
-        .branch_offset{old_block->branch_offset},
-        .indirect_branches{std::move(old_block->indirect_branches)},
-    };
-    *old_block = Block{
-        .begin{old_block->begin},
-        .end{pc},
-        .end_class{EndClass::Branch},
-        .cond{true},
-        .stack{std::move(old_block->stack)},
-        .branch_true{new_block},
-        .branch_false{nullptr},
-        .function_call{},
-        .return_block{},
-        .branch_reg{},
-        .branch_offset{},
-        .indirect_branches{},
-    };
+    *new_block = Block{};
+    new_block->begin = pc;
+    new_block->end = old_block->end;
+    new_block->end_class = old_block->end_class,
+    new_block->cond = old_block->cond;
+    new_block->stack = old_block->stack;
+    new_block->branch_true = old_block->branch_true;
+    new_block->branch_false = old_block->branch_false;
+    new_block->function_call = old_block->function_call;
+    new_block->return_block = old_block->return_block;
+    new_block->branch_reg = old_block->branch_reg;
+    new_block->branch_offset = old_block->branch_offset;
+    new_block->indirect_branches = std::move(old_block->indirect_branches);
+
+    const Location old_begin{old_block->begin};
+    Stack old_stack{std::move(old_block->stack)};
+    *old_block = Block{};
+    old_block->begin = old_begin;
+    old_block->end = pc;
+    old_block->end_class = EndClass::Branch;
+    old_block->cond = IR::Condition(true);
+    old_block->stack = old_stack;
+    old_block->branch_true = new_block;
+    old_block->branch_false = nullptr;
 }
 
 Token OpcodeToken(Opcode opcode) {
@@ -141,7 +137,7 @@ std::string NameOf(const Block& block) {
 
 void Stack::Push(Token token, Location target) {
     entries.push_back({
-        .token{token},
+        .token = token,
         .target{target},
     });
 }
@@ -177,24 +173,17 @@ bool Block::Contains(Location pc) const noexcept {
 }
 
 Function::Function(ObjectPool<Block>& block_pool, Location start_address)
-    : entrypoint{start_address}, labels{{
-                                     .address{start_address},
-                                     .block{block_pool.Create(Block{
-                                         .begin{start_address},
-                                         .end{start_address},
-                                         .end_class{EndClass::Branch},
-                                         .cond{true},
-                                         .stack{},
-                                         .branch_true{nullptr},
-                                         .branch_false{nullptr},
-                                         .function_call{},
-                                         .return_block{},
-                                         .branch_reg{},
-                                         .branch_offset{},
-                                         .indirect_branches{},
-                                     })},
-                                     .stack{},
-                                 }} {}
+    : entrypoint{start_address} {
+    Label& label{labels.emplace_back()};
+    label.address = start_address;
+    label.block = block_pool.Create(Block{});
+    label.block->begin = start_address;
+    label.block->end = start_address;
+    label.block->end_class = EndClass::Branch;
+    label.block->cond = IR::Condition(true);
+    label.block->branch_true = nullptr;
+    label.block->branch_false = nullptr;
+}
 
 CFG::CFG(Environment& env_, ObjectPool<Block>& block_pool_, Location start_address)
     : env{env_}, block_pool{block_pool_}, program_start{start_address} {
@@ -327,7 +316,8 @@ CFG::AnalysisState CFG::AnalyzeInst(Block* block, FunctionId function_id, Locati
         // Insert the function into the list if it doesn't exist
         const auto it{std::ranges::find(functions, cal_pc, &Function::entrypoint)};
         const bool exists{it != functions.end()};
-        const FunctionId call_id{exists ? std::distance(functions.begin(), it) : functions.size()};
+        const FunctionId call_id{exists ? static_cast<size_t>(std::distance(functions.begin(), it))
+                                        : functions.size()};
         if (!exists) {
             functions.emplace_back(block_pool, cal_pc);
         }
@@ -362,20 +352,14 @@ void CFG::AnalyzeCondInst(Block* block, FunctionId function_id, Location pc,
     }
     // Create a virtual block and a conditional block
     Block* const conditional_block{block_pool.Create()};
-    Block virtual_block{
-        .begin{block->begin.Virtual()},
-        .end{block->begin.Virtual()},
-        .end_class{EndClass::Branch},
-        .cond{cond},
-        .stack{block->stack},
-        .branch_true{conditional_block},
-        .branch_false{nullptr},
-        .function_call{},
-        .return_block{},
-        .branch_reg{},
-        .branch_offset{},
-        .indirect_branches{},
-    };
+    Block virtual_block{};
+    virtual_block.begin = block->begin.Virtual();
+    virtual_block.end = block->begin.Virtual();
+    virtual_block.end_class = EndClass::Branch;
+    virtual_block.stack = block->stack;
+    virtual_block.cond = cond;
+    virtual_block.branch_true = conditional_block;
+    virtual_block.branch_false = nullptr;
     // Save the contents of the visited block in the conditional block
     *conditional_block = std::move(*block);
     // Impersonate the visited block with a virtual block
@@ -444,7 +428,7 @@ CFG::AnalysisState CFG::AnalyzeBRX(Block* block, Location pc, Instruction inst, 
         if (!is_absolute) {
             target += pc.Offset();
         }
-        target += brx_table->branch_offset;
+        target += static_cast<unsigned int>(brx_table->branch_offset);
         target += 8;
         targets.push_back(target);
     }
@@ -455,8 +439,8 @@ CFG::AnalysisState CFG::AnalyzeBRX(Block* block, Location pc, Instruction inst, 
     for (const u32 target : targets) {
         Block* const branch{AddLabel(block, block->stack, target, function_id)};
         block->indirect_branches.push_back({
-            .block{branch},
-            .address{target},
+            .block = branch,
+            .address = target,
         });
     }
     block->cond = IR::Condition{true};
@@ -523,23 +507,17 @@ Block* CFG::AddLabel(Block* block, Stack stack, Location pc, FunctionId function
     if (label_it != function.labels.end()) {
         return label_it->block;
     }
-    Block* const new_block{block_pool.Create(Block{
-        .begin{pc},
-        .end{pc},
-        .end_class{EndClass::Branch},
-        .cond{true},
-        .stack{stack},
-        .branch_true{nullptr},
-        .branch_false{nullptr},
-        .function_call{},
-        .return_block{},
-        .branch_reg{},
-        .branch_offset{},
-        .indirect_branches{},
-    })};
+    Block* const new_block{block_pool.Create()};
+    new_block->begin = pc;
+    new_block->end = pc;
+    new_block->end_class = EndClass::Branch;
+    new_block->cond = IR::Condition(true);
+    new_block->stack = stack;
+    new_block->branch_true = nullptr;
+    new_block->branch_false = nullptr;
     function.labels.push_back(Label{
         .address{pc},
-        .block{new_block},
+        .block = new_block,
         .stack{std::move(stack)},
     });
     return new_block;

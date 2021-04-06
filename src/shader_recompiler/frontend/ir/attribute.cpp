@@ -17,7 +17,7 @@ u32 GenericAttributeIndex(Attribute attribute) {
     if (!IsGeneric(attribute)) {
         throw InvalidArgument("Attribute is not generic {}", attribute);
     }
-    return (static_cast<int>(attribute) - static_cast<int>(Attribute::Generic0X)) / 4;
+    return (static_cast<u32>(attribute) - static_cast<u32>(Attribute::Generic0X)) / 4u;
 }
 
 std::string NameOf(Attribute attribute) {

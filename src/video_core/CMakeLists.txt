@@ -203,7 +203,7 @@ add_library(video_core STATIC
 create_target_directory_groups(video_core)
 
 target_link_libraries(video_core PUBLIC common core)
-target_link_libraries(video_core PRIVATE glad shader_recompiler xbyak)
+target_link_libraries(video_core PUBLIC glad shader_recompiler xbyak)
 
 if (YUZU_USE_BUNDLED_FFMPEG AND NOT WIN32)
     add_dependencies(video_core ffmpeg-build)

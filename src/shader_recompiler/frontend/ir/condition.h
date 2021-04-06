@@ -30,11 +30,11 @@ public:
 
     auto operator<=>(const Condition&) const noexcept = default;
 
-    [[nodiscard]] IR::FlowTest FlowTest() const noexcept {
+    [[nodiscard]] IR::FlowTest GetFlowTest() const noexcept {
         return static_cast<IR::FlowTest>(flow_test);
     }
 
-    [[nodiscard]] std::pair<IR::Pred, bool> Pred() const noexcept {
+    [[nodiscard]] std::pair<IR::Pred, bool> GetPred() const noexcept {
         return {static_cast<IR::Pred>(pred), pred_negated != 0};
     }
 

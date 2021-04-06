@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <climits>
 #include <string_view>
 
 #include <fmt/format.h>
@@ -116,7 +117,8 @@ void VectorTypes::Define(Sirit::Module& sirit_ctx, Id base_type, std::string_vie
         const std::string_view def_name_view(
             def_name.data(),
             fmt::format_to_n(def_name.data(), def_name.size(), "{}x{}", name, i + 1).size);
-        defs[i] = sirit_ctx.Name(sirit_ctx.TypeVector(base_type, i + 1), def_name_view);
+        defs[static_cast<size_t>(i)] =
+            sirit_ctx.Name(sirit_ctx.TypeVector(base_type, i + 1), def_name_view);
     }
 }
 

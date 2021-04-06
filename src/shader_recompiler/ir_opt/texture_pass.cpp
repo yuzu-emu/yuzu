@@ -30,7 +30,7 @@ struct TextureInst {
 using TextureInstVector = boost::container::small_vector<TextureInst, 24>;
 
 IR::Opcode IndexedInstruction(const IR::Inst& inst) {
-    switch (inst.Opcode()) {
+    switch (inst.GetOpcode()) {
     case IR::Opcode::BindlessImageSampleImplicitLod:
     case IR::Opcode::BoundImageSampleImplicitLod:
         return IR::Opcode::ImageSampleImplicitLod;
@@ -67,7 +67,7 @@ IR::Opcode IndexedInstruction(const IR::Inst& inst) {
 }
 
 bool IsBindless(const IR::Inst& inst) {
-    switch (inst.Opcode()) {
+    switch (inst.GetOpcode()) {
     case IR::Opcode::BindlessImageSampleImplicitLod:
     case IR::Opcode::BindlessImageSampleExplicitLod:
     case IR::Opcode::BindlessImageSampleDrefImplicitLod:
@@ -91,7 +91,7 @@ bool IsBindless(const IR::Inst& inst) {
     case IR::Opcode::BoundImageGradient:
         return false;
     default:
-        throw InvalidArgument("Invalid opcode {}", inst.Opcode());
+        throw InvalidArgument("Invalid opcode {}", inst.GetOpcode());
     }
 }
 
@@ -100,7 +100,7 @@ bool IsTextureInstruction(const IR::Inst& inst) {
 }
 
 std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst) {
-    if (inst->Opcode() != IR::Opcode::GetCbufU32) {
+    if (inst->GetOpcode() != IR::Opcode::GetCbufU32) {
         return std::nullopt;
     }
     const IR::Value index{inst->Arg(0)};
@@ -134,14 +134,14 @@ TextureInst MakeInst(Environment& env, IR::Block* block, IR::Inst& inst) {
         addr = *track_addr;
     } else {
         addr = ConstBufferAddr{
-            .index{env.TextureBoundBuffer()},
-            .offset{inst.Arg(0).U32()},
+            .index = env.TextureBoundBuffer(),
+            .offset = inst.Arg(0).U32(),
         };
     }
     return TextureInst{
         .cbuf{addr},
-        .inst{&inst},
-        .block{block},
+        .inst = &inst,
+        .block = block,
     };
 }
 
@@ -211,7 +211,7 @@ void TexturePass(Environment& env, IR::Program& program) {
 
         const auto& cbuf{texture_inst.cbuf};
         auto flags{inst->Flags<IR::TextureInstInfo>()};
-        switch (inst->Opcode()) {
+        switch (inst->GetOpcode()) {
         case IR::Opcode::ImageQueryDimensions:
             flags.type.Assign(env.ReadTextureType(cbuf.index, cbuf.offset));
             inst->SetFlags(flags);
@@ -235,16 +235,16 @@ void TexturePass(Environment& env, IR::Program& program) {
         u32 index;
         if (flags.type == TextureType::Buffer) {
             index = descriptors.Add(TextureBufferDescriptor{
-                .cbuf_index{cbuf.index},
-                .cbuf_offset{cbuf.offset},
-                .count{1},
+                .cbuf_index = cbuf.index,
+                .cbuf_offset = cbuf.offset,
+                .count = 1,
             });
         } else {
             index = descriptors.Add(TextureDescriptor{
-                .type{flags.type},
-                .cbuf_index{cbuf.index},
-                .cbuf_offset{cbuf.offset},
-                .count{1},
+                .type = flags.type,
+                .cbuf_index = cbuf.index,
+                .cbuf_offset = cbuf.offset,
+                .count = 1,
             });
         }
         inst->SetArg(0, IR::Value{index});

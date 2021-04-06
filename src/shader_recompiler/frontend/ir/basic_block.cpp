@@ -155,7 +155,7 @@ std::string DumpBlock(const Block& block, const std::map<const Block*, size_t>& 
     ret += fmt::format(": begin={:04x} end={:04x}\n", block.LocationBegin(), block.LocationEnd());
 
     for (const Inst& inst : block) {
-        const Opcode op{inst.Opcode()};
+        const Opcode op{inst.GetOpcode()};
         ret += fmt::format("[{:016x}] ", reinterpret_cast<u64>(&inst));
         if (TypeOf(op) != Type::Void) {
             ret += fmt::format("%{:<5} = {}", InstIndex(inst_to_index, inst_index, &inst), op);

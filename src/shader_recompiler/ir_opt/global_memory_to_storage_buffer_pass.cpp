@@ -57,7 +57,7 @@ struct StorageInfo {
 
 /// Returns true when the instruction is a global memory instruction
 bool IsGlobalMemory(const IR::Inst& inst) {
-    switch (inst.Opcode()) {
+    switch (inst.GetOpcode()) {
     case IR::Opcode::LoadGlobalS8:
     case IR::Opcode::LoadGlobalU8:
     case IR::Opcode::LoadGlobalS16:
@@ -80,7 +80,7 @@ bool IsGlobalMemory(const IR::Inst& inst) {
 
 /// Returns true when the instruction is a global memory instruction
 bool IsGlobalMemoryWrite(const IR::Inst& inst) {
-    switch (inst.Opcode()) {
+    switch (inst.GetOpcode()) {
     case IR::Opcode::WriteGlobalS8:
     case IR::Opcode::WriteGlobalU8:
     case IR::Opcode::WriteGlobalS16:
@@ -140,7 +140,7 @@ bool MeetsBias(const StorageBufferAddr& storage_buffer, const Bias& bias) noexce
 void DiscardGlobalMemory(IR::Block& block, IR::Inst& inst) {
     IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
     const IR::Value zero{u32{0}};
-    switch (inst.Opcode()) {
+    switch (inst.GetOpcode()) {
     case IR::Opcode::LoadGlobalS8:
     case IR::Opcode::LoadGlobalU8:
     case IR::Opcode::LoadGlobalS16:
@@ -164,7 +164,7 @@ void DiscardGlobalMemory(IR::Block& block, IR::Inst& inst) {
         inst.Invalidate();
         break;
     default:
-        throw LogicError("Invalid opcode to discard its global memory operation {}", inst.Opcode());
+        throw LogicError("Invalid opcode to discard its global memory operation {}", inst.GetOpcode());
     }
 }
 
@@ -184,7 +184,7 @@ std::optional<LowAddrInfo> TrackLowAddress(IR::Inst* inst) {
     // This address is expected to either be a PackUint2x32 or a IAdd64
     IR::Inst* addr_inst{addr.InstRecursive()};
     s32 imm_offset{0};
-    if (addr_inst->Opcode() == IR::Opcode::IAdd64) {
+    if (addr_inst->GetOpcode() == IR::Opcode::IAdd64) {
         // If it's an IAdd64, get the immediate offset it is applying and grab the address
         // instruction. This expects for the instruction to be canonicalized having the address on
         // the first argument and the immediate offset on the second one.
@@ -200,7 +200,7 @@ std::optional<LowAddrInfo> TrackLowAddress(IR::Inst* inst) {
         addr_inst = iadd_addr.Inst();
     }
     // With IAdd64 handled, now PackUint2x32 is expected without exceptions
-    if (addr_inst->Opcode() != IR::Opcode::PackUint2x32) {
+    if (addr_inst->GetOpcode() != IR::Opcode::PackUint2x32) {
         return std::nullopt;
     }
     // PackUint2x32 is expected to be generated from a vector
@@ -210,20 +210,20 @@ std::optional<LowAddrInfo> TrackLowAddress(IR::Inst* inst) {
     }
     // This vector is expected to be a CompositeConstructU32x2
     IR::Inst* const vector_inst{vector.InstRecursive()};
-    if (vector_inst->Opcode() != IR::Opcode::CompositeConstructU32x2) {
+    if (vector_inst->GetOpcode() != IR::Opcode::CompositeConstructU32x2) {
         return std::nullopt;
     }
     // Grab the first argument from the CompositeConstructU32x2, this is the low address.
     return LowAddrInfo{
         .value{IR::U32{vector_inst->Arg(0)}},
-        .imm_offset{imm_offset},
+        .imm_offset = imm_offset,
     };
 }
 
 /// Tries to track the storage buffer address used by a global memory instruction
 std::optional<StorageBufferAddr> Track(const IR::Value& value, const Bias* bias) {
     const auto pred{[bias](const IR::Inst* inst) -> std::optional<StorageBufferAddr> {
-        if (inst->Opcode() != IR::Opcode::GetCbufU32) {
+        if (inst->GetOpcode() != IR::Opcode::GetCbufU32) {
             return std::nullopt;
         }
         const IR::Value index{inst->Arg(0)};
@@ -256,9 +256,9 @@ void CollectStorageBuffers(IR::Block& block, IR::Inst& inst, StorageInfo& info) 
     // NVN puts storage buffers in a specific range, we have to bias towards these addresses to
     // avoid getting false positives
     static constexpr Bias nvn_bias{
-        .index{0},
-        .offset_begin{0x110},
-        .offset_end{0x610},
+        .index = 0,
+        .offset_begin = 0x110,
+        .offset_end = 0x610,
     };
     // Track the low address of the instruction
     const std::optional<LowAddrInfo> low_addr_info{TrackLowAddress(&inst)};
@@ -286,8 +286,8 @@ void CollectStorageBuffers(IR::Block& block, IR::Inst& inst, StorageInfo& info) 
     info.set.insert(*storage_buffer);
     info.to_replace.push_back(StorageInst{
         .storage_buffer{*storage_buffer},
-        .inst{&inst},
-        .block{&block},
+        .inst = &inst,
+        .block = &block,
     });
 }
 
@@ -312,7 +312,7 @@ IR::U32 StorageOffset(IR::Block& block, IR::Inst& inst, StorageBufferAddr buffer
 /// Replace a global memory load instruction with its storage buffer equivalent
 void ReplaceLoad(IR::Block& block, IR::Inst& inst, const IR::U32& storage_index,
                  const IR::U32& offset) {
-    const IR::Opcode new_opcode{GlobalToStorage(inst.Opcode())};
+    const IR::Opcode new_opcode{GlobalToStorage(inst.GetOpcode())};
     const auto it{IR::Block::InstructionList::s_iterator_to(inst)};
     const IR::Value value{&*block.PrependNewInst(it, new_opcode, {storage_index, offset})};
     inst.ReplaceUsesWith(value);
@@ -321,7 +321,7 @@ void ReplaceLoad(IR::Block& block, IR::Inst& inst, const IR::U32& storage_index,
 /// Replace a global memory write instruction with its storage buffer equivalent
 void ReplaceWrite(IR::Block& block, IR::Inst& inst, const IR::U32& storage_index,
                   const IR::U32& offset) {
-    const IR::Opcode new_opcode{GlobalToStorage(inst.Opcode())};
+    const IR::Opcode new_opcode{GlobalToStorage(inst.GetOpcode())};
     const auto it{IR::Block::InstructionList::s_iterator_to(inst)};
     block.PrependNewInst(it, new_opcode, {storage_index, offset, inst.Arg(1)});
     inst.Invalidate();
@@ -330,7 +330,7 @@ void ReplaceWrite(IR::Block& block, IR::Inst& inst, const IR::U32& storage_index
 /// Replace a global memory instruction with its storage buffer equivalent
 void Replace(IR::Block& block, IR::Inst& inst, const IR::U32& storage_index,
              const IR::U32& offset) {
-    switch (inst.Opcode()) {
+    switch (inst.GetOpcode()) {
     case IR::Opcode::LoadGlobalS8:
     case IR::Opcode::LoadGlobalU8:
     case IR::Opcode::LoadGlobalS16:
@@ -348,7 +348,7 @@ void Replace(IR::Block& block, IR::Inst& inst, const IR::U32& storage_index,
     case IR::Opcode::WriteGlobal128:
         return ReplaceWrite(block, inst, storage_index, offset);
     default:
-        throw InvalidArgument("Invalid global memory opcode {}", inst.Opcode());
+        throw InvalidArgument("Invalid global memory opcode {}", inst.GetOpcode());
     }
 }
 } // Anonymous namespace
@@ -366,9 +366,9 @@ void GlobalMemoryToStorageBufferPass(IR::Program& program) {
     u32 storage_index{};
     for (const StorageBufferAddr& storage_buffer : info.set) {
         program.info.storage_buffers_descriptors.push_back({
-            .cbuf_index{storage_buffer.index},
-            .cbuf_offset{storage_buffer.offset},
-            .count{1},
+            .cbuf_index = storage_buffer.index,
+            .cbuf_offset = storage_buffer.offset,
+            .count = 1,
             .is_written{info.writes.contains(storage_buffer)},
         });
         ++storage_index;

@@ -199,7 +199,7 @@ void Impl(TranslatorVisitor& v, u64 insn, bool aoffi, Blod blod, bool lc,
         if (tex.dc != 0) {
             value = element < 3 ? IR::F32{sample} : v.ir.Imm32(1.0f);
         } else {
-            value = IR::F32{v.ir.CompositeExtract(sample, element)};
+            value = IR::F32{v.ir.CompositeExtract(sample, static_cast<size_t>(element))};
         }
         v.F(dest_reg, value);
         ++dest_reg;

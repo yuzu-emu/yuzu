@@ -41,9 +41,9 @@ void HFMA2(TranslatorVisitor& v, u64 insn, Merge merge, Swizzle swizzle_a, bool 
     rhs_c = v.ir.FPAbsNeg(rhs_c, false, neg_c);
 
     const IR::FpControl fp_control{
-        .no_contraction{true},
-        .rounding{IR::FpRounding::DontCare},
-        .fmz_mode{HalfPrecision2FmzMode(precision)},
+        .no_contraction = true,
+        .rounding = IR::FpRounding::DontCare,
+        .fmz_mode = HalfPrecision2FmzMode(precision),
     };
     IR::F16F32F64 lhs{v.ir.FPFma(lhs_a, lhs_b, lhs_c, fp_control)};
     IR::F16F32F64 rhs{v.ir.FPFma(rhs_a, rhs_b, rhs_c, fp_control)};
@@ -143,8 +143,9 @@ void TranslatorVisitor::HFMA2_imm(u64 insn) {
         BitField<57, 2, HalfPrecision> precision;
     } const hfma2{insn};
 
-    const u32 imm{static_cast<u32>(hfma2.low << 6) | ((hfma2.neg_low != 0 ? 1 : 0) << 15) |
-                  static_cast<u32>(hfma2.high << 22) | ((hfma2.neg_high != 0 ? 1 : 0) << 31)};
+    const u32 imm{
+        static_cast<u32>(hfma2.low << 6) | static_cast<u32>((hfma2.neg_low != 0 ? 1 : 0) << 15) |
+        static_cast<u32>(hfma2.high << 22) | static_cast<u32>((hfma2.neg_high != 0 ? 1 : 0) << 31)};
 
     HFMA2(*this, insn, false, hfma2.neg_c != 0, Swizzle::H1_H0, hfma2.swizzle_c, ir.Imm32(imm),
           GetReg39(insn), hfma2.saturate != 0, hfma2.precision);

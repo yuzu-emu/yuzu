@@ -54,7 +54,7 @@ void Impl(TranslatorVisitor& v, u64 insn, std::optional<u32> cbuf_offset) {
         if (((txq.mask >> element) & 1) == 0) {
             continue;
         }
-        v.X(dest_reg, IR::U32{v.ir.CompositeExtract(query, element)});
+        v.X(dest_reg, IR::U32{v.ir.CompositeExtract(query, static_cast<size_t>(element))});
         ++dest_reg;
     }
 }

@@ -94,7 +94,7 @@ public:
         }
     }
 
-    explicit TypedValue(IR::Inst* inst) : TypedValue(Value(inst)) {}
+    explicit TypedValue(IR::Inst* inst_) : TypedValue(Value(inst_)) {}
 };
 
 using U1 = TypedValue<Type::U1>;

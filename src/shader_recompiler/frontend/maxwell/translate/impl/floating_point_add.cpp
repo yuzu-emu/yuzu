@@ -23,9 +23,9 @@ void FADD(TranslatorVisitor& v, u64 insn, bool sat, bool cc, bool ftz, FpRoundin
     const IR::F32 op_a{v.ir.FPAbsNeg(v.F(fadd.src_a), abs_a, neg_a)};
     const IR::F32 op_b{v.ir.FPAbsNeg(src_b, abs_b, neg_b)};
     IR::FpControl control{
-        .no_contraction{true},
-        .rounding{CastFpRounding(fp_rounding)},
-        .fmz_mode{ftz ? IR::FmzMode::FTZ : IR::FmzMode::None},
+        .no_contraction = true,
+        .rounding = CastFpRounding(fp_rounding),
+        .fmz_mode = (ftz ? IR::FmzMode::FTZ : IR::FmzMode::None),
     };
     IR::F32 value{v.ir.FPAdd(op_a, op_b, control)};
     if (sat) {

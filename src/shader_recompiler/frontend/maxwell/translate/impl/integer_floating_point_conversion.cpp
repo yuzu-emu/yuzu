@@ -131,7 +131,7 @@ void I2F(TranslatorVisitor& v, u64 insn, IR::U32U64 src) {
         }
         const IR::Value vector{v.ir.UnpackDouble2x32(value)};
         for (int i = 0; i < 2; ++i) {
-            v.X(i2f.dest_reg + i, IR::U32{v.ir.CompositeExtract(vector, i)});
+            v.X(i2f.dest_reg + i, IR::U32{v.ir.CompositeExtract(vector, static_cast<size_t>(i))});
         }
         break;
     }

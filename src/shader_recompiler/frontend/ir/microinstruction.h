@@ -46,7 +46,7 @@ public:
     }
 
     /// Get the opcode this microinstruction represents.
-    [[nodiscard]] IR::Opcode Opcode() const noexcept {
+    [[nodiscard]] IR::Opcode GetOpcode() const noexcept {
         return op;
     }
 
@@ -95,7 +95,7 @@ public:
     requires(sizeof(FlagsType) <= sizeof(u32) && std::is_trivially_copyable_v<FlagsType>)
         [[nodiscard]] FlagsType Flags() const noexcept {
         FlagsType ret;
-        std::memcpy(&ret, &flags, sizeof(ret));
+        std::memcpy(reinterpret_cast<char*>(&ret), &flags, sizeof(ret));
         return ret;
     }
 

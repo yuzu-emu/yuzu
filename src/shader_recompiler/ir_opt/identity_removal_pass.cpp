@@ -22,7 +22,8 @@ void IdentityRemovalPass(IR::Program& program) {
                     inst->SetArg(i, arg.Inst()->Arg(0));
                 }
             }
-            if (inst->Opcode() == IR::Opcode::Identity || inst->Opcode() == IR::Opcode::Void) {
+            if (inst->GetOpcode() == IR::Opcode::Identity ||
+                inst->GetOpcode() == IR::Opcode::Void) {
                 to_invalidate.push_back(&*inst);
                 inst = block->Instructions().erase(inst);
             } else {

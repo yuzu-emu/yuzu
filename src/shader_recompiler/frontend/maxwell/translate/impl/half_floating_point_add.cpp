@@ -34,9 +34,9 @@ void HADD2(TranslatorVisitor& v, u64 insn, Merge merge, bool ftz, bool sat, bool
     rhs_b = v.ir.FPAbsNeg(rhs_b, abs_b, neg_b);
 
     const IR::FpControl fp_control{
-        .no_contraction{true},
-        .rounding{IR::FpRounding::DontCare},
-        .fmz_mode{ftz ? IR::FmzMode::FTZ : IR::FmzMode::None},
+        .no_contraction = true,
+        .rounding = IR::FpRounding::DontCare,
+        .fmz_mode = (ftz ? IR::FmzMode::FTZ : IR::FmzMode::None),
     };
     IR::F16F32F64 lhs{v.ir.FPAdd(lhs_a, lhs_b, fp_control)};
     IR::F16F32F64 rhs{v.ir.FPAdd(rhs_a, rhs_b, fp_control)};
@@ -102,8 +102,9 @@ void TranslatorVisitor::HADD2_imm(u64 insn) {
         BitField<20, 9, u64> low;
     } const hadd2{insn};
 
-    const u32 imm{static_cast<u32>(hadd2.low << 6) | ((hadd2.neg_low != 0 ? 1 : 0) << 15) |
-                  static_cast<u32>(hadd2.high << 22) | ((hadd2.neg_high != 0 ? 1 : 0) << 31)};
+    const u32 imm{
+        static_cast<u32>(hadd2.low << 6) | static_cast<u32>((hadd2.neg_low != 0 ? 1 : 0) << 15) |
+        static_cast<u32>(hadd2.high << 22) | static_cast<u32>((hadd2.neg_high != 0 ? 1 : 0) << 31)};
     HADD2(*this, insn, hadd2.sat != 0, false, false, Swizzle::H1_H0, ir.Imm32(imm));
 }
 
