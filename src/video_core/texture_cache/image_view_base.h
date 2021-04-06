@@ -27,6 +27,7 @@ DECLARE_ENUM_FLAG_OPERATORS(ImageViewFlagBits)
 struct ImageViewBase {
     explicit ImageViewBase(const ImageViewInfo& info, const ImageInfo& image_info,
                            ImageId image_id);
+    explicit ImageViewBase(const ImageInfo& info, const ImageViewInfo& view_info);
     explicit ImageViewBase(const NullImageParams&);
 
     [[nodiscard]] bool IsBuffer() const noexcept {

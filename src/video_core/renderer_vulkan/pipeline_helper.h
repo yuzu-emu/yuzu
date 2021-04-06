@@ -24,7 +24,8 @@ struct TextureHandle {
         [[likely]] if (via_header_index) {
             image = data;
             sampler = data;
-        } else {
+        }
+        else {
             const Tegra::Texture::TextureHandle handle{data};
             image = handle.tic_id;
             sampler = via_header_index ? image : handle.tsc_id.Value();
@@ -90,11 +91,11 @@ public:
         for ([[maybe_unused]] const auto& desc : info.storage_buffers_descriptors) {
             Add(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, stage);
         }
+        for ([[maybe_unused]] const auto& desc : info.texture_buffer_descriptors) {
+            Add(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, stage);
+        }
         for ([[maybe_unused]] const auto& desc : info.texture_descriptors) {
             Add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage);
-        }
-        for (const auto& desc : info.texture_buffer_descriptors) {
-            Add(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, stage);
         }
     }
 
@@ -156,20 +157,15 @@ inline VideoCommon::ImageViewType CastType(Shader::TextureType type) {
     return {};
 }
 
-inline void PushImageDescriptors(const Shader::Info& info, const VkSampler* samplers,
-                                 const ImageId* image_view_ids, TextureCache& texture_cache,
-                                 VKUpdateDescriptorQueue& update_descriptor_queue, size_t& index) {
+inline void PushImageDescriptors(const Shader::Info& info, const VkSampler*& samplers,
+                                 const ImageId*& image_view_ids, TextureCache& texture_cache,
+                                 VKUpdateDescriptorQueue& update_descriptor_queue) {
+    image_view_ids += info.texture_buffer_descriptors.size();
     for (const auto& desc : info.texture_descriptors) {
-        const VkSampler sampler{samplers[index]};
-        ImageView& image_view{texture_cache.GetImageView(image_view_ids[index])};
+        const VkSampler sampler{*(samplers++)};
+        ImageView& image_view{texture_cache.GetImageView(*(image_view_ids++))};
         const VkImageView vk_image_view{image_view.Handle(CastType(desc.type))};
         update_descriptor_queue.AddSampledImage(vk_image_view, sampler);
-        ++index;
-    }
-    for (const auto& desc : info.texture_buffer_descriptors) {
-        ImageView& image_view{texture_cache.GetImageView(image_view_ids[index])};
-        update_descriptor_queue.AddTexelBuffer(image_view.BufferView());
-        ++index;
     }
 }
 

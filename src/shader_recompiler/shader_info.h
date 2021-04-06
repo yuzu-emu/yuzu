@@ -119,8 +119,8 @@ struct Info {
     boost::container::static_vector<ConstantBufferDescriptor, MAX_CBUFS>
         constant_buffer_descriptors;
     boost::container::static_vector<StorageBufferDescriptor, MAX_SSBOS> storage_buffers_descriptors;
-    TextureDescriptors texture_descriptors;
     TextureBufferDescriptors texture_buffer_descriptors;
+    TextureDescriptors texture_descriptors;
 };
 
 } // namespace Shader
