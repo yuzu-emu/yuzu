@@ -518,6 +518,11 @@ Block* CFG::AddLabel(Block* block, Stack stack, Location pc, FunctionId function
         }
         return &*it;
     }
+    // Make sure we don't insert the same layer twice
+    const auto label_it{std::ranges::find(function.labels, pc, &Label::address)};
+    if (label_it != function.labels.end()) {
+        return label_it->block;
+    }
     Block* const new_block{block_pool.Create(Block{
         .begin{pc},
         .end{pc},
