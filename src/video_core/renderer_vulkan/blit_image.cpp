@@ -361,7 +361,7 @@ void BlitImageHelper::BlitColor(const Framebuffer* dst_framebuffer, const ImageV
         .operation = operation,
     };
     const VkPipelineLayout layout = *one_texture_pipeline_layout;
-    const VkImageView src_view = src_image_view.Handle(ImageViewType::e2D);
+    const VkImageView src_view = src_image_view.Handle(Shader::TextureType::Color2D);
     const VkSampler sampler = is_linear ? *linear_sampler : *nearest_sampler;
     const VkPipeline pipeline = FindOrEmplacePipeline(key);
     const VkDescriptorSet descriptor_set = one_texture_descriptor_allocator.Commit();
@@ -435,7 +435,7 @@ void BlitImageHelper::ConvertR16ToD16(const Framebuffer* dst_framebuffer,
 void BlitImageHelper::Convert(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
                               const ImageView& src_image_view) {
     const VkPipelineLayout layout = *one_texture_pipeline_layout;
-    const VkImageView src_view = src_image_view.Handle(ImageViewType::e2D);
+    const VkImageView src_view = src_image_view.Handle(Shader::TextureType::Color2D);
     const VkSampler sampler = *nearest_sampler;
     const VkDescriptorSet descriptor_set = one_texture_descriptor_allocator.Commit();
     const VkExtent2D extent{

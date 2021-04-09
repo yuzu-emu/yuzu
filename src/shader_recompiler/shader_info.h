@@ -22,14 +22,19 @@ enum class TextureType : u32 {
     Color3D,
     ColorCube,
     ColorArrayCube,
-    Shadow1D,
-    ShadowArray1D,
-    Shadow2D,
-    ShadowArray2D,
-    Shadow3D,
-    ShadowCube,
-    ShadowArrayCube,
     Buffer,
+};
+constexpr u32 NUM_TEXTURE_TYPES = 8;
+
+enum class ImageFormat : u32 {
+    Typeless,
+    R8_UINT,
+    R8_SINT,
+    R16_UINT,
+    R16_SINT,
+    R32_UINT,
+    R32G32_UINT,
+    R32G32B32A32_UINT,
 };
 
 enum class Interpolation {
@@ -43,21 +48,6 @@ struct InputVarying {
     bool used{false};
 };
 
-struct TextureDescriptor {
-    TextureType type;
-    u32 cbuf_index;
-    u32 cbuf_offset;
-    u32 count;
-};
-using TextureDescriptors = boost::container::small_vector<TextureDescriptor, 12>;
-
-struct TextureBufferDescriptor {
-    u32 cbuf_index;
-    u32 cbuf_offset;
-    u32 count;
-};
-using TextureBufferDescriptors = boost::container::small_vector<TextureBufferDescriptor, 2>;
-
 struct ConstantBufferDescriptor {
     u32 index;
     u32 count;
@@ -69,6 +59,32 @@ struct StorageBufferDescriptor {
     u32 count;
     bool is_written;
 };
+
+struct TextureBufferDescriptor {
+    u32 cbuf_index;
+    u32 cbuf_offset;
+    u32 count;
+};
+using TextureBufferDescriptors = boost::container::small_vector<TextureBufferDescriptor, 6>;
+
+struct TextureDescriptor {
+    TextureType type;
+    bool is_depth;
+    u32 cbuf_index;
+    u32 cbuf_offset;
+    u32 count;
+};
+using TextureDescriptors = boost::container::small_vector<TextureDescriptor, 12>;
+
+struct ImageDescriptor {
+    TextureType type;
+    ImageFormat format;
+    bool is_written;
+    u32 cbuf_index;
+    u32 cbuf_offset;
+    u32 count;
+};
+using ImageDescriptors = boost::container::small_vector<ImageDescriptor, 4>;
 
 struct Info {
     static constexpr size_t MAX_CBUFS{18};
@@ -121,6 +137,7 @@ struct Info {
     boost::container::static_vector<StorageBufferDescriptor, MAX_SSBOS> storage_buffers_descriptors;
     TextureBufferDescriptors texture_buffer_descriptors;
     TextureDescriptors texture_descriptors;
+    ImageDescriptors image_descriptors;
 };
 
 } // namespace Shader

@@ -23,24 +23,24 @@ enum class TextureType : u64 {
     ARRAY_CUBE,
 };
 
-Shader::TextureType GetType(TextureType type, bool dc) {
+Shader::TextureType GetType(TextureType type) {
     switch (type) {
     case TextureType::_1D:
-        return dc ? Shader::TextureType::Shadow1D : Shader::TextureType::Color1D;
+        return Shader::TextureType::Color1D;
     case TextureType::ARRAY_1D:
-        return dc ? Shader::TextureType::ShadowArray1D : Shader::TextureType::ColorArray1D;
+        return Shader::TextureType::ColorArray1D;
     case TextureType::_2D:
-        return dc ? Shader::TextureType::Shadow2D : Shader::TextureType::Color2D;
+        return Shader::TextureType::Color2D;
     case TextureType::ARRAY_2D:
-        return dc ? Shader::TextureType::ShadowArray2D : Shader::TextureType::ColorArray2D;
+        return Shader::TextureType::ColorArray2D;
     case TextureType::_3D:
-        return dc ? Shader::TextureType::Shadow3D : Shader::TextureType::Color3D;
+        return Shader::TextureType::Color3D;
     case TextureType::ARRAY_3D:
         throw NotImplementedException("3D array texture type");
     case TextureType::CUBE:
-        return dc ? Shader::TextureType::ShadowCube : Shader::TextureType::ColorCube;
+        return Shader::TextureType::ColorCube;
     case TextureType::ARRAY_CUBE:
-        return dc ? Shader::TextureType::ShadowArrayCube : Shader::TextureType::ColorArrayCube;
+        return Shader::TextureType::ColorArrayCube;
     }
     throw NotImplementedException("Invalid texture type {}", type);
 }
@@ -152,7 +152,7 @@ void Impl(TranslatorVisitor& v, u64 insn, bool is_bindless) {
     }
 
     IR::TextureInstInfo info{};
-    info.type.Assign(GetType(txd.type, false));
+    info.type.Assign(GetType(txd.type));
     info.num_derivates.Assign(num_derivates);
     info.has_lod_clamp.Assign(has_lod_clamp ? 1 : 0);
     const IR::Value sample{v.ir.ImageGradient(handle, coords, derivates, offset, lod_clamp, info)};

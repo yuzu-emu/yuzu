@@ -59,7 +59,8 @@ IR::Value Sample(TranslatorVisitor& v, u64 insn) {
         info.relaxed_precision.Assign(1);
     }
     info.gather_component.Assign(static_cast<u32>(tld4s.component_type.Value()));
-    info.type.Assign(tld4s.dc != 0 ? Shader::TextureType::Shadow2D : Shader::TextureType::Color2D);
+    info.type.Assign(Shader::TextureType::Color2D);
+    info.is_depth.Assign(tld4s.dc != 0 ? 1 : 0);
     IR::Value coords;
     if (tld4s.aoffi != 0) {
         CheckAlignment(reg_a, 2);

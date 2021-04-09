@@ -95,18 +95,21 @@ IR::Value Sample(TranslatorVisitor& v, u64 insn) {
                                            {}, info);
     case 4: // 2D.DC
         CheckAlignment(reg_a, 2);
-        info.type.Assign(TextureType::Shadow2D);
+        info.type.Assign(TextureType::Color2D);
+        info.is_depth.Assign(1);
         return v.ir.ImageSampleDrefImplicitLod(handle, Composite(v, reg_a, reg_a + 1), v.F(reg_b),
                                                {}, {}, {}, info);
     case 5: // 2D.LL.DC
         CheckAlignment(reg_a, 2);
         CheckAlignment(reg_b, 2);
-        info.type.Assign(TextureType::Shadow2D);
+        info.type.Assign(TextureType::Color2D);
+        info.is_depth.Assign(1);
         return v.ir.ImageSampleDrefExplicitLod(handle, Composite(v, reg_a, reg_a + 1),
                                                v.F(reg_b + 1), v.F(reg_b), {}, {}, info);
     case 6: // 2D.LZ.DC
         CheckAlignment(reg_a, 2);
-        info.type.Assign(TextureType::Shadow2D);
+        info.type.Assign(TextureType::Color2D);
+        info.is_depth.Assign(1);
         return v.ir.ImageSampleDrefExplicitLod(handle, Composite(v, reg_a, reg_a + 1), v.F(reg_b),
                                                zero, {}, {}, info);
     case 7: // ARRAY_2D
@@ -124,7 +127,8 @@ IR::Value Sample(TranslatorVisitor& v, u64 insn) {
     case 9: // ARRAY_2D.LZ.DC
         CheckAlignment(reg_a, 2);
         CheckAlignment(reg_b, 2);
-        info.type.Assign(TextureType::ShadowArray2D);
+        info.type.Assign(TextureType::ColorArray2D);
+        info.is_depth.Assign(1);
         return v.ir.ImageSampleDrefExplicitLod(
             handle, v.ir.CompositeConstruct(v.F(reg_a + 1), v.F(reg_b), ReadArray(v, v.X(reg_a))),
             v.F(reg_b + 1), zero, {}, {}, info);

@@ -2,7 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <utility>
+#include <array>
 
 #include "common/bit_field.h"
 #include "common/common_types.h"

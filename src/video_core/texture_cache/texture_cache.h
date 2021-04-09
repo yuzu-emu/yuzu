@@ -117,6 +117,9 @@ public:
     /// Return a reference to the given image view id
     [[nodiscard]] ImageView& GetImageView(ImageViewId id) noexcept;
 
+    /// Mark an image as modified from the GPU
+    void MarkModification(ImageId id) noexcept;
+
     /// Fill image_view_ids with the graphics images in indices
     void FillGraphicsImageViews(std::span<const u32> indices,
                                 std::span<ImageViewId> image_view_ids);
@@ -524,6 +527,11 @@ const typename P::ImageView& TextureCache<P>::GetImageView(ImageViewId id) const
 template <class P>
 typename P::ImageView& TextureCache<P>::GetImageView(ImageViewId id) noexcept {
     return slot_image_views[id];
+}
+
+template <class P>
+void TextureCache<P>::MarkModification(ImageId id) noexcept {
+    MarkModification(slot_images[id]);
 }
 
 template <class P>

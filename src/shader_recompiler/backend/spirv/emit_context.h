@@ -35,6 +35,11 @@ struct TextureDefinition {
     Id image_type;
 };
 
+struct ImageDefinition {
+    Id id;
+    Id image_type;
+};
+
 struct UniformDefinitions {
     Id U8{};
     Id S8{};
@@ -95,8 +100,9 @@ public:
 
     std::array<UniformDefinitions, Info::MAX_CBUFS> cbufs{};
     std::array<Id, Info::MAX_SSBOS> ssbos{};
-    std::vector<TextureDefinition> textures;
     std::vector<Id> texture_buffers;
+    std::vector<TextureDefinition> textures;
+    std::vector<ImageDefinition> images;
 
     Id workgroup_id{};
     Id local_invocation_id{};
@@ -156,6 +162,7 @@ private:
     void DefineStorageBuffers(const Info& info, u32& binding);
     void DefineTextureBuffers(const Info& info, u32& binding);
     void DefineTextures(const Info& info, u32& binding);
+    void DefineImages(const Info& info, u32& binding);
     void DefineAttributeMemAccess(const Info& info);
     void DefineLabels(IR::Program& program);
 

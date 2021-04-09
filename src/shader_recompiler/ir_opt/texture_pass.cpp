@@ -61,6 +61,12 @@ IR::Opcode IndexedInstruction(const IR::Inst& inst) {
     case IR::Opcode::BoundImageGradient:
     case IR::Opcode::BindlessImageGradient:
         return IR::Opcode::ImageGradient;
+    case IR::Opcode::BoundImageRead:
+    case IR::Opcode::BindlessImageRead:
+        return IR::Opcode::ImageRead;
+    case IR::Opcode::BoundImageWrite:
+    case IR::Opcode::BindlessImageWrite:
+        return IR::Opcode::ImageWrite;
     default:
         return IR::Opcode::Void;
     }
@@ -78,6 +84,8 @@ bool IsBindless(const IR::Inst& inst) {
     case IR::Opcode::BindlessImageQueryDimensions:
     case IR::Opcode::BindlessImageQueryLod:
     case IR::Opcode::BindlessImageGradient:
+    case IR::Opcode::BindlessImageRead:
+    case IR::Opcode::BindlessImageWrite:
         return true;
     case IR::Opcode::BoundImageSampleImplicitLod:
     case IR::Opcode::BoundImageSampleExplicitLod:
@@ -89,6 +97,8 @@ bool IsBindless(const IR::Inst& inst) {
     case IR::Opcode::BoundImageQueryDimensions:
     case IR::Opcode::BoundImageQueryLod:
     case IR::Opcode::BoundImageGradient:
+    case IR::Opcode::BoundImageRead:
+    case IR::Opcode::BoundImageWrite:
         return false;
     default:
         throw InvalidArgument("Invalid opcode {}", inst.GetOpcode());
@@ -147,10 +157,18 @@ TextureInst MakeInst(Environment& env, IR::Block* block, IR::Inst& inst) {
 
 class Descriptors {
 public:
-    explicit Descriptors(TextureDescriptors& texture_descriptors_,
-                         TextureBufferDescriptors& texture_buffer_descriptors_)
-        : texture_descriptors{texture_descriptors_}, texture_buffer_descriptors{
-                                                         texture_buffer_descriptors_} {}
+    explicit Descriptors(TextureBufferDescriptors& texture_buffer_descriptors_,
+                         TextureDescriptors& texture_descriptors_,
+                         ImageDescriptors& image_descriptors_)
+        : texture_buffer_descriptors{texture_buffer_descriptors_},
+          texture_descriptors{texture_descriptors_}, image_descriptors{image_descriptors_} {}
+
+    u32 Add(const TextureBufferDescriptor& desc) {
+        return Add(texture_buffer_descriptors, desc, [&desc](const auto& existing) {
+            return desc.cbuf_index == existing.cbuf_index &&
+                   desc.cbuf_offset == existing.cbuf_offset;
+        });
+    }
 
     u32 Add(const TextureDescriptor& desc) {
         return Add(texture_descriptors, desc, [&desc](const auto& existing) {
@@ -159,11 +177,14 @@ public:
         });
     }
 
-    u32 Add(const TextureBufferDescriptor& desc) {
-        return Add(texture_buffer_descriptors, desc, [&desc](const auto& existing) {
-            return desc.cbuf_index == existing.cbuf_index &&
+    u32 Add(const ImageDescriptor& desc) {
+        const u32 index{Add(image_descriptors, desc, [&desc](const auto& existing) {
+            return desc.type == existing.type && desc.format == existing.format &&
+                   desc.cbuf_index == existing.cbuf_index &&
                    desc.cbuf_offset == existing.cbuf_offset;
-        });
+        })};
+        image_descriptors[index].is_written |= desc.is_written;
+        return index;
     }
 
 private:
@@ -178,8 +199,9 @@ private:
         return static_cast<u32>(descriptors.size()) - 1;
     }
 
-    TextureDescriptors& texture_descriptors;
     TextureBufferDescriptors& texture_buffer_descriptors;
+    TextureDescriptors& texture_descriptors;
+    ImageDescriptors& image_descriptors;
 };
 } // Anonymous namespace
 
@@ -201,8 +223,9 @@ void TexturePass(Environment& env, IR::Program& program) {
         return lhs.cbuf.index < rhs.cbuf.index;
     });
     Descriptors descriptors{
-        program.info.texture_descriptors,
         program.info.texture_buffer_descriptors,
+        program.info.texture_descriptors,
+        program.info.image_descriptors,
     };
     for (TextureInst& texture_inst : to_replace) {
         // TODO: Handle arrays
@@ -233,19 +256,41 @@ void TexturePass(Environment& env, IR::Program& program) {
             break;
         }
         u32 index;
-        if (flags.type == TextureType::Buffer) {
-            index = descriptors.Add(TextureBufferDescriptor{
-                .cbuf_index = cbuf.index,
-                .cbuf_offset = cbuf.offset,
-                .count = 1,
-            });
-        } else {
-            index = descriptors.Add(TextureDescriptor{
-                .type = flags.type,
-                .cbuf_index = cbuf.index,
-                .cbuf_offset = cbuf.offset,
-                .count = 1,
-            });
+        switch (inst->GetOpcode()) {
+        case IR::Opcode::ImageRead:
+        case IR::Opcode::ImageWrite: {
+            const bool is_written{inst->GetOpcode() == IR::Opcode::ImageWrite};
+            if (flags.type == TextureType::Buffer) {
+                throw NotImplementedException("Image buffer");
+            } else {
+                index = descriptors.Add(ImageDescriptor{
+                    .type = flags.type,
+                    .format = flags.image_format,
+                    .is_written = is_written,
+                    .cbuf_index = cbuf.index,
+                    .cbuf_offset = cbuf.offset,
+                    .count = 1,
+                });
+            }
+            break;
+        }
+        default:
+            if (flags.type == TextureType::Buffer) {
+                index = descriptors.Add(TextureBufferDescriptor{
+                    .cbuf_index = cbuf.index,
+                    .cbuf_offset = cbuf.offset,
+                    .count = 1,
+                });
+            } else {
+                index = descriptors.Add(TextureDescriptor{
+                    .type = flags.type,
+                    .is_depth = flags.is_depth != 0,
+                    .cbuf_index = cbuf.index,
+                    .cbuf_offset = cbuf.offset,
+                    .count = 1,
+                });
+            }
+            break;
         }
         inst->SetArg(0, IR::Value{index});
     }

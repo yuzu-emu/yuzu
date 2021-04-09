@@ -494,7 +494,7 @@ bool RasterizerVulkan::AccelerateDisplay(const Tegra::FramebufferConfig& config,
     if (!image_view) {
         return false;
     }
-    screen_info.image_view = image_view->Handle(VideoCommon::ImageViewType::e2D);
+    screen_info.image_view = image_view->Handle(Shader::TextureType::Color2D);
     screen_info.width = image_view->size.width;
     screen_info.height = image_view->size.height;
     screen_info.is_srgb = VideoCore::Surface::IsPixelFormatSRGB(image_view->format);

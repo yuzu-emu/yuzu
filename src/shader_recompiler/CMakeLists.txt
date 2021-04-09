@@ -133,6 +133,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/predicate_set_predicate.cpp
     frontend/maxwell/translate/impl/predicate_set_register.cpp
     frontend/maxwell/translate/impl/select_source_with_predicate.cpp
+    frontend/maxwell/translate/impl/surface_load_store.cpp
     frontend/maxwell/translate/impl/texture_fetch.cpp
     frontend/maxwell/translate/impl/texture_fetch_swizzled.cpp
     frontend/maxwell/translate/impl/texture_gather_swizzled.cpp

@@ -1620,6 +1620,17 @@ Value IREmitter::ImageGradient(const Value& handle, const Value& coords, const V
     return Inst(op, Flags{info}, handle, coords, derivates, offset, lod_clamp);
 }
 
+Value IREmitter::ImageRead(const Value& handle, const Value& coords, TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageRead : Opcode::BindlessImageRead};
+    return Inst(op, Flags{info}, handle, coords);
+}
+
+void IREmitter::ImageWrite(const Value& handle, const Value& coords, const Value& color,
+                            TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageWrite : Opcode::BindlessImageWrite};
+    Inst(op, Flags{info}, handle, coords, color);
+}
+
 U1 IREmitter::VoteAll(const U1& value) {
     return Inst<U1>(Opcode::VoteAll, value);
 }
