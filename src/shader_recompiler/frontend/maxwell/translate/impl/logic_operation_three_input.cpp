@@ -73,7 +73,12 @@ IR::U32 LOP3(TranslatorVisitor& v, u64 insn, const IR::U32& op_b, const IR::U32&
         u64 insn;
         BitField<0, 8, IR::Reg> dest_reg;
         BitField<8, 8, IR::Reg> src_reg;
+        BitField<47, 1, u64> cc;
     } const lop3{insn};
+
+    if (lop3.cc != 0) {
+        throw NotImplementedException("LOP3 CC");
+    }
 
     const IR::U32 op_a{v.X(lop3.src_reg)};
     const IR::U32 result{ApplyLUT(v.ir, op_a, op_b, op_c, lut)};

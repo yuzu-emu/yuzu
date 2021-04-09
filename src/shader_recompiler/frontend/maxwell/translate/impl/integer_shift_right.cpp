@@ -16,11 +16,15 @@ void SHR(TranslatorVisitor& v, u64 insn, const IR::U32& shift) {
         BitField<39, 1, u64> is_wrapped;
         BitField<40, 1, u64> brev;
         BitField<43, 1, u64> xmode;
+        BitField<47, 1, u64> cc;
         BitField<48, 1, u64> is_signed;
     } const shr{insn};
 
     if (shr.xmode != 0) {
         throw NotImplementedException("SHR.XMODE");
+    }
+    if (shr.cc != 0) {
+        throw NotImplementedException("SHR.CC");
     }
 
     IR::U32 base{v.X(shr.src_reg_a)};

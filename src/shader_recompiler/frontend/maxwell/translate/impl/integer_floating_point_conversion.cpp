@@ -62,7 +62,7 @@ IR::U32 SmallAbs(TranslatorVisitor& v, const IR::U32& value, int bitsize) {
 void I2F(TranslatorVisitor& v, u64 insn, IR::U32U64 src) {
     const Encoding i2f{insn};
     if (i2f.cc != 0) {
-        throw NotImplementedException("CC");
+        throw NotImplementedException("I2F CC");
     }
     const bool is_signed{i2f.is_signed != 0};
     int src_bitsize{};

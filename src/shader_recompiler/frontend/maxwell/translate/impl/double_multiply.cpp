@@ -16,8 +16,13 @@ void DMUL(TranslatorVisitor& v, u64 insn, const IR::F64& src_b) {
         BitField<0, 8, IR::Reg> dest_reg;
         BitField<8, 8, IR::Reg> src_a_reg;
         BitField<39, 2, FpRounding> fp_rounding;
+        BitField<47, 1, u64> cc;
         BitField<48, 1, u64> neg;
     } const dmul{insn};
+
+    if (dmul.cc != 0) {
+        throw NotImplementedException("DMUL CC");
+    }
 
     const IR::F64 src_a{v.ir.FPAbsNeg(v.D(dmul.src_a_reg), false, dmul.neg != 0)};
     const IR::FpControl control{

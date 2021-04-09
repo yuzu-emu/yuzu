@@ -13,7 +13,12 @@ void BFI(TranslatorVisitor& v, u64 insn, const IR::U32& src_a, const IR::U32& ba
         u64 insn;
         BitField<0, 8, IR::Reg> dest_reg;
         BitField<8, 8, IR::Reg> insert_reg;
+        BitField<47, 1, u64> cc;
     } const bfi{insn};
+
+    if (bfi.cc != 0) {
+        throw NotImplementedException("BFI CC");
+    }
 
     const IR::U32 offset{v.ir.BitFieldExtract(src_a, v.ir.Imm32(0), v.ir.Imm32(8), false)};
     const IR::U32 unsafe_count{v.ir.BitFieldExtract(src_a, v.ir.Imm32(8), v.ir.Imm32(8), false)};
