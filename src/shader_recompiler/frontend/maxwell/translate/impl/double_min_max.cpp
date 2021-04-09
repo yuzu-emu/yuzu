@@ -17,9 +17,14 @@ void DMNMX(TranslatorVisitor& v, u64 insn, const IR::F64& src_b) {
         BitField<42, 1, u64> neg_pred;
         BitField<45, 1, u64> negate_b;
         BitField<46, 1, u64> abs_a;
+        BitField<47, 1, u64> cc;
         BitField<48, 1, u64> negate_a;
         BitField<49, 1, u64> abs_b;
     } const dmnmx{insn};
+
+    if (dmnmx.cc != 0) {
+        throw NotImplementedException("DMNMX CC");
+    }
 
     const IR::U1 pred{v.ir.GetPred(dmnmx.pred)};
     const IR::F64 op_a{v.ir.FPAbsNeg(v.D(dmnmx.src_a_reg), dmnmx.abs_a != 0, dmnmx.negate_a != 0)};

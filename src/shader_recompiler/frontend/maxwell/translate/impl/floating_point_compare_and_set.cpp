@@ -19,6 +19,7 @@ void FSET(TranslatorVisitor& v, u64 insn, const IR::F32& src_b) {
         BitField<43, 1, u64> negate_a;
         BitField<44, 1, u64> abs_b;
         BitField<45, 2, BooleanOp> bop;
+        BitField<47, 1, u64> cc;
         BitField<48, 4, FPCompareOp> compare_op;
         BitField<52, 1, u64> bf;
         BitField<53, 1, u64> negate_b;
@@ -43,10 +44,22 @@ void FSET(TranslatorVisitor& v, u64 insn, const IR::F32& src_b) {
 
     const IR::U32 one_mask{v.ir.Imm32(-1)};
     const IR::U32 fp_one{v.ir.Imm32(0x3f800000)};
-    const IR::U32 fail_result{v.ir.Imm32(0)};
+    const IR::U32 zero{v.ir.Imm32(0)};
     const IR::U32 pass_result{fset.bf == 0 ? one_mask : fp_one};
+    const IR::U32 result{v.ir.Select(bop_result, pass_result, zero)};
 
-    v.X(fset.dest_reg, IR::U32{v.ir.Select(bop_result, pass_result, fail_result)});
+    v.X(fset.dest_reg, result);
+    if (fset.cc != 0) {
+        const IR::U1 is_zero{v.ir.IEqual(result, zero)};
+        v.SetZFlag(is_zero);
+        if (fset.bf != 0) {
+            v.ResetSFlag();
+        } else {
+            v.SetSFlag(v.ir.LogicalNot(is_zero));
+        }
+        v.ResetCFlag();
+        v.ResetOFlag();
+    }
 }
 } // Anonymous namespace
 

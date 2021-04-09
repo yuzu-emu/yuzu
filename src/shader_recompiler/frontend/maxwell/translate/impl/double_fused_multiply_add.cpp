@@ -16,9 +16,14 @@ void DFMA(TranslatorVisitor& v, u64 insn, const IR::F64& src_b, const IR::F64& s
         BitField<0, 8, IR::Reg> dest_reg;
         BitField<8, 8, IR::Reg> src_a_reg;
         BitField<50, 2, FpRounding> fp_rounding;
+        BitField<47, 1, u64> cc;
         BitField<48, 1, u64> neg_b;
         BitField<49, 1, u64> neg_c;
     } const dfma{insn};
+
+    if (dfma.cc != 0) {
+        throw NotImplementedException("DFMA CC");
+    }
 
     const IR::F64 src_a{v.D(dfma.src_a_reg)};
     const IR::F64 op_b{v.ir.FPAbsNeg(src_b, false, dfma.neg_b != 0)};

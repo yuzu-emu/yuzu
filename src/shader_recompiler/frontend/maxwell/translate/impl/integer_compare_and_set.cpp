@@ -19,6 +19,7 @@ void ISET(TranslatorVisitor& v, u64 insn, const IR::U32& src_a) {
         BitField<43, 1, u64> x;
         BitField<44, 1, u64> bf;
         BitField<45, 2, BooleanOp> bop;
+        BitField<47, 1, u64> cc;
         BitField<48, 1, u64> is_signed;
         BitField<49, 3, CompareOp> compare_op;
     } const iset{insn};
@@ -38,12 +39,22 @@ void ISET(TranslatorVisitor& v, u64 insn, const IR::U32& src_a) {
 
     const IR::U32 one_mask{v.ir.Imm32(-1)};
     const IR::U32 fp_one{v.ir.Imm32(0x3f800000)};
-    const IR::U32 fail_result{v.ir.Imm32(0)};
+    const IR::U32 zero{v.ir.Imm32(0)};
     const IR::U32 pass_result{iset.bf == 0 ? one_mask : fp_one};
-
-    const IR::U32 result{v.ir.Select(bop_result, pass_result, fail_result)};
+    const IR::U32 result{v.ir.Select(bop_result, pass_result, zero)};
 
     v.X(iset.dest_reg, result);
+    if (iset.cc != 0) {
+        const IR::U1 is_zero{v.ir.IEqual(result, zero)};
+        v.SetZFlag(is_zero);
+        if (iset.bf != 0) {
+            v.ResetSFlag();
+        } else {
+            v.SetSFlag(v.ir.LogicalNot(is_zero));
+        }
+        v.ResetCFlag();
+        v.ResetOFlag();
+    }
 }
 } // Anonymous namespace
 

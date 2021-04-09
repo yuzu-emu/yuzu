@@ -41,6 +41,7 @@ void F2F(TranslatorVisitor& v, u64 insn, const IR::F16F32F64& src_a, bool abs) {
         BitField<0, 8, IR::Reg> dest_reg;
         BitField<44, 1, u64> ftz;
         BitField<45, 1, u64> neg;
+        BitField<47, 1, u64> cc;
         BitField<50, 1, u64> sat;
         BitField<39, 4, u64> rounding_op;
         BitField<39, 2, FpRounding> rounding;
@@ -52,6 +53,10 @@ void F2F(TranslatorVisitor& v, u64 insn, const IR::F16F32F64& src_a, bool abs) {
             return static_cast<RoundingOp>(rounding_op.Value() & rounding_mask);
         }
     } const f2f{insn};
+
+    if (f2f.cc != 0) {
+        throw NotImplementedException("F2F CC");
+    }
 
     IR::F16F32F64 input{v.ir.FPAbsNeg(src_a, abs, f2f.neg != 0)};
 

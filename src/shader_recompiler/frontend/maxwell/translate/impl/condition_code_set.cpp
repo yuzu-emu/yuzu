@@ -18,17 +18,29 @@ void TranslatorVisitor::CSET(u64 insn) {
         BitField<42, 1, u64> neg_bop_pred;
         BitField<44, 1, u64> bf;
         BitField<45, 2, BooleanOp> bop;
+        BitField<47, 1, u64> cc;
     } const cset{insn};
 
     const IR::U32 one_mask{ir.Imm32(-1)};
     const IR::U32 fp_one{ir.Imm32(0x3f800000)};
-    const IR::U32 fail_result{ir.Imm32(0)};
+    const IR::U32 zero{ir.Imm32(0)};
     const IR::U32 pass_result{cset.bf == 0 ? one_mask : fp_one};
     const IR::U1 cc_test_result{ir.GetFlowTestResult(cset.cc_test)};
     const IR::U1 bop_pred{ir.GetPred(cset.bop_pred, cset.neg_bop_pred != 0)};
     const IR::U1 pred_result{PredicateCombine(ir, cc_test_result, bop_pred, cset.bop)};
-    const IR::U32 result{ir.Select(pred_result, pass_result, fail_result)};
+    const IR::U32 result{ir.Select(pred_result, pass_result, zero)};
     X(cset.dest_reg, result);
+    if (cset.cc != 0) {
+        const IR::U1 is_zero{ir.IEqual(result, zero)};
+        SetZFlag(is_zero);
+        if (cset.bf != 0) {
+            ResetSFlag();
+        } else {
+            SetSFlag(ir.LogicalNot(is_zero));
+        }
+        ResetOFlag();
+        ResetCFlag();
+    }
 }
 
 void TranslatorVisitor::CSETP(u64 insn) {

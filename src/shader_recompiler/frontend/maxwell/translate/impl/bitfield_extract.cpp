@@ -14,8 +14,13 @@ void BFE(TranslatorVisitor& v, u64 insn, const IR::U32& src) {
         BitField<0, 8, IR::Reg> dest_reg;
         BitField<8, 8, IR::Reg> offset_reg;
         BitField<40, 1, u64> brev;
+        BitField<47, 1, u64> cc;
         BitField<48, 1, u64> is_signed;
     } const bfe{insn};
+
+    if (bfe.cc != 0) {
+        throw NotImplementedException("BFE CC");
+    }
 
     const IR::U32 offset{v.ir.BitFieldExtract(src, v.ir.Imm32(0), v.ir.Imm32(8), false)};
     const IR::U32 count{v.ir.BitFieldExtract(src, v.ir.Imm32(8), v.ir.Imm32(8), false)};

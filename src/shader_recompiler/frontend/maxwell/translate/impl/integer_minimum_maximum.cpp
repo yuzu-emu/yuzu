@@ -16,8 +16,13 @@ void IMNMX(TranslatorVisitor& v, u64 insn, const IR::U32& op_b) {
         BitField<39, 3, IR::Pred> pred;
         BitField<42, 1, u64> neg_pred;
         BitField<43, 2, u64> mode;
+        BitField<47, 1, u64> cc;
         BitField<48, 1, u64> is_signed;
     } const imnmx{insn};
+
+    if (imnmx.cc != 0) {
+        throw NotImplementedException("IMNMX CC");
+    }
 
     if (imnmx.mode != 0) {
         throw NotImplementedException("IMNMX.MODE");

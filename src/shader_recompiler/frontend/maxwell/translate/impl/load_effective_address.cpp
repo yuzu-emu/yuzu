@@ -14,6 +14,7 @@ void LEA_hi(TranslatorVisitor& v, u64 insn, const IR::U32& base, IR::U32 offset_
         u64 insn;
         BitField<0, 8, IR::Reg> dest_reg;
         BitField<8, 8, IR::Reg> offset_lo_reg;
+        BitField<47, 1, u64> cc;
         BitField<48, 3, IR::Pred> pred;
     } const lea{insn};
 
@@ -21,7 +22,10 @@ void LEA_hi(TranslatorVisitor& v, u64 insn, const IR::U32& base, IR::U32 offset_
         throw NotImplementedException("LEA.HI X");
     }
     if (lea.pred != IR::Pred::PT) {
-        throw NotImplementedException("LEA.LO Pred");
+        throw NotImplementedException("LEA.HI Pred");
+    }
+    if (lea.cc != 0) {
+        throw NotImplementedException("LEA.HI CC");
     }
 
     const IR::U32 offset_lo{v.X(lea.offset_lo_reg)};
@@ -44,6 +48,7 @@ void LEA_lo(TranslatorVisitor& v, u64 insn, const IR::U32& base) {
         BitField<39, 5, u64> scale;
         BitField<45, 1, u64> neg;
         BitField<46, 1, u64> x;
+        BitField<47, 1, u64> cc;
         BitField<48, 3, IR::Pred> pred;
     } const lea{insn};
     if (lea.x != 0) {
@@ -51,6 +56,9 @@ void LEA_lo(TranslatorVisitor& v, u64 insn, const IR::U32& base) {
     }
     if (lea.pred != IR::Pred::PT) {
         throw NotImplementedException("LEA.LO Pred");
+    }
+    if (lea.cc != 0) {
+        throw NotImplementedException("LEA.LO CC");
     }
 
     const IR::U32 offset_lo{v.X(lea.offset_lo_reg)};
