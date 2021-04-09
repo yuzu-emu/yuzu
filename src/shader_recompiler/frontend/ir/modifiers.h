@@ -43,11 +43,13 @@ static_assert(sizeof(FpControl) <= sizeof(u32));
 union TextureInstInfo {
     u32 raw;
     BitField<0, 8, TextureType> type;
-    BitField<8, 1, u32> has_bias;
-    BitField<9, 1, u32> has_lod_clamp;
-    BitField<10, 1, u32> relaxed_precision;
-    BitField<11, 2, u32> gather_component;
-    BitField<13, 2, u32> num_derivates;
+    BitField<8, 1, u32> is_depth;
+    BitField<9, 1, u32> has_bias;
+    BitField<10, 1, u32> has_lod_clamp;
+    BitField<11, 1, u32> relaxed_precision;
+    BitField<12, 2, u32> gather_component;
+    BitField<14, 2, u32> num_derivates;
+    BitField<16, 3, ImageFormat> image_format;
 };
 static_assert(sizeof(TextureInstInfo) <= sizeof(u32));
 

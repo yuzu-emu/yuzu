@@ -18,36 +18,65 @@ namespace {
 Id ImageType(EmitContext& ctx, const TextureDescriptor& desc) {
     const spv::ImageFormat format{spv::ImageFormat::Unknown};
     const Id type{ctx.F32[1]};
+    const bool depth{desc.is_depth};
     switch (desc.type) {
     case TextureType::Color1D:
-        return ctx.TypeImage(type, spv::Dim::Dim1D, false, false, false, 1, format);
+        return ctx.TypeImage(type, spv::Dim::Dim1D, depth, false, false, 1, format);
     case TextureType::ColorArray1D:
-        return ctx.TypeImage(type, spv::Dim::Dim1D, false, true, false, 1, format);
+        return ctx.TypeImage(type, spv::Dim::Dim1D, depth, true, false, 1, format);
     case TextureType::Color2D:
-        return ctx.TypeImage(type, spv::Dim::Dim2D, false, false, false, 1, format);
+        return ctx.TypeImage(type, spv::Dim::Dim2D, depth, false, false, 1, format);
     case TextureType::ColorArray2D:
-        return ctx.TypeImage(type, spv::Dim::Dim2D, false, true, false, 1, format);
+        return ctx.TypeImage(type, spv::Dim::Dim2D, depth, true, false, 1, format);
     case TextureType::Color3D:
-        return ctx.TypeImage(type, spv::Dim::Dim3D, false, false, false, 1, format);
+        return ctx.TypeImage(type, spv::Dim::Dim3D, depth, false, false, 1, format);
     case TextureType::ColorCube:
-        return ctx.TypeImage(type, spv::Dim::Cube, false, false, false, 1, format);
+        return ctx.TypeImage(type, spv::Dim::Cube, depth, false, false, 1, format);
     case TextureType::ColorArrayCube:
-        return ctx.TypeImage(type, spv::Dim::Cube, false, true, false, 1, format);
-    case TextureType::Shadow1D:
-        return ctx.TypeImage(type, spv::Dim::Dim1D, true, false, false, 1, format);
-    case TextureType::ShadowArray1D:
-        return ctx.TypeImage(type, spv::Dim::Dim1D, true, true, false, 1, format);
-    case TextureType::Shadow2D:
-        return ctx.TypeImage(type, spv::Dim::Dim2D, true, false, false, 1, format);
-    case TextureType::ShadowArray2D:
-        return ctx.TypeImage(type, spv::Dim::Dim2D, true, true, false, 1, format);
-    case TextureType::Shadow3D:
-        return ctx.TypeImage(type, spv::Dim::Dim3D, true, false, false, 1, format);
-    case TextureType::ShadowCube:
-        return ctx.TypeImage(type, spv::Dim::Cube, true, false, false, 1, format);
-    case TextureType::ShadowArrayCube:
-        return ctx.TypeImage(type, spv::Dim::Cube, true, true, false, 1, format);
+        return ctx.TypeImage(type, spv::Dim::Cube, depth, true, false, 1, format);
     case TextureType::Buffer:
+        break;
+    }
+    throw InvalidArgument("Invalid texture type {}", desc.type);
+}
+
+Id ImageType(EmitContext& ctx, const ImageDescriptor& desc) {
+    const spv::ImageFormat format{[&] {
+        switch (desc.format) {
+        case ImageFormat::Typeless:
+            return spv::ImageFormat::Unknown;
+        case ImageFormat::R8_UINT:
+            return spv::ImageFormat::R8ui;
+        case ImageFormat::R8_SINT:
+            return spv::ImageFormat::R8i;
+        case ImageFormat::R16_UINT:
+            return spv::ImageFormat::R16ui;
+        case ImageFormat::R16_SINT:
+            return spv::ImageFormat::R16i;
+        case ImageFormat::R32_UINT:
+            return spv::ImageFormat::R32ui;
+        case ImageFormat::R32G32_UINT:
+            return spv::ImageFormat::Rg32ui;
+        case ImageFormat::R32G32B32A32_UINT:
+            return spv::ImageFormat::Rgba32ui;
+        }
+        throw InvalidArgument("Invalid image format {}", desc.format);
+    }()};
+    const Id type{ctx.U32[1]};
+    switch (desc.type) {
+    case TextureType::Color1D:
+        return ctx.TypeImage(type, spv::Dim::Dim1D, false, false, false, 2, format);
+    case TextureType::ColorArray1D:
+        return ctx.TypeImage(type, spv::Dim::Dim1D, false, true, false, 2, format);
+    case TextureType::Color2D:
+        return ctx.TypeImage(type, spv::Dim::Dim2D, false, false, false, 2, format);
+    case TextureType::ColorArray2D:
+        return ctx.TypeImage(type, spv::Dim::Dim2D, false, true, false, 2, format);
+    case TextureType::Color3D:
+        return ctx.TypeImage(type, spv::Dim::Dim3D, false, false, false, 2, format);
+    case TextureType::Buffer:
+        throw NotImplementedException("Image buffer");
+    default:
         break;
     }
     throw InvalidArgument("Invalid texture type {}", desc.type);
@@ -134,6 +163,7 @@ EmitContext::EmitContext(const Profile& profile_, IR::Program& program, u32& bin
     DefineStorageBuffers(program.info, binding);
     DefineTextureBuffers(program.info, binding);
     DefineTextures(program.info, binding);
+    DefineImages(program.info, binding);
     DefineAttributeMemAccess(program.info);
     DefineLabels(program);
 }
@@ -562,6 +592,31 @@ void EmitContext::DefineTextures(const Info& info, u32& binding) {
             textures.push_back(TextureDefinition{
                 .id{id},
                 .sampled_type{sampled_type},
+                .image_type{image_type},
+            });
+        }
+        if (profile.supported_spirv >= 0x00010400) {
+            interfaces.push_back(id);
+        }
+        binding += desc.count;
+    }
+}
+
+void EmitContext::DefineImages(const Info& info, u32& binding) {
+    images.reserve(info.image_descriptors.size());
+    for (const ImageDescriptor& desc : info.image_descriptors) {
+        if (desc.count != 1) {
+            throw NotImplementedException("Array of textures");
+        }
+        const Id image_type{ImageType(*this, desc)};
+        const Id pointer_type{TypePointer(spv::StorageClass::UniformConstant, image_type)};
+        const Id id{AddGlobalVariable(pointer_type, spv::StorageClass::UniformConstant)};
+        Decorate(id, spv::Decoration::Binding, binding);
+        Decorate(id, spv::Decoration::DescriptorSet, 0U);
+        Name(id, fmt::format("img{}_{:02x}", desc.cbuf_index, desc.cbuf_offset));
+        for (u32 index = 0; index < desc.count; ++index) {
+            images.push_back(ImageDefinition{
+                .id{id},
                 .image_type{image_type},
             });
         }

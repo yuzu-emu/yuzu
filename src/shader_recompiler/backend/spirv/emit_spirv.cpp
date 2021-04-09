@@ -253,6 +253,7 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
     ctx.AddCapability(spv::Capability::ImageGatherExtended);
     ctx.AddCapability(spv::Capability::ImageQuery);
     ctx.AddCapability(spv::Capability::SampledBuffer);
+    ctx.AddCapability(spv::Capability::StorageImageReadWithoutFormat);
 }
 
 Id PhiArgDef(EmitContext& ctx, IR::Inst* inst, size_t index) {

@@ -215,6 +215,30 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     return VK_COMPONENT_SWIZZLE_ZERO;
 }
 
+[[nodiscard]] VkImageViewType ImageViewType(Shader::TextureType type) {
+    switch (type) {
+    case Shader::TextureType::Color1D:
+        return VK_IMAGE_VIEW_TYPE_1D;
+    case Shader::TextureType::Color2D:
+        return VK_IMAGE_VIEW_TYPE_2D;
+    case Shader::TextureType::ColorCube:
+        return VK_IMAGE_VIEW_TYPE_CUBE;
+    case Shader::TextureType::Color3D:
+        return VK_IMAGE_VIEW_TYPE_3D;
+    case Shader::TextureType::ColorArray1D:
+        return VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+    case Shader::TextureType::ColorArray2D:
+        return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    case Shader::TextureType::ColorArrayCube:
+        return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+    case Shader::TextureType::Buffer:
+        UNREACHABLE_MSG("Texture buffers can't be image views");
+        return VK_IMAGE_VIEW_TYPE_1D;
+    }
+    UNREACHABLE_MSG("Invalid image view type={}", type);
+    return VK_IMAGE_VIEW_TYPE_2D;
+}
+
 [[nodiscard]] VkImageViewType ImageViewType(VideoCommon::ImageViewType type) {
     switch (type) {
     case VideoCommon::ImageViewType::e1D:
@@ -232,7 +256,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case VideoCommon::ImageViewType::CubeArray:
         return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
     case VideoCommon::ImageViewType::Rect:
-        LOG_WARNING(Render_Vulkan, "Unnormalized image view type not supported");
+        UNIMPLEMENTED_MSG("Rect image view");
         return VK_IMAGE_VIEW_TYPE_2D;
     case VideoCommon::ImageViewType::Buffer:
         UNREACHABLE_MSG("Texture buffers can't be image views");
@@ -539,6 +563,28 @@ struct RangedBarrierRange {
     }
 };
 
+[[nodiscard]] VkFormat Format(Shader::ImageFormat format) {
+    switch (format) {
+    case Shader::ImageFormat::Typeless:
+        break;
+    case Shader::ImageFormat::R8_SINT:
+        return VK_FORMAT_R8_SINT;
+    case Shader::ImageFormat::R8_UINT:
+        return VK_FORMAT_R8_UINT;
+    case Shader::ImageFormat::R16_UINT:
+        return VK_FORMAT_R16_UINT;
+    case Shader::ImageFormat::R16_SINT:
+        return VK_FORMAT_R16_SINT;
+    case Shader::ImageFormat::R32_UINT:
+        return VK_FORMAT_R32_UINT;
+    case Shader::ImageFormat::R32G32_UINT:
+        return VK_FORMAT_R32G32_UINT;
+    case Shader::ImageFormat::R32G32B32A32_UINT:
+        return VK_FORMAT_R32G32B32A32_UINT;
+    }
+    UNREACHABLE_MSG("Invalid image format={}", format);
+    return VK_FORMAT_R32_UINT;
+}
 } // Anonymous namespace
 
 void TextureCacheRuntime::Finish() {
@@ -574,7 +620,7 @@ void TextureCacheRuntime::BlitImage(Framebuffer* dst_framebuffer, ImageView& dst
             return;
         }
     }
-    ASSERT(src.ImageFormat() == dst.ImageFormat());
+    ASSERT(src.format == dst.format);
     ASSERT(!(is_dst_msaa && !is_src_msaa));
     ASSERT(operation == Fermi2D::Operation::SrcCopy);
 
@@ -897,8 +943,9 @@ void Image::DownloadMemory(const StagingBufferRef& map, std::span<const BufferIm
 ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewInfo& info,
                      ImageId image_id_, Image& image)
     : VideoCommon::ImageViewBase{info, image.info, image_id_}, device{&runtime.device},
-      image_handle{image.Handle()}, image_format{image.info.format}, samples{ConvertSampleCount(
-                                                                         image.info.num_samples)} {
+      image_handle{image.Handle()}, samples{ConvertSampleCount(image.info.num_samples)} {
+    using Shader::TextureType;
+
     const VkImageAspectFlags aspect_mask = ImageViewAspectMask(info);
     std::array<SwizzleSource, 4> swizzle{
         SwizzleSource::R,
@@ -936,39 +983,39 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
         },
         .subresourceRange = MakeSubresourceRange(aspect_mask, info.range),
     };
-    const auto create = [&](VideoCommon::ImageViewType view_type, std::optional<u32> num_layers) {
+    const auto create = [&](TextureType tex_type, std::optional<u32> num_layers) {
         VkImageViewCreateInfo ci{create_info};
-        ci.viewType = ImageViewType(view_type);
+        ci.viewType = ImageViewType(tex_type);
         if (num_layers) {
             ci.subresourceRange.layerCount = *num_layers;
         }
         vk::ImageView handle = device->GetLogical().CreateImageView(ci);
         if (device->HasDebuggingToolAttached()) {
-            handle.SetObjectNameEXT(VideoCommon::Name(*this, view_type).c_str());
+            handle.SetObjectNameEXT(VideoCommon::Name(*this).c_str());
         }
-        image_views[static_cast<size_t>(view_type)] = std::move(handle);
+        image_views[static_cast<size_t>(tex_type)] = std::move(handle);
     };
     switch (info.type) {
     case VideoCommon::ImageViewType::e1D:
     case VideoCommon::ImageViewType::e1DArray:
-        create(VideoCommon::ImageViewType::e1D, 1);
-        create(VideoCommon::ImageViewType::e1DArray, std::nullopt);
-        render_target = Handle(VideoCommon::ImageViewType::e1DArray);
+        create(TextureType::Color1D, 1);
+        create(TextureType::ColorArray1D, std::nullopt);
+        render_target = Handle(TextureType::ColorArray1D);
         break;
     case VideoCommon::ImageViewType::e2D:
     case VideoCommon::ImageViewType::e2DArray:
-        create(VideoCommon::ImageViewType::e2D, 1);
-        create(VideoCommon::ImageViewType::e2DArray, std::nullopt);
-        render_target = Handle(VideoCommon::ImageViewType::e2DArray);
+        create(TextureType::Color2D, 1);
+        create(TextureType::ColorArray2D, std::nullopt);
+        render_target = Handle(Shader::TextureType::ColorArray2D);
         break;
     case VideoCommon::ImageViewType::e3D:
-        create(VideoCommon::ImageViewType::e3D, std::nullopt);
-        render_target = Handle(VideoCommon::ImageViewType::e3D);
+        create(TextureType::Color3D, std::nullopt);
+        render_target = Handle(Shader::TextureType::Color3D);
         break;
     case VideoCommon::ImageViewType::Cube:
     case VideoCommon::ImageViewType::CubeArray:
-        create(VideoCommon::ImageViewType::Cube, 6);
-        create(VideoCommon::ImageViewType::CubeArray, std::nullopt);
+        create(TextureType::ColorCube, 6);
+        create(TextureType::ColorArrayCube, std::nullopt);
         break;
     case VideoCommon::ImageViewType::Rect:
         UNIMPLEMENTED();
@@ -991,7 +1038,8 @@ VkImageView ImageView::DepthView() {
     if (depth_view) {
         return *depth_view;
     }
-    depth_view = MakeDepthStencilView(VK_IMAGE_ASPECT_DEPTH_BIT);
+    const auto& info = MaxwellToVK::SurfaceFormat(*device, FormatType::Optimal, true, format);
+    depth_view = MakeView(info.format, VK_IMAGE_ASPECT_DEPTH_BIT);
     return *depth_view;
 }
 
@@ -999,18 +1047,38 @@ VkImageView ImageView::StencilView() {
     if (stencil_view) {
         return *stencil_view;
     }
-    stencil_view = MakeDepthStencilView(VK_IMAGE_ASPECT_STENCIL_BIT);
+    const auto& info = MaxwellToVK::SurfaceFormat(*device, FormatType::Optimal, true, format);
+    stencil_view = MakeView(info.format, VK_IMAGE_ASPECT_STENCIL_BIT);
     return *stencil_view;
 }
 
-vk::ImageView ImageView::MakeDepthStencilView(VkImageAspectFlags aspect_mask) {
+VkImageView ImageView::StorageView(Shader::TextureType texture_type,
+                                   Shader::ImageFormat image_format) {
+    if (image_format == Shader::ImageFormat::Typeless) {
+        return Handle(texture_type);
+    }
+    const bool is_signed{image_format == Shader::ImageFormat::R8_SINT ||
+                         image_format == Shader::ImageFormat::R16_SINT};
+    if (!storage_views) {
+        storage_views = std::make_unique<StorageViews>();
+    }
+    auto& views{is_signed ? storage_views->signeds : storage_views->unsigneds};
+    auto& view{views[static_cast<size_t>(texture_type)]};
+    if (view) {
+        return *view;
+    }
+    view = MakeView(Format(image_format), VK_IMAGE_ASPECT_COLOR_BIT);
+    return *view;
+}
+
+vk::ImageView ImageView::MakeView(VkFormat vk_format, VkImageAspectFlags aspect_mask) {
     return device->GetLogical().CreateImageView({
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
         .image = image_handle,
         .viewType = ImageViewType(type),
-        .format = MaxwellToVK::SurfaceFormat(*device, FormatType::Optimal, true, format).format,
+        .format = vk_format,
         .components{
             .r = VK_COMPONENT_SWIZZLE_IDENTITY,
             .g = VK_COMPONENT_SWIZZLE_IDENTITY,

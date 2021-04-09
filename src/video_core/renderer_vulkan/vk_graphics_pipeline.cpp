@@ -186,6 +186,10 @@ void GraphicsPipeline::Configure(bool is_indexed) {
             Sampler* const sampler{texture_cache.GetGraphicsSampler(handle.sampler)};
             samplers.push_back(sampler->Handle());
         }
+        for (const auto& desc : info.image_descriptors) {
+            const TextureHandle handle{read_handle(desc.cbuf_index, desc.cbuf_offset)};
+            image_view_indices.push_back(handle.image);
+        }
     }
     const std::span indices_span(image_view_indices.data(), image_view_indices.size());
     texture_cache.FillGraphicsImageViews(indices_span, image_view_ids);

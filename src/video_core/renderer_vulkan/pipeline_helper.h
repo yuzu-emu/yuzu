@@ -97,6 +97,9 @@ public:
         for ([[maybe_unused]] const auto& desc : info.texture_descriptors) {
             Add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage);
         }
+        for (const auto& desc : info.image_descriptors) {
+            Add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, stage);
+        }
     }
 
 private:
@@ -127,36 +130,6 @@ private:
     size_t offset{};
 };
 
-inline VideoCommon::ImageViewType CastType(Shader::TextureType type) {
-    switch (type) {
-    case Shader::TextureType::Color1D:
-    case Shader::TextureType::Shadow1D:
-        return VideoCommon::ImageViewType::e1D;
-    case Shader::TextureType::ColorArray1D:
-    case Shader::TextureType::ShadowArray1D:
-        return VideoCommon::ImageViewType::e1DArray;
-    case Shader::TextureType::Color2D:
-    case Shader::TextureType::Shadow2D:
-        return VideoCommon::ImageViewType::e2D;
-    case Shader::TextureType::ColorArray2D:
-    case Shader::TextureType::ShadowArray2D:
-        return VideoCommon::ImageViewType::e2DArray;
-    case Shader::TextureType::Color3D:
-    case Shader::TextureType::Shadow3D:
-        return VideoCommon::ImageViewType::e3D;
-    case Shader::TextureType::ColorCube:
-    case Shader::TextureType::ShadowCube:
-        return VideoCommon::ImageViewType::Cube;
-    case Shader::TextureType::ColorArrayCube:
-    case Shader::TextureType::ShadowArrayCube:
-        return VideoCommon::ImageViewType::CubeArray;
-    case Shader::TextureType::Buffer:
-        break;
-    }
-    UNREACHABLE_MSG("Invalid texture type {}", type);
-    return {};
-}
-
 inline void PushImageDescriptors(const Shader::Info& info, const VkSampler*& samplers,
                                  const ImageId*& image_view_ids, TextureCache& texture_cache,
                                  VKUpdateDescriptorQueue& update_descriptor_queue) {
@@ -164,8 +137,16 @@ inline void PushImageDescriptors(const Shader::Info& info, const VkSampler*& sam
     for (const auto& desc : info.texture_descriptors) {
         const VkSampler sampler{*(samplers++)};
         ImageView& image_view{texture_cache.GetImageView(*(image_view_ids++))};
-        const VkImageView vk_image_view{image_view.Handle(CastType(desc.type))};
+        const VkImageView vk_image_view{image_view.Handle(desc.type)};
         update_descriptor_queue.AddSampledImage(vk_image_view, sampler);
+    }
+    for (const auto& desc : info.image_descriptors) {
+        ImageView& image_view{texture_cache.GetImageView(*(image_view_ids++))};
+        if (desc.is_written) {
+            texture_cache.MarkModification(image_view.image_id);
+        }
+        const VkImageView vk_image_view{image_view.StorageView(desc.type, desc.format)};
+        update_descriptor_queue.AddImage(vk_image_view);
     }
 }
 

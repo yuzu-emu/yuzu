@@ -108,6 +108,10 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
         Sampler* const sampler = texture_cache.GetComputeSampler(handle.sampler);
         samplers.push_back(sampler->Handle());
     }
+    for (const auto& desc : info.image_descriptors) {
+        const TextureHandle handle{read_handle(desc.cbuf_index, desc.cbuf_offset)};
+        image_view_indices.push_back(handle.image);
+    }
     const std::span indices_span(image_view_indices.data(), image_view_indices.size());
     texture_cache.FillComputeImageViews(indices_span, image_view_ids);
 

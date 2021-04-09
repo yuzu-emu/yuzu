@@ -144,6 +144,18 @@ Id TextureImage(EmitContext& ctx, const IR::Value& index, IR::TextureInstInfo in
     }
 }
 
+Id Image(EmitContext& ctx, const IR::Value& index, IR::TextureInstInfo info) {
+    if (!index.IsImmediate()) {
+        throw NotImplementedException("Indirect image indexing");
+    }
+    if (info.type == TextureType::Buffer) {
+        throw NotImplementedException("Image buffer");
+    } else {
+        const ImageDefinition def{ctx.images.at(index.U32())};
+        return ctx.OpLoad(def.image_type, def.id);
+    }
+}
+
 Id Decorate(EmitContext& ctx, IR::Inst* inst, Id sample) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
     if (info.relaxed_precision != 0) {
@@ -209,6 +221,14 @@ Id EmitBindlessImageGradient(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
 
+Id EmitBindlessImageRead(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+Id EmitBindlessImageWrite(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
 Id EmitBoundImageSampleImplicitLod(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
@@ -246,6 +266,14 @@ Id EmitBoundImageQueryLod(EmitContext&) {
 }
 
 Id EmitBoundImageGradient(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+Id EmitBoundImageRead(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+Id EmitBoundImageWrite(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
 
@@ -322,23 +350,16 @@ Id EmitImageQueryDimensions(EmitContext& ctx, IR::Inst* inst, const IR::Value& i
     const auto mips{[&] { return ctx.OpImageQueryLevels(ctx.U32[1], image); }};
     switch (info.type) {
     case TextureType::Color1D:
-    case TextureType::Shadow1D:
         return ctx.OpCompositeConstruct(ctx.U32[4], ctx.OpImageQuerySizeLod(ctx.U32[1], image, lod),
                                         zero, zero, mips());
     case TextureType::ColorArray1D:
     case TextureType::Color2D:
     case TextureType::ColorCube:
-    case TextureType::ShadowArray1D:
-    case TextureType::Shadow2D:
-    case TextureType::ShadowCube:
         return ctx.OpCompositeConstruct(ctx.U32[4], ctx.OpImageQuerySizeLod(ctx.U32[2], image, lod),
                                         zero, mips());
     case TextureType::ColorArray2D:
     case TextureType::Color3D:
     case TextureType::ColorArrayCube:
-    case TextureType::ShadowArray2D:
-    case TextureType::Shadow3D:
-    case TextureType::ShadowArrayCube:
         return ctx.OpCompositeConstruct(ctx.U32[4], ctx.OpImageQuerySizeLod(ctx.U32[3], image, lod),
                                         mips());
     case TextureType::Buffer:
@@ -363,6 +384,17 @@ Id EmitImageGradient(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, I
     return Emit(&EmitContext::OpImageSparseSampleExplicitLod,
                 &EmitContext::OpImageSampleExplicitLod, ctx, inst, ctx.F32[4], Texture(ctx, index),
                 coords, operands.Mask(), operands.Span());
+}
+
+Id EmitImageRead(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords) {
+    const auto info{inst->Flags<IR::TextureInstInfo>()};
+    return Emit(&EmitContext::OpImageSparseRead, &EmitContext::OpImageRead, ctx, inst, ctx.U32[4],
+                Image(ctx, index, info), coords, std::nullopt, std::span<const Id>{});
+}
+
+void EmitImageWrite(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords, Id color) {
+    const auto info{inst->Flags<IR::TextureInstInfo>()};
+    ctx.OpImageWrite(Image(ctx, index, info), coords, color);
 }
 
 } // namespace Shader::Backend::SPIRV
