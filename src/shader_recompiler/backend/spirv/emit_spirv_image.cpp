@@ -304,10 +304,6 @@ Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
                 ctx.F32[4], Texture(ctx, index), coords, dref, operands.Mask(), operands.Span());
 }
 
-#ifdef _WIN32
-#pragma optimize("", off)
-#endif
-
 Id EmitImageFetch(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords, Id offset,
                   Id lod, Id ms) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};

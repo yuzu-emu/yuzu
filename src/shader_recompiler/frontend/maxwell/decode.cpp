@@ -56,7 +56,7 @@ constexpr std::array UNORDERED_ENCODINGS{
 #define INST(name, cute, encode)                                                                   \
     InstEncoding{                                                                                  \
         .mask_value{MaskValueFromEncoding(encode)},                                                \
-        .opcode = Opcode::name,                                                                     \
+        .opcode = Opcode::name,                                                                    \
     },
 #include "maxwell.inc"
 #undef INST

@@ -72,8 +72,9 @@ bool IsCompareOpOrdered(FPCompareOp op) {
     }
 }
 
-IR::U1 FloatingPointCompare(IR::IREmitter& ir, const IR::F16F32F64& operand_1, const IR::F16F32F64& operand_2,
-                            FPCompareOp compare_op, IR::FpControl control) {
+IR::U1 FloatingPointCompare(IR::IREmitter& ir, const IR::F16F32F64& operand_1,
+                            const IR::F16F32F64& operand_2, FPCompareOp compare_op,
+                            IR::FpControl control) {
     const bool ordered{IsCompareOpOrdered(compare_op)};
     switch (compare_op) {
     case FPCompareOp::F:

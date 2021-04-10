@@ -44,7 +44,7 @@ void Split(Block* old_block, Block* new_block, Location pc) {
     *new_block = Block{};
     new_block->begin = pc;
     new_block->end = old_block->end;
-    new_block->end_class = old_block->end_class,
+    new_block->end_class = old_block->end_class;
     new_block->cond = old_block->cond;
     new_block->stack = old_block->stack;
     new_block->branch_true = old_block->branch_true;
@@ -428,7 +428,7 @@ CFG::AnalysisState CFG::AnalyzeBRX(Block* block, Location pc, Instruction inst, 
         if (!is_absolute) {
             target += pc.Offset();
         }
-        target += static_cast<unsigned int>(brx_table->branch_offset);
+        target += static_cast<u32>(brx_table->branch_offset);
         target += 8;
         targets.push_back(target);
     }

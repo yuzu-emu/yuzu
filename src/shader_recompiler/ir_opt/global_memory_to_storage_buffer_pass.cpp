@@ -164,7 +164,8 @@ void DiscardGlobalMemory(IR::Block& block, IR::Inst& inst) {
         inst.Invalidate();
         break;
     default:
-        throw LogicError("Invalid opcode to discard its global memory operation {}", inst.GetOpcode());
+        throw LogicError("Invalid opcode to discard its global memory operation {}",
+                         inst.GetOpcode());
     }
 }
 
