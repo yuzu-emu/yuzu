@@ -142,10 +142,6 @@ void TranslateF2I(TranslatorVisitor& v, u64 insn, const IR::F16F32F64& src_a) {
             throw NotImplementedException("Invalid F2I rounding {}", f2i.rounding.Value());
         }
     }()};
-
-    // TODO: Handle out of bounds conversions.
-    // For example converting F32 65537.0 to U16, the expected value is 0xffff,
-
     const bool is_signed{f2i.is_signed != 0};
     const auto [max_bound, min_bound] = ClampBounds(f2i.dest_format, is_signed);
 
