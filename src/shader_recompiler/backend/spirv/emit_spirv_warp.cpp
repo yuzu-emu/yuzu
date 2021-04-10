@@ -7,7 +7,6 @@
 namespace Shader::Backend::SPIRV {
 namespace {
 Id WarpExtract(EmitContext& ctx, Id value) {
-    [[maybe_unused]] const Id shift{ctx.Constant(ctx.U32[1], 5)};
     const Id local_index{ctx.OpLoad(ctx.U32[1], ctx.subgroup_local_invocation_id)};
     return ctx.OpVectorExtractDynamic(ctx.U32[1], value, local_index);
 }

@@ -65,7 +65,6 @@ void TranslatorVisitor::CS2R(u64) {
     ThrowNotImplemented(Opcode::CS2R);
 }
 
-
 void TranslatorVisitor::FCHK_reg(u64) {
     ThrowNotImplemented(Opcode::FCHK_reg);
 }

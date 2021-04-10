@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <mutex>
-#include <condition_variable>
 #include <atomic>
+#include <condition_variable>
+#include <mutex>
 
 #include "common/common_types.h"
 #include "common/thread_worker.h"
