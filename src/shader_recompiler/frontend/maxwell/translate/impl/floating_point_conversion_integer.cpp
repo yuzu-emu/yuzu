@@ -193,7 +193,7 @@ void TranslateF2I(TranslatorVisitor& v, u64 insn, const IR::F16F32F64& src_a) {
         if (bitsize != 64) {
             result = IR::U32{v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm32(0U), result)};
         } else {
-            result = IR::U64{v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm64(0UL), result)};
+            result = IR::U64{v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm64(u64{0}), result)};
         }
     }
 
