@@ -42,7 +42,15 @@ void TranslatorVisitor::FCMP_cr(u64 insn) {
 }
 
 void TranslatorVisitor::FCMP_imm(u64 insn) {
-    FCMP(*this, insn, GetReg39(insn), GetFloatImm20(insn));
+    union {
+        u64 raw;
+        BitField<20, 19, u64> value;
+        BitField<56, 1, u64> is_negative;
+    } const fcmp{insn};
+    const u32 sign_bit{fcmp.is_negative != 0 ? (1U << 31) : 0};
+    const u32 value{static_cast<u32>(fcmp.value) << 12};
+
+    FCMP(*this, insn, ir.Imm32(value), GetFloatReg39(insn));
 }
 
 } // namespace Shader::Maxwell
