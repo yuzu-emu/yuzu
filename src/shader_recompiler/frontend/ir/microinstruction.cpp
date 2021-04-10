@@ -93,6 +93,9 @@ bool Inst::MayHaveSideEffects() const noexcept {
     case Opcode::WriteSharedU32:
     case Opcode::WriteSharedU64:
     case Opcode::WriteSharedU128:
+    case Opcode::BindlessImageWrite:
+    case Opcode::BoundImageWrite:
+    case Opcode::ImageWrite:
         return true;
     default:
         return false;
