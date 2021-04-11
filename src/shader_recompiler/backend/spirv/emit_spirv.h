@@ -66,7 +66,6 @@ void EmitSetOFlag(EmitContext& ctx);
 Id EmitWorkgroupId(EmitContext& ctx);
 Id EmitLocalInvocationId(EmitContext& ctx);
 Id EmitLoadLocal(EmitContext& ctx, Id word_offset);
-Id EmitLaneId(EmitContext& ctx);
 void EmitWriteLocal(EmitContext& ctx, Id word_offset, Id value);
 Id EmitUndefU1(EmitContext& ctx);
 Id EmitUndefU8(EmitContext& ctx);
@@ -403,6 +402,7 @@ Id EmitImageGradient(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, I
                      Id derivates, Id offset, Id lod_clamp);
 Id EmitImageRead(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords);
 void EmitImageWrite(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords, Id color);
+Id EmitLaneId(EmitContext& ctx);
 Id EmitVoteAll(EmitContext& ctx, Id pred);
 Id EmitVoteAny(EmitContext& ctx, Id pred);
 Id EmitVoteEqual(EmitContext& ctx, Id pred);
