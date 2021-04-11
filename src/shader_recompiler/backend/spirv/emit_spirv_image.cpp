@@ -388,6 +388,10 @@ Id EmitImageGradient(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, I
 
 Id EmitImageRead(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
+    if (info.image_format == ImageFormat::Typeless && !ctx.profile.support_typeless_image_loads) {
+        // LOG_WARNING(..., "Typeless image read not supported by host");
+        return ctx.ConstantNull(ctx.U32[4]);
+    }
     return Emit(&EmitContext::OpImageSparseRead, &EmitContext::OpImageRead, ctx, inst, ctx.U32[4],
                 Image(ctx, index, info), coords, std::nullopt, std::span<const Id>{});
 }

@@ -635,6 +635,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
         .support_vote = true,
         .support_viewport_index_layer_non_geometry =
             device.IsExtShaderViewportIndexLayerSupported(),
+        .support_typeless_image_loads = device.IsFormatlessImageLoadSupported(),
         .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyBiggerThanGuest(),
         .has_broken_spirv_clamp = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS_KHR,
         .generic_input_types{},

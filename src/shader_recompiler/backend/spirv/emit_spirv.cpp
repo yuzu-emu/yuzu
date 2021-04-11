@@ -238,11 +238,13 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
             ctx.AddCapability(spv::Capability::SubgroupVoteKHR);
         }
     }
+    if (info.uses_typeless_image_reads && profile.support_typeless_image_loads) {
+        ctx.AddCapability(spv::Capability::StorageImageReadWithoutFormat);
+    }
     // TODO: Track this usage
     ctx.AddCapability(spv::Capability::ImageGatherExtended);
     ctx.AddCapability(spv::Capability::ImageQuery);
     ctx.AddCapability(spv::Capability::SampledBuffer);
-    ctx.AddCapability(spv::Capability::StorageImageReadWithoutFormat);
 }
 } // Anonymous namespace
 
