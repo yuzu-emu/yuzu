@@ -681,6 +681,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
     bool has_ext_transform_feedback{};
     bool has_ext_custom_border_color{};
     bool has_ext_extended_dynamic_state{};
+    bool has_ext_shader_atomic_int64{};
     for (const VkExtensionProperties& extension : physical.EnumerateDeviceExtensionProperties()) {
         const auto test = [&](std::optional<std::reference_wrapper<bool>> status, const char* name,
                               bool push) {
@@ -710,6 +711,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         test(has_ext_custom_border_color, VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME, false);
         test(has_ext_extended_dynamic_state, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, false);
         test(has_ext_subgroup_size_control, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, false);
+        test(has_ext_shader_atomic_int64, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME, false);
         test(has_khr_workgroup_memory_explicit_layout,
              VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME, false);
         if (Settings::values.renderer_debug) {
@@ -759,6 +761,18 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         }
     } else {
         is_warp_potentially_bigger = true;
+    }
+    if (has_ext_shader_atomic_int64) {
+        VkPhysicalDeviceShaderAtomicInt64Features atomic_int64;
+        atomic_int64.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+        atomic_int64.pNext = nullptr;
+        features.pNext = &atomic_int64;
+        physical.GetFeatures2KHR(features);
+
+        if (atomic_int64.shaderBufferInt64Atomics && atomic_int64.shaderSharedInt64Atomics) {
+            extensions.push_back(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME);
+            ext_shader_atomic_int64 = true;
+        }
     }
     if (has_ext_transform_feedback) {
         VkPhysicalDeviceTransformFeedbackFeaturesEXT tfb_features;

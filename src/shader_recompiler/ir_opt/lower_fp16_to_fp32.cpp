@@ -114,6 +114,18 @@ IR::Opcode Replace(IR::Opcode op) {
         return IR::Opcode::ConvertF32U32;
     case IR::Opcode::ConvertF16U64:
         return IR::Opcode::ConvertF32U64;
+    case IR::Opcode::GlobalAtomicAddF16x2:
+        return IR::Opcode::GlobalAtomicAddF32x2;
+    case IR::Opcode::StorageAtomicAddF16x2:
+        return IR::Opcode::StorageAtomicAddF32x2;
+    case IR::Opcode::GlobalAtomicMinF16x2:
+        return IR::Opcode::GlobalAtomicMinF32x2;
+    case IR::Opcode::StorageAtomicMinF16x2:
+        return IR::Opcode::StorageAtomicMinF32x2;
+    case IR::Opcode::GlobalAtomicMaxF16x2:
+        return IR::Opcode::GlobalAtomicMaxF32x2;
+    case IR::Opcode::StorageAtomicMaxF16x2:
+        return IR::Opcode::StorageAtomicMaxF32x2;
     default:
         return op;
     }

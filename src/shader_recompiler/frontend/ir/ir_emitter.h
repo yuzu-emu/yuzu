@@ -228,6 +228,45 @@ public:
     [[nodiscard]] U1 INotEqual(const U32& lhs, const U32& rhs);
     [[nodiscard]] U1 IGreaterThanEqual(const U32& lhs, const U32& rhs, bool is_signed);
 
+    [[nodiscard]] U32 SharedAtomicIAdd(const U32& pointer_offset, const U32& value);
+    [[nodiscard]] U32 SharedAtomicSMin(const U32& pointer_offset, const U32& value);
+    [[nodiscard]] U32 SharedAtomicUMin(const U32& pointer_offset, const U32& value);
+    [[nodiscard]] U32 SharedAtomicIMin(const U32& pointer_offset, const U32& value, bool is_signed);
+    [[nodiscard]] U32 SharedAtomicSMax(const U32& pointer_offset, const U32& value);
+    [[nodiscard]] U32 SharedAtomicUMax(const U32& pointer_offset, const U32& value);
+    [[nodiscard]] U32 SharedAtomicIMax(const U32& pointer_offset, const U32& value, bool is_signed);
+    [[nodiscard]] U32 SharedAtomicInc(const U32& pointer_offset, const U32& value);
+    [[nodiscard]] U32 SharedAtomicDec(const U32& pointer_offset, const U32& value);
+    [[nodiscard]] U32 SharedAtomicAnd(const U32& pointer_offset, const U32& value);
+    [[nodiscard]] U32 SharedAtomicOr(const U32& pointer_offset, const U32& value);
+    [[nodiscard]] U32 SharedAtomicXor(const U32& pointer_offset, const U32& value);
+    [[nodiscard]] U32U64 SharedAtomicExchange(const U32& pointer_offset, const U32U64& value);
+
+    [[nodiscard]] U32U64 GlobalAtomicIAdd(const U64& pointer_offset, const U32U64& value);
+    [[nodiscard]] U32U64 GlobalAtomicSMin(const U64& pointer_offset, const U32U64& value);
+    [[nodiscard]] U32U64 GlobalAtomicUMin(const U64& pointer_offset, const U32U64& value);
+    [[nodiscard]] U32U64 GlobalAtomicIMin(const U64& pointer_offset, const U32U64& value,
+                                          bool is_signed);
+    [[nodiscard]] U32U64 GlobalAtomicSMax(const U64& pointer_offset, const U32U64& value);
+    [[nodiscard]] U32U64 GlobalAtomicUMax(const U64& pointer_offset, const U32U64& value);
+    [[nodiscard]] U32U64 GlobalAtomicIMax(const U64& pointer_offset, const U32U64& value,
+                                          bool is_signed);
+    [[nodiscard]] U32 GlobalAtomicInc(const U64& pointer_offset, const U32& value);
+    [[nodiscard]] U32 GlobalAtomicDec(const U64& pointer_offset, const U32& value);
+    [[nodiscard]] U32U64 GlobalAtomicAnd(const U64& pointer_offset, const U32U64& value);
+    [[nodiscard]] U32U64 GlobalAtomicOr(const U64& pointer_offset, const U32U64& value);
+    [[nodiscard]] U32U64 GlobalAtomicXor(const U64& pointer_offset, const U32U64& value);
+    [[nodiscard]] U32U64 GlobalAtomicExchange(const U64& pointer_offset, const U32U64& value);
+
+    [[nodiscard]] F32 GlobalAtomicF32Add(const U64& pointer_offset, const Value& value,
+                                         const FpControl control = {});
+    [[nodiscard]] Value GlobalAtomicF16x2Add(const U64& pointer_offset, const Value& value,
+                                             const FpControl control = {});
+    [[nodiscard]] Value GlobalAtomicF16x2Min(const U64& pointer_offset, const Value& value,
+                                             const FpControl control = {});
+    [[nodiscard]] Value GlobalAtomicF16x2Max(const U64& pointer_offset, const Value& value,
+                                             const FpControl control = {});
+
     [[nodiscard]] U1 LogicalOr(const U1& a, const U1& b);
     [[nodiscard]] U1 LogicalAnd(const U1& a, const U1& b);
     [[nodiscard]] U1 LogicalXor(const U1& a, const U1& b);

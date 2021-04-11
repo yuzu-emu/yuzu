@@ -1284,6 +1284,204 @@ U1 IREmitter::IGreaterThanEqual(const U32& lhs, const U32& rhs, bool is_signed) 
     return Inst<U1>(is_signed ? Opcode::SGreaterThanEqual : Opcode::UGreaterThanEqual, lhs, rhs);
 }
 
+U32 IREmitter::SharedAtomicIAdd(const U32& pointer_offset, const U32& value) {
+    return Inst<U32>(Opcode::SharedAtomicIAdd32, pointer_offset, value);
+}
+
+U32 IREmitter::SharedAtomicSMin(const U32& pointer_offset, const U32& value) {
+    return Inst<U32>(Opcode::SharedAtomicSMin32, pointer_offset, value);
+}
+
+U32 IREmitter::SharedAtomicUMin(const U32& pointer_offset, const U32& value) {
+    return Inst<U32>(Opcode::SharedAtomicUMin32, pointer_offset, value);
+}
+
+U32 IREmitter::SharedAtomicIMin(const U32& pointer_offset, const U32& value, bool is_signed) {
+    return is_signed ? SharedAtomicSMin(pointer_offset, value)
+                     : SharedAtomicUMin(pointer_offset, value);
+}
+
+U32 IREmitter::SharedAtomicSMax(const U32& pointer_offset, const U32& value) {
+    return Inst<U32>(Opcode::SharedAtomicSMax32, pointer_offset, value);
+}
+
+U32 IREmitter::SharedAtomicUMax(const U32& pointer_offset, const U32& value) {
+    return Inst<U32>(Opcode::SharedAtomicUMax32, pointer_offset, value);
+}
+
+U32 IREmitter::SharedAtomicIMax(const U32& pointer_offset, const U32& value, bool is_signed) {
+    return is_signed ? SharedAtomicSMax(pointer_offset, value)
+                     : SharedAtomicUMax(pointer_offset, value);
+}
+
+U32 IREmitter::SharedAtomicInc(const U32& pointer_offset, const U32& value) {
+    return Inst<U32>(Opcode::SharedAtomicInc32, pointer_offset, value);
+}
+
+U32 IREmitter::SharedAtomicDec(const U32& pointer_offset, const U32& value) {
+    return Inst<U32>(Opcode::SharedAtomicDec32, pointer_offset, value);
+}
+
+U32 IREmitter::SharedAtomicAnd(const U32& pointer_offset, const U32& value) {
+    return Inst<U32>(Opcode::SharedAtomicAnd32, pointer_offset, value);
+}
+
+U32 IREmitter::SharedAtomicOr(const U32& pointer_offset, const U32& value) {
+    return Inst<U32>(Opcode::SharedAtomicOr32, pointer_offset, value);
+}
+
+U32 IREmitter::SharedAtomicXor(const U32& pointer_offset, const U32& value) {
+    return Inst<U32>(Opcode::SharedAtomicXor32, pointer_offset, value);
+}
+
+U32U64 IREmitter::SharedAtomicExchange(const U32& pointer_offset, const U32U64& value) {
+    switch (value.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::SharedAtomicExchange32, pointer_offset, value);
+    case Type::U64:
+        return Inst<U64>(Opcode::SharedAtomicExchange64, pointer_offset, value);
+    default:
+        ThrowInvalidType(pointer_offset.Type());
+    }
+}
+
+U32U64 IREmitter::GlobalAtomicIAdd(const U64& pointer_offset, const U32U64& value) {
+    switch (value.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::GlobalAtomicIAdd32, pointer_offset, value);
+    case Type::U64:
+        return Inst<U64>(Opcode::GlobalAtomicIAdd64, pointer_offset, value);
+    default:
+        ThrowInvalidType(value.Type());
+    }
+}
+
+U32U64 IREmitter::GlobalAtomicSMin(const U64& pointer_offset, const U32U64& value) {
+    switch (value.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::GlobalAtomicSMin32, pointer_offset, value);
+    case Type::U64:
+        return Inst<U64>(Opcode::GlobalAtomicSMin64, pointer_offset, value);
+    default:
+        ThrowInvalidType(value.Type());
+    }
+}
+
+U32U64 IREmitter::GlobalAtomicUMin(const U64& pointer_offset, const U32U64& value) {
+    switch (value.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::GlobalAtomicUMin32, pointer_offset, value);
+    case Type::U64:
+        return Inst<U64>(Opcode::GlobalAtomicUMin64, pointer_offset, value);
+    default:
+        ThrowInvalidType(value.Type());
+    }
+}
+
+U32U64 IREmitter::GlobalAtomicIMin(const U64& pointer_offset, const U32U64& value, bool is_signed) {
+    return is_signed ? GlobalAtomicSMin(pointer_offset, value)
+                     : GlobalAtomicUMin(pointer_offset, value);
+}
+
+U32U64 IREmitter::GlobalAtomicSMax(const U64& pointer_offset, const U32U64& value) {
+    switch (value.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::GlobalAtomicSMax32, pointer_offset, value);
+    case Type::U64:
+        return Inst<U64>(Opcode::GlobalAtomicSMax64, pointer_offset, value);
+    default:
+        ThrowInvalidType(value.Type());
+    }
+}
+
+U32U64 IREmitter::GlobalAtomicUMax(const U64& pointer_offset, const U32U64& value) {
+    switch (value.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::GlobalAtomicUMax32, pointer_offset, value);
+    case Type::U64:
+        return Inst<U64>(Opcode::GlobalAtomicUMax64, pointer_offset, value);
+    default:
+        ThrowInvalidType(value.Type());
+    }
+}
+
+U32U64 IREmitter::GlobalAtomicIMax(const U64& pointer_offset, const U32U64& value, bool is_signed) {
+    return is_signed ? GlobalAtomicSMax(pointer_offset, value)
+                     : GlobalAtomicUMax(pointer_offset, value);
+}
+
+U32 IREmitter::GlobalAtomicInc(const U64& pointer_offset, const U32& value) {
+    return Inst<U32>(Opcode::GlobalAtomicInc32, pointer_offset, value);
+}
+
+U32 IREmitter::GlobalAtomicDec(const U64& pointer_offset, const U32& value) {
+    return Inst<U32>(Opcode::GlobalAtomicDec32, pointer_offset, value);
+}
+
+U32U64 IREmitter::GlobalAtomicAnd(const U64& pointer_offset, const U32U64& value) {
+    switch (value.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::GlobalAtomicAnd32, pointer_offset, value);
+    case Type::U64:
+        return Inst<U64>(Opcode::GlobalAtomicAnd64, pointer_offset, value);
+    default:
+        ThrowInvalidType(value.Type());
+    }
+}
+
+U32U64 IREmitter::GlobalAtomicOr(const U64& pointer_offset, const U32U64& value) {
+    switch (value.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::GlobalAtomicOr32, pointer_offset, value);
+    case Type::U64:
+        return Inst<U64>(Opcode::GlobalAtomicOr64, pointer_offset, value);
+    default:
+        ThrowInvalidType(value.Type());
+    }
+}
+
+U32U64 IREmitter::GlobalAtomicXor(const U64& pointer_offset, const U32U64& value) {
+    switch (value.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::GlobalAtomicXor32, pointer_offset, value);
+    case Type::U64:
+        return Inst<U64>(Opcode::GlobalAtomicXor64, pointer_offset, value);
+    default:
+        ThrowInvalidType(value.Type());
+    }
+}
+
+U32U64 IREmitter::GlobalAtomicExchange(const U64& pointer_offset, const U32U64& value) {
+    switch (value.Type()) {
+    case Type::U32:
+        return Inst<U32>(Opcode::GlobalAtomicExchange32, pointer_offset, value);
+    case Type::U64:
+        return Inst<U64>(Opcode::GlobalAtomicExchange64, pointer_offset, value);
+    default:
+        ThrowInvalidType(pointer_offset.Type());
+    }
+}
+
+F32 IREmitter::GlobalAtomicF32Add(const U64& pointer_offset, const Value& value,
+                                  const FpControl control) {
+    return Inst<F32>(Opcode::GlobalAtomicAddF32, Flags{control}, pointer_offset, value);
+}
+
+Value IREmitter::GlobalAtomicF16x2Add(const U64& pointer_offset, const Value& value,
+                                      const FpControl control) {
+    return Inst(Opcode::GlobalAtomicAddF16x2, Flags{control}, pointer_offset, value);
+}
+
+Value IREmitter::GlobalAtomicF16x2Min(const U64& pointer_offset, const Value& value,
+                                      const FpControl control) {
+    return Inst(Opcode::GlobalAtomicMinF16x2, Flags{control}, pointer_offset, value);
+}
+
+Value IREmitter::GlobalAtomicF16x2Max(const U64& pointer_offset, const Value& value,
+                                      const FpControl control) {
+    return Inst(Opcode::GlobalAtomicMaxF16x2, Flags{control}, pointer_offset, value);
+}
+
 U1 IREmitter::LogicalOr(const U1& a, const U1& b) {
     return Inst<U1>(Opcode::LogicalOr, a, b);
 }
@@ -1626,7 +1824,7 @@ Value IREmitter::ImageRead(const Value& handle, const Value& coords, TextureInst
 }
 
 void IREmitter::ImageWrite(const Value& handle, const Value& coords, const Value& color,
-                            TextureInstInfo info) {
+                           TextureInstInfo info) {
     const Opcode op{handle.IsImmediate() ? Opcode::BoundImageWrite : Opcode::BindlessImageWrite};
     Inst(op, Flags{info}, handle, coords, color);
 }

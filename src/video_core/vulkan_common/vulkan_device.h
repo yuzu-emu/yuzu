@@ -229,6 +229,11 @@ public:
         return ext_shader_stencil_export;
     }
 
+    /// Returns true if the device supports VK_KHR_shader_atomic_int64.
+    bool IsExtShaderAtomicInt64Supported() const {
+        return ext_shader_atomic_int64;
+    }
+
     /// Returns true when a known debugging tool is attached.
     bool HasDebuggingToolAttached() const {
         return has_renderdoc || has_nsight_graphics;
@@ -320,6 +325,7 @@ private:
     bool ext_custom_border_color{};         ///< Support for VK_EXT_custom_border_color.
     bool ext_extended_dynamic_state{};      ///< Support for VK_EXT_extended_dynamic_state.
     bool ext_shader_stencil_export{};       ///< Support for VK_EXT_shader_stencil_export.
+    bool ext_shader_atomic_int64{};         ///< Support for VK_KHR_shader_atomic_int64.
     bool nv_device_diagnostics_config{};    ///< Support for VK_NV_device_diagnostics_config.
     bool has_renderdoc{};                   ///< Has RenderDoc attached
     bool has_nsight_graphics{};             ///< Has Nsight Graphics attached

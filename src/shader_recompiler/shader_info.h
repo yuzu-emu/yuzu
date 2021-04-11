@@ -128,6 +128,19 @@ struct Info {
     bool uses_subgroup_mask{};
     bool uses_fswzadd{};
     bool uses_typeless_image_reads{};
+    bool uses_shared_increment{};
+    bool uses_shared_decrement{};
+    bool uses_global_increment{};
+    bool uses_global_decrement{};
+    bool uses_atomic_f32_add{};
+    bool uses_atomic_f16x2_add{};
+    bool uses_atomic_f16x2_min{};
+    bool uses_atomic_f16x2_max{};
+    bool uses_atomic_f32x2_add{};
+    bool uses_atomic_f32x2_min{};
+    bool uses_atomic_f32x2_max{};
+    bool uses_64_bit_atomics{};
+    bool uses_shared_memory_u32x2{};
 
     IR::Type used_constant_buffer_types{};
 
