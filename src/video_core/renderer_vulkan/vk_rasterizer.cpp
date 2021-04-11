@@ -279,6 +279,7 @@ void RasterizerVulkan::DispatchCompute() {
 
     const auto& qmd{kepler_compute.launch_description};
     const std::array<u32, 3> dim{qmd.grid_dim_x, qmd.grid_dim_y, qmd.grid_dim_z};
+    scheduler.RequestOutsideRenderPassOperationContext();
     scheduler.Record([dim](vk::CommandBuffer cmdbuf) { cmdbuf.Dispatch(dim[0], dim[1], dim[2]); });
 }
 
