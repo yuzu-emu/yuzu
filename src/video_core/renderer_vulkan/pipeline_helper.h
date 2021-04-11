@@ -85,42 +85,34 @@ public:
     }
 
     void Add(const Shader::Info& info, VkShaderStageFlags stage) {
-        for ([[maybe_unused]] const auto& desc : info.constant_buffer_descriptors) {
-            Add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stage);
-        }
-        for ([[maybe_unused]] const auto& desc : info.storage_buffers_descriptors) {
-            Add(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, stage);
-        }
-        for ([[maybe_unused]] const auto& desc : info.texture_buffer_descriptors) {
-            Add(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, stage);
-        }
-        for ([[maybe_unused]] const auto& desc : info.texture_descriptors) {
-            Add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage);
-        }
-        for ([[maybe_unused]] const auto& desc : info.image_descriptors) {
-            Add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, stage);
-        }
+        Add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stage, info.constant_buffer_descriptors.size());
+        Add(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, stage, info.storage_buffers_descriptors.size());
+        Add(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, stage, info.texture_buffer_descriptors.size());
+        Add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage, info.texture_descriptors.size());
+        Add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, stage, info.image_descriptors.size());
     }
 
 private:
-    void Add(VkDescriptorType type, VkShaderStageFlags stage) {
-        bindings.push_back({
-            .binding = binding,
-            .descriptorType = type,
-            .descriptorCount = 1,
-            .stageFlags = stage,
-            .pImmutableSamplers = nullptr,
-        });
-        entries.push_back(VkDescriptorUpdateTemplateEntryKHR{
-            .dstBinding = binding,
-            .dstArrayElement = 0,
-            .descriptorCount = 1,
-            .descriptorType = type,
-            .offset = offset,
-            .stride = sizeof(DescriptorUpdateEntry),
-        });
-        ++binding;
-        offset += sizeof(DescriptorUpdateEntry);
+    void Add(VkDescriptorType type, VkShaderStageFlags stage, size_t num) {
+        for (size_t i = 0; i < num; ++i) {
+            bindings.push_back({
+                .binding = binding,
+                .descriptorType = type,
+                .descriptorCount = 1,
+                .stageFlags = stage,
+                .pImmutableSamplers = nullptr,
+            });
+            entries.push_back({
+                .dstBinding = binding,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = type,
+                .offset = offset,
+                .stride = sizeof(DescriptorUpdateEntry),
+            });
+            ++binding;
+            offset += sizeof(DescriptorUpdateEntry);
+        }
     }
 
     const vk::Device* device{};
