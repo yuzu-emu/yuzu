@@ -107,6 +107,7 @@ public:
 
     Id workgroup_id{};
     Id local_invocation_id{};
+    Id is_helper_invocation{};
     Id subgroup_local_invocation_id{};
     Id subgroup_mask_eq{};
     Id subgroup_mask_lt{};
