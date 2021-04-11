@@ -816,8 +816,13 @@ private:
                 throw NotImplementedException("Statement type {}", stmt.type);
             }
         }
-        if (current_block && continue_block) {
-            IR::IREmitter{*current_block}.Branch(continue_block);
+        if (current_block) {
+            IR::IREmitter ir{*current_block};
+            if (continue_block) {
+                ir.Branch(continue_block);
+            } else {
+                ir.Unreachable();
+            }
         }
     }
 
