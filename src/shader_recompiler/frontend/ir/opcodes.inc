@@ -58,7 +58,6 @@ OPCODE(SetCFlag,                                            Void,           U1, 
 OPCODE(SetOFlag,                                            Void,           U1,                                                                             )
 OPCODE(WorkgroupId,                                         U32x3,                                                                                          )
 OPCODE(LocalInvocationId,                                   U32x3,                                                                                          )
-OPCODE(LaneId,                                              U32,                                                                                            )
 
 // Undefined
 OPCODE(UndefU1,                                             U1,                                                                                             )
@@ -419,6 +418,7 @@ OPCODE(ImageRead,                                           U32x4,          U32,
 OPCODE(ImageWrite,                                          Void,           U32,            Opaque,         U32x4,                                          )
 
 // Warp operations
+OPCODE(LaneId,                                              U32,                                                                                            )
 OPCODE(VoteAll,                                             U1,             U1,                                                                             )
 OPCODE(VoteAny,                                             U1,             U1,                                                                             )
 OPCODE(VoteEqual,                                           U1,             U1,                                                                             )

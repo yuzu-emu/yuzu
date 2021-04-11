@@ -49,6 +49,14 @@ Id SelectValue(EmitContext& ctx, Id in_range, Id value, Id src_thread_id) {
 }
 } // Anonymous namespace
 
+Id EmitLaneId(EmitContext& ctx) {
+    const Id id{ctx.OpLoad(ctx.U32[1], ctx.subgroup_local_invocation_id)};
+    if (!ctx.profile.warp_size_potentially_larger_than_guest) {
+        return id;
+    }
+    return ctx.OpBitwiseAnd(ctx.U32[1], id, ctx.Constant(ctx.U32[1], 31U));
+}
+
 Id EmitVoteAll(EmitContext& ctx, Id pred) {
     if (!ctx.profile.warp_size_potentially_larger_than_guest) {
         return ctx.OpSubgroupAllKHR(ctx.U1, pred);
