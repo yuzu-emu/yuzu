@@ -30,18 +30,7 @@ struct FuncTraits<ReturnType_ (*)(Args...)> {
 
 template <auto func, typename... Args>
 void SetDefinition(EmitContext& ctx, IR::Inst* inst, Args... args) {
-    const Id forward_id{inst->Definition<Id>()};
-    const bool has_forward_id{Sirit::ValidId(forward_id)};
-    Id current_id{};
-    if (has_forward_id) {
-        current_id = ctx.ExchangeCurrentId(forward_id);
-    }
-    const Id new_id{func(ctx, std::forward<Args>(args)...)};
-    if (has_forward_id) {
-        ctx.ExchangeCurrentId(current_id);
-    } else {
-        inst->SetDefinition<Id>(new_id);
-    }
+    inst->SetDefinition<Id>(func(ctx, std::forward<Args>(args)...));
 }
 
 template <typename ArgType>
@@ -255,31 +244,6 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
     ctx.AddCapability(spv::Capability::SampledBuffer);
     ctx.AddCapability(spv::Capability::StorageImageReadWithoutFormat);
 }
-
-Id PhiArgDef(EmitContext& ctx, IR::Inst* inst, size_t index) {
-    // Phi nodes can have forward declarations, if an argument is not defined provide a forward
-    // declaration of it. Invoke will take care of giving it the right definition when it's
-    // actually defined.
-    const IR::Value arg{inst->Arg(index)};
-    if (arg.IsImmediate()) {
-        // Let the context handle immediate definitions, as it already knows how
-        return ctx.Def(arg);
-    }
-    IR::Inst* const arg_inst{arg.InstRecursive()};
-    if (const Id def{arg_inst->Definition<Id>()}; Sirit::ValidId(def)) {
-        // Return the current definition if it exists
-        return def;
-    }
-    if (arg_inst == inst) {
-        // This is a self referencing phi node
-        // Self-referencing definition will be set by the caller, so just grab the current id
-        return ctx.CurrentId();
-    }
-    // If it hasn't been defined and it's not a self reference, get a forward declaration
-    const Id def{ctx.ForwardDeclarationId()};
-    arg_inst->SetDefinition<Id>(def);
-    return def;
-}
 } // Anonymous namespace
 
 std::vector<u32> EmitSPIRV(const Profile& profile, IR::Program& program, u32& binding) {
@@ -292,31 +256,45 @@ std::vector<u32> EmitSPIRV(const Profile& profile, IR::Program& program, u32& bi
         SetupSignedNanCapabilities(profile, program, ctx, main);
     }
     SetupCapabilities(profile, program.info, ctx);
+
+    auto inst{program.blocks.front()->begin()};
+    size_t block_index{};
+    ctx.PatchDeferredPhi([&](size_t phi_arg) {
+        if (phi_arg == 0) {
+            ++inst;
+            if (inst == program.blocks[block_index]->end() ||
+                inst->GetOpcode() != IR::Opcode::Phi) {
+                do {
+                    ++block_index;
+                    inst = program.blocks[block_index]->begin();
+                } while (inst->GetOpcode() != IR::Opcode::Phi);
+            }
+        }
+        return ctx.Def(inst->Arg(phi_arg));
+    });
     return ctx.Assemble();
 }
 
 Id EmitPhi(EmitContext& ctx, IR::Inst* inst) {
     const size_t num_args{inst->NumArgs()};
-    boost::container::small_vector<Id, 32> operands;
-    operands.reserve(num_args * 2);
+    boost::container::small_vector<Id, 32> blocks;
+    blocks.reserve(num_args);
     for (size_t index = 0; index < num_args; ++index) {
-        operands.push_back(PhiArgDef(ctx, inst, index));
-        operands.push_back(inst->PhiBlock(index)->Definition<Id>());
+        blocks.push_back(inst->PhiBlock(index)->Definition<Id>());
     }
     // The type of a phi instruction is stored in its flags
     const Id result_type{TypeId(ctx, inst->Flags<IR::Type>())};
-    return ctx.OpPhi(result_type, std::span(operands.data(), operands.size()));
+    return ctx.DeferredOpPhi(result_type, std::span(blocks.data(), blocks.size()));
 }
 
 void EmitVoid(EmitContext&) {}
 
 Id EmitIdentity(EmitContext& ctx, const IR::Value& value) {
-    if (const Id id = ctx.Def(value); Sirit::ValidId(id)) {
-        return id;
+    const Id id{ctx.Def(value)};
+    if (!Sirit::ValidId(id)) {
+        throw NotImplementedException("Forward identity declaration");
     }
-    const Id def{ctx.ForwardDeclarationId()};
-    value.InstRecursive()->SetDefinition<Id>(def);
-    return def;
+    return id;
 }
 
 void EmitGetZeroFromOp(EmitContext&) {
