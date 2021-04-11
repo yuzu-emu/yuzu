@@ -206,6 +206,7 @@ VKComputePass::VKComputePass(const Device& device, VKDescriptorPool& descriptor_
         .codeSize = static_cast<u32>(code.size_bytes()),
         .pCode = code.data(),
     });
+    device.SaveShader(code);
     pipeline = device.GetLogical().CreateComputePipeline({
         .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
         .pNext = nullptr,
