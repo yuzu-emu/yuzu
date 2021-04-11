@@ -111,16 +111,25 @@ Id EmitShiftRightArithmetic64(EmitContext& ctx, Id base, Id shift) {
     return ctx.OpShiftRightArithmetic(ctx.U64, base, shift);
 }
 
-Id EmitBitwiseAnd32(EmitContext& ctx, Id a, Id b) {
-    return ctx.OpBitwiseAnd(ctx.U32[1], a, b);
+Id EmitBitwiseAnd32(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
+    const Id result{ctx.OpBitwiseAnd(ctx.U32[1], a, b)};
+    SetZeroFlag(ctx, inst, result);
+    SetSignFlag(ctx, inst, result);
+    return result;
 }
 
-Id EmitBitwiseOr32(EmitContext& ctx, Id a, Id b) {
-    return ctx.OpBitwiseOr(ctx.U32[1], a, b);
+Id EmitBitwiseOr32(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
+    const Id result{ctx.OpBitwiseOr(ctx.U32[1], a, b)};
+    SetZeroFlag(ctx, inst, result);
+    SetSignFlag(ctx, inst, result);
+    return result;
 }
 
-Id EmitBitwiseXor32(EmitContext& ctx, Id a, Id b) {
-    return ctx.OpBitwiseXor(ctx.U32[1], a, b);
+Id EmitBitwiseXor32(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
+    const Id result{ctx.OpBitwiseXor(ctx.U32[1], a, b)};
+    SetZeroFlag(ctx, inst, result);
+    SetSignFlag(ctx, inst, result);
+    return result;
 }
 
 Id EmitBitFieldInsert(EmitContext& ctx, Id base, Id insert, Id offset, Id count) {
