@@ -127,6 +127,7 @@ struct Info {
     bool uses_subgroup_vote{};
     bool uses_subgroup_mask{};
     bool uses_fswzadd{};
+    bool uses_typeless_image_reads{};
 
     IR::Type used_constant_buffer_types{};
 
