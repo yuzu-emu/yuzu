@@ -90,6 +90,8 @@ public:
     [[nodiscard]] U32 LocalInvocationIdY();
     [[nodiscard]] U32 LocalInvocationIdZ();
 
+    [[nodiscard]] U1 IsHelperInvocation();
+
     [[nodiscard]] U32 LaneId();
 
     [[nodiscard]] U32 LoadGlobalU8(const U64& address);

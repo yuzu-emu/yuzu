@@ -58,6 +58,7 @@ OPCODE(SetCFlag,                                            Void,           U1, 
 OPCODE(SetOFlag,                                            Void,           U1,                                                                             )
 OPCODE(WorkgroupId,                                         U32x3,                                                                                          )
 OPCODE(LocalInvocationId,                                   U32x3,                                                                                          )
+OPCODE(IsHelperInvocation,                                  U1,                                                                                             )
 
 // Undefined
 OPCODE(UndefU1,                                             U1,                                                                                             )

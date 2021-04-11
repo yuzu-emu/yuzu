@@ -348,6 +348,9 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::LocalInvocationId:
         info.uses_local_invocation_id = true;
         break;
+    case IR::Opcode::IsHelperInvocation:
+        info.uses_is_helper_invocation = true;
+        break;
     case IR::Opcode::LaneId:
     case IR::Opcode::ShuffleIndex:
     case IR::Opcode::ShuffleUp:

@@ -65,6 +65,7 @@ void EmitSetCFlag(EmitContext& ctx);
 void EmitSetOFlag(EmitContext& ctx);
 Id EmitWorkgroupId(EmitContext& ctx);
 Id EmitLocalInvocationId(EmitContext& ctx);
+Id EmitIsHelperInvocation(EmitContext& ctx);
 Id EmitLoadLocal(EmitContext& ctx, Id word_offset);
 void EmitWriteLocal(EmitContext& ctx, Id word_offset, Id value);
 Id EmitUndefU1(EmitContext& ctx);

@@ -790,6 +790,9 @@ void EmitContext::DefineInputs(const Info& info) {
     if (info.uses_local_invocation_id) {
         local_invocation_id = DefineInput(*this, U32[3], spv::BuiltIn::LocalInvocationId);
     }
+    if (info.uses_is_helper_invocation) {
+        is_helper_invocation = DefineInput(*this, U1, spv::BuiltIn::HelperInvocation);
+    }
     if (info.uses_subgroup_mask) {
         subgroup_mask_eq = DefineInput(*this, U32[4], spv::BuiltIn::SubgroupEqMaskKHR);
         subgroup_mask_lt = DefineInput(*this, U32[4], spv::BuiltIn::SubgroupLtMaskKHR);

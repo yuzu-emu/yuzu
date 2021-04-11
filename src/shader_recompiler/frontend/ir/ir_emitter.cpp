@@ -347,6 +347,10 @@ U32 IREmitter::LocalInvocationIdZ() {
     return U32{CompositeExtract(Inst(Opcode::LocalInvocationId), 2)};
 }
 
+U1 IREmitter::IsHelperInvocation() {
+    return Inst<U1>(Opcode::IsHelperInvocation);
+}
+
 U32 IREmitter::LaneId() {
     return Inst<U32>(Opcode::LaneId);
 }
