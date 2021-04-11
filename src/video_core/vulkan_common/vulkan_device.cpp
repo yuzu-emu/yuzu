@@ -493,7 +493,7 @@ void Device::ReportLoss() const {
     std::this_thread::sleep_for(std::chrono::seconds{15});
 }
 
-void Device::SaveShader(const std::vector<u32>& spirv) const {
+void Device::SaveShader(std::span<const u32> spirv) const {
     if (nsight_aftermath_tracker) {
         nsight_aftermath_tracker->SaveShader(spirv);
     }

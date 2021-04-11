@@ -770,6 +770,7 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
 
         const Shader::Profile profile{MakeProfile(key, program.stage)};
         const std::vector<u32> code{EmitSPIRV(profile, program, binding)};
+        device.SaveShader(code);
         modules[stage_index] = BuildShader(device, code);
         if (device.HasDebuggingToolAttached()) {
             const std::string name{fmt::format("{:016x}{:016x}", key.unique_hashes[index][0],
@@ -846,7 +847,8 @@ std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
     Shader::IR::Program program{TranslateProgram(pools.inst, pools.block, env, cfg)};
     u32 binding{0};
-    std::vector<u32> code{EmitSPIRV(base_profile, program, binding)};
+    const std::vector<u32> code{EmitSPIRV(base_profile, program, binding)};
+    device.SaveShader(code);
     vk::ShaderModule spv_module{BuildShader(device, code)};
     if (device.HasDebuggingToolAttached()) {
         const auto name{fmt::format("{:016x}{:016x}", key.unique_hash[0], key.unique_hash[1])};

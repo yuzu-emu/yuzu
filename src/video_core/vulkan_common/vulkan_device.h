@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <span>
 #include <vector>
 
 #include "common/common_types.h"
@@ -43,7 +44,7 @@ public:
     void ReportLoss() const;
 
     /// Reports a shader to Nsight Aftermath.
-    void SaveShader(const std::vector<u32>& spirv) const;
+    void SaveShader(std::span<const u32> spirv) const;
 
     /// Returns the name of the VkDriverId reported from Vulkan.
     std::string GetDriverName() const;
