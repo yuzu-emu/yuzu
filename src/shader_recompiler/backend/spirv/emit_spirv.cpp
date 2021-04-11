@@ -246,21 +246,10 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
     ctx.AddCapability(spv::Capability::ImageQuery);
     ctx.AddCapability(spv::Capability::SampledBuffer);
 }
-} // Anonymous namespace
 
-std::vector<u32> EmitSPIRV(const Profile& profile, IR::Program& program, u32& binding) {
-    EmitContext ctx{profile, program, binding};
-    const Id main{DefineMain(ctx, program)};
-    DefineEntryPoint(program, ctx, main);
-    if (profile.support_float_controls) {
-        ctx.AddExtension("SPV_KHR_float_controls");
-        SetupDenormControl(profile, program, ctx, main);
-        SetupSignedNanCapabilities(profile, program, ctx, main);
-    }
-    SetupCapabilities(profile, program.info, ctx);
-
+void PatchPhiNodes(IR::Program& program, EmitContext& ctx) {
     auto inst{program.blocks.front()->begin()};
-    size_t block_index{};
+    size_t block_index{0};
     ctx.PatchDeferredPhi([&](size_t phi_arg) {
         if (phi_arg == 0) {
             ++inst;
@@ -274,6 +263,20 @@ std::vector<u32> EmitSPIRV(const Profile& profile, IR::Program& program, u32& bi
         }
         return ctx.Def(inst->Arg(phi_arg));
     });
+}
+} // Anonymous namespace
+
+std::vector<u32> EmitSPIRV(const Profile& profile, IR::Program& program, u32& binding) {
+    EmitContext ctx{profile, program, binding};
+    const Id main{DefineMain(ctx, program)};
+    DefineEntryPoint(program, ctx, main);
+    if (profile.support_float_controls) {
+        ctx.AddExtension("SPV_KHR_float_controls");
+        SetupDenormControl(profile, program, ctx, main);
+        SetupSignedNanCapabilities(profile, program, ctx, main);
+    }
+    SetupCapabilities(profile, program.info, ctx);
+    PatchPhiNodes(program, ctx);
     return ctx.Assemble();
 }
 
