@@ -97,7 +97,7 @@ public:
         for ([[maybe_unused]] const auto& desc : info.texture_descriptors) {
             Add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage);
         }
-        for (const auto& desc : info.image_descriptors) {
+        for ([[maybe_unused]] const auto& desc : info.image_descriptors) {
             Add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, stage);
         }
     }
