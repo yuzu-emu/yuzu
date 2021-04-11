@@ -145,6 +145,10 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::FPOrdGreaterThanEqual16:
     case IR::Opcode::FPUnordGreaterThanEqual16:
     case IR::Opcode::FPIsNan16:
+    case IR::Opcode::GlobalAtomicAddF16x2:
+    case IR::Opcode::StorageAtomicAddF16x2:
+    case IR::Opcode::StorageAtomicMinF16x2:
+    case IR::Opcode::StorageAtomicMaxF16x2:
         info.uses_fp16 = true;
         break;
     case IR::Opcode::CompositeConstructF64x2:
@@ -310,6 +314,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::ConvertF16U64:
     case IR::Opcode::ConvertF32U64:
     case IR::Opcode::ConvertF64U64:
+    case IR::Opcode::SharedAtomicExchange64:
         info.uses_int64 = true;
         break;
     default:
@@ -443,6 +448,71 @@ void VisitUsages(Info& info, IR::Inst& inst) {
         break;
     case IR::Opcode::FSwizzleAdd:
         info.uses_fswzadd = true;
+        break;
+    case IR::Opcode::SharedAtomicInc32:
+        info.uses_shared_increment = true;
+        break;
+    case IR::Opcode::SharedAtomicDec32:
+        info.uses_shared_decrement = true;
+        break;
+    case IR::Opcode::GlobalAtomicInc32:
+    case IR::Opcode::StorageAtomicInc32:
+        info.uses_global_increment = true;
+        break;
+    case IR::Opcode::GlobalAtomicDec32:
+    case IR::Opcode::StorageAtomicDec32:
+        info.uses_global_decrement = true;
+        break;
+    case IR::Opcode::GlobalAtomicAddF32:
+    case IR::Opcode::StorageAtomicAddF32:
+        info.uses_atomic_f32_add = true;
+        break;
+    case IR::Opcode::GlobalAtomicAddF16x2:
+    case IR::Opcode::StorageAtomicAddF16x2:
+        info.uses_atomic_f16x2_add = true;
+        break;
+    case IR::Opcode::GlobalAtomicAddF32x2:
+    case IR::Opcode::StorageAtomicAddF32x2:
+        info.uses_atomic_f32x2_add = true;
+        break;
+    case IR::Opcode::GlobalAtomicMinF16x2:
+    case IR::Opcode::StorageAtomicMinF16x2:
+        info.uses_atomic_f16x2_min = true;
+        break;
+    case IR::Opcode::GlobalAtomicMinF32x2:
+    case IR::Opcode::StorageAtomicMinF32x2:
+        info.uses_atomic_f32x2_min = true;
+        break;
+    case IR::Opcode::GlobalAtomicMaxF16x2:
+    case IR::Opcode::StorageAtomicMaxF16x2:
+        info.uses_atomic_f16x2_max = true;
+        break;
+    case IR::Opcode::GlobalAtomicMaxF32x2:
+    case IR::Opcode::StorageAtomicMaxF32x2:
+        info.uses_atomic_f32x2_max = true;
+        break;
+    case IR::Opcode::GlobalAtomicIAdd64:
+    case IR::Opcode::GlobalAtomicSMin64:
+    case IR::Opcode::GlobalAtomicUMin64:
+    case IR::Opcode::GlobalAtomicSMax64:
+    case IR::Opcode::GlobalAtomicUMax64:
+    case IR::Opcode::GlobalAtomicAnd64:
+    case IR::Opcode::GlobalAtomicOr64:
+    case IR::Opcode::GlobalAtomicXor64:
+    case IR::Opcode::GlobalAtomicExchange64:
+    case IR::Opcode::StorageAtomicIAdd64:
+    case IR::Opcode::StorageAtomicSMin64:
+    case IR::Opcode::StorageAtomicUMin64:
+    case IR::Opcode::StorageAtomicSMax64:
+    case IR::Opcode::StorageAtomicUMax64:
+    case IR::Opcode::StorageAtomicAnd64:
+    case IR::Opcode::StorageAtomicOr64:
+    case IR::Opcode::StorageAtomicXor64:
+        info.uses_64_bit_atomics = true;
+        break;
+    case IR::Opcode::SharedAtomicExchange64:
+        info.uses_64_bit_atomics = true;
+        info.uses_shared_memory_u32x2 = true;
         break;
     default:
         break;

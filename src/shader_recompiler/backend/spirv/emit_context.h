@@ -94,6 +94,7 @@ public:
     Id output_f32{};
 
     Id storage_u32{};
+    Id storage_memory_u32{};
 
     Id image_buffer_type{};
     Id sampled_texture_buffer_type{};
@@ -136,9 +137,21 @@ public:
     Id shared_memory_u32{};
     Id shared_memory_u32x2{};
     Id shared_memory_u32x4{};
+    Id shared_memory_u32_type{};
 
     Id shared_store_u8_func{};
     Id shared_store_u16_func{};
+    Id increment_cas_shared{};
+    Id increment_cas_ssbo{};
+    Id decrement_cas_shared{};
+    Id decrement_cas_ssbo{};
+    Id f32_add_cas{};
+    Id f16x2_add_cas{};
+    Id f16x2_min_cas{};
+    Id f16x2_max_cas{};
+    Id f32x2_add_cas{};
+    Id f32x2_min_cas{};
+    Id f32x2_max_cas{};
 
     Id input_position{};
     std::array<Id, 32> input_generics{};
@@ -153,6 +166,11 @@ public:
     std::vector<Id> interfaces;
 
 private:
+    enum class CasPointerType {
+        Shared,
+        Ssbo,
+    };
+
     void DefineCommonTypes(const Info& info);
     void DefineCommonConstants();
     void DefineInterfaces(const Info& info);
@@ -171,6 +189,8 @@ private:
 
     void DefineInputs(const Info& info);
     void DefineOutputs(const Info& info);
+
+    [[nodiscard]] Id CasLoop(Id function, CasPointerType pointer_type, Id value_type);
 };
 
 } // namespace Shader::Backend::SPIRV

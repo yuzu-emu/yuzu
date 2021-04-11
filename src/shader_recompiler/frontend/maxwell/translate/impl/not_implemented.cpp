@@ -17,16 +17,8 @@ void TranslatorVisitor::ATOM_cas(u64) {
     ThrowNotImplemented(Opcode::ATOM_cas);
 }
 
-void TranslatorVisitor::ATOM(u64) {
-    ThrowNotImplemented(Opcode::ATOM);
-}
-
 void TranslatorVisitor::ATOMS_cas(u64) {
     ThrowNotImplemented(Opcode::ATOMS_cas);
-}
-
-void TranslatorVisitor::ATOMS(u64) {
-    ThrowNotImplemented(Opcode::ATOMS);
 }
 
 void TranslatorVisitor::B2R(u64) {
@@ -239,10 +231,6 @@ void TranslatorVisitor::R2B(u64) {
 
 void TranslatorVisitor::RAM(u64) {
     ThrowNotImplemented(Opcode::RAM);
-}
-
-void TranslatorVisitor::RED(u64) {
-    ThrowNotImplemented(Opcode::RED);
 }
 
 void TranslatorVisitor::RET(u64) {
