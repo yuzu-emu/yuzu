@@ -44,9 +44,6 @@ void LOP(TranslatorVisitor& v, u64 insn, IR::U32 op_b, bool x, bool cc, bool inv
     if (x) {
         throw NotImplementedException("X");
     }
-    if (cc) {
-        throw NotImplementedException("CC");
-    }
     IR::U32 op_a{v.X(lop.src_reg)};
     if (inv_a != 0) {
         op_a = v.ir.BitwiseNot(op_a);
@@ -59,6 +56,17 @@ void LOP(TranslatorVisitor& v, u64 insn, IR::U32 op_b, bool x, bool cc, bool inv
     if (pred_op) {
         const IR::U1 pred_result{PredicateOperation(v.ir, result, *pred_op)};
         v.ir.SetPred(dest_pred, pred_result);
+    }
+    if (cc) {
+        if (bit_op == LogicalOp::PASS_B) {
+            v.SetZFlag(v.ir.IEqual(result, v.ir.Imm32(0)));
+            v.SetSFlag(v.ir.ILessThan(result, v.ir.Imm32(0), true));
+        } else {
+            v.SetZFlag(v.ir.GetZeroFromOp(result));
+            v.SetSFlag(v.ir.GetSignFromOp(result));
+        }
+        v.ResetCFlag();
+        v.ResetOFlag();
     }
     v.X(lop.dest_reg, result);
 }
