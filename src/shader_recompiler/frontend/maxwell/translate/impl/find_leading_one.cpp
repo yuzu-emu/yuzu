@@ -8,26 +8,27 @@
 
 namespace Shader::Maxwell {
 namespace {
-void FLO(TranslatorVisitor& v, u64 insn, const IR::U32& src) {
+void FLO(TranslatorVisitor& v, u64 insn, IR::U32 src) {
     union {
         u64 insn;
         BitField<0, 8, IR::Reg> dest_reg;
         BitField<40, 1, u64> tilde;
         BitField<41, 1, u64> shift;
+        BitField<47, 1, u64> cc;
         BitField<48, 1, u64> is_signed;
     } const flo{insn};
 
-    const bool invert{flo.tilde != 0};
-    const bool is_signed{flo.is_signed != 0};
-    const bool shift_op{flo.shift != 0};
-
-    const IR::U32 operand{invert ? v.ir.BitwiseNot(src) : src};
-    const IR::U32 find_result{is_signed ? v.ir.FindSMsb(operand) : v.ir.FindUMsb(operand)};
-    const IR::U1 find_fail{v.ir.IEqual(find_result, v.ir.Imm32(-1))};
-    const IR::U32 offset{v.ir.Imm32(31)};
-    const IR::U32 success_result{shift_op ? IR::U32{v.ir.ISub(offset, find_result)} : find_result};
-
-    const IR::U32 result{v.ir.Select(find_fail, find_result, success_result)};
+    if (flo.cc != 0) {
+        throw NotImplementedException("CC");
+    }
+    if (flo.tilde != 0) {
+        src = v.ir.BitwiseNot(src);
+    }
+    IR::U32 result{flo.is_signed != 0 ? v.ir.FindSMsb(src) : v.ir.FindUMsb(src)};
+    if (flo.shift != 0) {
+        const IR::U1 not_found{v.ir.IEqual(result, v.ir.Imm32(-1))};
+        result = IR::U32{v.ir.Select(not_found, result, v.ir.BitwiseXor(result, v.ir.Imm32(31)))};
+    }
     v.X(flo.dest_reg, result);
 }
 } // Anonymous namespace
