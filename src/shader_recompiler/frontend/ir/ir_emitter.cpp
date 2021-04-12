@@ -125,6 +125,14 @@ void IREmitter::Epilogue() {
     Inst(Opcode::Epilogue);
 }
 
+void IREmitter::EmitVertex(const U32& stream) {
+    Inst(Opcode::EmitVertex, stream);
+}
+
+void IREmitter::EndPrimitive(const U32& stream) {
+    Inst(Opcode::EndPrimitive, stream);
+}
+
 U32 IREmitter::GetReg(IR::Reg reg) {
     return Inst<U32>(Opcode::GetRegister, reg);
 }

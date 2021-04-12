@@ -36,4 +36,12 @@ void EmitEpilogue(EmitContext& ctx) {
     }
 }
 
+void EmitEmitVertex(EmitContext& ctx, Id stream) {
+    ctx.OpEmitStreamVertex(stream);
+}
+
+void EmitEndPrimitive(EmitContext& ctx, Id stream) {
+    ctx.OpEndStreamPrimitive(stream);
+}
+
 } // namespace Shader::Backend::SPIRV

@@ -69,6 +69,8 @@ bool Inst::MayHaveSideEffects() const noexcept {
     case Opcode::MemoryBarrierSystemLevel:
     case Opcode::Prologue:
     case Opcode::Epilogue:
+    case Opcode::EmitVertex:
+    case Opcode::EndPrimitive:
     case Opcode::SetAttribute:
     case Opcode::SetAttributeIndexed:
     case Opcode::SetFragColor:

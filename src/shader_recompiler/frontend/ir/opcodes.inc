@@ -25,6 +25,8 @@ OPCODE(MemoryBarrierSystemLevel,                            Void,               
 // Special operations
 OPCODE(Prologue,                                            Void,                                                                                           )
 OPCODE(Epilogue,                                            Void,                                                                                           )
+OPCODE(EmitVertex,                                          Void,           U32,                                                                            )
+OPCODE(EndPrimitive,                                        Void,           U32,                                                                            )
 
 // Context getters/setters
 OPCODE(GetRegister,                                         U32,            Reg,                                                                            )

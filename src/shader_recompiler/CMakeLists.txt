@@ -134,6 +134,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/move_register_to_predicate.cpp
     frontend/maxwell/translate/impl/move_special_register.cpp
     frontend/maxwell/translate/impl/not_implemented.cpp
+    frontend/maxwell/translate/impl/output_geometry.cpp
     frontend/maxwell/translate/impl/predicate_set_predicate.cpp
     frontend/maxwell/translate/impl/predicate_set_register.cpp
     frontend/maxwell/translate/impl/select_source_with_predicate.cpp
