@@ -6,8 +6,6 @@
 #include "common/common_types.h"
 #include "shader_recompiler/frontend/maxwell/translate/impl/impl.h"
 
-#pragma optimize("", off)
-
 namespace Shader::Maxwell {
 namespace {
 enum class Mode : u64 {
