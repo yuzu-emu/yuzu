@@ -129,6 +129,7 @@ struct Info {
     bool uses_subgroup_mask{};
     bool uses_fswzadd{};
     bool uses_typeless_image_reads{};
+    bool uses_typeless_image_writes{};
     bool uses_shared_increment{};
     bool uses_shared_decrement{};
     bool uses_global_increment{};

@@ -436,6 +436,11 @@ void VisitUsages(Info& info, IR::Inst& inst) {
             inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp) != nullptr;
         break;
     }
+    case IR::Opcode::ImageWrite: {
+        const auto flags{inst.Flags<IR::TextureInstInfo>()};
+        info.uses_typeless_image_writes |= flags.image_format == ImageFormat::Typeless;
+        break;
+    }
     case IR::Opcode::SubgroupEqMask:
     case IR::Opcode::SubgroupLtMask:
     case IR::Opcode::SubgroupLeMask:
