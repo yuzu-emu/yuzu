@@ -169,18 +169,6 @@ void TranslatorVisitor::NOP(u64) {
     // NOP is No-Op.
 }
 
-void TranslatorVisitor::OUT_reg(u64) {
-    ThrowNotImplemented(Opcode::OUT_reg);
-}
-
-void TranslatorVisitor::OUT_cbuf(u64) {
-    ThrowNotImplemented(Opcode::OUT_cbuf);
-}
-
-void TranslatorVisitor::OUT_imm(u64) {
-    ThrowNotImplemented(Opcode::OUT_imm);
-}
-
 void TranslatorVisitor::PBK() {
     // PBK is a no-op
 }

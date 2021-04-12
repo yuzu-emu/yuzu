@@ -43,6 +43,9 @@ public:
     void Prologue();
     void Epilogue();
 
+    void EmitVertex(const U32& stream);
+    void EndPrimitive(const U32& stream);
+
     [[nodiscard]] U32 GetReg(IR::Reg reg);
     void SetReg(IR::Reg reg, const U32& value);
 

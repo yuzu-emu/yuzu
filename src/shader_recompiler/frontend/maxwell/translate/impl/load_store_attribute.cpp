@@ -64,7 +64,7 @@ void TranslatorVisitor::ALD(u64 insn) {
         BitField<8, 8, IR::Reg> index_reg;
         BitField<20, 10, u64> absolute_offset;
         BitField<20, 11, s64> relative_offset;
-        BitField<39, 8, IR::Reg> stream_reg;
+        BitField<39, 8, IR::Reg> array_reg;
         BitField<32, 1, u64> o;
         BitField<31, 1, u64> patch;
         BitField<47, 2, Size> size;
@@ -100,15 +100,12 @@ void TranslatorVisitor::AST(u64 insn) {
         BitField<20, 10, u64> absolute_offset;
         BitField<20, 11, s64> relative_offset;
         BitField<31, 1, u64> patch;
-        BitField<39, 8, IR::Reg> stream_reg;
+        BitField<39, 8, IR::Reg> array_reg;
         BitField<47, 2, Size> size;
     } const ast{insn};
 
     if (ast.patch != 0) {
         throw NotImplementedException("P");
-    }
-    if (ast.stream_reg != IR::Reg::RZ) {
-        throw NotImplementedException("Stream store");
     }
     if (ast.index_reg != IR::Reg::RZ) {
         throw NotImplementedException("Indexed store");

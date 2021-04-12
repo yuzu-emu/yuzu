@@ -34,6 +34,8 @@ void EmitMemoryBarrierDeviceLevel(EmitContext& ctx);
 void EmitMemoryBarrierSystemLevel(EmitContext& ctx);
 void EmitPrologue(EmitContext& ctx);
 void EmitEpilogue(EmitContext& ctx);
+void EmitEmitVertex(EmitContext& ctx, Id stream);
+void EmitEndPrimitive(EmitContext& ctx, Id stream);
 void EmitGetRegister(EmitContext& ctx);
 void EmitSetRegister(EmitContext& ctx);
 void EmitGetPred(EmitContext& ctx);
