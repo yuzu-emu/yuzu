@@ -308,19 +308,27 @@ U1 IREmitter::GetFlowTestResult(FlowTest test) {
 }
 
 F32 IREmitter::GetAttribute(IR::Attribute attribute) {
-    return Inst<F32>(Opcode::GetAttribute, attribute);
+    return GetAttribute(attribute, Imm32(0));
 }
 
-void IREmitter::SetAttribute(IR::Attribute attribute, const F32& value) {
-    Inst(Opcode::SetAttribute, attribute, value);
+F32 IREmitter::GetAttribute(IR::Attribute attribute, const U32& vertex) {
+    return Inst<F32>(Opcode::GetAttribute, attribute, vertex);
+}
+
+void IREmitter::SetAttribute(IR::Attribute attribute, const F32& value, const U32& vertex) {
+    Inst(Opcode::SetAttribute, attribute, value, vertex);
 }
 
 F32 IREmitter::GetAttributeIndexed(const U32& phys_address) {
-    return Inst<F32>(Opcode::GetAttributeIndexed, phys_address);
+    return GetAttributeIndexed(phys_address, Imm32(0));
 }
 
-void IREmitter::SetAttributeIndexed(const U32& phys_address, const F32& value) {
-    Inst(Opcode::SetAttributeIndexed, phys_address, value);
+F32 IREmitter::GetAttributeIndexed(const U32& phys_address, const U32& vertex) {
+    return Inst<F32>(Opcode::GetAttributeIndexed, phys_address, vertex);
+}
+
+void IREmitter::SetAttributeIndexed(const U32& phys_address, const F32& value, const U32& vertex) {
+    Inst(Opcode::SetAttributeIndexed, phys_address, value, vertex);
 }
 
 void IREmitter::SetFragColor(u32 index, u32 component, const F32& value) {

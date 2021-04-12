@@ -18,6 +18,14 @@ enum class AttributeType : u8 {
     Disabled,
 };
 
+enum class InputTopology {
+    Points,
+    Lines,
+    LinesAdjacency,
+    Triangles,
+    TrianglesAdjacency,
+};
+
 struct Profile {
     u32 supported_spirv{0x00010000};
 
@@ -45,6 +53,8 @@ struct Profile {
 
     std::array<AttributeType, 32> generic_input_types{};
     bool convert_depth_mode{};
+
+    InputTopology input_topology{};
 
     std::optional<float> fixed_state_point_size;
 };

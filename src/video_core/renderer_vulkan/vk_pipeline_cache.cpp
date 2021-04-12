@@ -769,7 +769,7 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
         const size_t stage_index{index - 1};
         infos[stage_index] = &program.info;
 
-        const Shader::Profile profile{MakeProfile(key, program.stage)};
+        const Shader::Profile profile{MakeProfile(key, program)};
         const std::vector<u32> code{EmitSPIRV(profile, program, binding)};
         device.SaveShader(code);
         modules[stage_index] = BuildShader(device, code);
@@ -880,15 +880,59 @@ static Shader::AttributeType CastAttributeType(const FixedPipelineState::VertexA
 }
 
 Shader::Profile PipelineCache::MakeProfile(const GraphicsPipelineCacheKey& key,
-                                           Shader::Stage stage) {
+                                           const Shader::IR::Program& program) {
     Shader::Profile profile{base_profile};
-    if (stage == Shader::Stage::VertexB) {
-        profile.convert_depth_mode = key.state.ndc_minus_one_to_one != 0;
-        if (key.state.topology == Maxwell::PrimitiveTopology::Points) {
-            profile.fixed_state_point_size = Common::BitCast<float>(key.state.point_size);
+
+    const Shader::Stage stage{program.stage};
+    const bool has_geometry{key.unique_hashes[4] != u128{}};
+    const bool gl_ndc{key.state.ndc_minus_one_to_one != 0};
+    const float point_size{Common::BitCast<float>(key.state.point_size)};
+    switch (stage) {
+    case Shader::Stage::VertexB:
+        if (!has_geometry) {
+            if (key.state.topology == Maxwell::PrimitiveTopology::Points) {
+                profile.fixed_state_point_size = point_size;
+            }
+            profile.convert_depth_mode = gl_ndc;
         }
         std::ranges::transform(key.state.attributes, profile.generic_input_types.begin(),
                                &CastAttributeType);
+        break;
+    case Shader::Stage::Geometry:
+        if (program.output_topology == Shader::OutputTopology::PointList) {
+            profile.fixed_state_point_size = point_size;
+        }
+        profile.convert_depth_mode = gl_ndc;
+        break;
+    default:
+        break;
+    }
+    switch (key.state.topology) {
+    case Maxwell::PrimitiveTopology::Points:
+        profile.input_topology = Shader::InputTopology::Points;
+        break;
+    case Maxwell::PrimitiveTopology::Lines:
+    case Maxwell::PrimitiveTopology::LineLoop:
+    case Maxwell::PrimitiveTopology::LineStrip:
+        profile.input_topology = Shader::InputTopology::Lines;
+        break;
+    case Maxwell::PrimitiveTopology::Triangles:
+    case Maxwell::PrimitiveTopology::TriangleStrip:
+    case Maxwell::PrimitiveTopology::TriangleFan:
+    case Maxwell::PrimitiveTopology::Quads:
+    case Maxwell::PrimitiveTopology::QuadStrip:
+    case Maxwell::PrimitiveTopology::Polygon:
+    case Maxwell::PrimitiveTopology::Patches:
+        profile.input_topology = Shader::InputTopology::Triangles;
+        break;
+    case Maxwell::PrimitiveTopology::LinesAdjacency:
+    case Maxwell::PrimitiveTopology::LineStripAdjacency:
+        profile.input_topology = Shader::InputTopology::LinesAdjacency;
+        break;
+    case Maxwell::PrimitiveTopology::TrianglesAdjacency:
+    case Maxwell::PrimitiveTopology::TriangleStripAdjacency:
+        profile.input_topology = Shader::InputTopology::TrianglesAdjacency;
+        break;
     }
     return profile;
 }

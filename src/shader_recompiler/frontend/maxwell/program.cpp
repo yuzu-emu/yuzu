@@ -69,9 +69,20 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
     program.post_order_blocks = PostOrder(program.blocks);
     program.stage = env.ShaderStage();
     program.local_memory_size = env.LocalMemorySize();
-    if (program.stage == Stage::Compute) {
+    switch (program.stage) {
+    case Stage::Geometry: {
+        const ProgramHeader& sph{env.SPH()};
+        program.output_topology = sph.common3.output_topology;
+        program.output_vertices = sph.common4.max_output_vertices;
+        program.invocations = sph.common2.threads_per_input_primitive;
+        break;
+    }
+    case Stage::Compute:
         program.workgroup_size = env.WorkgroupSize();
         program.shared_memory_size = env.SharedMemorySize();
+        break;
+    default:
+        break;
     }
     RemoveUnreachableBlocks(program);
 

@@ -10,6 +10,7 @@
 #include <boost/container/small_vector.hpp>
 
 #include "shader_recompiler/frontend/ir/basic_block.h"
+#include "shader_recompiler/program_header.h"
 #include "shader_recompiler/shader_info.h"
 #include "shader_recompiler/stage.h"
 
@@ -21,6 +22,9 @@ struct Program {
     Info info;
     Stage stage{};
     std::array<u32, 3> workgroup_size{};
+    OutputTopology output_topology{};
+    u32 output_vertices{};
+    u32 invocations{};
     u32 local_memory_size{};
     u32 shared_memory_size{};
 };
