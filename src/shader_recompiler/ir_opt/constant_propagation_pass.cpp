@@ -422,6 +422,9 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
         return FoldAdd<u32>(block, inst);
     case IR::Opcode::ISub32:
         return FoldISub32(inst);
+    case IR::Opcode::IMul32:
+        FoldWhenAllImmediates(inst, [](u32 a, u32 b) { return a * b; });
+        return;
     case IR::Opcode::BitCastF32U32:
         return FoldBitCast<IR::Opcode::BitCastF32U32, f32, u32>(inst, IR::Opcode::BitCastU32F32);
     case IR::Opcode::BitCastU32F32:
@@ -478,6 +481,15 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
         return;
     case IR::Opcode::INotEqual:
         FoldWhenAllImmediates(inst, [](u32 a, u32 b) { return a != b; });
+        return;
+    case IR::Opcode::BitwiseAnd32:
+        FoldWhenAllImmediates(inst, [](u32 a, u32 b) { return a & b; });
+        return;
+    case IR::Opcode::BitwiseOr32:
+        FoldWhenAllImmediates(inst, [](u32 a, u32 b) { return a | b; });
+        return;
+    case IR::Opcode::BitwiseXor32:
+        FoldWhenAllImmediates(inst, [](u32 a, u32 b) { return a ^ b; });
         return;
     case IR::Opcode::BitFieldUExtract:
         FoldWhenAllImmediates(inst, [](u32 base, u32 shift, u32 count) {
