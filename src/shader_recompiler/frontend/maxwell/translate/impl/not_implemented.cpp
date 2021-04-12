@@ -141,10 +141,6 @@ void TranslatorVisitor::IMUL32I(u64) {
     ThrowNotImplemented(Opcode::IMUL32I);
 }
 
-void TranslatorVisitor::ISBERD(u64) {
-    ThrowNotImplemented(Opcode::ISBERD);
-}
-
 void TranslatorVisitor::JCAL(u64) {
     ThrowNotImplemented(Opcode::JCAL);
 }
