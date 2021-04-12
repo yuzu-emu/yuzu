@@ -120,6 +120,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/integer_shift_right.cpp
     frontend/maxwell/translate/impl/integer_short_multiply_add.cpp
     frontend/maxwell/translate/impl/integer_to_integer_conversion.cpp
+    frontend/maxwell/translate/impl/internal_stage_buffer_entry_read.cpp
     frontend/maxwell/translate/impl/load_constant.cpp
     frontend/maxwell/translate/impl/load_constant.h
     frontend/maxwell/translate/impl/load_effective_address.cpp
