@@ -115,6 +115,9 @@ enum class SpecialRegister : u64 {
     switch (special_register) {
     case SpecialRegister::SR_THREAD_KILL:
         return IR::U32{ir.Select(ir.IsHelperInvocation(), ir.Imm32(-1), ir.Imm32(0))};
+    case SpecialRegister::SR_INVOCATION_INFO:
+        // LOG_WARNING(..., "SR_INVOCATION_INFO is stubbed");
+        return ir.Imm32(0x00ff'0000);
     case SpecialRegister::SR_TID_X:
         return ir.LocalInvocationIdX();
     case SpecialRegister::SR_TID_Y:
@@ -128,10 +131,10 @@ enum class SpecialRegister : u64 {
     case SpecialRegister::SR_CTAID_Z:
         return ir.WorkgroupIdZ();
     case SpecialRegister::SR_WSCALEFACTOR_XY:
-        // LOG_WARNING(ShaderDecompiler, "SR_WSCALEFACTOR_XY (Stubbed)");
+        // LOG_WARNING(..., "SR_WSCALEFACTOR_XY is stubbed");
         return ir.Imm32(Common::BitCast<u32>(1.0f));
     case SpecialRegister::SR_WSCALEFACTOR_Z:
-        // LOG_WARNING(ShaderDecompiler, "SR_WSCALEFACTOR_Z (Stubbed)");
+        // LOG_WARNING(..., "SR_WSCALEFACTOR_Z is stubbed");
         return ir.Imm32(Common::BitCast<u32>(1.0f));
     case SpecialRegister::SR_LANEID:
         return ir.LaneId();
