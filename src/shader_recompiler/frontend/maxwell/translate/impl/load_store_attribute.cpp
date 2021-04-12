@@ -64,7 +64,7 @@ void TranslatorVisitor::ALD(u64 insn) {
         BitField<8, 8, IR::Reg> index_reg;
         BitField<20, 10, u64> absolute_offset;
         BitField<20, 11, s64> relative_offset;
-        BitField<39, 8, IR::Reg> array_reg;
+        BitField<39, 8, IR::Reg> vertex_reg;
         BitField<32, 1, u64> o;
         BitField<31, 1, u64> patch;
         BitField<47, 2, Size> size;
@@ -80,15 +80,17 @@ void TranslatorVisitor::ALD(u64 insn) {
     if (offset % 4 != 0) {
         throw NotImplementedException("Unaligned absolute offset {}", offset);
     }
+    const IR::U32 vertex{X(ald.vertex_reg)};
     const u32 num_elements{NumElements(ald.size)};
     if (ald.index_reg == IR::Reg::RZ) {
         for (u32 element = 0; element < num_elements; ++element) {
-            F(ald.dest_reg + element, ir.GetAttribute(IR::Attribute{offset / 4 + element}));
+            const IR::Attribute attr{offset / 4 + element};
+            F(ald.dest_reg + element, ir.GetAttribute(attr, vertex));
         }
         return;
     }
     HandleIndexed(*this, ald.index_reg, num_elements, [&](u32 element, IR::U32 final_offset) {
-        F(ald.dest_reg + element, ir.GetAttributeIndexed(final_offset));
+        F(ald.dest_reg + element, ir.GetAttributeIndexed(final_offset, vertex));
     });
 }
 
@@ -100,7 +102,7 @@ void TranslatorVisitor::AST(u64 insn) {
         BitField<20, 10, u64> absolute_offset;
         BitField<20, 11, s64> relative_offset;
         BitField<31, 1, u64> patch;
-        BitField<39, 8, IR::Reg> array_reg;
+        BitField<39, 8, IR::Reg> vertex_reg;
         BitField<47, 2, Size> size;
     } const ast{insn};
 
@@ -114,15 +116,17 @@ void TranslatorVisitor::AST(u64 insn) {
     if (offset % 4 != 0) {
         throw NotImplementedException("Unaligned absolute offset {}", offset);
     }
+    const IR::U32 vertex{X(ast.vertex_reg)};
     const u32 num_elements{NumElements(ast.size)};
     if (ast.index_reg == IR::Reg::RZ) {
         for (u32 element = 0; element < num_elements; ++element) {
-            ir.SetAttribute(IR::Attribute{offset / 4 + element}, F(ast.src_reg + element));
+            const IR::Attribute attr{offset / 4 + element};
+            ir.SetAttribute(attr, F(ast.src_reg + element), vertex);
         }
         return;
     }
     HandleIndexed(*this, ast.index_reg, num_elements, [&](u32 element, IR::U32 final_offset) {
-        ir.SetAttributeIndexed(final_offset, F(ast.src_reg + element));
+        ir.SetAttributeIndexed(final_offset, F(ast.src_reg + element), vertex);
     });
 }
 

@@ -134,6 +134,44 @@ void DefineEntryPoint(const IR::Program& program, EmitContext& ctx, Id main) {
     case Shader::Stage::VertexB:
         execution_model = spv::ExecutionModel::Vertex;
         break;
+    case Shader::Stage::Geometry:
+        execution_model = spv::ExecutionModel::Geometry;
+        ctx.AddCapability(spv::Capability::Geometry);
+        ctx.AddCapability(spv::Capability::GeometryStreams);
+        switch (ctx.profile.input_topology) {
+        case InputTopology::Points:
+            ctx.AddExecutionMode(main, spv::ExecutionMode::InputPoints);
+            break;
+        case InputTopology::Lines:
+            ctx.AddExecutionMode(main, spv::ExecutionMode::InputLines);
+            break;
+        case InputTopology::LinesAdjacency:
+            ctx.AddExecutionMode(main, spv::ExecutionMode::InputLinesAdjacency);
+            break;
+        case InputTopology::Triangles:
+            ctx.AddExecutionMode(main, spv::ExecutionMode::Triangles);
+            break;
+        case InputTopology::TrianglesAdjacency:
+            ctx.AddExecutionMode(main, spv::ExecutionMode::InputTrianglesAdjacency);
+            break;
+        }
+        switch (program.output_topology) {
+        case OutputTopology::PointList:
+            ctx.AddExecutionMode(main, spv::ExecutionMode::OutputPoints);
+            break;
+        case OutputTopology::LineStrip:
+            ctx.AddExecutionMode(main, spv::ExecutionMode::OutputLineStrip);
+            break;
+        case OutputTopology::TriangleStrip:
+            ctx.AddExecutionMode(main, spv::ExecutionMode::OutputTriangleStrip);
+            break;
+        }
+        if (program.info.stores_point_size) {
+            ctx.AddCapability(spv::Capability::GeometryPointSize);
+        }
+        ctx.AddExecutionMode(main, spv::ExecutionMode::OutputVertices, program.output_vertices);
+        ctx.AddExecutionMode(main, spv::ExecutionMode::Invocations, program.invocations);
+        break;
     case Shader::Stage::Fragment:
         execution_model = spv::ExecutionModel::Fragment;
         ctx.AddExecutionMode(main, spv::ExecutionMode::OriginUpperLeft);

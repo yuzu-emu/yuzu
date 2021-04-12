@@ -33,6 +33,10 @@ namespace Core {
 class System;
 }
 
+namespace Shader::IR {
+struct Program;
+}
+
 namespace Vulkan {
 
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
@@ -160,7 +164,8 @@ private:
                                                            Shader::Environment& env,
                                                            bool build_in_parallel);
 
-    Shader::Profile MakeProfile(const GraphicsPipelineCacheKey& key, Shader::Stage stage);
+    Shader::Profile MakeProfile(const GraphicsPipelineCacheKey& key,
+                                const Shader::IR::Program& program);
 
     Tegra::GPU& gpu;
     Tegra::Engines::Maxwell3D& maxwell3d;

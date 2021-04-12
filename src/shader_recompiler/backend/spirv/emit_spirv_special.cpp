@@ -5,6 +5,17 @@
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 
 namespace Shader::Backend::SPIRV {
+namespace {
+void ConvertDepthMode(EmitContext& ctx) {
+    const Id type{ctx.F32[1]};
+    const Id position{ctx.OpLoad(ctx.F32[4], ctx.output_position)};
+    const Id z{ctx.OpCompositeExtract(type, position, 2u)};
+    const Id w{ctx.OpCompositeExtract(type, position, 3u)};
+    const Id screen_depth{ctx.OpFMul(type, ctx.OpFAdd(type, z, w), ctx.Constant(type, 0.5f))};
+    const Id vector{ctx.OpCompositeInsert(ctx.F32[4], screen_depth, position, 2u)};
+    ctx.OpStore(ctx.output_position, vector);
+}
+} // Anonymous namespace
 
 void EmitPrologue(EmitContext& ctx) {
     if (ctx.stage == Stage::VertexB) {
@@ -25,23 +36,30 @@ void EmitPrologue(EmitContext& ctx) {
 }
 
 void EmitEpilogue(EmitContext& ctx) {
-    if (ctx.profile.convert_depth_mode) {
-        const Id type{ctx.F32[1]};
-        const Id position{ctx.OpLoad(ctx.F32[4], ctx.output_position)};
-        const Id z{ctx.OpCompositeExtract(type, position, 2u)};
-        const Id w{ctx.OpCompositeExtract(type, position, 3u)};
-        const Id screen_depth{ctx.OpFMul(type, ctx.OpFAdd(type, z, w), ctx.Constant(type, 0.5f))};
-        const Id vector{ctx.OpCompositeInsert(ctx.F32[4], screen_depth, position, 2u)};
-        ctx.OpStore(ctx.output_position, vector);
+    if (ctx.stage == Stage::VertexB && ctx.profile.convert_depth_mode) {
+        ConvertDepthMode(ctx);
     }
 }
 
-void EmitEmitVertex(EmitContext& ctx, Id stream) {
-    ctx.OpEmitStreamVertex(stream);
+void EmitEmitVertex(EmitContext& ctx, const IR::Value& stream) {
+    if (ctx.profile.convert_depth_mode) {
+        ConvertDepthMode(ctx);
+    }
+    if (!stream.IsImmediate()) {
+        // LOG_WARNING(..., "EmitVertex's stream is not constant");
+        ctx.OpEmitStreamVertex(ctx.u32_zero_value);
+        return;
+    }
+    ctx.OpEmitStreamVertex(ctx.Def(stream));
 }
 
-void EmitEndPrimitive(EmitContext& ctx, Id stream) {
-    ctx.OpEndStreamPrimitive(stream);
+void EmitEndPrimitive(EmitContext& ctx, const IR::Value& stream) {
+    if (!stream.IsImmediate()) {
+        // LOG_WARNING(..., "EndPrimitive's stream is not constant");
+        ctx.OpEndStreamPrimitive(ctx.u32_zero_value);
+        return;
+    }
+    ctx.OpEndStreamPrimitive(ctx.Def(stream));
 }
 
 } // namespace Shader::Backend::SPIRV

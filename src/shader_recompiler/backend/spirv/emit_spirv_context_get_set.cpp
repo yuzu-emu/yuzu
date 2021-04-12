@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <tuple>
+#include <utility>
 
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 
@@ -27,6 +28,15 @@ std::optional<AttrInfo> AttrTypes(EmitContext& ctx, u32 index) {
         return std::nullopt;
     }
     throw InvalidArgument("Invalid attribute type {}", type);
+}
+
+template <typename... Args>
+Id AttrPointer(EmitContext& ctx, Id pointer_type, Id vertex, Id base, Args&&... args) {
+    if (ctx.stage == Stage::Geometry) {
+        return ctx.OpAccessChain(pointer_type, base, vertex, std::forward<Args>(args)...);
+    } else {
+        return ctx.OpAccessChain(pointer_type, base, std::forward<Args>(args)...);
+    }
 }
 
 std::optional<Id> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
@@ -66,6 +76,31 @@ std::optional<Id> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
         throw NotImplementedException("Read attribute {}", attr);
     }
 }
+
+Id GetCbuf(EmitContext& ctx, Id result_type, Id UniformDefinitions::*member_ptr, u32 element_size,
+           const IR::Value& binding, const IR::Value& offset) {
+    if (!binding.IsImmediate()) {
+        throw NotImplementedException("Constant buffer indexing");
+    }
+    const Id cbuf{ctx.cbufs[binding.U32()].*member_ptr};
+    const Id uniform_type{ctx.uniform_types.*member_ptr};
+    if (!offset.IsImmediate()) {
+        Id index{ctx.Def(offset)};
+        if (element_size > 1) {
+            const u32 log2_element_size{static_cast<u32>(std::countr_zero(element_size))};
+            const Id shift{ctx.Constant(ctx.U32[1], log2_element_size)};
+            index = ctx.OpShiftRightArithmetic(ctx.U32[1], ctx.Def(offset), shift);
+        }
+        const Id access_chain{ctx.OpAccessChain(uniform_type, cbuf, ctx.u32_zero_value, index)};
+        return ctx.OpLoad(result_type, access_chain);
+    }
+    if (offset.U32() % element_size != 0) {
+        throw NotImplementedException("Unaligned immediate constant buffer load");
+    }
+    const Id imm_offset{ctx.Constant(ctx.U32[1], offset.U32() / element_size)};
+    const Id access_chain{ctx.OpAccessChain(uniform_type, cbuf, ctx.u32_zero_value, imm_offset)};
+    return ctx.OpLoad(result_type, access_chain);
+}
 } // Anonymous namespace
 
 void EmitGetRegister(EmitContext&) {
@@ -100,31 +135,6 @@ void EmitGetIndirectBranchVariable(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-static Id GetCbuf(EmitContext& ctx, Id result_type, Id UniformDefinitions::*member_ptr,
-                  u32 element_size, const IR::Value& binding, const IR::Value& offset) {
-    if (!binding.IsImmediate()) {
-        throw NotImplementedException("Constant buffer indexing");
-    }
-    const Id cbuf{ctx.cbufs[binding.U32()].*member_ptr};
-    const Id uniform_type{ctx.uniform_types.*member_ptr};
-    if (!offset.IsImmediate()) {
-        Id index{ctx.Def(offset)};
-        if (element_size > 1) {
-            const u32 log2_element_size{static_cast<u32>(std::countr_zero(element_size))};
-            const Id shift{ctx.Constant(ctx.U32[1], log2_element_size)};
-            index = ctx.OpShiftRightArithmetic(ctx.U32[1], ctx.Def(offset), shift);
-        }
-        const Id access_chain{ctx.OpAccessChain(uniform_type, cbuf, ctx.u32_zero_value, index)};
-        return ctx.OpLoad(result_type, access_chain);
-    }
-    if (offset.U32() % element_size != 0) {
-        throw NotImplementedException("Unaligned immediate constant buffer load");
-    }
-    const Id imm_offset{ctx.Constant(ctx.U32[1], offset.U32() / element_size)};
-    const Id access_chain{ctx.OpAccessChain(uniform_type, cbuf, ctx.u32_zero_value, imm_offset)};
-    return ctx.OpLoad(result_type, access_chain);
-}
-
 Id EmitGetCbufU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
     const Id load{GetCbuf(ctx, ctx.U8, &UniformDefinitions::U8, sizeof(u8), binding, offset)};
     return ctx.OpUConvert(ctx.U32[1], load);
@@ -157,7 +167,7 @@ Id EmitGetCbufU32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value&
     return GetCbuf(ctx, ctx.U32[2], &UniformDefinitions::U32x2, sizeof(u32[2]), binding, offset);
 }
 
-Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr) {
+Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
     const u32 element{static_cast<u32>(attr) % 4};
     const auto element_id{[&] { return ctx.Constant(ctx.U32[1], element); }};
     if (IR::IsGeneric(attr)) {
@@ -168,7 +178,7 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr) {
             return ctx.Constant(ctx.F32[1], 0.0f);
         }
         const Id generic_id{ctx.input_generics.at(index)};
-        const Id pointer{ctx.OpAccessChain(type->pointer, generic_id, element_id())};
+        const Id pointer{AttrPointer(ctx, type->pointer, vertex, generic_id, element_id())};
         const Id value{ctx.OpLoad(type->id, pointer)};
         return type->needs_cast ? ctx.OpBitcast(ctx.F32[1], value) : value;
     }
@@ -177,8 +187,8 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr) {
     case IR::Attribute::PositionY:
     case IR::Attribute::PositionZ:
     case IR::Attribute::PositionW:
-        return ctx.OpLoad(ctx.F32[1],
-                          ctx.OpAccessChain(ctx.input_f32, ctx.input_position, element_id()));
+        return ctx.OpLoad(
+            ctx.F32[1], AttrPointer(ctx, ctx.input_f32, vertex, ctx.input_position, element_id()));
     case IR::Attribute::InstanceId:
         if (ctx.profile.support_vertex_instance_id) {
             return ctx.OpLoad(ctx.U32[1], ctx.instance_id);
@@ -198,29 +208,32 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr) {
                             ctx.Constant(ctx.U32[1], std::numeric_limits<u32>::max()),
                             ctx.u32_zero_value);
     case IR::Attribute::PointSpriteS:
-        return ctx.OpLoad(ctx.F32[1], ctx.OpAccessChain(ctx.input_f32, ctx.point_coord,
-                                                        ctx.Constant(ctx.U32[1], 0U)));
+        return ctx.OpLoad(ctx.F32[1], AttrPointer(ctx, ctx.input_f32, vertex, ctx.point_coord,
+                                                  ctx.u32_zero_value));
     case IR::Attribute::PointSpriteT:
-        return ctx.OpLoad(ctx.F32[1], ctx.OpAccessChain(ctx.input_f32, ctx.point_coord,
-                                                        ctx.Constant(ctx.U32[1], 1U)));
+        return ctx.OpLoad(ctx.F32[1], AttrPointer(ctx, ctx.input_f32, vertex, ctx.point_coord,
+                                                  ctx.Constant(ctx.U32[1], 1U)));
     default:
         throw NotImplementedException("Read attribute {}", attr);
     }
 }
 
-void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value) {
+void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value, [[maybe_unused]] Id vertex) {
     const std::optional<Id> output{OutputAttrPointer(ctx, attr)};
-    if (!output) {
-        return;
+    if (output) {
+        ctx.OpStore(*output, value);
     }
-    ctx.OpStore(*output, value);
 }
 
-Id EmitGetAttributeIndexed(EmitContext& ctx, Id offset) {
-    return ctx.OpFunctionCall(ctx.F32[1], ctx.indexed_load_func, offset);
+Id EmitGetAttributeIndexed(EmitContext& ctx, Id offset, Id vertex) {
+    if (ctx.stage == Stage::Geometry) {
+        return ctx.OpFunctionCall(ctx.F32[1], ctx.indexed_load_func, offset, vertex);
+    } else {
+        return ctx.OpFunctionCall(ctx.F32[1], ctx.indexed_load_func, offset);
+    }
 }
 
-void EmitSetAttributeIndexed(EmitContext& ctx, Id offset, Id value) {
+void EmitSetAttributeIndexed(EmitContext& ctx, Id offset, Id value, [[maybe_unused]] Id vertex) {
     ctx.OpFunctionCall(ctx.void_id, ctx.indexed_store_func, offset, value);
 }
 
