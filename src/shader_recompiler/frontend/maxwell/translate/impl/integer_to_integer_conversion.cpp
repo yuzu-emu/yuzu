@@ -105,6 +105,8 @@ void I2I(TranslatorVisitor& v, u64 insn, const IR::U32& src_a) {
     if (i2i.cc != 0) {
         v.SetZFlag(v.ir.GetZeroFromOp(result));
         v.SetSFlag(v.ir.GetSignFromOp(result));
+        v.ResetCFlag();
+        v.ResetOFlag();
     }
 }
 } // Anonymous namespace
