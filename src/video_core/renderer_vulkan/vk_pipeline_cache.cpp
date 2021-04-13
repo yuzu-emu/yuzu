@@ -934,6 +934,7 @@ Shader::Profile PipelineCache::MakeProfile(const GraphicsPipelineCacheKey& key,
         profile.input_topology = Shader::InputTopology::TrianglesAdjacency;
         break;
     }
+    profile.force_early_z = key.state.early_z != 0;
     return profile;
 }
 

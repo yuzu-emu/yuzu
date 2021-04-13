@@ -178,6 +178,9 @@ void DefineEntryPoint(const IR::Program& program, EmitContext& ctx, Id main) {
         if (program.info.stores_frag_depth) {
             ctx.AddExecutionMode(main, spv::ExecutionMode::DepthReplacing);
         }
+        if (ctx.profile.force_early_z) {
+            ctx.AddExecutionMode(main, spv::ExecutionMode::EarlyFragmentTests);
+        }
         break;
     default:
         throw NotImplementedException("Stage {}", program.stage);
