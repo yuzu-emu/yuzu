@@ -53,6 +53,7 @@ struct Profile {
 
     std::array<AttributeType, 32> generic_input_types{};
     bool convert_depth_mode{};
+    bool force_early_z{};
 
     InputTopology input_topology{};
 
