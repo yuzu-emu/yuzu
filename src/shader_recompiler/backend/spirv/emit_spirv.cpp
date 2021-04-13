@@ -276,7 +276,7 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
             ctx.AddCapability(spv::Capability::SubgroupVoteKHR);
         }
     }
-    if (info.uses_64_bit_atomics && profile.support_int64_atomics) {
+    if (info.uses_int64_bit_atomics && profile.support_int64_atomics) {
         ctx.AddCapability(spv::Capability::Int64Atomics);
     }
     if (info.uses_typeless_image_reads && profile.support_typeless_image_loads) {

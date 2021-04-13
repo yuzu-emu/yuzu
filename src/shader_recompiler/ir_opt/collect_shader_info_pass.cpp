@@ -315,6 +315,23 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::ConvertF32U64:
     case IR::Opcode::ConvertF64U64:
     case IR::Opcode::SharedAtomicExchange64:
+    case IR::Opcode::GlobalAtomicIAdd64:
+    case IR::Opcode::GlobalAtomicSMin64:
+    case IR::Opcode::GlobalAtomicUMin64:
+    case IR::Opcode::GlobalAtomicSMax64:
+    case IR::Opcode::GlobalAtomicUMax64:
+    case IR::Opcode::GlobalAtomicAnd64:
+    case IR::Opcode::GlobalAtomicOr64:
+    case IR::Opcode::GlobalAtomicXor64:
+    case IR::Opcode::GlobalAtomicExchange64:
+    case IR::Opcode::StorageAtomicIAdd64:
+    case IR::Opcode::StorageAtomicSMin64:
+    case IR::Opcode::StorageAtomicUMin64:
+    case IR::Opcode::StorageAtomicSMax64:
+    case IR::Opcode::StorageAtomicUMax64:
+    case IR::Opcode::StorageAtomicAnd64:
+    case IR::Opcode::StorageAtomicOr64:
+    case IR::Opcode::StorageAtomicXor64:
         info.uses_int64 = true;
         break;
     default:
@@ -457,46 +474,91 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::FSwizzleAdd:
         info.uses_fswzadd = true;
         break;
+    case IR::Opcode::LoadStorageU8:
+    case IR::Opcode::LoadStorageS8:
+    case IR::Opcode::WriteStorageU8:
+    case IR::Opcode::WriteStorageS8:
+        info.used_storage_buffer_types |= IR::Type::U8;
+        break;
+    case IR::Opcode::LoadStorageU16:
+    case IR::Opcode::LoadStorageS16:
+    case IR::Opcode::WriteStorageU16:
+    case IR::Opcode::WriteStorageS16:
+        info.used_storage_buffer_types |= IR::Type::U16;
+        break;
+    case IR::Opcode::LoadStorage32:
+    case IR::Opcode::WriteStorage32:
+    case IR::Opcode::StorageAtomicIAdd32:
+    case IR::Opcode::StorageAtomicSMin32:
+    case IR::Opcode::StorageAtomicUMin32:
+    case IR::Opcode::StorageAtomicSMax32:
+    case IR::Opcode::StorageAtomicUMax32:
+    case IR::Opcode::StorageAtomicAnd32:
+    case IR::Opcode::StorageAtomicOr32:
+    case IR::Opcode::StorageAtomicXor32:
+    case IR::Opcode::StorageAtomicExchange32:
+        info.used_storage_buffer_types |= IR::Type::U32;
+        break;
+    case IR::Opcode::LoadStorage64:
+    case IR::Opcode::WriteStorage64:
+        info.used_storage_buffer_types |= IR::Type::U32x2;
+        break;
+    case IR::Opcode::LoadStorage128:
+    case IR::Opcode::WriteStorage128:
+        info.used_storage_buffer_types |= IR::Type::U32x4;
+        break;
     case IR::Opcode::SharedAtomicInc32:
         info.uses_shared_increment = true;
         break;
     case IR::Opcode::SharedAtomicDec32:
         info.uses_shared_decrement = true;
         break;
+    case IR::Opcode::SharedAtomicExchange64:
+        info.uses_int64_bit_atomics = true;
+        break;
     case IR::Opcode::GlobalAtomicInc32:
     case IR::Opcode::StorageAtomicInc32:
+        info.used_storage_buffer_types |= IR::Type::U32;
         info.uses_global_increment = true;
         break;
     case IR::Opcode::GlobalAtomicDec32:
     case IR::Opcode::StorageAtomicDec32:
+        info.used_storage_buffer_types |= IR::Type::U32;
         info.uses_global_decrement = true;
         break;
     case IR::Opcode::GlobalAtomicAddF32:
     case IR::Opcode::StorageAtomicAddF32:
+        info.used_storage_buffer_types |= IR::Type::U32;
         info.uses_atomic_f32_add = true;
         break;
     case IR::Opcode::GlobalAtomicAddF16x2:
     case IR::Opcode::StorageAtomicAddF16x2:
+        info.used_storage_buffer_types |= IR::Type::U32;
         info.uses_atomic_f16x2_add = true;
         break;
     case IR::Opcode::GlobalAtomicAddF32x2:
     case IR::Opcode::StorageAtomicAddF32x2:
+        info.used_storage_buffer_types |= IR::Type::U32;
         info.uses_atomic_f32x2_add = true;
         break;
     case IR::Opcode::GlobalAtomicMinF16x2:
     case IR::Opcode::StorageAtomicMinF16x2:
+        info.used_storage_buffer_types |= IR::Type::U32;
         info.uses_atomic_f16x2_min = true;
         break;
     case IR::Opcode::GlobalAtomicMinF32x2:
     case IR::Opcode::StorageAtomicMinF32x2:
+        info.used_storage_buffer_types |= IR::Type::U32;
         info.uses_atomic_f32x2_min = true;
         break;
     case IR::Opcode::GlobalAtomicMaxF16x2:
     case IR::Opcode::StorageAtomicMaxF16x2:
+        info.used_storage_buffer_types |= IR::Type::U32;
         info.uses_atomic_f16x2_max = true;
         break;
     case IR::Opcode::GlobalAtomicMaxF32x2:
     case IR::Opcode::StorageAtomicMaxF32x2:
+        info.used_storage_buffer_types |= IR::Type::U32;
         info.uses_atomic_f32x2_max = true;
         break;
     case IR::Opcode::GlobalAtomicIAdd64:
@@ -516,11 +578,8 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::StorageAtomicAnd64:
     case IR::Opcode::StorageAtomicOr64:
     case IR::Opcode::StorageAtomicXor64:
-        info.uses_64_bit_atomics = true;
-        break;
-    case IR::Opcode::SharedAtomicExchange64:
-        info.uses_64_bit_atomics = true;
-        info.uses_shared_memory_u32x2 = true;
+        info.used_storage_buffer_types |= IR::Type::U64;
+        info.uses_int64_bit_atomics = true;
         break;
     default:
         break;

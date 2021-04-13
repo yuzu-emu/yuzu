@@ -15,7 +15,7 @@
 
 namespace Shader::Backend::SPIRV {
 namespace {
-enum class CasFunctionType {
+enum class Operation {
     Increment,
     Decrement,
     FPAdd,
@@ -23,44 +23,11 @@ enum class CasFunctionType {
     FPMax,
 };
 
-Id CasFunction(EmitContext& ctx, CasFunctionType function_type, Id value_type) {
-    const Id func_type{ctx.TypeFunction(value_type, value_type, value_type)};
-    const Id func{ctx.OpFunction(value_type, spv::FunctionControlMask::MaskNone, func_type)};
-    const Id op_a{ctx.OpFunctionParameter(value_type)};
-    const Id op_b{ctx.OpFunctionParameter(value_type)};
-    ctx.AddLabel();
-    Id result{};
-    switch (function_type) {
-    case CasFunctionType::Increment: {
-        const Id pred{ctx.OpUGreaterThanEqual(ctx.U1, op_a, op_b)};
-        const Id incr{ctx.OpIAdd(value_type, op_a, ctx.Constant(value_type, 1))};
-        result = ctx.OpSelect(value_type, pred, ctx.u32_zero_value, incr);
-        break;
-    }
-    case CasFunctionType::Decrement: {
-        const Id lhs{ctx.OpIEqual(ctx.U1, op_a, ctx.Constant(value_type, 0u))};
-        const Id rhs{ctx.OpUGreaterThan(ctx.U1, op_a, op_b)};
-        const Id pred{ctx.OpLogicalOr(ctx.U1, lhs, rhs)};
-        const Id decr{ctx.OpISub(value_type, op_a, ctx.Constant(value_type, 1))};
-        result = ctx.OpSelect(value_type, pred, op_b, decr);
-        break;
-    }
-    case CasFunctionType::FPAdd:
-        result = ctx.OpFAdd(value_type, op_a, op_b);
-        break;
-    case CasFunctionType::FPMin:
-        result = ctx.OpFMin(value_type, op_a, op_b);
-        break;
-    case CasFunctionType::FPMax:
-        result = ctx.OpFMax(value_type, op_a, op_b);
-        break;
-    default:
-        break;
-    }
-    ctx.OpReturnValue(result);
-    ctx.OpFunctionEnd();
-    return func;
-}
+struct AttrInfo {
+    Id pointer;
+    Id id;
+    bool needs_cast;
+};
 
 Id ImageType(EmitContext& ctx, const TextureDescriptor& desc) {
     const spv::ImageFormat format{spv::ImageFormat::Unknown};
@@ -182,12 +149,6 @@ Id GetAttributeType(EmitContext& ctx, AttributeType type) {
     throw InvalidArgument("Invalid attribute type {}", type);
 }
 
-struct AttrInfo {
-    Id pointer;
-    Id id;
-    bool needs_cast;
-};
-
 std::optional<AttrInfo> AttrTypes(EmitContext& ctx, u32 index) {
     const AttributeType type{ctx.profile.generic_input_types.at(index)};
     switch (type) {
@@ -203,6 +164,164 @@ std::optional<AttrInfo> AttrTypes(EmitContext& ctx, u32 index) {
     throw InvalidArgument("Invalid attribute type {}", type);
 }
 
+void DefineConstBuffers(EmitContext& ctx, const Info& info, Id UniformDefinitions::*member_type,
+                        u32 binding, Id type, char type_char, u32 element_size) {
+    const Id array_type{ctx.TypeArray(type, ctx.Constant(ctx.U32[1], 65536U / element_size))};
+    ctx.Decorate(array_type, spv::Decoration::ArrayStride, element_size);
+
+    const Id struct_type{ctx.TypeStruct(array_type)};
+    ctx.Name(struct_type, fmt::format("cbuf_block_{}{}", type_char, element_size * CHAR_BIT));
+    ctx.Decorate(struct_type, spv::Decoration::Block);
+    ctx.MemberName(struct_type, 0, "data");
+    ctx.MemberDecorate(struct_type, 0, spv::Decoration::Offset, 0U);
+
+    const Id struct_pointer_type{ctx.TypePointer(spv::StorageClass::Uniform, struct_type)};
+    const Id uniform_type{ctx.TypePointer(spv::StorageClass::Uniform, type)};
+    ctx.uniform_types.*member_type = uniform_type;
+
+    for (const ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
+        const Id id{ctx.AddGlobalVariable(struct_pointer_type, spv::StorageClass::Uniform)};
+        ctx.Decorate(id, spv::Decoration::Binding, binding);
+        ctx.Decorate(id, spv::Decoration::DescriptorSet, 0U);
+        ctx.Name(id, fmt::format("c{}", desc.index));
+        for (size_t i = 0; i < desc.count; ++i) {
+            ctx.cbufs[desc.index + i].*member_type = id;
+        }
+        if (ctx.profile.supported_spirv >= 0x00010400) {
+            ctx.interfaces.push_back(id);
+        }
+        binding += desc.count;
+    }
+}
+
+void DefineSsbos(EmitContext& ctx, StorageTypeDefinition& type_def,
+                 Id StorageDefinitions::*member_type, const Info& info, u32 binding, Id type,
+                 u32 stride) {
+    const Id array_type{ctx.TypeRuntimeArray(type)};
+    ctx.Decorate(array_type, spv::Decoration::ArrayStride, stride);
+
+    const Id struct_type{ctx.TypeStruct(array_type)};
+    ctx.Decorate(struct_type, spv::Decoration::Block);
+    ctx.MemberDecorate(struct_type, 0, spv::Decoration::Offset, 0U);
+
+    const Id struct_pointer{ctx.TypePointer(spv::StorageClass::StorageBuffer, struct_type)};
+    type_def.array = struct_pointer;
+    type_def.element = ctx.TypePointer(spv::StorageClass::StorageBuffer, type);
+
+    u32 index{};
+    for (const StorageBufferDescriptor& desc : info.storage_buffers_descriptors) {
+        const Id id{ctx.AddGlobalVariable(struct_pointer, spv::StorageClass::StorageBuffer)};
+        ctx.Decorate(id, spv::Decoration::Binding, binding);
+        ctx.Decorate(id, spv::Decoration::DescriptorSet, 0U);
+        ctx.Name(id, fmt::format("ssbo{}", index));
+        if (ctx.profile.supported_spirv >= 0x00010400) {
+            ctx.interfaces.push_back(id);
+        }
+        for (size_t i = 0; i < desc.count; ++i) {
+            ctx.ssbos[index + i].*member_type = id;
+        }
+        index += desc.count;
+        binding += desc.count;
+    }
+}
+
+Id CasFunction(EmitContext& ctx, Operation operation, Id value_type) {
+    const Id func_type{ctx.TypeFunction(value_type, value_type, value_type)};
+    const Id func{ctx.OpFunction(value_type, spv::FunctionControlMask::MaskNone, func_type)};
+    const Id op_a{ctx.OpFunctionParameter(value_type)};
+    const Id op_b{ctx.OpFunctionParameter(value_type)};
+    ctx.AddLabel();
+    Id result{};
+    switch (operation) {
+    case Operation::Increment: {
+        const Id pred{ctx.OpUGreaterThanEqual(ctx.U1, op_a, op_b)};
+        const Id incr{ctx.OpIAdd(value_type, op_a, ctx.Constant(value_type, 1))};
+        result = ctx.OpSelect(value_type, pred, ctx.u32_zero_value, incr);
+        break;
+    }
+    case Operation::Decrement: {
+        const Id lhs{ctx.OpIEqual(ctx.U1, op_a, ctx.Constant(value_type, 0u))};
+        const Id rhs{ctx.OpUGreaterThan(ctx.U1, op_a, op_b)};
+        const Id pred{ctx.OpLogicalOr(ctx.U1, lhs, rhs)};
+        const Id decr{ctx.OpISub(value_type, op_a, ctx.Constant(value_type, 1))};
+        result = ctx.OpSelect(value_type, pred, op_b, decr);
+        break;
+    }
+    case Operation::FPAdd:
+        result = ctx.OpFAdd(value_type, op_a, op_b);
+        break;
+    case Operation::FPMin:
+        result = ctx.OpFMin(value_type, op_a, op_b);
+        break;
+    case Operation::FPMax:
+        result = ctx.OpFMax(value_type, op_a, op_b);
+        break;
+    default:
+        break;
+    }
+    ctx.OpReturnValue(result);
+    ctx.OpFunctionEnd();
+    return func;
+}
+
+Id CasLoop(EmitContext& ctx, Operation operation, Id array_pointer, Id element_pointer,
+           Id value_type, Id memory_type, spv::Scope scope) {
+    const bool is_shared{scope == spv::Scope::Workgroup};
+    const bool is_struct{!is_shared || ctx.profile.support_explicit_workgroup_layout};
+    const Id cas_func{CasFunction(ctx, operation, value_type)};
+    const Id zero{ctx.u32_zero_value};
+    const Id scope_id{ctx.Constant(ctx.U32[1], static_cast<u32>(scope))};
+
+    const Id loop_header{ctx.OpLabel()};
+    const Id continue_block{ctx.OpLabel()};
+    const Id merge_block{ctx.OpLabel()};
+    const Id func_type{is_shared
+                           ? ctx.TypeFunction(value_type, ctx.U32[1], value_type)
+                           : ctx.TypeFunction(value_type, ctx.U32[1], value_type, array_pointer)};
+
+    const Id func{ctx.OpFunction(value_type, spv::FunctionControlMask::MaskNone, func_type)};
+    const Id index{ctx.OpFunctionParameter(ctx.U32[1])};
+    const Id op_b{ctx.OpFunctionParameter(value_type)};
+    const Id base{is_shared ? ctx.shared_memory_u32 : ctx.OpFunctionParameter(array_pointer)};
+    ctx.AddLabel();
+    ctx.OpBranch(loop_header);
+    ctx.AddLabel(loop_header);
+
+    ctx.OpLoopMerge(merge_block, continue_block, spv::LoopControlMask::MaskNone);
+    ctx.OpBranch(continue_block);
+
+    ctx.AddLabel(continue_block);
+    const Id word_pointer{is_struct ? ctx.OpAccessChain(element_pointer, base, zero, index)
+                                    : ctx.OpAccessChain(element_pointer, base, index)};
+    if (value_type.value == ctx.F32[2].value) {
+        const Id u32_value{ctx.OpLoad(ctx.U32[1], word_pointer)};
+        const Id value{ctx.OpUnpackHalf2x16(ctx.F32[2], u32_value)};
+        const Id new_value{ctx.OpFunctionCall(value_type, cas_func, value, op_b)};
+        const Id u32_new_value{ctx.OpPackHalf2x16(ctx.U32[1], new_value)};
+        const Id atomic_res{ctx.OpAtomicCompareExchange(ctx.U32[1], word_pointer, scope_id, zero,
+                                                        zero, u32_new_value, u32_value)};
+        const Id success{ctx.OpIEqual(ctx.U1, atomic_res, u32_value)};
+        ctx.OpBranchConditional(success, merge_block, loop_header);
+
+        ctx.AddLabel(merge_block);
+        ctx.OpReturnValue(ctx.OpUnpackHalf2x16(ctx.F32[2], atomic_res));
+    } else {
+        const Id value{ctx.OpLoad(memory_type, word_pointer)};
+        const bool matching_type{value_type.value == memory_type.value};
+        const Id bitcast_value{matching_type ? value : ctx.OpBitcast(value_type, value)};
+        const Id cal_res{ctx.OpFunctionCall(value_type, cas_func, bitcast_value, op_b)};
+        const Id new_value{matching_type ? cal_res : ctx.OpBitcast(memory_type, cal_res)};
+        const Id atomic_res{ctx.OpAtomicCompareExchange(ctx.U32[1], word_pointer, scope_id, zero,
+                                                        zero, new_value, value)};
+        const Id success{ctx.OpIEqual(ctx.U1, atomic_res, value)};
+        ctx.OpBranchConditional(success, merge_block, loop_header);
+
+        ctx.AddLabel(merge_block);
+        ctx.OpReturnValue(ctx.OpBitcast(value_type, atomic_res));
+    }
+    ctx.OpFunctionEnd();
+    return func;
+}
 } // Anonymous namespace
 
 void VectorTypes::Define(Sirit::Module& sirit_ctx, Id base_type, std::string_view name) {
@@ -226,6 +345,7 @@ EmitContext::EmitContext(const Profile& profile_, IR::Program& program, u32& bin
     DefineInterfaces(program.info);
     DefineLocalMemory(program);
     DefineSharedMemory(program);
+    DefineSharedMemoryFunctions(program);
     DefineConstantBuffers(program.info, binding);
     DefineStorageBuffers(program.info, binding);
     DefineTextureBuffers(program.info, binding);
@@ -261,56 +381,6 @@ Id EmitContext::Def(const IR::Value& value) {
     default:
         throw NotImplementedException("Immediate type {}", value.Type());
     }
-}
-
-Id EmitContext::CasLoop(Id function, CasPointerType pointer_type, Id value_type) {
-    const Id loop_header{OpLabel()};
-    const Id continue_block{OpLabel()};
-    const Id merge_block{OpLabel()};
-    const Id storage_type{pointer_type == CasPointerType::Shared ? shared_memory_u32_type
-                                                                 : storage_memory_u32};
-    const Id func_type{TypeFunction(value_type, U32[1], value_type, storage_type)};
-    const Id func{OpFunction(value_type, spv::FunctionControlMask::MaskNone, func_type)};
-    const Id index{OpFunctionParameter(U32[1])};
-    const Id op_b{OpFunctionParameter(value_type)};
-    const Id base{OpFunctionParameter(storage_type)};
-    AddLabel();
-    const Id one{Constant(U32[1], 1)};
-    OpBranch(loop_header);
-    AddLabel(loop_header);
-    OpLoopMerge(merge_block, continue_block, spv::LoopControlMask::MaskNone);
-    OpBranch(continue_block);
-
-    AddLabel(continue_block);
-    const Id word_pointer{pointer_type == CasPointerType::Shared
-                              ? OpAccessChain(shared_u32, base, index)
-                              : OpAccessChain(storage_u32, base, u32_zero_value, index)};
-    if (value_type.value == F32[2].value) {
-        const Id u32_value{OpLoad(U32[1], word_pointer)};
-        const Id value{OpUnpackHalf2x16(F32[2], u32_value)};
-        const Id new_value{OpFunctionCall(value_type, function, value, op_b)};
-        const Id u32_new_value{OpPackHalf2x16(U32[1], new_value)};
-        const Id atomic_res{OpAtomicCompareExchange(U32[1], word_pointer, one, u32_zero_value,
-                                                    u32_zero_value, u32_new_value, u32_value)};
-        const Id success{OpIEqual(U1, atomic_res, u32_value)};
-        OpBranchConditional(success, merge_block, loop_header);
-
-        AddLabel(merge_block);
-        OpReturnValue(OpUnpackHalf2x16(F32[2], atomic_res));
-    } else {
-        const Id value{OpLoad(U32[1], word_pointer)};
-        const Id new_value{OpBitcast(
-            U32[1], OpFunctionCall(value_type, function, OpBitcast(value_type, value), op_b))};
-        const Id atomic_res{OpAtomicCompareExchange(U32[1], word_pointer, one, u32_zero_value,
-                                                    u32_zero_value, new_value, value)};
-        const Id success{OpIEqual(U1, atomic_res, value)};
-        OpBranchConditional(success, merge_block, loop_header);
-
-        AddLabel(merge_block);
-        OpReturnValue(OpBitcast(value_type, atomic_res));
-    }
-    OpFunctionEnd();
-    return func;
 }
 
 void EmitContext::DefineCommonTypes(const Info& info) {
@@ -397,27 +467,31 @@ void EmitContext::DefineSharedMemory(const IR::Program& program) {
         Decorate(variable, spv::Decoration::Aliased);
         interfaces.push_back(variable);
 
-        return std::make_pair(variable, element_pointer);
+        return std::make_tuple(variable, element_pointer, pointer);
     }};
     if (profile.support_explicit_workgroup_layout) {
         AddExtension("SPV_KHR_workgroup_memory_explicit_layout");
         AddCapability(spv::Capability::WorkgroupMemoryExplicitLayoutKHR);
         if (program.info.uses_int8) {
             AddCapability(spv::Capability::WorkgroupMemoryExplicitLayout8BitAccessKHR);
-            std::tie(shared_memory_u8, shared_u8) = make(U8, 1);
+            std::tie(shared_memory_u8, shared_u8, std::ignore) = make(U8, 1);
         }
         if (program.info.uses_int16) {
             AddCapability(spv::Capability::WorkgroupMemoryExplicitLayout16BitAccessKHR);
-            std::tie(shared_memory_u16, shared_u16) = make(U16, 2);
+            std::tie(shared_memory_u16, shared_u16, std::ignore) = make(U16, 2);
         }
-        std::tie(shared_memory_u32, shared_u32) = make(U32[1], 4);
-        std::tie(shared_memory_u32x2, shared_u32x2) = make(U32[2], 8);
-        std::tie(shared_memory_u32x4, shared_u32x4) = make(U32[4], 16);
+        if (program.info.uses_int64) {
+            std::tie(shared_memory_u64, shared_u64, std::ignore) = make(U64, 8);
+        }
+        std::tie(shared_memory_u32, shared_u32, shared_memory_u32_type) = make(U32[1], 4);
+        std::tie(shared_memory_u32x2, shared_u32x2, std::ignore) = make(U32[2], 8);
+        std::tie(shared_memory_u32x4, shared_u32x4, std::ignore) = make(U32[4], 16);
         return;
     }
     const u32 num_elements{Common::DivCeil(program.shared_memory_size, 4U)};
     const Id type{TypeArray(U32[1], Constant(U32[1], num_elements))};
     shared_memory_u32_type = TypePointer(spv::StorageClass::Workgroup, type);
+
     shared_u32 = TypePointer(spv::StorageClass::Workgroup, U32[1]);
     shared_memory_u32 = AddGlobalVariable(shared_memory_u32_type, spv::StorageClass::Workgroup);
     interfaces.push_back(shared_memory_u32);
@@ -463,13 +537,16 @@ void EmitContext::DefineSharedMemory(const IR::Program& program) {
     if (program.info.uses_int16) {
         shared_store_u16_func = make_function(16, 16);
     }
+}
+
+void EmitContext::DefineSharedMemoryFunctions(const IR::Program& program) {
     if (program.info.uses_shared_increment) {
-        const Id inc_func{CasFunction(*this, CasFunctionType::Increment, U32[1])};
-        increment_cas_shared = CasLoop(inc_func, CasPointerType::Shared, U32[1]);
+        increment_cas_shared = CasLoop(*this, Operation::Increment, shared_memory_u32_type,
+                                       shared_u32, U32[1], U32[1], spv::Scope::Workgroup);
     }
     if (program.info.uses_shared_decrement) {
-        const Id dec_func{CasFunction(*this, CasFunctionType::Decrement, U32[1])};
-        decrement_cas_shared = CasLoop(dec_func, CasPointerType::Shared, U32[1]);
+        decrement_cas_shared = CasLoop(*this, Operation::Decrement, shared_memory_u32_type,
+                                       shared_u32, U32[1], U32[1], spv::Scope::Workgroup);
     }
 }
 
@@ -628,21 +705,24 @@ void EmitContext::DefineConstantBuffers(const Info& info, u32& binding) {
         return;
     }
     if (True(info.used_constant_buffer_types & IR::Type::U8)) {
-        DefineConstantBuffers(info, &UniformDefinitions::U8, binding, U8, 'u', sizeof(u8));
-        DefineConstantBuffers(info, &UniformDefinitions::S8, binding, S8, 's', sizeof(s8));
+        DefineConstBuffers(*this, info, &UniformDefinitions::U8, binding, U8, 'u', sizeof(u8));
+        DefineConstBuffers(*this, info, &UniformDefinitions::S8, binding, S8, 's', sizeof(s8));
     }
     if (True(info.used_constant_buffer_types & IR::Type::U16)) {
-        DefineConstantBuffers(info, &UniformDefinitions::U16, binding, U16, 'u', sizeof(u16));
-        DefineConstantBuffers(info, &UniformDefinitions::S16, binding, S16, 's', sizeof(s16));
+        DefineConstBuffers(*this, info, &UniformDefinitions::U16, binding, U16, 'u', sizeof(u16));
+        DefineConstBuffers(*this, info, &UniformDefinitions::S16, binding, S16, 's', sizeof(s16));
     }
     if (True(info.used_constant_buffer_types & IR::Type::U32)) {
-        DefineConstantBuffers(info, &UniformDefinitions::U32, binding, U32[1], 'u', sizeof(u32));
+        DefineConstBuffers(*this, info, &UniformDefinitions::U32, binding, U32[1], 'u',
+                           sizeof(u32));
     }
     if (True(info.used_constant_buffer_types & IR::Type::F32)) {
-        DefineConstantBuffers(info, &UniformDefinitions::F32, binding, F32[1], 'f', sizeof(f32));
+        DefineConstBuffers(*this, info, &UniformDefinitions::F32, binding, F32[1], 'f',
+                           sizeof(f32));
     }
     if (True(info.used_constant_buffer_types & IR::Type::U32x2)) {
-        DefineConstantBuffers(info, &UniformDefinitions::U32x2, binding, U32[2], 'u', sizeof(u64));
+        DefineConstBuffers(*this, info, &UniformDefinitions::U32x2, binding, U32[2], 'u',
+                           sizeof(u32[2]));
     }
     for (const ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
         binding += desc.count;
@@ -655,75 +735,83 @@ void EmitContext::DefineStorageBuffers(const Info& info, u32& binding) {
     }
     AddExtension("SPV_KHR_storage_buffer_storage_class");
 
-    const Id array_type{TypeRuntimeArray(U32[1])};
-    Decorate(array_type, spv::Decoration::ArrayStride, 4U);
-
-    const Id struct_type{TypeStruct(array_type)};
-    Name(struct_type, "ssbo_block");
-    Decorate(struct_type, spv::Decoration::Block);
-    MemberName(struct_type, 0, "data");
-    MemberDecorate(struct_type, 0, spv::Decoration::Offset, 0U);
-
-    storage_memory_u32 = TypePointer(spv::StorageClass::StorageBuffer, struct_type);
-    storage_u32 = TypePointer(spv::StorageClass::StorageBuffer, U32[1]);
-
-    u32 index{};
+    if (True(info.used_storage_buffer_types & IR::Type::U8)) {
+        DefineSsbos(*this, storage_types.U8, &StorageDefinitions::U8, info, binding, U8,
+                    sizeof(u8));
+        DefineSsbos(*this, storage_types.S8, &StorageDefinitions::S8, info, binding, S8,
+                    sizeof(u8));
+    }
+    if (True(info.used_storage_buffer_types & IR::Type::U16)) {
+        DefineSsbos(*this, storage_types.U16, &StorageDefinitions::U16, info, binding, U16,
+                    sizeof(u16));
+        DefineSsbos(*this, storage_types.S16, &StorageDefinitions::S16, info, binding, S16,
+                    sizeof(u16));
+    }
+    if (True(info.used_storage_buffer_types & IR::Type::U32)) {
+        DefineSsbos(*this, storage_types.U32, &StorageDefinitions::U32, info, binding, U32[1],
+                    sizeof(u32));
+    }
+    if (True(info.used_storage_buffer_types & IR::Type::F32)) {
+        DefineSsbos(*this, storage_types.F32, &StorageDefinitions::F32, info, binding, F32[1],
+                    sizeof(f32));
+    }
+    if (True(info.used_storage_buffer_types & IR::Type::U64)) {
+        DefineSsbos(*this, storage_types.U64, &StorageDefinitions::U64, info, binding, U64,
+                    sizeof(u64));
+    }
+    if (True(info.used_storage_buffer_types & IR::Type::U32x2)) {
+        DefineSsbos(*this, storage_types.U32x2, &StorageDefinitions::U32x2, info, binding, U32[2],
+                    sizeof(u32[2]));
+    }
+    if (True(info.used_storage_buffer_types & IR::Type::U32x4)) {
+        DefineSsbos(*this, storage_types.U32x4, &StorageDefinitions::U32x4, info, binding, U32[4],
+                    sizeof(u32[4]));
+    }
     for (const StorageBufferDescriptor& desc : info.storage_buffers_descriptors) {
-        const Id id{AddGlobalVariable(storage_memory_u32, spv::StorageClass::StorageBuffer)};
-        Decorate(id, spv::Decoration::Binding, binding);
-        Decorate(id, spv::Decoration::DescriptorSet, 0U);
-        Name(id, fmt::format("ssbo{}", index));
-        if (profile.supported_spirv >= 0x00010400) {
-            interfaces.push_back(id);
-        }
-        std::fill_n(ssbos.data() + index, desc.count, id);
-        index += desc.count;
         binding += desc.count;
     }
-    if (info.uses_global_increment) {
+    const bool needs_function{
+        info.uses_global_increment || info.uses_global_decrement || info.uses_atomic_f32_add ||
+        info.uses_atomic_f16x2_add || info.uses_atomic_f16x2_min || info.uses_atomic_f16x2_max ||
+        info.uses_atomic_f32x2_add || info.uses_atomic_f32x2_min || info.uses_atomic_f32x2_max};
+    if (needs_function) {
         AddCapability(spv::Capability::VariablePointersStorageBuffer);
-        const Id inc_func{CasFunction(*this, CasFunctionType::Increment, U32[1])};
-        increment_cas_ssbo = CasLoop(inc_func, CasPointerType::Ssbo, U32[1]);
+    }
+    if (info.uses_global_increment) {
+        increment_cas_ssbo = CasLoop(*this, Operation::Increment, storage_types.U32.array,
+                                     storage_types.U32.element, U32[1], U32[1], spv::Scope::Device);
     }
     if (info.uses_global_decrement) {
-        AddCapability(spv::Capability::VariablePointersStorageBuffer);
-        const Id dec_func{CasFunction(*this, CasFunctionType::Decrement, U32[1])};
-        decrement_cas_ssbo = CasLoop(dec_func, CasPointerType::Ssbo, U32[1]);
+        decrement_cas_ssbo = CasLoop(*this, Operation::Decrement, storage_types.U32.array,
+                                     storage_types.U32.element, U32[1], U32[1], spv::Scope::Device);
     }
     if (info.uses_atomic_f32_add) {
-        AddCapability(spv::Capability::VariablePointersStorageBuffer);
-        const Id add_func{CasFunction(*this, CasFunctionType::FPAdd, F32[1])};
-        f32_add_cas = CasLoop(add_func, CasPointerType::Ssbo, F32[1]);
+        f32_add_cas = CasLoop(*this, Operation::FPAdd, storage_types.U32.array,
+                              storage_types.U32.element, F32[1], U32[1], spv::Scope::Device);
     }
     if (info.uses_atomic_f16x2_add) {
-        AddCapability(spv::Capability::VariablePointersStorageBuffer);
-        const Id add_func{CasFunction(*this, CasFunctionType::FPAdd, F16[2])};
-        f16x2_add_cas = CasLoop(add_func, CasPointerType::Ssbo, F16[2]);
+        f16x2_add_cas = CasLoop(*this, Operation::FPAdd, storage_types.U32.array,
+                                storage_types.U32.element, F16[2], F16[2], spv::Scope::Device);
     }
     if (info.uses_atomic_f16x2_min) {
-        AddCapability(spv::Capability::VariablePointersStorageBuffer);
-        const Id func{CasFunction(*this, CasFunctionType::FPMin, F16[2])};
-        f16x2_min_cas = CasLoop(func, CasPointerType::Ssbo, F16[2]);
+        f16x2_min_cas = CasLoop(*this, Operation::FPMin, storage_types.U32.array,
+                                storage_types.U32.element, F16[2], F16[2], spv::Scope::Device);
     }
     if (info.uses_atomic_f16x2_max) {
-        AddCapability(spv::Capability::VariablePointersStorageBuffer);
-        const Id func{CasFunction(*this, CasFunctionType::FPMax, F16[2])};
-        f16x2_max_cas = CasLoop(func, CasPointerType::Ssbo, F16[2]);
+        f16x2_max_cas = CasLoop(*this, Operation::FPMax, storage_types.U32.array,
+                                storage_types.U32.element, F16[2], F16[2], spv::Scope::Device);
     }
     if (info.uses_atomic_f32x2_add) {
-        AddCapability(spv::Capability::VariablePointersStorageBuffer);
-        const Id add_func{CasFunction(*this, CasFunctionType::FPAdd, F32[2])};
-        f32x2_add_cas = CasLoop(add_func, CasPointerType::Ssbo, F32[2]);
+        f32x2_add_cas = CasLoop(*this, Operation::FPAdd, storage_types.U32.array,
+                                storage_types.U32.element, F32[2], F32[2], spv::Scope::Device);
     }
     if (info.uses_atomic_f32x2_min) {
-        AddCapability(spv::Capability::VariablePointersStorageBuffer);
-        const Id func{CasFunction(*this, CasFunctionType::FPMin, F32[2])};
-        f32x2_min_cas = CasLoop(func, CasPointerType::Ssbo, F32[2]);
+        f32x2_min_cas = CasLoop(*this, Operation::FPMin, storage_types.U32.array,
+                                storage_types.U32.element, F32[2], F32[2], spv::Scope::Device);
     }
     if (info.uses_atomic_f32x2_max) {
-        AddCapability(spv::Capability::VariablePointersStorageBuffer);
-        const Id func{CasFunction(*this, CasFunctionType::FPMax, F32[2])};
-        f32x2_max_cas = CasLoop(func, CasPointerType::Ssbo, F32[2]);
+        f32x2_max_cas = CasLoop(*this, Operation::FPMax, storage_types.U32.array,
+                                storage_types.U32.element, F32[2], F32[2], spv::Scope::Device);
     }
 }
 
@@ -900,36 +988,6 @@ void EmitContext::DefineInputs(const Info& info) {
             Decorate(id, spv::Decoration::Flat);
             break;
         }
-    }
-}
-
-void EmitContext::DefineConstantBuffers(const Info& info, Id UniformDefinitions::*member_type,
-                                        u32 binding, Id type, char type_char, u32 element_size) {
-    const Id array_type{TypeArray(type, Constant(U32[1], 65536U / element_size))};
-    Decorate(array_type, spv::Decoration::ArrayStride, element_size);
-
-    const Id struct_type{TypeStruct(array_type)};
-    Name(struct_type, fmt::format("cbuf_block_{}{}", type_char, element_size * CHAR_BIT));
-    Decorate(struct_type, spv::Decoration::Block);
-    MemberName(struct_type, 0, "data");
-    MemberDecorate(struct_type, 0, spv::Decoration::Offset, 0U);
-
-    const Id struct_pointer_type{TypePointer(spv::StorageClass::Uniform, struct_type)};
-    const Id uniform_type{TypePointer(spv::StorageClass::Uniform, type)};
-    uniform_types.*member_type = uniform_type;
-
-    for (const ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
-        const Id id{AddGlobalVariable(struct_pointer_type, spv::StorageClass::Uniform)};
-        Decorate(id, spv::Decoration::Binding, binding);
-        Decorate(id, spv::Decoration::DescriptorSet, 0U);
-        Name(id, fmt::format("c{}", desc.index));
-        for (size_t i = 0; i < desc.count; ++i) {
-            cbufs[desc.index + i].*member_type = id;
-        }
-        if (profile.supported_spirv >= 0x00010400) {
-            interfaces.push_back(id);
-        }
-        binding += desc.count;
     }
 }
 

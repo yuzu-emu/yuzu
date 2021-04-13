@@ -89,17 +89,21 @@ void EmitWriteGlobalS16(EmitContext& ctx);
 void EmitWriteGlobal32(EmitContext& ctx);
 void EmitWriteGlobal64(EmitContext& ctx);
 void EmitWriteGlobal128(EmitContext& ctx);
-void EmitLoadStorageU8(EmitContext& ctx);
-void EmitLoadStorageS8(EmitContext& ctx);
-void EmitLoadStorageU16(EmitContext& ctx);
-void EmitLoadStorageS16(EmitContext& ctx);
+Id EmitLoadStorageU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
+Id EmitLoadStorageS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
+Id EmitLoadStorageU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
+Id EmitLoadStorageS16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 Id EmitLoadStorage32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 Id EmitLoadStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 Id EmitLoadStorage128(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
-void EmitWriteStorageU8(EmitContext& ctx);
-void EmitWriteStorageS8(EmitContext& ctx);
-void EmitWriteStorageU16(EmitContext& ctx);
-void EmitWriteStorageS16(EmitContext& ctx);
+void EmitWriteStorageU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                        Id value);
+void EmitWriteStorageS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                        Id value);
+void EmitWriteStorageU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                         Id value);
+void EmitWriteStorageS16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                         Id value);
 void EmitWriteStorage32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
                         Id value);
 void EmitWriteStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,

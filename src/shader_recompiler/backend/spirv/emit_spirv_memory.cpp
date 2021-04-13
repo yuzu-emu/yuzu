@@ -22,29 +22,29 @@ Id StorageIndex(EmitContext& ctx, const IR::Value& offset, size_t element_size) 
     return ctx.OpShiftRightLogical(ctx.U32[1], index, shift_id);
 }
 
-Id EmitLoadStorage(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                   u32 num_components) {
-    // TODO: Support reinterpreting bindings, guaranteed to be aligned
+Id StoragePointer(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                  const StorageTypeDefinition& type_def, size_t element_size,
+                  Id StorageDefinitions::*member_ptr) {
     if (!binding.IsImmediate()) {
         throw NotImplementedException("Dynamic storage buffer indexing");
     }
-    const Id ssbo{ctx.ssbos[binding.U32()]};
-    const Id base_index{StorageIndex(ctx, offset, sizeof(u32))};
-    std::array<Id, 4> components;
-    for (u32 element = 0; element < num_components; ++element) {
-        Id index{base_index};
-        if (element > 0) {
-            index = ctx.OpIAdd(ctx.U32[1], base_index, ctx.Constant(ctx.U32[1], element));
-        }
-        const Id pointer{ctx.OpAccessChain(ctx.storage_u32, ssbo, ctx.u32_zero_value, index)};
-        components[element] = ctx.OpLoad(ctx.U32[1], pointer);
-    }
-    if (num_components == 1) {
-        return components[0];
-    } else {
-        const std::span components_span(components.data(), num_components);
-        return ctx.OpCompositeConstruct(ctx.U32[num_components], components_span);
-    }
+    const Id ssbo{ctx.ssbos[binding.U32()].*member_ptr};
+    const Id index{StorageIndex(ctx, offset, element_size)};
+    return ctx.OpAccessChain(type_def.element, ssbo, ctx.u32_zero_value, index);
+}
+
+Id LoadStorage(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset, Id result_type,
+               const StorageTypeDefinition& type_def, size_t element_size,
+               Id StorageDefinitions::*member_ptr) {
+    const Id pointer{StoragePointer(ctx, binding, offset, type_def, element_size, member_ptr)};
+    return ctx.OpLoad(result_type, pointer);
+}
+
+void WriteStorage(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset, Id value,
+                  const StorageTypeDefinition& type_def, size_t element_size,
+                  Id StorageDefinitions::*member_ptr) {
+    const Id pointer{StoragePointer(ctx, binding, offset, type_def, element_size, member_ptr)};
+    ctx.OpStore(pointer, value);
 }
 } // Anonymous namespace
 
@@ -104,92 +104,85 @@ void EmitWriteGlobal128(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitLoadStorageU8(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitLoadStorageU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
+    return ctx.OpUConvert(ctx.U32[1],
+                          LoadStorage(ctx, binding, offset, ctx.U8, ctx.storage_types.U8,
+                                      sizeof(u8), &StorageDefinitions::U8));
 }
 
-void EmitLoadStorageS8(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitLoadStorageS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
+    return ctx.OpSConvert(ctx.U32[1],
+                          LoadStorage(ctx, binding, offset, ctx.S8, ctx.storage_types.S8,
+                                      sizeof(s8), &StorageDefinitions::S8));
 }
 
-void EmitLoadStorageU16(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitLoadStorageU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
+    return ctx.OpUConvert(ctx.U32[1],
+                          LoadStorage(ctx, binding, offset, ctx.U16, ctx.storage_types.U16,
+                                      sizeof(u16), &StorageDefinitions::U16));
 }
 
-void EmitLoadStorageS16(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitLoadStorageS16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
+    return ctx.OpSConvert(ctx.U32[1],
+                          LoadStorage(ctx, binding, offset, ctx.S16, ctx.storage_types.S16,
+                                      sizeof(s16), &StorageDefinitions::S16));
 }
 
 Id EmitLoadStorage32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    return EmitLoadStorage(ctx, binding, offset, 1);
+    return LoadStorage(ctx, binding, offset, ctx.U32[1], ctx.storage_types.U32, sizeof(u32),
+                       &StorageDefinitions::U32);
 }
 
 Id EmitLoadStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    return EmitLoadStorage(ctx, binding, offset, 2);
+    return LoadStorage(ctx, binding, offset, ctx.U32[2], ctx.storage_types.U32x2, sizeof(u32[2]),
+                       &StorageDefinitions::U32x2);
 }
 
 Id EmitLoadStorage128(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    return EmitLoadStorage(ctx, binding, offset, 4);
+    return LoadStorage(ctx, binding, offset, ctx.U32[4], ctx.storage_types.U32x4, sizeof(u32[4]),
+                       &StorageDefinitions::U32x4);
 }
 
-void EmitWriteStorageU8(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+void EmitWriteStorageU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                        Id value) {
+    WriteStorage(ctx, binding, offset, ctx.OpSConvert(ctx.U8, value), ctx.storage_types.U8,
+                 sizeof(u8), &StorageDefinitions::U8);
 }
 
-void EmitWriteStorageS8(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+void EmitWriteStorageS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                        Id value) {
+    WriteStorage(ctx, binding, offset, ctx.OpSConvert(ctx.S8, value), ctx.storage_types.S8,
+                 sizeof(s8), &StorageDefinitions::S8);
 }
 
-void EmitWriteStorageU16(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+void EmitWriteStorageU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                         Id value) {
+    WriteStorage(ctx, binding, offset, ctx.OpSConvert(ctx.U16, value), ctx.storage_types.U16,
+                 sizeof(u16), &StorageDefinitions::U16);
 }
 
-void EmitWriteStorageS16(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+void EmitWriteStorageS16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                         Id value) {
+    WriteStorage(ctx, binding, offset, ctx.OpSConvert(ctx.S16, value), ctx.storage_types.S16,
+                 sizeof(s16), &StorageDefinitions::S16);
 }
 
 void EmitWriteStorage32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
                         Id value) {
-    if (!binding.IsImmediate()) {
-        throw NotImplementedException("Dynamic storage buffer indexing");
-    }
-    const Id ssbo{ctx.ssbos[binding.U32()]};
-    const Id index{StorageIndex(ctx, offset, sizeof(u32))};
-    const Id pointer{ctx.OpAccessChain(ctx.storage_u32, ssbo, ctx.u32_zero_value, index)};
-    ctx.OpStore(pointer, value);
+    WriteStorage(ctx, binding, offset, value, ctx.storage_types.U32, sizeof(u32),
+                 &StorageDefinitions::U32);
 }
 
 void EmitWriteStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
                         Id value) {
-    if (!binding.IsImmediate()) {
-        throw NotImplementedException("Dynamic storage buffer indexing");
-    }
-    // TODO: Support reinterpreting bindings, guaranteed to be aligned
-    const Id ssbo{ctx.ssbos[binding.U32()]};
-    const Id low_index{StorageIndex(ctx, offset, sizeof(u32))};
-    const Id high_index{ctx.OpIAdd(ctx.U32[1], low_index, ctx.Constant(ctx.U32[1], 1U))};
-    const Id low_pointer{ctx.OpAccessChain(ctx.storage_u32, ssbo, ctx.u32_zero_value, low_index)};
-    const Id high_pointer{ctx.OpAccessChain(ctx.storage_u32, ssbo, ctx.u32_zero_value, high_index)};
-    ctx.OpStore(low_pointer, ctx.OpCompositeExtract(ctx.U32[1], value, 0U));
-    ctx.OpStore(high_pointer, ctx.OpCompositeExtract(ctx.U32[1], value, 1U));
+    WriteStorage(ctx, binding, offset, value, ctx.storage_types.U32x2, sizeof(u32[2]),
+                 &StorageDefinitions::U32x2);
 }
 
 void EmitWriteStorage128(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
                          Id value) {
-    if (!binding.IsImmediate()) {
-        throw NotImplementedException("Dynamic storage buffer indexing");
-    }
-    // TODO: Support reinterpreting bindings, guaranteed to be aligned
-    const Id ssbo{ctx.ssbos[binding.U32()]};
-    const Id base_index{StorageIndex(ctx, offset, sizeof(u32))};
-    for (u32 element = 0; element < 4; ++element) {
-        Id index = base_index;
-        if (element > 0) {
-            index = ctx.OpIAdd(ctx.U32[1], base_index, ctx.Constant(ctx.U32[1], element));
-        }
-        const Id pointer{ctx.OpAccessChain(ctx.storage_u32, ssbo, ctx.u32_zero_value, index)};
-        ctx.OpStore(pointer, ctx.OpCompositeExtract(ctx.U32[1], value, element));
-    }
+    WriteStorage(ctx, binding, offset, value, ctx.storage_types.U32x4, sizeof(u32[4]),
+                 &StorageDefinitions::U32x4);
 }
 
 } // namespace Shader::Backend::SPIRV
