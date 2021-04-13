@@ -61,18 +61,19 @@ enum class Clamp : u64 {
     TRAP,
 };
 
+// https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#cache-operators
 enum class LoadCache : u64 {
-    Default,
-    CG,
-    CI,
-    CV,
+    CA, // Cache at all levels, likely to be accessed again
+    CG, // Cache at global level (L2 and below, not L1)
+    CI, // ???
+    CV, // Don't cache and fetch again (volatile)
 };
 
 enum class StoreCache : u64 {
-    Default,
-    CG,
-    CS,
-    WT,
+    WB, // Cache write-back all coherent levels
+    CG, // Cache at global level (L2 and below, not L1)
+    CS, // Cache streaming, likely to be accessed once
+    WT, // Cache write-through (to system memory, volatile?)
 };
 
 ImageFormat Format(Size size) {
@@ -188,7 +189,7 @@ void TranslatorVisitor::SULD(u64 insn) {
     if (suld.clamp != Clamp::IGN) {
         throw NotImplementedException("Clamp {}", suld.clamp.Value());
     }
-    if (suld.cache != LoadCache::Default) {
+    if (suld.cache != LoadCache::CA && suld.cache != LoadCache::CG) {
         throw NotImplementedException("Cache {}", suld.cache.Value());
     }
     const bool is_typed{suld.d != 0};
@@ -248,7 +249,7 @@ void TranslatorVisitor::SUST(u64 insn) {
     if (sust.clamp != Clamp::IGN) {
         throw NotImplementedException("Clamp {}", sust.clamp.Value());
     }
-    if (sust.cache != StoreCache::Default) {
+    if (sust.cache != StoreCache::WB && sust.cache != StoreCache::CG) {
         throw NotImplementedException("Cache {}", sust.cache.Value());
     }
     const bool is_typed{sust.d != 0};
