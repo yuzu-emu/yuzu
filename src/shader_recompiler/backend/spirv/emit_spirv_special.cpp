@@ -15,6 +15,13 @@ void ConvertDepthMode(EmitContext& ctx) {
     const Id vector{ctx.OpCompositeInsert(ctx.F32[4], screen_depth, position, 2u)};
     ctx.OpStore(ctx.output_position, vector);
 }
+
+void SetFixedPipelinePointSize(EmitContext& ctx) {
+    if (ctx.profile.fixed_state_point_size) {
+        const float point_size{*ctx.profile.fixed_state_point_size};
+        ctx.OpStore(ctx.output_point_size, ctx.Constant(ctx.F32[1], point_size));
+    }
+}
 } // Anonymous namespace
 
 void EmitPrologue(EmitContext& ctx) {
@@ -28,10 +35,9 @@ void EmitPrologue(EmitContext& ctx) {
                 ctx.OpStore(generic_id, default_vector);
             }
         }
-        if (ctx.profile.fixed_state_point_size) {
-            const float point_size{*ctx.profile.fixed_state_point_size};
-            ctx.OpStore(ctx.output_point_size, ctx.Constant(ctx.F32[1], point_size));
-        }
+    }
+    if (ctx.stage == Stage::VertexB || ctx.stage == Stage::Geometry) {
+        SetFixedPipelinePointSize(ctx);
     }
 }
 
@@ -45,21 +51,23 @@ void EmitEmitVertex(EmitContext& ctx, const IR::Value& stream) {
     if (ctx.profile.convert_depth_mode) {
         ConvertDepthMode(ctx);
     }
-    if (!stream.IsImmediate()) {
+    if (stream.IsImmediate()) {
+        ctx.OpEmitStreamVertex(ctx.Def(stream));
+    } else {
         // LOG_WARNING(..., "EmitVertex's stream is not constant");
         ctx.OpEmitStreamVertex(ctx.u32_zero_value);
-        return;
     }
-    ctx.OpEmitStreamVertex(ctx.Def(stream));
+    // Restore fixed pipeline point size after emitting the vertex
+    SetFixedPipelinePointSize(ctx);
 }
 
 void EmitEndPrimitive(EmitContext& ctx, const IR::Value& stream) {
-    if (!stream.IsImmediate()) {
+    if (stream.IsImmediate()) {
+        ctx.OpEndStreamPrimitive(ctx.Def(stream));
+    } else {
         // LOG_WARNING(..., "EndPrimitive's stream is not constant");
         ctx.OpEndStreamPrimitive(ctx.u32_zero_value);
-        return;
     }
-    ctx.OpEndStreamPrimitive(ctx.Def(stream));
 }
 
 } // namespace Shader::Backend::SPIRV
