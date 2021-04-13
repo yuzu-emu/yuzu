@@ -44,6 +44,7 @@ constexpr std::array REQUIRED_EXTENSIONS{
     VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
     VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
     VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+    VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME,
     VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME,
@@ -313,6 +314,14 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     };
     SetNext(next, host_query_reset);
 
+    VkPhysicalDeviceVariablePointerFeaturesKHR variable_pointers{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES_KHR,
+        .pNext = nullptr,
+        .variablePointersStorageBuffer = VK_TRUE,
+        .variablePointers = VK_TRUE,
+    };
+    SetNext(next, variable_pointers);
+
     VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT demote{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT,
         .pNext = nullptr,
@@ -397,6 +406,17 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         SetNext(next, dynamic_state);
     } else {
         LOG_INFO(Render_Vulkan, "Device doesn't support extended dynamic state");
+    }
+
+    VkPhysicalDeviceShaderAtomicInt64FeaturesKHR atomic_int64;
+    if (ext_shader_atomic_int64) {
+        atomic_int64 = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES_KHR,
+            .pNext = nullptr,
+            .shaderBufferInt64Atomics = VK_TRUE,
+            .shaderSharedInt64Atomics = VK_TRUE,
+        };
+        SetNext(next, atomic_int64);
     }
 
     VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR workgroup_layout;
@@ -624,9 +644,13 @@ void Device::CheckSuitability(bool requires_swapchain) const {
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT;
     demote.pNext = nullptr;
 
+    VkPhysicalDeviceVariablePointerFeaturesKHR variable_pointers{};
+    variable_pointers.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES_KHR;
+    variable_pointers.pNext = &demote;
+
     VkPhysicalDeviceRobustness2FeaturesEXT robustness2{};
     robustness2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
-    robustness2.pNext = &demote;
+    robustness2.pNext = &variable_pointers;
 
     VkPhysicalDeviceFeatures2KHR features2{};
     features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -654,6 +678,9 @@ void Device::CheckSuitability(bool requires_swapchain) const {
         std::make_pair(features.shaderStorageImageWriteWithoutFormat,
                        "shaderStorageImageWriteWithoutFormat"),
         std::make_pair(demote.shaderDemoteToHelperInvocation, "shaderDemoteToHelperInvocation"),
+        std::make_pair(variable_pointers.variablePointers, "variablePointers"),
+        std::make_pair(variable_pointers.variablePointersStorageBuffer,
+                       "variablePointersStorageBuffer"),
         std::make_pair(robustness2.robustBufferAccess2, "robustBufferAccess2"),
         std::make_pair(robustness2.robustImageAccess2, "robustImageAccess2"),
         std::make_pair(robustness2.nullDescriptor, "nullDescriptor"),

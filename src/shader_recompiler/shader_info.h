@@ -141,10 +141,10 @@ struct Info {
     bool uses_atomic_f32x2_add{};
     bool uses_atomic_f32x2_min{};
     bool uses_atomic_f32x2_max{};
-    bool uses_64_bit_atomics{};
-    bool uses_shared_memory_u32x2{};
+    bool uses_int64_bit_atomics{};
 
     IR::Type used_constant_buffer_types{};
+    IR::Type used_storage_buffer_types{};
 
     u32 constant_buffer_mask{};
 

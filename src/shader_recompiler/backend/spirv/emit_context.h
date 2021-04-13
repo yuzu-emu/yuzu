@@ -50,6 +50,35 @@ struct UniformDefinitions {
     Id U32x2{};
 };
 
+struct StorageTypeDefinition {
+    Id array{};
+    Id element{};
+};
+
+struct StorageTypeDefinitions {
+    StorageTypeDefinition U8{};
+    StorageTypeDefinition S8{};
+    StorageTypeDefinition U16{};
+    StorageTypeDefinition S16{};
+    StorageTypeDefinition U32{};
+    StorageTypeDefinition U64{};
+    StorageTypeDefinition F32{};
+    StorageTypeDefinition U32x2{};
+    StorageTypeDefinition U32x4{};
+};
+
+struct StorageDefinitions {
+    Id U8{};
+    Id S8{};
+    Id U16{};
+    Id S16{};
+    Id U32{};
+    Id F32{};
+    Id U64{};
+    Id U32x2{};
+    Id U32x4{};
+};
+
 class EmitContext final : public Sirit::Module {
 public:
     explicit EmitContext(const Profile& profile, IR::Program& program, u32& binding);
@@ -78,12 +107,14 @@ public:
     Id f32_zero_value{};
 
     UniformDefinitions uniform_types;
+    StorageTypeDefinitions storage_types;
 
     Id private_u32{};
 
     Id shared_u8{};
     Id shared_u16{};
     Id shared_u32{};
+    Id shared_u64{};
     Id shared_u32x2{};
     Id shared_u32x4{};
 
@@ -93,14 +124,11 @@ public:
 
     Id output_f32{};
 
-    Id storage_u32{};
-    Id storage_memory_u32{};
-
     Id image_buffer_type{};
     Id sampled_texture_buffer_type{};
 
     std::array<UniformDefinitions, Info::MAX_CBUFS> cbufs{};
-    std::array<Id, Info::MAX_SSBOS> ssbos{};
+    std::array<StorageDefinitions, Info::MAX_SSBOS> ssbos{};
     std::vector<Id> texture_buffers;
     std::vector<TextureDefinition> textures;
     std::vector<ImageDefinition> images;
@@ -136,8 +164,10 @@ public:
     Id shared_memory_u8{};
     Id shared_memory_u16{};
     Id shared_memory_u32{};
+    Id shared_memory_u64{};
     Id shared_memory_u32x2{};
     Id shared_memory_u32x4{};
+
     Id shared_memory_u32_type{};
 
     Id shared_store_u8_func{};
@@ -167,16 +197,12 @@ public:
     std::vector<Id> interfaces;
 
 private:
-    enum class CasPointerType {
-        Shared,
-        Ssbo,
-    };
-
     void DefineCommonTypes(const Info& info);
     void DefineCommonConstants();
     void DefineInterfaces(const Info& info);
     void DefineLocalMemory(const IR::Program& program);
     void DefineSharedMemory(const IR::Program& program);
+    void DefineSharedMemoryFunctions(const IR::Program& program);
     void DefineConstantBuffers(const Info& info, u32& binding);
     void DefineStorageBuffers(const Info& info, u32& binding);
     void DefineTextureBuffers(const Info& info, u32& binding);
@@ -185,13 +211,8 @@ private:
     void DefineAttributeMemAccess(const Info& info);
     void DefineLabels(IR::Program& program);
 
-    void DefineConstantBuffers(const Info& info, Id UniformDefinitions::*member_type, u32 binding,
-                               Id type, char type_char, u32 element_size);
-
     void DefineInputs(const Info& info);
     void DefineOutputs(const Info& info);
-
-    [[nodiscard]] Id CasLoop(Id function, CasPointerType pointer_type, Id value_type);
 };
 
 } // namespace Shader::Backend::SPIRV
