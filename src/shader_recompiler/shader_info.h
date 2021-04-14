@@ -109,6 +109,7 @@ struct Info {
     bool stores_position{};
     bool stores_point_size{};
     bool stores_clip_distance{};
+    bool stores_layer{};
     bool stores_viewport_index{};
     bool stores_indexed_attributes{};
 

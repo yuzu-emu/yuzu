@@ -124,17 +124,17 @@ void DefineEntryPoint(const IR::Program& program, EmitContext& ctx, Id main) {
     const std::span interfaces(ctx.interfaces.data(), ctx.interfaces.size());
     spv::ExecutionModel execution_model{};
     switch (program.stage) {
-    case Shader::Stage::Compute: {
+    case Stage::Compute: {
         const std::array<u32, 3> workgroup_size{program.workgroup_size};
         execution_model = spv::ExecutionModel::GLCompute;
         ctx.AddExecutionMode(main, spv::ExecutionMode::LocalSize, workgroup_size[0],
                              workgroup_size[1], workgroup_size[2]);
         break;
     }
-    case Shader::Stage::VertexB:
+    case Stage::VertexB:
         execution_model = spv::ExecutionModel::Vertex;
         break;
-    case Shader::Stage::Geometry:
+    case Stage::Geometry:
         execution_model = spv::ExecutionModel::Geometry;
         ctx.AddCapability(spv::Capability::Geometry);
         ctx.AddCapability(spv::Capability::GeometryStreams);
@@ -172,7 +172,7 @@ void DefineEntryPoint(const IR::Program& program, EmitContext& ctx, Id main) {
         ctx.AddExecutionMode(main, spv::ExecutionMode::OutputVertices, program.output_vertices);
         ctx.AddExecutionMode(main, spv::ExecutionMode::Invocations, program.invocations);
         break;
-    case Shader::Stage::Fragment:
+    case Stage::Fragment:
         execution_model = spv::ExecutionModel::Fragment;
         ctx.AddExecutionMode(main, spv::ExecutionMode::OriginUpperLeft);
         if (program.info.stores_frag_depth) {
@@ -258,10 +258,14 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
         ctx.AddExtension("SPV_EXT_demote_to_helper_invocation");
         ctx.AddCapability(spv::Capability::DemoteToHelperInvocationEXT);
     }
+    if (info.stores_layer) {
+        ctx.AddCapability(spv::Capability::ShaderLayer);
+    }
     if (info.stores_viewport_index) {
         ctx.AddCapability(spv::Capability::MultiViewport);
-        if (profile.support_viewport_index_layer_non_geometry &&
-            ctx.stage != Shader::Stage::Geometry) {
+    }
+    if (info.stores_layer || info.stores_viewport_index) {
+        if (profile.support_viewport_index_layer_non_geometry && ctx.stage != Stage::Geometry) {
             ctx.AddExtension("SPV_EXT_shader_viewport_index_layer");
             ctx.AddCapability(spv::Capability::ShaderViewportIndexLayerEXT);
         }

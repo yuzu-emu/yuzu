@@ -76,9 +76,14 @@ std::optional<Id> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
         const Id clip_num{ctx.Constant(ctx.U32[1], index)};
         return ctx.OpAccessChain(ctx.output_f32, ctx.clip_distances, clip_num);
     }
+    case IR::Attribute::Layer:
+        return ctx.profile.support_viewport_index_layer_non_geometry ||
+                       ctx.stage == Shader::Stage::Geometry
+                   ? std::optional<Id>{ctx.layer}
+                   : std::nullopt;
     case IR::Attribute::ViewportIndex:
-        return (ctx.profile.support_viewport_index_layer_non_geometry ||
-                ctx.stage == Shader::Stage::Geometry)
+        return ctx.profile.support_viewport_index_layer_non_geometry ||
+                       ctx.stage == Shader::Stage::Geometry
                    ? std::optional<Id>{ctx.viewport_index}
                    : std::nullopt;
     default:
