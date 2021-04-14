@@ -5,8 +5,8 @@
 #pragma once
 
 #include <array>
-#include <vector>
 #include <optional>
+#include <vector>
 
 #include "common/common_types.h"
 
@@ -25,6 +25,17 @@ enum class InputTopology {
     LinesAdjacency,
     Triangles,
     TrianglesAdjacency,
+};
+
+enum class CompareFunction {
+    Never,
+    Less,
+    Equal,
+    LessThanEqual,
+    Greater,
+    NotEqual,
+    GreaterThanEqual,
+    Always,
 };
 
 struct TransformFeedbackVarying {
@@ -66,6 +77,8 @@ struct Profile {
     InputTopology input_topology{};
 
     std::optional<float> fixed_state_point_size;
+    std::optional<CompareFunction> alpha_test_func;
+    float alpha_test_reference{};
 
     std::vector<TransformFeedbackVarying> xfb_varyings;
 };

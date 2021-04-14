@@ -492,6 +492,37 @@ private:
     u32 read_lowest{};
     u32 read_highest{};
 };
+
+Shader::CompareFunction MaxwellToCompareFunction(Maxwell::ComparisonOp comparison) {
+    switch (comparison) {
+    case Maxwell::ComparisonOp::Never:
+    case Maxwell::ComparisonOp::NeverOld:
+        return Shader::CompareFunction::Never;
+    case Maxwell::ComparisonOp::Less:
+    case Maxwell::ComparisonOp::LessOld:
+        return Shader::CompareFunction::Less;
+    case Maxwell::ComparisonOp::Equal:
+    case Maxwell::ComparisonOp::EqualOld:
+        return Shader::CompareFunction::Equal;
+    case Maxwell::ComparisonOp::LessEqual:
+    case Maxwell::ComparisonOp::LessEqualOld:
+        return Shader::CompareFunction::LessThanEqual;
+    case Maxwell::ComparisonOp::Greater:
+    case Maxwell::ComparisonOp::GreaterOld:
+        return Shader::CompareFunction::Greater;
+    case Maxwell::ComparisonOp::NotEqual:
+    case Maxwell::ComparisonOp::NotEqualOld:
+        return Shader::CompareFunction::NotEqual;
+    case Maxwell::ComparisonOp::GreaterEqual:
+    case Maxwell::ComparisonOp::GreaterEqualOld:
+        return Shader::CompareFunction::GreaterThanEqual;
+    case Maxwell::ComparisonOp::Always:
+    case Maxwell::ComparisonOp::AlwaysOld:
+        return Shader::CompareFunction::Always;
+    }
+    UNIMPLEMENTED_MSG("Unimplemented comparison op={}", comparison);
+    return {};
+}
 } // Anonymous namespace
 
 void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
@@ -1015,6 +1046,11 @@ Shader::Profile PipelineCache::MakeProfile(const GraphicsPipelineCacheKey& key,
             profile.xfb_varyings = MakeTransformFeedbackVaryings(key);
         }
         profile.convert_depth_mode = gl_ndc;
+        break;
+    case Shader::Stage::Fragment:
+        profile.alpha_test_func = MaxwellToCompareFunction(
+            key.state.UnpackComparisonOp(key.state.alpha_test_func.Value()));
+        profile.alpha_test_reference = Common::BitCast<float>(key.state.alpha_test_ref);
         break;
     default:
         break;

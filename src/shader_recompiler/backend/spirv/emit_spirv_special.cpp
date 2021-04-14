@@ -37,6 +37,48 @@ Id DefaultVarying(EmitContext& ctx, u32 num_components, u32 element, Id zero, Id
     }
     throw InvalidArgument("Bad element");
 }
+
+Id ComparisonFunction(EmitContext& ctx, CompareFunction comparison, Id operand_1, Id operand_2) {
+    switch (comparison) {
+    case CompareFunction::Never:
+        return ctx.false_value;
+    case CompareFunction::Less:
+        return ctx.OpFOrdLessThan(ctx.U1, operand_1, operand_2);
+    case CompareFunction::Equal:
+        return ctx.OpFOrdEqual(ctx.U1, operand_1, operand_2);
+    case CompareFunction::LessThanEqual:
+        return ctx.OpFOrdLessThanEqual(ctx.U1, operand_1, operand_2);
+    case CompareFunction::Greater:
+        return ctx.OpFOrdGreaterThan(ctx.U1, operand_1, operand_2);
+    case CompareFunction::NotEqual:
+        return ctx.OpFOrdNotEqual(ctx.U1, operand_1, operand_2);
+    case CompareFunction::GreaterThanEqual:
+        return ctx.OpFOrdGreaterThanEqual(ctx.U1, operand_1, operand_2);
+    case CompareFunction::Always:
+        return ctx.true_value;
+    }
+    throw InvalidArgument("Comparison function {}", comparison);
+}
+
+void AlphaTest(EmitContext& ctx) {
+    const auto comparison{*ctx.profile.alpha_test_func};
+    if (comparison == CompareFunction::Always) {
+        return;
+    }
+    const Id type{ctx.F32[1]};
+    const Id rt0_color{ctx.OpLoad(ctx.F32[4], ctx.frag_color[0])};
+    const Id alpha{ctx.OpCompositeExtract(type, rt0_color, 3u)};
+
+    const Id true_label{ctx.OpLabel()};
+    const Id discard_label{ctx.OpLabel()};
+    const Id alpha_reference{ctx.Constant(ctx.F32[1], ctx.profile.alpha_test_reference)};
+    const Id condition{ComparisonFunction(ctx, comparison, alpha, alpha_reference)};
+
+    ctx.OpBranchConditional(condition, true_label, discard_label);
+    ctx.AddLabel(discard_label);
+    ctx.OpKill();
+    ctx.AddLabel(true_label);
+}
 } // Anonymous namespace
 
 void EmitPrologue(EmitContext& ctx) {
@@ -67,6 +109,9 @@ void EmitPrologue(EmitContext& ctx) {
 void EmitEpilogue(EmitContext& ctx) {
     if (ctx.stage == Stage::VertexB && ctx.profile.convert_depth_mode) {
         ConvertDepthMode(ctx);
+    }
+    if (ctx.stage == Stage::Fragment) {
+        AlphaTest(ctx);
     }
 }
 
