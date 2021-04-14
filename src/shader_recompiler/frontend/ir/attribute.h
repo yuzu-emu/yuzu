@@ -226,6 +226,8 @@ enum class Attribute : u64 {
 
 [[nodiscard]] u32 GenericAttributeIndex(Attribute attribute);
 
+[[nodiscard]] u32 GenericAttributeElement(Attribute attribute);
+
 [[nodiscard]] std::string NameOf(Attribute attribute);
 
 } // namespace Shader::IR

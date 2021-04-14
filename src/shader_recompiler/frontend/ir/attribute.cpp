@@ -20,6 +20,13 @@ u32 GenericAttributeIndex(Attribute attribute) {
     return (static_cast<u32>(attribute) - static_cast<u32>(Attribute::Generic0X)) / 4u;
 }
 
+u32 GenericAttributeElement(Attribute attribute) {
+    if (!IsGeneric(attribute)) {
+        throw InvalidArgument("Attribute is not generic {}", attribute);
+    }
+    return static_cast<u32>(attribute) % 4;
+}
+
 std::string NameOf(Attribute attribute) {
     switch (attribute) {
     case Attribute::PrimitiveId:

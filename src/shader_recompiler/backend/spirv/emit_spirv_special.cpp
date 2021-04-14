@@ -22,6 +22,21 @@ void SetFixedPipelinePointSize(EmitContext& ctx) {
         ctx.OpStore(ctx.output_point_size, ctx.Constant(ctx.F32[1], point_size));
     }
 }
+
+Id DefaultVarying(EmitContext& ctx, u32 num_components, u32 element, Id zero, Id one,
+                  Id default_vector) {
+    switch (num_components) {
+    case 1:
+        return element == 3 ? one : zero;
+    case 2:
+        return ctx.ConstantComposite(ctx.F32[2], zero, element + 1 == 3 ? one : zero);
+    case 3:
+        return ctx.ConstantComposite(ctx.F32[3], zero, zero, element + 2 == 3 ? one : zero);
+    case 4:
+        return default_vector;
+    }
+    throw InvalidArgument("Bad element");
+}
 } // Anonymous namespace
 
 void EmitPrologue(EmitContext& ctx) {
@@ -30,9 +45,17 @@ void EmitPrologue(EmitContext& ctx) {
         const Id one{ctx.Constant(ctx.F32[1], 1.0f)};
         const Id default_vector{ctx.ConstantComposite(ctx.F32[4], zero, zero, zero, one)};
         ctx.OpStore(ctx.output_position, default_vector);
-        for (const Id generic_id : ctx.output_generics) {
-            if (Sirit::ValidId(generic_id)) {
-                ctx.OpStore(generic_id, default_vector);
+        for (const auto& info : ctx.output_generics) {
+            if (info[0].num_components == 0) {
+                continue;
+            }
+            u32 element{0};
+            while (element < 4) {
+                const auto& element_info{info[element]};
+                const u32 num{element_info.num_components};
+                const Id value{DefaultVarying(ctx, num, element, zero, one, default_vector)};
+                ctx.OpStore(element_info.id, value);
+                element += num;
             }
         }
     }
