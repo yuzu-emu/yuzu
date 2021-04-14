@@ -157,6 +157,7 @@ public:
     Id front_face{};
     Id point_coord{};
     Id clip_distances{};
+    Id layer{};
     Id viewport_index{};
 
     Id fswzadd_lut_a{};
