@@ -77,7 +77,7 @@ Id StorageAtomicU64(EmitContext& ctx, const IR::Value& binding, const IR::Value&
                                     binding, offset, sizeof(u32[2]))};
     const Id original_value{ctx.OpBitcast(ctx.U64, ctx.OpLoad(ctx.U32[2], pointer))};
     const Id result{(ctx.*non_atomic_func)(ctx.U64, value, original_value)};
-    ctx.OpStore(pointer, result);
+    ctx.OpStore(pointer, ctx.OpBitcast(ctx.U32[2], result));
     return original_value;
 }
 } // Anonymous namespace
