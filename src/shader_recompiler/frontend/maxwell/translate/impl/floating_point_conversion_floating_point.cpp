@@ -179,7 +179,33 @@ void TranslatorVisitor::F2F_cbuf(u64 insn) {
 }
 
 void TranslatorVisitor::F2F_imm([[maybe_unused]] u64 insn) {
-    throw NotImplementedException("Instruction");
-}
+    union {
+        u64 insn;
+        BitField<49, 1, u64> abs;
+        BitField<10, 2, FloatFormat> src_size;
+        BitField<41, 1, u64> selector;
+        BitField<20, 20, u64> imm;
+
+    } const f2f{insn};
+
+    IR::F16F32F64 src_a;
+    switch (f2f.src_size) {
+    case FloatFormat::F16: {
+        const u32 imm{static_cast<u32>(f2f.imm & 0x00ffff)};
+        IR::Value vector{ir.UnpackFloat2x16(ir.Imm32(imm | (imm << 16)))};
+        src_a = IR::F16{ir.CompositeExtract(vector, 0)};
+        break;
+    }
+    case FloatFormat::F32:
+        src_a = GetFloatImm20(insn);
+        break;
+    case FloatFormat::F64:
+        src_a = GetDoubleImm20(insn);
+        break;
+    default:
+        throw NotImplementedException("Invalid dest format {}", f2f.src_size.Value());
+    }
+    F2F(*this, insn, src_a, f2f.abs != 0);
+} // namespace Shader::Maxwell
 
 } // namespace Shader::Maxwell
