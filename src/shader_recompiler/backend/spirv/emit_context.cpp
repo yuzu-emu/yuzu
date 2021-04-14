@@ -135,6 +135,45 @@ Id DefineOutput(EmitContext& ctx, Id type, std::optional<spv::BuiltIn> builtin =
     return DefineVariable(ctx, type, builtin, spv::StorageClass::Output);
 }
 
+void DefineGenericOutput(EmitContext& ctx, size_t index) {
+    static constexpr std::string_view swizzle{"xyzw"};
+    const size_t base_attr_index{static_cast<size_t>(IR::Attribute::Generic0X) + index * 4};
+    u32 element{0};
+    while (element < 4) {
+        const u32 remainder{4 - element};
+        const TransformFeedbackVarying* xfb_varying{};
+        if (!ctx.profile.xfb_varyings.empty()) {
+            xfb_varying = &ctx.profile.xfb_varyings[base_attr_index + element];
+            xfb_varying = xfb_varying && xfb_varying->components > 0 ? xfb_varying : nullptr;
+        }
+        const u32 num_components{xfb_varying ? xfb_varying->components : remainder};
+
+        const Id id{DefineOutput(ctx, ctx.F32[num_components])};
+        ctx.Decorate(id, spv::Decoration::Location, static_cast<u32>(index));
+        if (element > 0) {
+            ctx.Decorate(id, spv::Decoration::Component, element);
+        }
+        if (xfb_varying) {
+            ctx.Decorate(id, spv::Decoration::XfbBuffer, xfb_varying->buffer);
+            ctx.Decorate(id, spv::Decoration::XfbStride, xfb_varying->stride);
+            ctx.Decorate(id, spv::Decoration::Offset, xfb_varying->offset);
+        }
+        if (num_components < 4 || element > 0) {
+            ctx.Name(id, fmt::format("out_attr{}", index));
+        } else {
+            const std::string_view subswizzle{swizzle.substr(element, num_components)};
+            ctx.Name(id, fmt::format("out_attr{}_{}", index, subswizzle));
+        }
+        const GenericElementInfo info{
+            .id = id,
+            .first_element = element,
+            .num_components = num_components,
+        };
+        std::fill_n(ctx.output_generics[index].begin(), num_components, info);
+        element += num_components;
+    }
+}
+
 Id GetAttributeType(EmitContext& ctx, AttributeType type) {
     switch (type) {
     case AttributeType::Float:
@@ -663,12 +702,15 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
             OpReturn();
             ++label_index;
         }
-        for (size_t i = 0; i < info.stores_generics.size(); i++) {
+        for (size_t i = 0; i < info.stores_generics.size(); ++i) {
             if (!info.stores_generics[i]) {
                 continue;
             }
+            if (output_generics[i][0].num_components != 4) {
+                throw NotImplementedException("Physical stores and transform feedbacks");
+            }
             AddLabel(labels[label_index]);
-            const Id generic_id{output_generics.at(i)};
+            const Id generic_id{output_generics[i][0].id};
             const Id pointer{OpAccessChain(output_f32, generic_id, masked_index)};
             OpStore(pointer, store_value);
             OpReturn();
@@ -1015,11 +1057,9 @@ void EmitContext::DefineOutputs(const Info& info) {
         }
         viewport_index = DefineOutput(*this, U32[1], spv::BuiltIn::ViewportIndex);
     }
-    for (size_t i = 0; i < info.stores_generics.size(); ++i) {
-        if (info.stores_generics[i]) {
-            output_generics[i] = DefineOutput(*this, F32[4]);
-            Decorate(output_generics[i], spv::Decoration::Location, static_cast<u32>(i));
-            Name(output_generics[i], fmt::format("out_attr{}", i));
+    for (size_t index = 0; index < info.stores_generics.size(); ++index) {
+        if (info.stores_generics[index]) {
+            DefineGenericOutput(*this, index);
         }
     }
     if (stage == Stage::Fragment) {

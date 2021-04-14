@@ -40,11 +40,17 @@ Id AttrPointer(EmitContext& ctx, Id pointer_type, Id vertex, Id base, Args&&... 
 }
 
 std::optional<Id> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
-    const u32 element{static_cast<u32>(attr) % 4};
-    const auto element_id{[&] { return ctx.Constant(ctx.U32[1], element); }};
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
-        return ctx.OpAccessChain(ctx.output_f32, ctx.output_generics.at(index), element_id());
+        const u32 element{IR::GenericAttributeElement(attr)};
+        const GenericElementInfo& info{ctx.output_generics.at(index).at(element)};
+        if (info.num_components == 1) {
+            return info.id;
+        } else {
+            const u32 index_element{element - info.first_element};
+            const Id index_id{ctx.Constant(ctx.U32[1], index_element)};
+            return ctx.OpAccessChain(ctx.output_f32, info.id, index_id);
+        }
     }
     switch (attr) {
     case IR::Attribute::PointSize:
@@ -52,8 +58,11 @@ std::optional<Id> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
     case IR::Attribute::PositionX:
     case IR::Attribute::PositionY:
     case IR::Attribute::PositionZ:
-    case IR::Attribute::PositionW:
-        return ctx.OpAccessChain(ctx.output_f32, ctx.output_position, element_id());
+    case IR::Attribute::PositionW: {
+        const u32 element{static_cast<u32>(attr) % 4};
+        const Id element_id{ctx.Constant(ctx.U32[1], element)};
+        return ctx.OpAccessChain(ctx.output_f32, ctx.output_position, element_id);
+    }
     case IR::Attribute::ClipDistance0:
     case IR::Attribute::ClipDistance1:
     case IR::Attribute::ClipDistance2:

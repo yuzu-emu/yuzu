@@ -288,6 +288,9 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
     if (info.uses_typeless_image_writes) {
         ctx.AddCapability(spv::Capability::StorageImageWriteWithoutFormat);
     }
+    if (!ctx.profile.xfb_varyings.empty()) {
+        ctx.AddCapability(spv::Capability::TransformFeedback);
+    }
     // TODO: Track this usage
     ctx.AddCapability(spv::Capability::ImageGatherExtended);
     ctx.AddCapability(spv::Capability::ImageQuery);

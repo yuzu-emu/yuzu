@@ -52,6 +52,8 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
     const u32 topology_index = static_cast<u32>(regs.draw.topology.Value());
 
     raw1 = 0;
+    no_extended_dynamic_state.Assign(has_extended_dynamic_state ? 0 : 1);
+    xfb_enabled.Assign(regs.tfb_enabled != 0);
     primitive_restart_enable.Assign(regs.primitive_restart.enabled != 0 ? 1 : 0);
     depth_bias_enable.Assign(enabled_lut[POLYGON_OFFSET_ENABLE_LUT[topology_index]] != 0 ? 1 : 0);
     depth_clamp_disabled.Assign(regs.view_volume_clip_control.depth_clamp_disabled.Value());
@@ -113,9 +115,11 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
             return static_cast<u16>(viewport.swizzle.raw);
         });
     }
-    if (!has_extended_dynamic_state) {
-        no_extended_dynamic_state.Assign(1);
+    if (no_extended_dynamic_state != 0) {
         dynamic_state.Refresh(regs);
+    }
+    if (xfb_enabled != 0) {
+        xfb_state.Refresh(regs);
     }
 }
 
@@ -156,6 +160,17 @@ void FixedPipelineState::BlendingAttachment::Refresh(const Maxwell& regs, size_t
     factor_source_a.Assign(PackBlendFactor(src.factor_source_a));
     factor_dest_a.Assign(PackBlendFactor(src.factor_dest_a));
     enable.Assign(1);
+}
+
+void FixedPipelineState::TransformFeedbackState::Refresh(const Maxwell& regs) {
+    std::ranges::transform(regs.tfb_layouts, layouts.begin(), [](const auto& layout) {
+        return Layout{
+            .stream = layout.stream,
+            .varying_count = layout.varying_count,
+            .stride = layout.stride,
+        };
+    });
+    varyings = regs.tfb_varying_locs;
 }
 
 void FixedPipelineState::DynamicState::Refresh(const Maxwell& regs) {

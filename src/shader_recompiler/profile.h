@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <vector>
 #include <optional>
 
 #include "common/common_types.h"
@@ -24,6 +25,13 @@ enum class InputTopology {
     LinesAdjacency,
     Triangles,
     TrianglesAdjacency,
+};
+
+struct TransformFeedbackVarying {
+    u32 buffer{};
+    u32 stride{};
+    u32 offset{};
+    u32 components{};
 };
 
 struct Profile {
@@ -58,6 +66,8 @@ struct Profile {
     InputTopology input_topology{};
 
     std::optional<float> fixed_state_point_size;
+
+    std::vector<TransformFeedbackVarying> xfb_varyings;
 };
 
 } // namespace Shader

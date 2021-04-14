@@ -79,6 +79,12 @@ struct StorageDefinitions {
     Id U32x4{};
 };
 
+struct GenericElementInfo {
+    Id id{};
+    u32 first_element{};
+    u32 num_components{};
+};
+
 class EmitContext final : public Sirit::Module {
 public:
     explicit EmitContext(const Profile& profile, IR::Program& program, u32& binding);
@@ -189,7 +195,7 @@ public:
 
     Id output_point_size{};
     Id output_position{};
-    std::array<Id, 32> output_generics{};
+    std::array<std::array<GenericElementInfo, 4>, 32> output_generics{};
 
     std::array<Id, 8> frag_color{};
     Id frag_depth{};

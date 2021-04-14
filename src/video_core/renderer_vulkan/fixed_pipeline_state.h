@@ -130,6 +130,18 @@ struct FixedPipelineState {
         }
     };
 
+    struct TransformFeedbackState {
+        struct Layout {
+            u32 stream;
+            u32 varying_count;
+            u32 stride;
+        };
+        std::array<Layout, Maxwell::NumTransformFeedbackBuffers> layouts;
+        std::array<std::array<u8, 128>, Maxwell::NumTransformFeedbackBuffers> varyings;
+
+        void Refresh(const Maxwell& regs);
+    };
+
     struct DynamicState {
         union {
             u32 raw1;
@@ -168,6 +180,7 @@ struct FixedPipelineState {
     union {
         u32 raw1;
         BitField<0, 1, u32> no_extended_dynamic_state;
+        BitField<1, 1, u32> xfb_enabled;
         BitField<2, 1, u32> primitive_restart_enable;
         BitField<3, 1, u32> depth_bias_enable;
         BitField<4, 1, u32> depth_clamp_disabled;
@@ -199,6 +212,7 @@ struct FixedPipelineState {
     std::array<BlendingAttachment, Maxwell::NumRenderTargets> attachments;
     std::array<u16, Maxwell::NumViewports> viewport_swizzles;
     DynamicState dynamic_state;
+    TransformFeedbackState xfb_state;
 
     void Refresh(Tegra::Engines::Maxwell3D& maxwell3d, bool has_extended_dynamic_state);
 
@@ -211,8 +225,16 @@ struct FixedPipelineState {
     }
 
     size_t Size() const noexcept {
-        const size_t total_size = sizeof *this;
-        return total_size - (no_extended_dynamic_state != 0 ? 0 : sizeof(DynamicState));
+        if (xfb_enabled != 0) {
+            // When transform feedback is enabled, use the whole struct
+            return sizeof(*this);
+        } else if (no_extended_dynamic_state != 0) {
+            // Dynamic state is enabled, we can enable more
+            return offsetof(FixedPipelineState, xfb_state);
+        } else {
+            // No XFB, extended dynamic state enabled
+            return offsetof(FixedPipelineState, dynamic_state);
+        }
     }
 };
 static_assert(std::has_unique_object_representations_v<FixedPipelineState>);
