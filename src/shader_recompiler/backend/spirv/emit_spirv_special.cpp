@@ -65,6 +65,10 @@ void AlphaTest(EmitContext& ctx) {
     if (comparison == CompareFunction::Always) {
         return;
     }
+    if (!Sirit::ValidId(ctx.frag_color[0])) {
+        return;
+    }
+
     const Id type{ctx.F32[1]};
     const Id rt0_color{ctx.OpLoad(ctx.F32[4], ctx.frag_color[0])};
     const Id alpha{ctx.OpCompositeExtract(type, rt0_color, 3u)};
@@ -74,6 +78,7 @@ void AlphaTest(EmitContext& ctx) {
     const Id alpha_reference{ctx.Constant(ctx.F32[1], ctx.profile.alpha_test_reference)};
     const Id condition{ComparisonFunction(ctx, comparison, alpha, alpha_reference)};
 
+    ctx.OpSelectionMerge(true_label, spv::SelectionControlMask::MaskNone);
     ctx.OpBranchConditional(condition, true_label, discard_label);
     ctx.AddLabel(discard_label);
     ctx.OpKill();
