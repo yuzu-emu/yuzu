@@ -58,13 +58,6 @@ void IADD3(TranslatorVisitor& v, u64 insn, IR::U32 op_b, IR::U32 op_c) {
         BitField<51, 1, u64> neg_a;
     } iadd3{insn};
 
-    if (iadd3.x != 0) {
-        throw NotImplementedException("IADD3 X");
-    }
-    if (iadd3.cc != 0) {
-        throw NotImplementedException("IADD3 CC");
-    }
-
     IR::U32 op_a{v.X(iadd3.src_a)};
     op_a = IntegerHalf(v.ir, op_a, iadd3.half_a);
     op_b = IntegerHalf(v.ir, op_b, iadd3.half_b);
@@ -81,10 +74,32 @@ void IADD3(TranslatorVisitor& v, u64 insn, IR::U32 op_b, IR::U32 op_c) {
     }
 
     IR::U32 lhs{v.ir.IAdd(op_a, op_b)};
+    IR::U1 of_1;
+    if (iadd3.cc != 0) {
+        of_1 = v.ir.GetOverflowFromOp(lhs);
+    }
+    if (iadd3.x != 0) {
+        const IR::U32 carry{v.ir.Select(v.ir.GetCFlag(), v.ir.Imm32(1), v.ir.Imm32(0))};
+        lhs = v.ir.IAdd(lhs, carry);
+    }
+    if (iadd3.cc != 0 && iadd3.shift == Shift::Left) {
+        IR::U32 high_bits{v.ir.ShiftRightLogical(lhs, v.ir.Imm32(16))};
+        of_1 = v.ir.LogicalOr(of_1, v.ir.INotEqual(v.ir.Imm32(0), high_bits));
+    }
     lhs = IntegerShift(v.ir, lhs, iadd3.shift);
     const IR::U32 result{v.ir.IAdd(lhs, op_c)};
 
     v.X(iadd3.dest_reg, result);
+    if (iadd3.cc != 0) {
+        // TODO: How does CC behave when X is set?
+        if (iadd3.x != 0) {
+            throw NotImplementedException("IADD3 X+CC");
+        }
+        v.SetZFlag(v.ir.GetZeroFromOp(result));
+        v.SetSFlag(v.ir.GetSignFromOp(result));
+        v.SetCFlag(v.ir.GetCarryFromOp(result));
+        v.SetOFlag(v.ir.LogicalOr(v.ir.GetOverflowFromOp(result), of_1));
+    }
 }
 } // Anonymous namespace
 
