@@ -696,6 +696,8 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
         .has_broken_spirv_clamp = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS_KHR,
         .generic_input_types{},
         .fixed_state_point_size{},
+        .alpha_test_func{},
+        .xfb_varyings{},
     };
 }
 
