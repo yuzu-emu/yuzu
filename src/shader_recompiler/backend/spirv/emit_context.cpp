@@ -54,28 +54,30 @@ Id ImageType(EmitContext& ctx, const TextureDescriptor& desc) {
     throw InvalidArgument("Invalid texture type {}", desc.type);
 }
 
+spv::ImageFormat GetImageFormat(ImageFormat format) {
+    switch (format) {
+    case ImageFormat::Typeless:
+        return spv::ImageFormat::Unknown;
+    case ImageFormat::R8_UINT:
+        return spv::ImageFormat::R8ui;
+    case ImageFormat::R8_SINT:
+        return spv::ImageFormat::R8i;
+    case ImageFormat::R16_UINT:
+        return spv::ImageFormat::R16ui;
+    case ImageFormat::R16_SINT:
+        return spv::ImageFormat::R16i;
+    case ImageFormat::R32_UINT:
+        return spv::ImageFormat::R32ui;
+    case ImageFormat::R32G32_UINT:
+        return spv::ImageFormat::Rg32ui;
+    case ImageFormat::R32G32B32A32_UINT:
+        return spv::ImageFormat::Rgba32ui;
+    }
+    throw InvalidArgument("Invalid image format {}", format);
+}
+
 Id ImageType(EmitContext& ctx, const ImageDescriptor& desc) {
-    const spv::ImageFormat format{[&] {
-        switch (desc.format) {
-        case ImageFormat::Typeless:
-            return spv::ImageFormat::Unknown;
-        case ImageFormat::R8_UINT:
-            return spv::ImageFormat::R8ui;
-        case ImageFormat::R8_SINT:
-            return spv::ImageFormat::R8i;
-        case ImageFormat::R16_UINT:
-            return spv::ImageFormat::R16ui;
-        case ImageFormat::R16_SINT:
-            return spv::ImageFormat::R16i;
-        case ImageFormat::R32_UINT:
-            return spv::ImageFormat::R32ui;
-        case ImageFormat::R32G32_UINT:
-            return spv::ImageFormat::Rg32ui;
-        case ImageFormat::R32G32B32A32_UINT:
-            return spv::ImageFormat::Rgba32ui;
-        }
-        throw InvalidArgument("Invalid image format {}", desc.format);
-    }()};
+    const spv::ImageFormat format{GetImageFormat(desc.format)};
     const Id type{ctx.U32[1]};
     switch (desc.type) {
     case TextureType::Color1D:
@@ -388,6 +390,7 @@ EmitContext::EmitContext(const Profile& profile_, IR::Program& program, u32& bin
     DefineConstantBuffers(program.info, binding);
     DefineStorageBuffers(program.info, binding);
     DefineTextureBuffers(program.info, binding);
+    DefineImageBuffers(program.info, binding);
     DefineTextures(program.info, binding);
     DefineImages(program.info, binding);
     DefineAttributeMemAccess(program.info);
@@ -876,6 +879,31 @@ void EmitContext::DefineTextureBuffers(const Info& info, u32& binding) {
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
         Name(id, fmt::format("texbuf{}_{:02x}", desc.cbuf_index, desc.cbuf_offset));
         texture_buffers.insert(texture_buffers.end(), desc.count, id);
+        if (profile.supported_spirv >= 0x00010400) {
+            interfaces.push_back(id);
+        }
+        binding += desc.count;
+    }
+}
+
+void EmitContext::DefineImageBuffers(const Info& info, u32& binding) {
+    image_buffers.reserve(info.image_buffer_descriptors.size());
+    for (const ImageBufferDescriptor& desc : info.image_buffer_descriptors) {
+        if (desc.count != 1) {
+            throw NotImplementedException("Array of image buffers");
+        }
+        const spv::ImageFormat format{GetImageFormat(desc.format)};
+        const Id image_type{TypeImage(U32[4], spv::Dim::Buffer, false, false, false, 2, format)};
+        const Id pointer_type{TypePointer(spv::StorageClass::UniformConstant, image_type)};
+        const Id id{AddGlobalVariable(pointer_type, spv::StorageClass::UniformConstant)};
+        Decorate(id, spv::Decoration::Binding, binding);
+        Decorate(id, spv::Decoration::DescriptorSet, 0U);
+        Name(id, fmt::format("imgbuf{}_{:02x}", desc.cbuf_index, desc.cbuf_offset));
+        const ImageBufferDefinition def{
+            .id = id,
+            .image_type = image_type,
+        };
+        image_buffers.insert(image_buffers.end(), desc.count, def);
         if (profile.supported_spirv >= 0x00010400) {
             interfaces.push_back(id);
         }

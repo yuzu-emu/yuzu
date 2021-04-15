@@ -150,7 +150,7 @@ public:
     void UnbindGraphicsTextureBuffers(size_t stage);
 
     void BindGraphicsTextureBuffer(size_t stage, size_t tbo_index, GPUVAddr gpu_addr, u32 size,
-                                   PixelFormat format);
+                                   PixelFormat format, bool is_written);
 
     void UnbindComputeStorageBuffers();
 
@@ -159,8 +159,8 @@ public:
 
     void UnbindComputeTextureBuffers();
 
-    void BindComputeTextureBuffer(size_t tbo_index, GPUVAddr gpu_addr, u32 size,
-                                  PixelFormat format);
+    void BindComputeTextureBuffer(size_t tbo_index, GPUVAddr gpu_addr, u32 size, PixelFormat format,
+                                  bool is_written);
 
     void FlushCachedWrites();
 
@@ -346,7 +346,9 @@ private:
     u32 written_compute_storage_buffers = 0;
 
     std::array<u32, NUM_STAGES> enabled_texture_buffers{};
+    std::array<u32, NUM_STAGES> written_texture_buffers{};
     u32 enabled_compute_texture_buffers = 0;
+    u32 written_compute_texture_buffers = 0;
 
     std::array<u32, NUM_STAGES> fast_bound_uniform_buffers{};
 
@@ -557,12 +559,14 @@ void BufferCache<P>::BindGraphicsStorageBuffer(size_t stage, size_t ssbo_index, 
 template <class P>
 void BufferCache<P>::UnbindGraphicsTextureBuffers(size_t stage) {
     enabled_texture_buffers[stage] = 0;
+    written_texture_buffers[stage] = 0;
 }
 
 template <class P>
 void BufferCache<P>::BindGraphicsTextureBuffer(size_t stage, size_t tbo_index, GPUVAddr gpu_addr,
-                                               u32 size, PixelFormat format) {
+                                               u32 size, PixelFormat format, bool is_written) {
     enabled_texture_buffers[stage] |= 1U << tbo_index;
+    written_texture_buffers[stage] |= (is_written ? 1U : 0U) << tbo_index;
     texture_buffers[stage][tbo_index] = GetTextureBufferBinding(gpu_addr, size, format);
 }
 
@@ -589,12 +593,14 @@ void BufferCache<P>::BindComputeStorageBuffer(size_t ssbo_index, u32 cbuf_index,
 template <class P>
 void BufferCache<P>::UnbindComputeTextureBuffers() {
     enabled_compute_texture_buffers = 0;
+    written_compute_texture_buffers = 0;
 }
 
 template <class P>
 void BufferCache<P>::BindComputeTextureBuffer(size_t tbo_index, GPUVAddr gpu_addr, u32 size,
-                                              PixelFormat format) {
+                                              PixelFormat format, bool is_written) {
     enabled_compute_texture_buffers |= 1U << tbo_index;
+    written_compute_texture_buffers |= (is_written ? 1U : 0U) << tbo_index;
     compute_texture_buffers[tbo_index] = GetTextureBufferBinding(gpu_addr, size, format);
 }
 
@@ -1052,6 +1058,10 @@ void BufferCache<P>::UpdateTextureBuffers(size_t stage) {
     ForEachEnabledBit(enabled_texture_buffers[stage], [&](u32 index) {
         Binding& binding = texture_buffers[stage][index];
         binding.buffer_id = FindBuffer(binding.cpu_addr, binding.size);
+        // Mark buffer as written if needed
+        if (((written_texture_buffers[stage] >> index) & 1) != 0) {
+            MarkWrittenBuffer(binding.buffer_id, binding.cpu_addr, binding.size);
+        }
     });
 }
 
@@ -1121,6 +1131,10 @@ void BufferCache<P>::UpdateComputeTextureBuffers() {
     ForEachEnabledBit(enabled_compute_texture_buffers, [&](u32 index) {
         Binding& binding = compute_texture_buffers[index];
         binding.buffer_id = FindBuffer(binding.cpu_addr, binding.size);
+        // Mark as written if needed
+        if (((written_compute_texture_buffers >> index) & 1) != 0) {
+            MarkWrittenBuffer(binding.buffer_id, binding.cpu_addr, binding.size);
+        }
     });
 }
 

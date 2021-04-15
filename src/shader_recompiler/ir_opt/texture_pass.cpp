@@ -158,14 +158,23 @@ TextureInst MakeInst(Environment& env, IR::Block* block, IR::Inst& inst) {
 class Descriptors {
 public:
     explicit Descriptors(TextureBufferDescriptors& texture_buffer_descriptors_,
+                         ImageBufferDescriptors& image_buffer_descriptors_,
                          TextureDescriptors& texture_descriptors_,
                          ImageDescriptors& image_descriptors_)
         : texture_buffer_descriptors{texture_buffer_descriptors_},
+          image_buffer_descriptors{image_buffer_descriptors_},
           texture_descriptors{texture_descriptors_}, image_descriptors{image_descriptors_} {}
 
     u32 Add(const TextureBufferDescriptor& desc) {
         return Add(texture_buffer_descriptors, desc, [&desc](const auto& existing) {
             return desc.cbuf_index == existing.cbuf_index &&
+                   desc.cbuf_offset == existing.cbuf_offset;
+        });
+    }
+
+    u32 Add(const ImageBufferDescriptor& desc) {
+        return Add(image_buffer_descriptors, desc, [&desc](const auto& existing) {
+            return desc.format == existing.format && desc.cbuf_index == existing.cbuf_index &&
                    desc.cbuf_offset == existing.cbuf_offset;
         });
     }
@@ -200,6 +209,7 @@ private:
     }
 
     TextureBufferDescriptors& texture_buffer_descriptors;
+    ImageBufferDescriptors& image_buffer_descriptors;
     TextureDescriptors& texture_descriptors;
     ImageDescriptors& image_descriptors;
 };
@@ -224,6 +234,7 @@ void TexturePass(Environment& env, IR::Program& program) {
     });
     Descriptors descriptors{
         program.info.texture_buffer_descriptors,
+        program.info.image_buffer_descriptors,
         program.info.texture_descriptors,
         program.info.image_descriptors,
     };
@@ -261,7 +272,13 @@ void TexturePass(Environment& env, IR::Program& program) {
         case IR::Opcode::ImageWrite: {
             const bool is_written{inst->GetOpcode() == IR::Opcode::ImageWrite};
             if (flags.type == TextureType::Buffer) {
-                throw NotImplementedException("Image buffer");
+                index = descriptors.Add(ImageBufferDescriptor{
+                    .format = flags.image_format,
+                    .is_written = is_written,
+                    .cbuf_index = cbuf.index,
+                    .cbuf_offset = cbuf.offset,
+                    .count = 1,
+                });
             } else {
                 index = descriptors.Add(ImageDescriptor{
                     .type = flags.type,

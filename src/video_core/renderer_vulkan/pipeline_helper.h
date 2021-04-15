@@ -88,6 +88,7 @@ public:
         Add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stage, info.constant_buffer_descriptors.size());
         Add(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, stage, info.storage_buffers_descriptors.size());
         Add(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, stage, info.texture_buffer_descriptors.size());
+        Add(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, stage, info.image_buffer_descriptors.size());
         Add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage, info.texture_descriptors.size());
         Add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, stage, info.image_descriptors.size());
     }
@@ -126,6 +127,7 @@ inline void PushImageDescriptors(const Shader::Info& info, const VkSampler*& sam
                                  const ImageId*& image_view_ids, TextureCache& texture_cache,
                                  VKUpdateDescriptorQueue& update_descriptor_queue) {
     image_view_ids += info.texture_buffer_descriptors.size();
+    image_view_ids += info.image_buffer_descriptors.size();
     for (const auto& desc : info.texture_descriptors) {
         const VkSampler sampler{*(samplers++)};
         ImageView& image_view{texture_cache.GetImageView(*(image_view_ids++))};
