@@ -149,7 +149,8 @@ Id Image(EmitContext& ctx, const IR::Value& index, IR::TextureInstInfo info) {
         throw NotImplementedException("Indirect image indexing");
     }
     if (info.type == TextureType::Buffer) {
-        throw NotImplementedException("Image buffer");
+        const ImageBufferDefinition def{ctx.image_buffers.at(index.U32())};
+        return ctx.OpLoad(def.image_type, def.id);
     } else {
         const ImageDefinition def{ctx.images.at(index.U32())};
         return ctx.OpLoad(def.image_type, def.id);

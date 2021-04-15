@@ -67,6 +67,15 @@ struct TextureBufferDescriptor {
 };
 using TextureBufferDescriptors = boost::container::small_vector<TextureBufferDescriptor, 6>;
 
+struct ImageBufferDescriptor {
+    ImageFormat format;
+    bool is_written;
+    u32 cbuf_index;
+    u32 cbuf_offset;
+    u32 count;
+};
+using ImageBufferDescriptors = boost::container::small_vector<ImageBufferDescriptor, 2>;
+
 struct TextureDescriptor {
     TextureType type;
     bool is_depth;
@@ -153,6 +162,7 @@ struct Info {
         constant_buffer_descriptors;
     boost::container::static_vector<StorageBufferDescriptor, MAX_SSBOS> storage_buffers_descriptors;
     TextureBufferDescriptors texture_buffer_descriptors;
+    ImageBufferDescriptors image_buffer_descriptors;
     TextureDescriptors texture_descriptors;
     ImageDescriptors image_descriptors;
 };
