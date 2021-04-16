@@ -99,6 +99,7 @@ public:
     [[nodiscard]] U32 LocalInvocationIdZ();
 
     [[nodiscard]] U32 InvocationId();
+    [[nodiscard]] U32 SampleId();
     [[nodiscard]] U1 IsHelperInvocation();
 
     [[nodiscard]] U32 LaneId();

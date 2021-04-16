@@ -375,6 +375,10 @@ U32 IREmitter::InvocationId() {
     return Inst<U32>(Opcode::InvocationId);
 }
 
+U32 IREmitter::SampleId() {
+    return Inst<U32>(Opcode::SampleId);
+}
+
 U1 IREmitter::IsHelperInvocation() {
     return Inst<U1>(Opcode::IsHelperInvocation);
 }
