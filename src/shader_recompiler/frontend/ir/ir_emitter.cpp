@@ -331,6 +331,14 @@ void IREmitter::SetAttributeIndexed(const U32& phys_address, const F32& value, c
     Inst(Opcode::SetAttributeIndexed, phys_address, value, vertex);
 }
 
+F32 IREmitter::GetPatch(Patch patch) {
+    return Inst<F32>(Opcode::GetPatch, patch);
+}
+
+void IREmitter::SetPatch(Patch patch, const F32& value) {
+    Inst(Opcode::SetPatch, patch, value);
+}
+
 void IREmitter::SetFragColor(u32 index, u32 component, const F32& value) {
     Inst(Opcode::SetFragColor, Imm32(index), Imm32(component), value);
 }
@@ -361,6 +369,10 @@ U32 IREmitter::LocalInvocationIdY() {
 
 U32 IREmitter::LocalInvocationIdZ() {
     return U32{CompositeExtract(Inst(Opcode::LocalInvocationId), 2)};
+}
+
+U32 IREmitter::InvocationId() {
+    return Inst<U32>(Opcode::InvocationId);
 }
 
 U1 IREmitter::IsHelperInvocation() {

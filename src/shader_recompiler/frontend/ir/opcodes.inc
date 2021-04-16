@@ -48,6 +48,8 @@ OPCODE(GetAttribute,                                        F32,            Attr
 OPCODE(SetAttribute,                                        Void,           Attribute,      F32,            U32,                                            )
 OPCODE(GetAttributeIndexed,                                 F32,            U32,            U32,                                                            )
 OPCODE(SetAttributeIndexed,                                 Void,           U32,            F32,            U32,                                            )
+OPCODE(GetPatch,                                            F32,            Patch,                                                                          )
+OPCODE(SetPatch,                                            Void,           Patch,          F32,                                                            )
 OPCODE(SetFragColor,                                        Void,           U32,            U32,            F32,                                            )
 OPCODE(SetFragDepth,                                        Void,           F32,                                                                            )
 OPCODE(GetZFlag,                                            U1,             Void,                                                                           )
@@ -60,6 +62,7 @@ OPCODE(SetCFlag,                                            Void,           U1, 
 OPCODE(SetOFlag,                                            Void,           U1,                                                                             )
 OPCODE(WorkgroupId,                                         U32x3,                                                                                          )
 OPCODE(LocalInvocationId,                                   U32x3,                                                                                          )
+OPCODE(InvocationId,                                        U32,                                                                                            )
 OPCODE(IsHelperInvocation,                                  U1,                                                                                             )
 
 // Undefined

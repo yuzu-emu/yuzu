@@ -73,6 +73,7 @@ bool Inst::MayHaveSideEffects() const noexcept {
     case Opcode::EndPrimitive:
     case Opcode::SetAttribute:
     case Opcode::SetAttributeIndexed:
+    case Opcode::SetPatch:
     case Opcode::SetFragColor:
     case Opcode::SetFragDepth:
     case Opcode::WriteGlobalU8:

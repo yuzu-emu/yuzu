@@ -53,6 +53,10 @@ void GetAttribute(Info& info, IR::Attribute attribute) {
     case IR::Attribute::PointSpriteT:
         info.loads_point_coord = true;
         break;
+    case IR::Attribute::TessellationEvaluationPointU:
+    case IR::Attribute::TessellationEvaluationPointV:
+        info.loads_tess_coord = true;
+        break;
     default:
         throw NotImplementedException("Get attribute {}", attribute);
     }
@@ -91,6 +95,34 @@ void SetAttribute(Info& info, IR::Attribute attribute) {
         break;
     default:
         throw NotImplementedException("Set attribute {}", attribute);
+    }
+}
+
+void GetPatch(Info& info, IR::Patch patch) {
+    if (!IR::IsGeneric(patch)) {
+        throw NotImplementedException("Reading non-generic patch {}", patch);
+    }
+    info.uses_patches.at(IR::GenericPatchIndex(patch)) = true;
+}
+
+void SetPatch(Info& info, IR::Patch patch) {
+    if (IR::IsGeneric(patch)) {
+        info.uses_patches.at(IR::GenericPatchIndex(patch)) = true;
+        return;
+    }
+    switch (patch) {
+    case IR::Patch::TessellationLodLeft:
+    case IR::Patch::TessellationLodTop:
+    case IR::Patch::TessellationLodRight:
+    case IR::Patch::TessellationLodBottom:
+        info.stores_tess_level_outer = true;
+        break;
+    case IR::Patch::TessellationLodInteriorU:
+    case IR::Patch::TessellationLodInteriorV:
+        info.stores_tess_level_inner = true;
+        break;
+    default:
+        throw NotImplementedException("Set patch {}", patch);
     }
 }
 
@@ -350,6 +382,12 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::SetAttribute:
         SetAttribute(info, inst.Arg(0).Attribute());
         break;
+    case IR::Opcode::GetPatch:
+        GetPatch(info, inst.Arg(0).Patch());
+        break;
+    case IR::Opcode::SetPatch:
+        SetPatch(info, inst.Arg(0).Patch());
+        break;
     case IR::Opcode::GetAttributeIndexed:
         info.loads_indexed_attributes = true;
         break;
@@ -367,6 +405,9 @@ void VisitUsages(Info& info, IR::Inst& inst) {
         break;
     case IR::Opcode::LocalInvocationId:
         info.uses_local_invocation_id = true;
+        break;
+    case IR::Opcode::InvocationId:
+        info.uses_invocation_id = true;
         break;
     case IR::Opcode::IsHelperInvocation:
         info.uses_is_helper_invocation = true;

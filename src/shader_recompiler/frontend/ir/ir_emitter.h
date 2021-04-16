@@ -84,6 +84,9 @@ public:
     [[nodiscard]] F32 GetAttributeIndexed(const U32& phys_address, const U32& vertex);
     void SetAttributeIndexed(const U32& phys_address, const F32& value, const U32& vertex);
 
+    [[nodiscard]] F32 GetPatch(Patch patch);
+    void SetPatch(Patch patch, const F32& value);
+
     void SetFragColor(u32 index, u32 component, const F32& value);
     void SetFragDepth(const F32& value);
 
@@ -95,6 +98,7 @@ public:
     [[nodiscard]] U32 LocalInvocationIdY();
     [[nodiscard]] U32 LocalInvocationIdZ();
 
+    [[nodiscard]] U32 InvocationId();
     [[nodiscard]] U1 IsHelperInvocation();
 
     [[nodiscard]] U32 LaneId();

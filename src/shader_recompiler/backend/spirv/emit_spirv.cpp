@@ -45,6 +45,8 @@ ArgType Arg(EmitContext& ctx, const IR::Value& arg) {
         return arg.Label();
     } else if constexpr (std::is_same_v<ArgType, IR::Attribute>) {
         return arg.Attribute();
+    } else if constexpr (std::is_same_v<ArgType, IR::Patch>) {
+        return arg.Patch();
     } else if constexpr (std::is_same_v<ArgType, IR::Reg>) {
         return arg.Reg();
     }
@@ -120,6 +122,30 @@ Id DefineMain(EmitContext& ctx, IR::Program& program) {
     return main;
 }
 
+spv::ExecutionMode ExecutionMode(TessPrimitive primitive) {
+    switch (primitive) {
+    case TessPrimitive::Isolines:
+        return spv::ExecutionMode::Isolines;
+    case TessPrimitive::Triangles:
+        return spv::ExecutionMode::Triangles;
+    case TessPrimitive::Quads:
+        return spv::ExecutionMode::Quads;
+    }
+    throw InvalidArgument("Tessellation primitive {}", primitive);
+}
+
+spv::ExecutionMode ExecutionMode(TessSpacing spacing) {
+    switch (spacing) {
+    case TessSpacing::Equal:
+        return spv::ExecutionMode::SpacingEqual;
+    case TessSpacing::FractionalOdd:
+        return spv::ExecutionMode::SpacingFractionalOdd;
+    case TessSpacing::FractionalEven:
+        return spv::ExecutionMode::SpacingFractionalEven;
+    }
+    throw InvalidArgument("Tessellation spacing {}", spacing);
+}
+
 void DefineEntryPoint(const IR::Program& program, EmitContext& ctx, Id main) {
     const std::span interfaces(ctx.interfaces.data(), ctx.interfaces.size());
     spv::ExecutionModel execution_model{};
@@ -133,6 +159,19 @@ void DefineEntryPoint(const IR::Program& program, EmitContext& ctx, Id main) {
     }
     case Stage::VertexB:
         execution_model = spv::ExecutionModel::Vertex;
+        break;
+    case Stage::TessellationControl:
+        execution_model = spv::ExecutionModel::TessellationControl;
+        ctx.AddCapability(spv::Capability::Tessellation);
+        ctx.AddExecutionMode(main, spv::ExecutionMode::OutputVertices, program.invocations);
+        break;
+    case Stage::TessellationEval:
+        execution_model = spv::ExecutionModel::TessellationEvaluation;
+        ctx.AddCapability(spv::Capability::Tessellation);
+        ctx.AddExecutionMode(main, ExecutionMode(ctx.profile.tess_primitive));
+        ctx.AddExecutionMode(main, ExecutionMode(ctx.profile.tess_spacing));
+        ctx.AddExecutionMode(main, ctx.profile.tess_clockwise ? spv::ExecutionMode::VertexOrderCw
+                                                              : spv::ExecutionMode::VertexOrderCcw);
         break;
     case Stage::Geometry:
         execution_model = spv::ExecutionModel::Geometry;

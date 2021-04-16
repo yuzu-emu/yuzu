@@ -70,6 +70,11 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
     program.stage = env.ShaderStage();
     program.local_memory_size = env.LocalMemorySize();
     switch (program.stage) {
+    case Stage::TessellationControl: {
+        const ProgramHeader& sph{env.SPH()};
+        program.invocations = sph.common2.threads_per_input_primitive;
+        break;
+    }
     case Stage::Geometry: {
         const ProgramHeader& sph{env.SPH()};
         program.output_topology = sph.common3.output_topology;

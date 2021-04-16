@@ -18,6 +18,8 @@ Value::Value(IR::Pred value) noexcept : type{Type::Pred}, pred{value} {}
 
 Value::Value(IR::Attribute value) noexcept : type{Type::Attribute}, attribute{value} {}
 
+Value::Value(IR::Patch value) noexcept : type{Type::Patch}, patch{value} {}
+
 Value::Value(bool value) noexcept : type{Type::U1}, imm_u1{value} {}
 
 Value::Value(u8 value) noexcept : type{Type::U8}, imm_u8{value} {}
@@ -109,6 +111,11 @@ IR::Attribute Value::Attribute() const {
     return attribute;
 }
 
+IR::Patch Value::Patch() const {
+    ValidateAccess(Type::Patch);
+    return patch;
+}
+
 bool Value::U1() const {
     if (IsIdentity()) {
         return inst->Arg(0).U1();
@@ -182,6 +189,8 @@ bool Value::operator==(const Value& other) const {
         return pred == other.pred;
     case Type::Attribute:
         return attribute == other.attribute;
+    case Type::Patch:
+        return patch == other.patch;
     case Type::U1:
         return imm_u1 == other.imm_u1;
     case Type::U8:

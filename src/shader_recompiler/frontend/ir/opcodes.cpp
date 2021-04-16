@@ -24,6 +24,7 @@ constexpr Type Label{Type::Label};
 constexpr Type Reg{Type::Reg};
 constexpr Type Pred{Type::Pred};
 constexpr Type Attribute{Type::Attribute};
+constexpr Type Patch{Type::Patch};
 constexpr Type U1{Type::U1};
 constexpr Type U8{Type::U8};
 constexpr Type U16{Type::U16};
