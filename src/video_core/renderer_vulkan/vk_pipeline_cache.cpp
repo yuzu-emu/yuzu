@@ -1116,6 +1116,7 @@ Shader::Profile PipelineCache::MakeProfile(const GraphicsPipelineCacheKey& key,
         break;
     }
     profile.force_early_z = key.state.early_z != 0;
+    profile.y_negate = key.state.y_negate != 0;
     return profile;
 }
 

@@ -97,6 +97,8 @@ struct Profile {
     std::optional<CompareFunction> alpha_test_func;
     float alpha_test_reference{};
 
+    bool y_negate{};
+
     std::vector<TransformFeedbackVarying> xfb_varyings;
 };
 

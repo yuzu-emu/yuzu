@@ -379,6 +379,10 @@ U1 IREmitter::IsHelperInvocation() {
     return Inst<U1>(Opcode::IsHelperInvocation);
 }
 
+F32 IREmitter::YDirection() {
+    return Inst<F32>(Opcode::YDirection);
+}
+
 U32 IREmitter::LaneId() {
     return Inst<U32>(Opcode::LaneId);
 }

@@ -150,6 +150,8 @@ enum class SpecialRegister : u64 {
         return ir.SubgroupGtMask();
     case SpecialRegister::SR_GEMASK:
         return ir.SubgroupGeMask();
+    case SpecialRegister::SR_Y_DIRECTION:
+        return ir.BitCast<IR::U32>(ir.YDirection());
     default:
         throw NotImplementedException("S2R special register {}", special_register);
     }

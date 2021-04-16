@@ -65,6 +65,7 @@ OPCODE(LocalInvocationId,                                   U32x3,              
 OPCODE(InvocationId,                                        U32,                                                                                            )
 OPCODE(SampleId,                                            U32,                                                                                            )
 OPCODE(IsHelperInvocation,                                  U1,                                                                                             )
+OPCODE(YDirection,                                          F32,                                                                                            )
 
 // Undefined
 OPCODE(UndefU1,                                             U1,                                                                                             )

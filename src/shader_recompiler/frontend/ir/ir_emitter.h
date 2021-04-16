@@ -102,6 +102,7 @@ public:
     [[nodiscard]] U32 InvocationId();
     [[nodiscard]] U32 SampleId();
     [[nodiscard]] U1 IsHelperInvocation();
+    [[nodiscard]] F32 YDirection();
 
     [[nodiscard]] U32 LaneId();
 
