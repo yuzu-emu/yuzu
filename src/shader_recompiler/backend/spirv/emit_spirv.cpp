@@ -303,6 +303,10 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
     if (info.stores_viewport_index) {
         ctx.AddCapability(spv::Capability::MultiViewport);
     }
+    if (info.stores_viewport_mask && profile.support_viewport_mask) {
+        ctx.AddExtension("SPV_NV_viewport_array2");
+        ctx.AddCapability(spv::Capability::ShaderViewportMaskNV);
+    }
     if (info.stores_layer || info.stores_viewport_index) {
         if (profile.support_viewport_index_layer_non_geometry && ctx.stage != Stage::Geometry) {
             ctx.AddExtension("SPV_EXT_shader_viewport_index_layer");

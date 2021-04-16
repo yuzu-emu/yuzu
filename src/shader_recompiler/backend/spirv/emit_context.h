@@ -134,6 +134,7 @@ public:
     Id input_s32{};
 
     Id output_f32{};
+    Id output_u32{};
 
     Id image_buffer_type{};
     Id sampled_texture_buffer_type{};
@@ -167,6 +168,7 @@ public:
     Id clip_distances{};
     Id layer{};
     Id viewport_index{};
+    Id viewport_mask{};
     Id primitive_id{};
 
     Id fswzadd_lut_a{};

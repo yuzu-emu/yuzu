@@ -75,6 +75,7 @@ struct Profile {
     bool support_explicit_workgroup_layout{};
     bool support_vote{};
     bool support_viewport_index_layer_non_geometry{};
+    bool support_viewport_mask{};
     bool support_typeless_image_loads{};
     bool warp_size_potentially_larger_than_guest{};
     bool support_int64_atomics{};

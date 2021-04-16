@@ -96,6 +96,9 @@ void SetAttribute(Info& info, IR::Attribute attribute) {
     case IR::Attribute::ViewportIndex:
         info.stores_viewport_index = true;
         break;
+    case IR::Attribute::ViewportMask:
+        info.stores_viewport_mask = true;
+        break;
     default:
         throw NotImplementedException("Set attribute {}", attribute);
     }

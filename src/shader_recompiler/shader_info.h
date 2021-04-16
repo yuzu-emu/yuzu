@@ -124,6 +124,7 @@ struct Info {
     bool stores_clip_distance{};
     bool stores_layer{};
     bool stores_viewport_index{};
+    bool stores_viewport_mask{};
     bool stores_tess_level_outer{};
     bool stores_tess_level_inner{};
     bool stores_indexed_attributes{};
