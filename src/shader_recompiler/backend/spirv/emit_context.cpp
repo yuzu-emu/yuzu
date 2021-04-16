@@ -998,6 +998,9 @@ void EmitContext::DefineInputs(const Info& info) {
     if (info.uses_invocation_id) {
         invocation_id = DefineInput(*this, U32[1], false, spv::BuiltIn::InvocationId);
     }
+    if (info.uses_sample_id) {
+        sample_id = DefineInput(*this, U32[1], false, spv::BuiltIn::SampleId);
+    }
     if (info.uses_is_helper_invocation) {
         is_helper_invocation = DefineInput(*this, U1, false, spv::BuiltIn::HelperInvocation);
     }

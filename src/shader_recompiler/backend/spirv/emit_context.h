@@ -149,6 +149,7 @@ public:
     Id workgroup_id{};
     Id local_invocation_id{};
     Id invocation_id{};
+    Id sample_id{};
     Id is_helper_invocation{};
     Id subgroup_local_invocation_id{};
     Id subgroup_mask_eq{};

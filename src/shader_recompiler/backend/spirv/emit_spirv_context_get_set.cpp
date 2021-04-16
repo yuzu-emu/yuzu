@@ -391,6 +391,10 @@ Id EmitInvocationId(EmitContext& ctx) {
     return ctx.OpLoad(ctx.U32[1], ctx.invocation_id);
 }
 
+Id EmitSampleId(EmitContext& ctx) {
+    return ctx.OpLoad(ctx.U32[1], ctx.sample_id);
+}
+
 Id EmitIsHelperInvocation(EmitContext& ctx) {
     return ctx.OpLoad(ctx.U1, ctx.is_helper_invocation);
 }

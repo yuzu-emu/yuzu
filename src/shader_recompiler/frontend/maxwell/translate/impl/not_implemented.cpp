@@ -181,10 +181,6 @@ void TranslatorVisitor::PEXIT(u64) {
     ThrowNotImplemented(Opcode::PEXIT);
 }
 
-void TranslatorVisitor::PIXLD(u64) {
-    ThrowNotImplemented(Opcode::PIXLD);
-}
-
 void TranslatorVisitor::PLONGJMP(u64) {
     ThrowNotImplemented(Opcode::PLONGJMP);
 }
