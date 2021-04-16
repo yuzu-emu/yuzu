@@ -1040,6 +1040,36 @@ Shader::Profile PipelineCache::MakeProfile(const GraphicsPipelineCacheKey& key,
         std::ranges::transform(key.state.attributes, profile.generic_input_types.begin(),
                                &CastAttributeType);
         break;
+    case Shader::Stage::TessellationEval:
+        // We have to flip tessellation clockwise for some reason...
+        profile.tess_clockwise = key.state.tessellation_clockwise == 0;
+        profile.tess_primitive = [&key] {
+            const u32 raw{key.state.tessellation_primitive.Value()};
+            switch (static_cast<Maxwell::TessellationPrimitive>(raw)) {
+            case Maxwell::TessellationPrimitive::Isolines:
+                return Shader::TessPrimitive::Isolines;
+            case Maxwell::TessellationPrimitive::Triangles:
+                return Shader::TessPrimitive::Triangles;
+            case Maxwell::TessellationPrimitive::Quads:
+                return Shader::TessPrimitive::Quads;
+            }
+            UNREACHABLE();
+            return Shader::TessPrimitive::Triangles;
+        }();
+        profile.tess_spacing = [&] {
+            const u32 raw{key.state.tessellation_spacing};
+            switch (static_cast<Maxwell::TessellationSpacing>(raw)) {
+            case Maxwell::TessellationSpacing::Equal:
+                return Shader::TessSpacing::Equal;
+            case Maxwell::TessellationSpacing::FractionalOdd:
+                return Shader::TessSpacing::FractionalOdd;
+            case Maxwell::TessellationSpacing::FractionalEven:
+                return Shader::TessSpacing::FractionalEven;
+            }
+            UNREACHABLE();
+            return Shader::TessSpacing::Equal;
+        }();
+        break;
     case Shader::Stage::Geometry:
         if (program.output_topology == Shader::OutputTopology::PointList) {
             profile.fixed_state_point_size = point_size;

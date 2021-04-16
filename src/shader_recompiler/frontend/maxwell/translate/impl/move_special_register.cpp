@@ -113,6 +113,8 @@ enum class SpecialRegister : u64 {
 
 [[nodiscard]] IR::U32 Read(IR::IREmitter& ir, SpecialRegister special_register) {
     switch (special_register) {
+    case SpecialRegister::SR_INVOCATION_ID:
+        return ir.InvocationId();
     case SpecialRegister::SR_THREAD_KILL:
         return IR::U32{ir.Select(ir.IsHelperInvocation(), ir.Imm32(-1), ir.Imm32(0))};
     case SpecialRegister::SR_INVOCATION_INFO:

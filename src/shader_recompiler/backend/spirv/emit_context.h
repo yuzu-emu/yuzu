@@ -147,6 +147,7 @@ public:
 
     Id workgroup_id{};
     Id local_invocation_id{};
+    Id invocation_id{};
     Id is_helper_invocation{};
     Id subgroup_local_invocation_id{};
     Id subgroup_mask_eq{};
@@ -162,6 +163,7 @@ public:
     Id base_vertex{};
     Id front_face{};
     Id point_coord{};
+    Id tess_coord{};
     Id clip_distances{};
     Id layer{};
     Id viewport_index{};
@@ -204,6 +206,10 @@ public:
     Id output_position{};
     std::array<std::array<GenericElementInfo, 4>, 32> output_generics{};
 
+    Id output_tess_level_outer{};
+    Id output_tess_level_inner{};
+    std::array<Id, 30> patches{};
+
     std::array<Id, 8> frag_color{};
     Id frag_depth{};
 
@@ -212,7 +218,7 @@ public:
 private:
     void DefineCommonTypes(const Info& info);
     void DefineCommonConstants();
-    void DefineInterfaces(const Info& info);
+    void DefineInterfaces(const IR::Program& program);
     void DefineLocalMemory(const IR::Program& program);
     void DefineSharedMemory(const IR::Program& program);
     void DefineSharedMemoryFunctions(const IR::Program& program);
@@ -226,7 +232,7 @@ private:
     void DefineLabels(IR::Program& program);
 
     void DefineInputs(const Info& info);
-    void DefineOutputs(const Info& info);
+    void DefineOutputs(const IR::Program& program);
 };
 
 } // namespace Shader::Backend::SPIRV

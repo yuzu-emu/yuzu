@@ -65,6 +65,8 @@ VkFrontFace FrontFace(Maxwell::FrontFace front_face);
 
 VkCullModeFlagBits CullFace(Maxwell::CullFace cull_face);
 
+VkPolygonMode PolygonMode(Maxwell::PolygonMode polygon_mode);
+
 VkComponentSwizzle SwizzleSource(Tegra::Texture::SwizzleSource swizzle);
 
 VkViewportCoordinateSwizzleNV ViewportSwizzle(Maxwell::ViewportSwizzle swizzle);

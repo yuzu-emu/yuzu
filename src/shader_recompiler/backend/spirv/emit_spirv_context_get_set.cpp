@@ -32,10 +32,23 @@ std::optional<AttrInfo> AttrTypes(EmitContext& ctx, u32 index) {
 
 template <typename... Args>
 Id AttrPointer(EmitContext& ctx, Id pointer_type, Id vertex, Id base, Args&&... args) {
-    if (ctx.stage == Stage::Geometry) {
+    switch (ctx.stage) {
+    case Stage::TessellationControl:
+    case Stage::TessellationEval:
+    case Stage::Geometry:
         return ctx.OpAccessChain(pointer_type, base, vertex, std::forward<Args>(args)...);
-    } else {
+    default:
         return ctx.OpAccessChain(pointer_type, base, std::forward<Args>(args)...);
+    }
+}
+
+template <typename... Args>
+Id OutputAccessChain(EmitContext& ctx, Id result_type, Id base, Args&&... args) {
+    if (ctx.stage == Stage::TessellationControl) {
+        const Id invocation_id{ctx.OpLoad(ctx.U32[1], ctx.invocation_id)};
+        return ctx.OpAccessChain(result_type, base, invocation_id, std::forward<Args>(args)...);
+    } else {
+        return ctx.OpAccessChain(result_type, base, std::forward<Args>(args)...);
     }
 }
 
@@ -49,7 +62,7 @@ std::optional<Id> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
         } else {
             const u32 index_element{element - info.first_element};
             const Id index_id{ctx.Constant(ctx.U32[1], index_element)};
-            return ctx.OpAccessChain(ctx.output_f32, info.id, index_id);
+            return OutputAccessChain(ctx, ctx.output_f32, info.id, index_id);
         }
     }
     switch (attr) {
@@ -61,7 +74,7 @@ std::optional<Id> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
     case IR::Attribute::PositionW: {
         const u32 element{static_cast<u32>(attr) % 4};
         const Id element_id{ctx.Constant(ctx.U32[1], element)};
-        return ctx.OpAccessChain(ctx.output_f32, ctx.output_position, element_id);
+        return OutputAccessChain(ctx, ctx.output_f32, ctx.output_position, element_id);
     }
     case IR::Attribute::ClipDistance0:
     case IR::Attribute::ClipDistance1:
@@ -74,7 +87,7 @@ std::optional<Id> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
         const u32 base{static_cast<u32>(IR::Attribute::ClipDistance0)};
         const u32 index{static_cast<u32>(attr) - base};
         const Id clip_num{ctx.Constant(ctx.U32[1], index)};
-        return ctx.OpAccessChain(ctx.output_f32, ctx.clip_distances, clip_num);
+        return OutputAccessChain(ctx, ctx.output_f32, ctx.clip_distances, clip_num);
     }
     case IR::Attribute::Layer:
         return ctx.profile.support_viewport_index_layer_non_geometry ||
@@ -222,11 +235,18 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
                             ctx.Constant(ctx.U32[1], std::numeric_limits<u32>::max()),
                             ctx.u32_zero_value);
     case IR::Attribute::PointSpriteS:
-        return ctx.OpLoad(ctx.F32[1], AttrPointer(ctx, ctx.input_f32, vertex, ctx.point_coord,
-                                                  ctx.u32_zero_value));
+        return ctx.OpLoad(ctx.F32[1],
+                          ctx.OpAccessChain(ctx.input_f32, ctx.point_coord, ctx.u32_zero_value));
     case IR::Attribute::PointSpriteT:
-        return ctx.OpLoad(ctx.F32[1], AttrPointer(ctx, ctx.input_f32, vertex, ctx.point_coord,
-                                                  ctx.Constant(ctx.U32[1], 1U)));
+        return ctx.OpLoad(ctx.F32[1], ctx.OpAccessChain(ctx.input_f32, ctx.point_coord,
+                                                        ctx.Constant(ctx.U32[1], 1U)));
+    case IR::Attribute::TessellationEvaluationPointU:
+        return ctx.OpLoad(ctx.F32[1],
+                          ctx.OpAccessChain(ctx.input_f32, ctx.tess_coord, ctx.u32_zero_value));
+    case IR::Attribute::TessellationEvaluationPointV:
+        return ctx.OpLoad(ctx.F32[1], ctx.OpAccessChain(ctx.input_f32, ctx.tess_coord,
+                                                        ctx.Constant(ctx.U32[1], 1U)));
+
     default:
         throw NotImplementedException("Read attribute {}", attr);
     }
@@ -240,15 +260,57 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value, [[maybe_un
 }
 
 Id EmitGetAttributeIndexed(EmitContext& ctx, Id offset, Id vertex) {
-    if (ctx.stage == Stage::Geometry) {
+    switch (ctx.stage) {
+    case Stage::TessellationControl:
+    case Stage::TessellationEval:
+    case Stage::Geometry:
         return ctx.OpFunctionCall(ctx.F32[1], ctx.indexed_load_func, offset, vertex);
-    } else {
+    default:
         return ctx.OpFunctionCall(ctx.F32[1], ctx.indexed_load_func, offset);
     }
 }
 
 void EmitSetAttributeIndexed(EmitContext& ctx, Id offset, Id value, [[maybe_unused]] Id vertex) {
     ctx.OpFunctionCall(ctx.void_id, ctx.indexed_store_func, offset, value);
+}
+
+Id EmitGetPatch(EmitContext& ctx, IR::Patch patch) {
+    if (!IR::IsGeneric(patch)) {
+        throw NotImplementedException("Non-generic patch load");
+    }
+    const u32 index{IR::GenericPatchIndex(patch)};
+    const Id element{ctx.Constant(ctx.U32[1], IR::GenericPatchElement(patch))};
+    const Id pointer{ctx.OpAccessChain(ctx.input_f32, ctx.patches.at(index), element)};
+    return ctx.OpLoad(ctx.F32[1], pointer);
+}
+
+void EmitSetPatch(EmitContext& ctx, IR::Patch patch, Id value) {
+    const Id pointer{[&] {
+        if (IR::IsGeneric(patch)) {
+            const u32 index{IR::GenericPatchIndex(patch)};
+            const Id element{ctx.Constant(ctx.U32[1], IR::GenericPatchElement(patch))};
+            return ctx.OpAccessChain(ctx.output_f32, ctx.patches.at(index), element);
+        }
+        switch (patch) {
+        case IR::Patch::TessellationLodLeft:
+        case IR::Patch::TessellationLodRight:
+        case IR::Patch::TessellationLodTop:
+        case IR::Patch::TessellationLodBottom: {
+            const u32 index{static_cast<u32>(patch) - u32(IR::Patch::TessellationLodLeft)};
+            const Id index_id{ctx.Constant(ctx.U32[1], index)};
+            return ctx.OpAccessChain(ctx.output_f32, ctx.output_tess_level_outer, index_id);
+        }
+        case IR::Patch::TessellationLodInteriorU:
+            return ctx.OpAccessChain(ctx.output_f32, ctx.output_tess_level_inner,
+                                     ctx.u32_zero_value);
+        case IR::Patch::TessellationLodInteriorV:
+            return ctx.OpAccessChain(ctx.output_f32, ctx.output_tess_level_inner,
+                                     ctx.Constant(ctx.U32[1], 1u));
+        default:
+            throw NotImplementedException("Patch {}", patch);
+        }
+    }()};
+    ctx.OpStore(pointer, value);
 }
 
 void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, Id value) {
@@ -299,6 +361,10 @@ Id EmitWorkgroupId(EmitContext& ctx) {
 
 Id EmitLocalInvocationId(EmitContext& ctx) {
     return ctx.OpLoad(ctx.U32[3], ctx.local_invocation_id);
+}
+
+Id EmitInvocationId(EmitContext& ctx) {
+    return ctx.OpLoad(ctx.U32[1], ctx.invocation_id);
 }
 
 Id EmitIsHelperInvocation(EmitContext& ctx) {

@@ -41,6 +41,8 @@ add_library(shader_recompiler STATIC
     frontend/ir/opcodes.cpp
     frontend/ir/opcodes.h
     frontend/ir/opcodes.inc
+    frontend/ir/patch.cpp
+    frontend/ir/patch.h
     frontend/ir/post_order.cpp
     frontend/ir/post_order.h
     frontend/ir/pred.h

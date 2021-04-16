@@ -685,6 +685,19 @@ VkCullModeFlagBits CullFace(Maxwell::CullFace cull_face) {
     return {};
 }
 
+VkPolygonMode PolygonMode(Maxwell::PolygonMode polygon_mode) {
+    switch (polygon_mode) {
+    case Maxwell::PolygonMode::Point:
+        return VK_POLYGON_MODE_POINT;
+    case Maxwell::PolygonMode::Line:
+        return VK_POLYGON_MODE_LINE;
+    case Maxwell::PolygonMode::Fill:
+        return VK_POLYGON_MODE_FILL;
+    }
+    UNIMPLEMENTED_MSG("Unimplemented polygon mode={}", polygon_mode);
+    return {};
+}
+
 VkComponentSwizzle SwizzleSource(Tegra::Texture::SwizzleSource swizzle) {
     switch (swizzle) {
     case Tegra::Texture::SwizzleSource::Zero:

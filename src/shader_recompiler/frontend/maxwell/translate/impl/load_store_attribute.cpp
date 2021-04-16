@@ -70,12 +70,6 @@ void TranslatorVisitor::ALD(u64 insn) {
         BitField<47, 2, Size> size;
     } const ald{insn};
 
-    if (ald.o != 0) {
-        throw NotImplementedException("O");
-    }
-    if (ald.patch != 0) {
-        throw NotImplementedException("P");
-    }
     const u64 offset{ald.absolute_offset.Value()};
     if (offset % 4 != 0) {
         throw NotImplementedException("Unaligned absolute offset {}", offset);
@@ -84,10 +78,18 @@ void TranslatorVisitor::ALD(u64 insn) {
     const u32 num_elements{NumElements(ald.size)};
     if (ald.index_reg == IR::Reg::RZ) {
         for (u32 element = 0; element < num_elements; ++element) {
-            const IR::Attribute attr{offset / 4 + element};
-            F(ald.dest_reg + element, ir.GetAttribute(attr, vertex));
+            if (ald.patch != 0) {
+                const IR::Patch patch{offset / 4 + element};
+                F(ald.dest_reg + element, ir.GetPatch(patch));
+            } else {
+                const IR::Attribute attr{offset / 4 + element};
+                F(ald.dest_reg + element, ir.GetAttribute(attr, vertex));
+            }
         }
         return;
+    }
+    if (ald.patch != 0) {
+        throw NotImplementedException("Indirect patch read");
     }
     HandleIndexed(*this, ald.index_reg, num_elements, [&](u32 element, IR::U32 final_offset) {
         F(ald.dest_reg + element, ir.GetAttributeIndexed(final_offset, vertex));
@@ -106,9 +108,6 @@ void TranslatorVisitor::AST(u64 insn) {
         BitField<47, 2, Size> size;
     } const ast{insn};
 
-    if (ast.patch != 0) {
-        throw NotImplementedException("P");
-    }
     if (ast.index_reg != IR::Reg::RZ) {
         throw NotImplementedException("Indexed store");
     }
@@ -120,10 +119,18 @@ void TranslatorVisitor::AST(u64 insn) {
     const u32 num_elements{NumElements(ast.size)};
     if (ast.index_reg == IR::Reg::RZ) {
         for (u32 element = 0; element < num_elements; ++element) {
-            const IR::Attribute attr{offset / 4 + element};
-            ir.SetAttribute(attr, F(ast.src_reg + element), vertex);
+            if (ast.patch != 0) {
+                const IR::Patch patch{offset / 4 + element};
+                ir.SetPatch(patch, F(ast.src_reg + element));
+            } else {
+                const IR::Attribute attr{offset / 4 + element};
+                ir.SetAttribute(attr, F(ast.src_reg + element), vertex);
+            }
         }
         return;
+    }
+    if (ast.patch != 0) {
+        throw NotImplementedException("Indexed tessellation patch store");
     }
     HandleIndexed(*this, ast.index_reg, num_elements, [&](u32 element, IR::U32 final_offset) {
         ir.SetAttributeIndexed(final_offset, F(ast.src_reg + element), vertex);

@@ -355,7 +355,8 @@ void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pa
             static_cast<VkBool32>(state.depth_clamp_disabled == 0 ? VK_TRUE : VK_FALSE),
         .rasterizerDiscardEnable =
             static_cast<VkBool32>(state.rasterize_enable == 0 ? VK_TRUE : VK_FALSE),
-        .polygonMode = VK_POLYGON_MODE_FILL,
+        .polygonMode =
+            MaxwellToVK::PolygonMode(FixedPipelineState::UnpackPolygonMode(state.polygon_mode)),
         .cullMode = static_cast<VkCullModeFlags>(
             dynamic.cull_enable ? MaxwellToVK::CullFace(dynamic.CullFace()) : VK_CULL_MODE_NONE),
         .frontFace = MaxwellToVK::FrontFace(dynamic.FrontFace()),

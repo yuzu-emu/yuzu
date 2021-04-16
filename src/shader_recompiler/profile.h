@@ -38,6 +38,18 @@ enum class CompareFunction {
     Always,
 };
 
+enum class TessPrimitive {
+    Isolines,
+    Triangles,
+    Quads,
+};
+
+enum class TessSpacing {
+    Equal,
+    FractionalOdd,
+    FractionalEven,
+};
+
 struct TransformFeedbackVarying {
     u32 buffer{};
     u32 stride{};
@@ -73,6 +85,10 @@ struct Profile {
     std::array<AttributeType, 32> generic_input_types{};
     bool convert_depth_mode{};
     bool force_early_z{};
+
+    TessPrimitive tess_primitive{};
+    TessSpacing tess_spacing{};
+    bool tess_clockwise{};
 
     InputTopology input_topology{};
 

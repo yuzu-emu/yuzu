@@ -9,6 +9,7 @@
 #include "shader_recompiler/frontend/ir/attribute.h"
 #include "shader_recompiler/frontend/ir/pred.h"
 #include "shader_recompiler/frontend/ir/reg.h"
+#include "shader_recompiler/frontend/ir/patch.h"
 #include "shader_recompiler/frontend/ir/type.h"
 
 namespace Shader::IR {
@@ -24,6 +25,7 @@ public:
     explicit Value(IR::Reg value) noexcept;
     explicit Value(IR::Pred value) noexcept;
     explicit Value(IR::Attribute value) noexcept;
+    explicit Value(IR::Patch value) noexcept;
     explicit Value(bool value) noexcept;
     explicit Value(u8 value) noexcept;
     explicit Value(u16 value) noexcept;
@@ -46,6 +48,7 @@ public:
     [[nodiscard]] IR::Reg Reg() const;
     [[nodiscard]] IR::Pred Pred() const;
     [[nodiscard]] IR::Attribute Attribute() const;
+    [[nodiscard]] IR::Patch Patch() const;
     [[nodiscard]] bool U1() const;
     [[nodiscard]] u8 U8() const;
     [[nodiscard]] u16 U16() const;
@@ -67,6 +70,7 @@ private:
         IR::Reg reg;
         IR::Pred pred;
         IR::Attribute attribute;
+        IR::Patch patch;
         bool imm_u1;
         u8 imm_u8;
         u16 imm_u16;

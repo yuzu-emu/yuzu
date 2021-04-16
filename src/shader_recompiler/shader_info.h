@@ -101,8 +101,10 @@ struct Info {
 
     bool uses_workgroup_id{};
     bool uses_local_invocation_id{};
+    bool uses_invocation_id{};
     bool uses_is_helper_invocation{};
     bool uses_subgroup_invocation_id{};
+    std::array<bool, 30> uses_patches{};
 
     std::array<InputVarying, 32> input_generics{};
     bool loads_position{};
@@ -110,6 +112,7 @@ struct Info {
     bool loads_vertex_id{};
     bool loads_front_face{};
     bool loads_point_coord{};
+    bool loads_tess_coord{};
     bool loads_indexed_attributes{};
 
     std::array<bool, 8> stores_frag_color{};
@@ -120,6 +123,8 @@ struct Info {
     bool stores_clip_distance{};
     bool stores_layer{};
     bool stores_viewport_index{};
+    bool stores_tess_level_outer{};
+    bool stores_tess_level_inner{};
     bool stores_indexed_attributes{};
 
     bool uses_fp16{};
