@@ -211,7 +211,7 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
     }
     switch (attr) {
     case IR::Attribute::PrimitiveId:
-        return ctx.OpLoad(ctx.U32[1], ctx.primitive_id);
+        return ctx.OpBitcast(ctx.F32[1], ctx.OpLoad(ctx.U32[1], ctx.primitive_id));
     case IR::Attribute::PositionX:
     case IR::Attribute::PositionY:
     case IR::Attribute::PositionZ:
@@ -220,17 +220,19 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
             ctx.F32[1], AttrPointer(ctx, ctx.input_f32, vertex, ctx.input_position, element_id()));
     case IR::Attribute::InstanceId:
         if (ctx.profile.support_vertex_instance_id) {
-            return ctx.OpLoad(ctx.U32[1], ctx.instance_id);
+            return ctx.OpBitcast(ctx.F32[1], ctx.OpLoad(ctx.U32[1], ctx.instance_id));
         } else {
-            return ctx.OpISub(ctx.U32[1], ctx.OpLoad(ctx.U32[1], ctx.instance_index),
-                              ctx.OpLoad(ctx.U32[1], ctx.base_instance));
+            const Id index{ctx.OpLoad(ctx.U32[1], ctx.instance_index)};
+            const Id base{ctx.OpLoad(ctx.U32[1], ctx.base_instance)};
+            return ctx.OpBitcast(ctx.F32[1], ctx.OpISub(ctx.U32[1], index, base));
         }
     case IR::Attribute::VertexId:
         if (ctx.profile.support_vertex_instance_id) {
-            return ctx.OpLoad(ctx.U32[1], ctx.vertex_id);
+            return ctx.OpBitcast(ctx.F32[1], ctx.OpLoad(ctx.U32[1], ctx.vertex_id));
         } else {
-            return ctx.OpISub(ctx.U32[1], ctx.OpLoad(ctx.U32[1], ctx.vertex_index),
-                              ctx.OpLoad(ctx.U32[1], ctx.base_vertex));
+            const Id index{ctx.OpLoad(ctx.U32[1], ctx.vertex_index)};
+            const Id base{ctx.OpLoad(ctx.U32[1], ctx.base_vertex)};
+            return ctx.OpBitcast(ctx.F32[1], ctx.OpISub(ctx.U32[1], index, base));
         }
     case IR::Attribute::FrontFace:
         return ctx.OpSelect(ctx.U32[1], ctx.OpLoad(ctx.U1, ctx.front_face),
