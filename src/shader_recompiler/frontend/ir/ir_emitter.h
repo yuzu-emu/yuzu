@@ -88,6 +88,7 @@ public:
     void SetPatch(Patch patch, const F32& value);
 
     void SetFragColor(u32 index, u32 component, const F32& value);
+    void SetSampleMask(const U32& value);
     void SetFragDepth(const F32& value);
 
     [[nodiscard]] U32 WorkgroupIdX();

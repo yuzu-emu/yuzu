@@ -343,6 +343,10 @@ void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, Id value) {
     ctx.OpStore(pointer, value);
 }
 
+void EmitSetSampleMask(EmitContext& ctx, Id value) {
+    ctx.OpStore(ctx.sample_mask, value);
+}
+
 void EmitSetFragDepth(EmitContext& ctx, Id value) {
     ctx.OpStore(ctx.frag_depth, value);
 }

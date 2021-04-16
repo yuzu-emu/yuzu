@@ -118,6 +118,7 @@ struct Info {
     bool loads_indexed_attributes{};
 
     std::array<bool, 8> stores_frag_color{};
+    bool stores_sample_mask{};
     bool stores_frag_depth{};
     std::array<bool, 32> stores_generics{};
     bool stores_position{};

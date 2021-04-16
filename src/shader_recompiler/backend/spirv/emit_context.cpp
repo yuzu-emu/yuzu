@@ -1179,7 +1179,10 @@ void EmitContext::DefineOutputs(const IR::Program& program) {
         if (info.stores_frag_depth) {
             frag_depth = DefineOutput(*this, F32[1], std::nullopt);
             Decorate(frag_depth, spv::Decoration::BuiltIn, spv::BuiltIn::FragDepth);
-            Name(frag_depth, "frag_depth");
+        }
+        if (info.stores_sample_mask) {
+            sample_mask = DefineOutput(*this, U32[1], std::nullopt);
+            Decorate(sample_mask, spv::Decoration::BuiltIn, spv::BuiltIn::SampleMask);
         }
         break;
     default:

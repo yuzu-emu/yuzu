@@ -22,7 +22,7 @@ void ExitFragment(TranslatorVisitor& v) {
         }
     }
     if (sph.ps.omap.sample_mask != 0) {
-        throw NotImplementedException("Sample mask");
+        v.ir.SetSampleMask(v.X(src_reg));
     }
     if (sph.ps.omap.depth != 0) {
         v.ir.SetFragDepth(v.F(src_reg + 1));

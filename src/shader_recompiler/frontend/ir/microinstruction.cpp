@@ -75,6 +75,7 @@ bool Inst::MayHaveSideEffects() const noexcept {
     case Opcode::SetAttributeIndexed:
     case Opcode::SetPatch:
     case Opcode::SetFragColor:
+    case Opcode::SetSampleMask:
     case Opcode::SetFragDepth:
     case Opcode::WriteGlobalU8:
     case Opcode::WriteGlobalS8:

@@ -403,6 +403,9 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::SetFragColor:
         info.stores_frag_color[inst.Arg(0).U32()] = true;
         break;
+    case IR::Opcode::SetSampleMask:
+        info.stores_sample_mask = true;
+        break;
     case IR::Opcode::SetFragDepth:
         info.stores_frag_depth = true;
         break;

@@ -215,6 +215,7 @@ public:
     std::array<Id, 30> patches{};
 
     std::array<Id, 8> frag_color{};
+    Id sample_mask{};
     Id frag_depth{};
 
     std::vector<Id> interfaces;
