@@ -34,6 +34,9 @@ void GetAttribute(Info& info, IR::Attribute attribute) {
         return;
     }
     switch (attribute) {
+    case IR::Attribute::PrimitiveId:
+        info.loads_primitive_id = true;
+        break;
     case IR::Attribute::PositionX:
     case IR::Attribute::PositionY:
     case IR::Attribute::PositionZ:

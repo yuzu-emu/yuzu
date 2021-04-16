@@ -107,6 +107,7 @@ struct Info {
     std::array<bool, 30> uses_patches{};
 
     std::array<InputVarying, 32> input_generics{};
+    bool loads_primitive_id{};
     bool loads_position{};
     bool loads_instance_id{};
     bool loads_vertex_id{};

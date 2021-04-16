@@ -210,6 +210,8 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
         return type->needs_cast ? ctx.OpBitcast(ctx.F32[1], value) : value;
     }
     switch (attr) {
+    case IR::Attribute::PrimitiveId:
+        return ctx.OpLoad(ctx.U32[1], ctx.primitive_id);
     case IR::Attribute::PositionX:
     case IR::Attribute::PositionY:
     case IR::Attribute::PositionZ:

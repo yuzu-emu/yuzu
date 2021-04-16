@@ -1021,6 +1021,9 @@ void EmitContext::DefineInputs(const Info& info) {
         fswzadd_lut_b =
             ConstantComposite(F32[4], f32_minus_one, f32_minus_one, f32_one, f32_minus_one);
     }
+    if (info.loads_primitive_id) {
+        primitive_id = DefineInput(*this, U32[1], false, spv::BuiltIn::PrimitiveId);
+    }
     if (info.loads_position) {
         const bool is_fragment{stage != Stage::Fragment};
         const spv::BuiltIn built_in{is_fragment ? spv::BuiltIn::Position : spv::BuiltIn::FragCoord};

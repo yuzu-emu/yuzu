@@ -167,6 +167,7 @@ public:
     Id clip_distances{};
     Id layer{};
     Id viewport_index{};
+    Id primitive_id{};
 
     Id fswzadd_lut_a{};
     Id fswzadd_lut_b{};
