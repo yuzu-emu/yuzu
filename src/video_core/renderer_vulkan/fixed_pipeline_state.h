@@ -202,6 +202,7 @@ struct FixedPipelineState {
         BitField<3, 1, u32> early_z;
         BitField<4, 1, u32> depth_enabled;
         BitField<5, 5, u32> depth_format;
+        BitField<10, 1, u32> y_negate;
     };
     std::array<u8, Maxwell::NumRenderTargets> color_formats;
 

@@ -82,6 +82,8 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
     alpha_test_ref = Common::BitCast<u32>(regs.alpha_test_ref);
     point_size = Common::BitCast<u32>(regs.point_size);
 
+    y_negate.Assign(regs.screen_y_control.y_negate != 0 ? 1 : 0);
+
     if (maxwell3d.dirty.flags[Dirty::InstanceDivisors]) {
         maxwell3d.dirty.flags[Dirty::InstanceDivisors] = false;
         for (size_t index = 0; index < Maxwell::NumVertexArrays; ++index) {
