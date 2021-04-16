@@ -51,6 +51,7 @@ OPCODE(SetAttributeIndexed,                                 Void,           U32,
 OPCODE(GetPatch,                                            F32,            Patch,                                                                          )
 OPCODE(SetPatch,                                            Void,           Patch,          F32,                                                            )
 OPCODE(SetFragColor,                                        Void,           U32,            U32,            F32,                                            )
+OPCODE(SetSampleMask,                                       Void,           U32,                                                                            )
 OPCODE(SetFragDepth,                                        Void,           F32,                                                                            )
 OPCODE(GetZFlag,                                            U1,             Void,                                                                           )
 OPCODE(GetSFlag,                                            U1,             Void,                                                                           )

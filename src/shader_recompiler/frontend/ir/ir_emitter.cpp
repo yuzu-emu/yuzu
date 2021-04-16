@@ -343,6 +343,10 @@ void IREmitter::SetFragColor(u32 index, u32 component, const F32& value) {
     Inst(Opcode::SetFragColor, Imm32(index), Imm32(component), value);
 }
 
+void IREmitter::SetSampleMask(const U32& value) {
+    Inst(Opcode::SetSampleMask, value);
+}
+
 void IREmitter::SetFragDepth(const F32& value) {
     Inst(Opcode::SetFragDepth, value);
 }
