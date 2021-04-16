@@ -457,6 +457,7 @@ void EmitContext::DefineCommonTypes(const Info& info) {
     input_s32 = Name(TypePointer(spv::StorageClass::Input, TypeInt(32, true)), "input_s32");
 
     output_f32 = Name(TypePointer(spv::StorageClass::Output, F32[1]), "output_f32");
+    output_u32 = Name(TypePointer(spv::StorageClass::Output, U32[1]), "output_u32");
 
     if (info.uses_int8) {
         AddCapability(spv::Capability::Int8);
@@ -1130,6 +1131,9 @@ void EmitContext::DefineOutputs(const IR::Program& program) {
             throw NotImplementedException("Storing ViewportIndex in fragment stage");
         }
         viewport_index = DefineOutput(*this, U32[1], invocations, spv::BuiltIn::ViewportIndex);
+    }
+    if (info.stores_viewport_mask && profile.support_viewport_mask) {
+        viewport_mask = DefineOutput(*this, TypeArray(U32[1], Constant(U32[1], 1u)), std::nullopt);
     }
     for (size_t index = 0; index < info.stores_generics.size(); ++index) {
         if (info.stores_generics[index]) {

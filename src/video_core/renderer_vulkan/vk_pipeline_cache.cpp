@@ -690,6 +690,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
         .support_vote = true,
         .support_viewport_index_layer_non_geometry =
             device.IsExtShaderViewportIndexLayerSupported(),
+        .support_viewport_mask = device.IsNvViewportArray2Supported(),
         .support_typeless_image_loads = device.IsFormatlessImageLoadSupported(),
         .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyBiggerThanGuest(),
         .support_int64_atomics = device.IsExtShaderAtomicInt64Supported(),

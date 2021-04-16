@@ -99,6 +99,11 @@ std::optional<Id> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
                        ctx.stage == Shader::Stage::Geometry
                    ? std::optional<Id>{ctx.viewport_index}
                    : std::nullopt;
+    case IR::Attribute::ViewportMask:
+        if (!ctx.profile.support_viewport_mask) {
+            return std::nullopt;
+        }
+        return ctx.OpAccessChain(ctx.output_u32, ctx.viewport_mask, ctx.u32_zero_value);
     default:
         throw NotImplementedException("Read attribute {}", attr);
     }
