@@ -52,7 +52,15 @@ Id OutputAccessChain(EmitContext& ctx, Id result_type, Id base, Args&&... args) 
     }
 }
 
-std::optional<Id> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
+struct OutAttr {
+    OutAttr(Id pointer_) : pointer{pointer_} {}
+    OutAttr(Id pointer_, Id type_) : pointer{pointer_}, type{type_} {}
+
+    Id pointer{};
+    Id type{};
+};
+
+std::optional<OutAttr> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
         const u32 element{IR::GenericAttributeElement(attr)};
@@ -90,20 +98,23 @@ std::optional<Id> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
         return OutputAccessChain(ctx, ctx.output_f32, ctx.clip_distances, clip_num);
     }
     case IR::Attribute::Layer:
-        return ctx.profile.support_viewport_index_layer_non_geometry ||
-                       ctx.stage == Shader::Stage::Geometry
-                   ? std::optional<Id>{ctx.layer}
-                   : std::nullopt;
+        if (ctx.profile.support_viewport_index_layer_non_geometry ||
+            ctx.stage == Shader::Stage::Geometry) {
+            return OutAttr{ctx.layer, ctx.U32[1]};
+        }
+        return std::nullopt;
     case IR::Attribute::ViewportIndex:
-        return ctx.profile.support_viewport_index_layer_non_geometry ||
-                       ctx.stage == Shader::Stage::Geometry
-                   ? std::optional<Id>{ctx.viewport_index}
-                   : std::nullopt;
+        if (ctx.profile.support_viewport_index_layer_non_geometry ||
+            ctx.stage == Shader::Stage::Geometry) {
+            return OutAttr{ctx.viewport_index, ctx.U32[1]};
+        }
+        return std::nullopt;
     case IR::Attribute::ViewportMask:
         if (!ctx.profile.support_viewport_mask) {
             return std::nullopt;
         }
-        return ctx.OpAccessChain(ctx.output_u32, ctx.viewport_mask, ctx.u32_zero_value);
+        return OutAttr{ctx.OpAccessChain(ctx.output_u32, ctx.viewport_mask, ctx.u32_zero_value),
+                       ctx.U32[1]};
     default:
         throw NotImplementedException("Read attribute {}", attr);
     }
@@ -262,10 +273,14 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
 }
 
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value, [[maybe_unused]] Id vertex) {
-    const std::optional<Id> output{OutputAttrPointer(ctx, attr)};
-    if (output) {
-        ctx.OpStore(*output, value);
+    const std::optional<OutAttr> output{OutputAttrPointer(ctx, attr)};
+    if (!output) {
+        return;
     }
+    if (Sirit::ValidId(output->type)) {
+        value = ctx.OpBitcast(output->type, value);
+    }
+    ctx.OpStore(output->pointer, value);
 }
 
 Id EmitGetAttributeIndexed(EmitContext& ctx, Id offset, Id vertex) {
