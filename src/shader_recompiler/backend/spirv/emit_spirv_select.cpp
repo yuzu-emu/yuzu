@@ -10,8 +10,7 @@ Id EmitSelectU1(EmitContext& ctx, Id cond, Id true_value, Id false_value) {
     return ctx.OpSelect(ctx.U1, cond, true_value, false_value);
 }
 
-Id EmitSelectU8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Id cond,
-                [[maybe_unused]] Id true_value, [[maybe_unused]] Id false_value) {
+Id EmitSelectU8(EmitContext&, Id, Id, Id) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
