@@ -18,10 +18,6 @@ void BFE(TranslatorVisitor& v, u64 insn, const IR::U32& src) {
         BitField<48, 1, u64> is_signed;
     } const bfe{insn};
 
-    if (bfe.cc != 0) {
-        throw NotImplementedException("BFE CC");
-    }
-
     const IR::U32 offset{v.ir.BitFieldExtract(src, v.ir.Imm32(0), v.ir.Imm32(8), false)};
     const IR::U32 count{v.ir.BitFieldExtract(src, v.ir.Imm32(8), v.ir.Imm32(8), false)};
 
@@ -53,6 +49,13 @@ void BFE(TranslatorVisitor& v, u64 insn, const IR::U32& src) {
     result = IR::U32{v.ir.Select(zero_count, zero, result)};
 
     v.X(bfe.dest_reg, result);
+
+    if (bfe.cc != 0) {
+        v.SetZFlag(v.ir.IEqual(result, zero));
+        v.SetSFlag(v.ir.ILessThan(result, zero, true));
+        v.ResetCFlag();
+        v.ResetOFlag();
+    }
 }
 } // Anonymous namespace
 
