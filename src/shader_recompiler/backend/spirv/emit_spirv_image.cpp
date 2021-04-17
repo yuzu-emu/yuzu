@@ -12,7 +12,7 @@ namespace {
 class ImageOperands {
 public:
     explicit ImageOperands(EmitContext& ctx, bool has_bias, bool has_lod, bool has_lod_clamp,
-                           Id lod, Id offset) {
+                           Id lod, const IR::Value& offset) {
         if (has_bias) {
             const Id bias{has_lod_clamp ? ctx.OpCompositeExtract(ctx.F32[1], lod, 0) : lod};
             Add(spv::ImageOperandsMask::Bias, bias);
@@ -21,9 +21,7 @@ public:
             const Id lod_value{has_lod_clamp ? ctx.OpCompositeExtract(ctx.F32[1], lod, 0) : lod};
             Add(spv::ImageOperandsMask::Lod, lod_value);
         }
-        if (Sirit::ValidId(offset)) {
-            Add(spv::ImageOperandsMask::Offset, offset);
-        }
+        AddOffset(ctx, offset);
         if (has_lod_clamp) {
             const Id lod_clamp{has_bias ? ctx.OpCompositeExtract(ctx.F32[1], lod, 1) : lod};
             Add(spv::ImageOperandsMask::MinLod, lod_clamp);
@@ -96,6 +94,46 @@ public:
         }
     }
 
+    std::span<const Id> Span() const noexcept {
+        return std::span{operands.data(), operands.size()};
+    }
+
+    spv::ImageOperandsMask Mask() const noexcept {
+        return mask;
+    }
+
+private:
+    void AddOffset(EmitContext& ctx, const IR::Value& offset) {
+        if (offset.IsEmpty()) {
+            return;
+        }
+        if (offset.IsImmediate()) {
+            Add(spv::ImageOperandsMask::ConstOffset, ctx.Constant(ctx.U32[1], offset.U32()));
+            return;
+        }
+        IR::Inst* const inst{offset.InstRecursive()};
+        if (inst->AreAllArgsImmediates()) {
+            switch (inst->GetOpcode()) {
+            case IR::Opcode::CompositeConstructU32x2:
+                Add(spv::ImageOperandsMask::ConstOffset,
+                    ctx.Const(inst->Arg(0).U32(), inst->Arg(1).U32()));
+                return;
+            case IR::Opcode::CompositeConstructU32x3:
+                Add(spv::ImageOperandsMask::ConstOffset,
+                    ctx.Const(inst->Arg(0).U32(), inst->Arg(1).U32(), inst->Arg(2).U32()));
+                return;
+            case IR::Opcode::CompositeConstructU32x4:
+                Add(spv::ImageOperandsMask::ConstOffset,
+                    ctx.Const(inst->Arg(0).U32(), inst->Arg(1).U32(), inst->Arg(2).U32(),
+                              inst->Arg(3).U32()));
+                return;
+            default:
+                break;
+            }
+        }
+        Add(spv::ImageOperandsMask::Offset, ctx.Def(offset));
+    }
+
     void Add(spv::ImageOperandsMask new_mask, Id value) {
         mask = static_cast<spv::ImageOperandsMask>(static_cast<unsigned>(mask) |
                                                    static_cast<unsigned>(new_mask));
@@ -109,15 +147,6 @@ public:
         operands.push_back(value_2);
     }
 
-    std::span<const Id> Span() const noexcept {
-        return std::span{operands.data(), operands.size()};
-    }
-
-    spv::ImageOperandsMask Mask() const noexcept {
-        return mask;
-    }
-
-private:
     boost::container::static_vector<Id, 4> operands;
     spv::ImageOperandsMask mask{};
 };
@@ -279,7 +308,7 @@ Id EmitBoundImageWrite(EmitContext&) {
 }
 
 Id EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
-                              Id bias_lc, Id offset) {
+                              Id bias_lc, const IR::Value& offset) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
     const ImageOperands operands(ctx, info.has_bias != 0, false, info.has_lod_clamp != 0, bias_lc,
                                  offset);
@@ -289,7 +318,7 @@ Id EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value&
 }
 
 Id EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
-                              Id lod_lc, Id offset) {
+                              Id lod_lc, const IR::Value& offset) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
     const ImageOperands operands(ctx, false, true, info.has_lod_clamp != 0, lod_lc, offset);
     return Emit(&EmitContext::OpImageSparseSampleExplicitLod,
@@ -298,7 +327,7 @@ Id EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value&
 }
 
 Id EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                                  Id coords, Id dref, Id bias_lc, Id offset) {
+                                  Id coords, Id dref, Id bias_lc, const IR::Value& offset) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
     const ImageOperands operands(ctx, info.has_bias != 0, false, info.has_lod_clamp != 0, bias_lc,
                                  offset);
@@ -308,7 +337,7 @@ Id EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Va
 }
 
 Id EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                                  Id coords, Id dref, Id lod_lc, Id offset) {
+                                  Id coords, Id dref, Id lod_lc, const IR::Value& offset) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
     const ImageOperands operands(ctx, false, true, info.has_lod_clamp != 0, lod_lc, offset);
     return Emit(&EmitContext::OpImageSparseSampleDrefExplicitLod,
