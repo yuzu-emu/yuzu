@@ -490,13 +490,13 @@ Id EmitBoundImageGradient(EmitContext&);
 Id EmitBoundImageRead(EmitContext&);
 Id EmitBoundImageWrite(EmitContext&);
 Id EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
-                              Id bias_lc, Id offset);
+                              Id bias_lc, const IR::Value& offset);
 Id EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
-                              Id lod_lc, Id offset);
+                              Id lod_lc, const IR::Value& offset);
 Id EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                                  Id coords, Id dref, Id bias_lc, Id offset);
+                                  Id coords, Id dref, Id bias_lc, const IR::Value& offset);
 Id EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                                  Id coords, Id dref, Id lod_lc, Id offset);
+                                  Id coords, Id dref, Id lod_lc, const IR::Value& offset);
 Id EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
                    const IR::Value& offset, const IR::Value& offset2);
 Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,

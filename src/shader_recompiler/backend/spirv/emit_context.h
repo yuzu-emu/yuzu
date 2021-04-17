@@ -97,6 +97,23 @@ public:
 
     [[nodiscard]] Id Def(const IR::Value& value);
 
+    Id Const(u32 value) {
+        return Constant(U32[1], value);
+    }
+
+    Id Const(u32 element_1, u32 element_2) {
+        return ConstantComposite(U32[2], Const(element_1), Const(element_2));
+    }
+
+    Id Const(u32 element_1, u32 element_2, u32 element_3) {
+        return ConstantComposite(U32[3], Const(element_1), Const(element_2), Const(element_3));
+    }
+
+    Id Const(u32 element_1, u32 element_2, u32 element_3, u32 element_4) {
+        return ConstantComposite(U32[2], Const(element_1), Const(element_2), Const(element_3),
+                                 Const(element_4));
+    }
+
     const Profile& profile;
     Stage stage{};
 
