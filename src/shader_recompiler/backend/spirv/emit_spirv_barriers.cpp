@@ -7,7 +7,7 @@
 
 namespace Shader::Backend::SPIRV {
 namespace {
-void EmitMemoryBarrierImpl(EmitContext& ctx, spv::Scope scope) {
+void MemoryBarrier(EmitContext& ctx, spv::Scope scope) {
     const auto semantics{
         spv::MemorySemanticsMask::AcquireRelease | spv::MemorySemanticsMask::UniformMemory |
         spv::MemorySemanticsMask::WorkgroupMemory | spv::MemorySemanticsMask::AtomicCounterMemory |
@@ -27,16 +27,12 @@ void EmitBarrier(EmitContext& ctx) {
                          ctx.Constant(ctx.U32[1], static_cast<u32>(memory_semantics)));
 }
 
-void EmitMemoryBarrierWorkgroupLevel(EmitContext& ctx) {
-    EmitMemoryBarrierImpl(ctx, spv::Scope::Workgroup);
+void EmitWorkgroupMemoryBarrier(EmitContext& ctx) {
+    MemoryBarrier(ctx, spv::Scope::Workgroup);
 }
 
-void EmitMemoryBarrierDeviceLevel(EmitContext& ctx) {
-    EmitMemoryBarrierImpl(ctx, spv::Scope::Device);
-}
-
-void EmitMemoryBarrierSystemLevel(EmitContext& ctx) {
-    EmitMemoryBarrierImpl(ctx, spv::Scope::CrossDevice);
+void EmitDeviceMemoryBarrier(EmitContext& ctx) {
+    MemoryBarrier(ctx, spv::Scope::Device);
 }
 
 } // namespace Shader::Backend::SPIRV

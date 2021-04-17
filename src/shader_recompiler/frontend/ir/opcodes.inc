@@ -18,9 +18,8 @@ OPCODE(DemoteToHelperInvocation,                            Void,           Labe
 
 // Barriers
 OPCODE(Barrier,                                             Void,                                                                                           )
-OPCODE(MemoryBarrierWorkgroupLevel,                         Void,                                                                                           )
-OPCODE(MemoryBarrierDeviceLevel,                            Void,                                                                                           )
-OPCODE(MemoryBarrierSystemLevel,                            Void,                                                                                           )
+OPCODE(WorkgroupMemoryBarrier,                              Void,                                                                                           )
+OPCODE(DeviceMemoryBarrier,                                 Void,                                                                                           )
 
 // Special operations
 OPCODE(Prologue,                                            Void,                                                                                           )
