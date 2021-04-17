@@ -533,4 +533,8 @@ Id EmitDPdxFine(EmitContext& ctx, Id op_a);
 
 Id EmitDPdyFine(EmitContext& ctx, Id op_a);
 
+Id EmitDPdxCoarse(EmitContext& ctx, Id op_a);
+
+Id EmitDPdyCoarse(EmitContext& ctx, Id op_a);
+
 } // namespace Shader::Backend::SPIRV

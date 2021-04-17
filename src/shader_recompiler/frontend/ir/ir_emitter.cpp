@@ -1933,4 +1933,12 @@ F32 IREmitter::DPdyFine(const F32& a) {
     return Inst<F32>(Opcode::DPdyFine, a);
 }
 
+F32 IREmitter::DPdxCoarse(const F32& a) {
+    return Inst<F32>(Opcode::DPdxCoarse, a);
+}
+
+F32 IREmitter::DPdyCoarse(const F32& a) {
+    return Inst<F32>(Opcode::DPdyCoarse, a);
+}
+
 } // namespace Shader::IR
