@@ -187,7 +187,7 @@ add_library(common STATIC
     zstd_compression.h
 )
 
-if(ARCHITECTURE_x86_64)
+if(ARCHITECTURE STREQUAL "x86_64")
     target_sources(common
         PRIVATE
             x64/cpu_detect.cpp
@@ -220,7 +220,13 @@ endif()
 create_target_directory_groups(common)
 
 target_link_libraries(common PUBLIC ${Boost_LIBRARIES} fmt::fmt microprofile)
-target_link_libraries(common PRIVATE lz4::lz4 xbyak)
+target_link_libraries(common PRIVATE lz4::lz4)
+if (ARCHITECTURE STREQUAL "x86_64")
+    target_link_libraries(common PRIVATE xbyak)
+elseif(ARCHITECTURE STREQUAL "arm64")
+    target_link_libraries(common PRIVATE xbyak_aarch64)
+endif()
+
 if (MSVC)
   target_link_libraries(common PRIVATE zstd::zstd)
 else()

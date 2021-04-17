@@ -21,7 +21,7 @@ PhysicalCore::PhysicalCore(std::size_t core_index, Core::System& system,
 PhysicalCore::~PhysicalCore() = default;
 
 void PhysicalCore::Initialize([[maybe_unused]] bool is_64_bit) {
-#ifdef ARCHITECTURE_x86_64
+#if defined(ARCHITECTURE_x86_64) || defined(ARCHITECTURE_ARM64)
     auto& kernel = system.Kernel();
     if (is_64_bit) {
         arm_interface = std::make_unique<Core::ARM_Dynarmic_64>(

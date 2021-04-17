@@ -9,6 +9,10 @@ if (ARCHITECTURE_x86 OR ARCHITECTURE_x86_64)
     add_library(xbyak INTERFACE)
     target_include_directories(xbyak SYSTEM INTERFACE ./xbyak/xbyak)
     target_compile_definitions(xbyak INTERFACE XBYAK_NO_OP_NAMES)
+elseif(ARCHITECTURE_ARM64)
+    add_library(xbyak_aarch64 INTERFACE)
+    target_include_directories(xbyak_aarch64 SYSTEM INTERFACE ./xbyak_aarch64/xbyak_aarch64)
+    target_compile_definitions(xbyak_aarch64 INTERFACE XBYAK_NO_OP_NAMES)
 endif()
 
 # Catch
@@ -16,7 +20,7 @@ add_library(catch-single-include INTERFACE)
 target_include_directories(catch-single-include INTERFACE catch/single_include)
 
 # Dynarmic
-if (ARCHITECTURE_x86_64)
+if (ARCHITECTURE_x86_64 OR ARCHITECTURE_ARM64)
     set(DYNARMIC_TESTS OFF)
     set(DYNARMIC_NO_BUNDLED_FMT ON)
     add_subdirectory(dynarmic)

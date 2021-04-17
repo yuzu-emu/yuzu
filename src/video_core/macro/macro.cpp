@@ -11,8 +11,11 @@
 #include "video_core/macro/macro.h"
 #include "video_core/macro/macro_hle.h"
 #include "video_core/macro/macro_interpreter.h"
+#ifdef ARCHITECTURE_x86_64
 #include "video_core/macro/macro_jit_x64.h"
+#elif ARCHITECTURE_ARM64
 
+#endif
 namespace Tegra {
 
 MacroEngine::MacroEngine(Engines::Maxwell3D& maxwell3d)

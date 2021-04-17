@@ -6,7 +6,7 @@
     url = https://github.com/kinetiknz/cubeb.git
 [submodule "dynarmic"]
     path = externals/dynarmic
-    url = https://github.com/MerryMage/dynarmic.git
+    url = https://github.com/vricosti/dynarmic.git
 [submodule "soundtouch"]
     path = externals/soundtouch
     url = https://github.com/citra-emu/ext-soundtouch.git
@@ -40,3 +40,6 @@
 [submodule "ffmpeg"]
 	path = externals/ffmpeg
 	url = https://git.ffmpeg.org/ffmpeg.git
+[submodule "externals/xbyak_aarch64"]
+	path = externals/xbyak_aarch64
+	url = https://github.com/herumi/xbyak_aarch64.git

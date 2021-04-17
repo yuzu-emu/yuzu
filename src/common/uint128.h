@@ -7,6 +7,7 @@
 #include <cstring>
 #include <utility>
 
+#ifdef ARCHITECTURE_x86_64
 #ifdef _MSC_VER
 #include <intrin.h>
 #pragma intrinsic(__umulh)
@@ -14,6 +15,7 @@
 #pragma intrinsic(_udiv128)
 #else
 #include <x86intrin.h>
+#endif
 #endif
 
 #include "common/common_types.h"

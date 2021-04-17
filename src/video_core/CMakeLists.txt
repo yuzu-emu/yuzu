@@ -54,8 +54,6 @@ add_library(video_core STATIC
     macro/macro_hle.h
     macro/macro_interpreter.cpp
     macro/macro_interpreter.h
-    macro/macro_jit_x64.cpp
-    macro/macro_jit_x64.h
     fence_manager.h
     gpu.cpp
     gpu.h
@@ -261,10 +259,24 @@ add_library(video_core STATIC
     vulkan_common/nsight_aftermath_tracker.h
 )
 
+if(ARCHITECTURE_x86_64)
+    target_sources(video_core
+        PRIVATE
+            macro/macro_jit_x64.cpp
+            macro/macro_jit_x64.h
+    )
+endif()
+
 create_target_directory_groups(video_core)
 
 target_link_libraries(video_core PUBLIC common core)
-target_link_libraries(video_core PRIVATE glad xbyak)
+target_link_libraries(video_core PRIVATE glad)
+if (ARCHITECTURE_x86_64)
+    target_link_libraries(video_core PRIVATE xbyak)
+elseif(ARCHITECTURE_ARM64)
+    target_link_libraries(video_core PRIVATE xbyak_aarch64)
+endif()
+
 
 if (YUZU_USE_BUNDLED_FFMPEG AND NOT WIN32)
     add_dependencies(video_core ffmpeg-build)
