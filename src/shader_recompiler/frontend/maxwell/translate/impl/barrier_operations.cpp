@@ -12,34 +12,24 @@ namespace Shader::Maxwell {
 namespace {
 // Seems to be in CUDA terminology.
 enum class LocalScope : u64 {
-    CTG = 0,
-    GL = 1,
-    SYS = 2,
-    VC = 3,
+    CTA,
+    GL,
+    SYS,
+    VC,
 };
-
-IR::MemoryScope LocalScopeToMemoryScope(LocalScope scope) {
-    switch (scope) {
-    case LocalScope::CTG:
-        return IR::MemoryScope::Workgroup;
-    case LocalScope::GL:
-        return IR::MemoryScope::Device;
-    case LocalScope::SYS:
-        return IR::MemoryScope::System;
-    default:
-        throw NotImplementedException("Unimplemented Local Scope {}", scope);
-    }
-}
-
 } // Anonymous namespace
 
 void TranslatorVisitor::MEMBAR(u64 inst) {
     union {
         u64 raw;
         BitField<8, 2, LocalScope> scope;
-    } membar{inst};
+    } const membar{inst};
 
-    ir.MemoryBarrier(LocalScopeToMemoryScope(membar.scope));
+    if (membar.scope == LocalScope::CTA) {
+        ir.WorkgroupMemoryBarrier();
+    } else {
+        ir.DeviceMemoryBarrier();
+    }
 }
 
 void TranslatorVisitor::DEPBAR() {
