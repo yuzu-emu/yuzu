@@ -176,6 +176,8 @@ public:
                 } else if (!sealed_blocks.contains(block)) {
                     // Incomplete CFG
                     IR::Inst* phi{&*block->PrependNewInst(block->begin(), IR::Opcode::Phi)};
+                    phi->SetFlags(IR::TypeOf(UndefOpcode(variable)));
+
                     incomplete_phis[block].insert_or_assign(variable, phi);
                     stack.back().result = IR::Value{&*phi};
                 } else if (const std::span imm_preds{block->ImmediatePredecessors()};
@@ -187,6 +189,8 @@ public:
                 } else {
                     // Break potential cycles with operandless phi
                     IR::Inst* const phi{&*block->PrependNewInst(block->begin(), IR::Opcode::Phi)};
+                    phi->SetFlags(IR::TypeOf(UndefOpcode(variable)));
+
                     WriteVariable(variable, block, IR::Value{phi});
 
                     stack.back().phi = phi;
