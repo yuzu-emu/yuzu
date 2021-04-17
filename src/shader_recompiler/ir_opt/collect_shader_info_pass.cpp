@@ -530,6 +530,10 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::FSwizzleAdd:
         info.uses_fswzadd = true;
         break;
+    case IR::Opcode::DPdxFine:
+    case IR::Opcode::DPdyFine:
+        info.uses_derivates = true;
+        break;
     case IR::Opcode::LoadStorageU8:
     case IR::Opcode::LoadStorageS8:
     case IR::Opcode::WriteStorageU8:

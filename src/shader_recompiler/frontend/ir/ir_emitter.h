@@ -353,6 +353,10 @@ public:
     [[nodiscard]] F32 FSwizzleAdd(const F32& a, const F32& b, const U32& swizzle,
                                   FpControl control = {});
 
+    [[nodiscard]] F32 DPdxFine(const F32& a);
+
+    [[nodiscard]] F32 DPdyFine(const F32& a);
+
 private:
     IR::Block::iterator insertion_point;
 

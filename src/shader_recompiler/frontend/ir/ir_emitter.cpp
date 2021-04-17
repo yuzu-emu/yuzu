@@ -1925,4 +1925,12 @@ F32 IREmitter::FSwizzleAdd(const F32& a, const F32& b, const U32& swizzle, FpCon
     return Inst<F32>(Opcode::FSwizzleAdd, Flags{control}, a, b, swizzle);
 }
 
+F32 IREmitter::DPdxFine(const F32& a) {
+    return Inst<F32>(Opcode::DPdxFine, a);
+}
+
+F32 IREmitter::DPdyFine(const F32& a) {
+    return Inst<F32>(Opcode::DPdyFine, a);
+}
+
 } // namespace Shader::IR
