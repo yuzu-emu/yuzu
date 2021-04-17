@@ -357,6 +357,10 @@ public:
 
     [[nodiscard]] F32 DPdyFine(const F32& a);
 
+    [[nodiscard]] F32 DPdxCoarse(const F32& a);
+
+    [[nodiscard]] F32 DPdyCoarse(const F32& a);
+
 private:
     IR::Block::iterator insertion_point;
 

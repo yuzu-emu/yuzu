@@ -191,4 +191,12 @@ Id EmitDPdyFine(EmitContext& ctx, Id op_a) {
     return ctx.OpDPdyFine(ctx.F32[1], op_a);
 }
 
+Id EmitDPdxCoarse(EmitContext& ctx, Id op_a) {
+    return ctx.OpDPdxCoarse(ctx.F32[1], op_a);
+}
+
+Id EmitDPdyCoarse(EmitContext& ctx, Id op_a) {
+    return ctx.OpDPdyCoarse(ctx.F32[1], op_a);
+}
+
 } // namespace Shader::Backend::SPIRV
