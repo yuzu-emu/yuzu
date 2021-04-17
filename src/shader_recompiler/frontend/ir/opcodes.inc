@@ -511,3 +511,5 @@ OPCODE(ShuffleUp,                                           U32,            U32,
 OPCODE(ShuffleDown,                                         U32,            U32,            U32,            U32,            U32,                            )
 OPCODE(ShuffleButterfly,                                    U32,            U32,            U32,            U32,            U32,                            )
 OPCODE(FSwizzleAdd,                                         F32,            F32,            F32,            U32,                                            )
+OPCODE(DPdxFine,                                            F32,            F32,                                                                            )
+OPCODE(DPdyFine,                                            F32,            F32,                                                                            )

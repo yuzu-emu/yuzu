@@ -412,6 +412,71 @@ void FoldCompositeExtract(IR::Inst& inst, IR::Opcode construct, IR::Opcode inser
     inst.ReplaceUsesWith(*result);
 }
 
+IR::Value GetThroughCast(IR::Value value, IR::Opcode expected_cast) {
+    if (value.IsImmediate()) {
+        return value;
+    }
+    IR::Inst* const inst{value.InstRecursive()};
+    if (inst->GetOpcode() == expected_cast) {
+        return inst->Arg(0).Resolve();
+    }
+    return value;
+}
+
+void FoldFSwizzleAdd(IR::Block& block, IR::Inst& inst) {
+    const IR::Value swizzle{inst.Arg(2)};
+    if (!swizzle.IsImmediate()) {
+        return;
+    }
+
+    const IR::Value value_1{GetThroughCast(inst.Arg(0).Resolve(), IR::Opcode::BitCastF32U32)};
+    const IR::Value value_2{GetThroughCast(inst.Arg(1).Resolve(), IR::Opcode::BitCastF32U32)};
+
+    if (value_1.IsImmediate()) {
+        return;
+    }
+
+    const u32 swizzle_value{swizzle.U32()};
+    if (swizzle_value != 0x99 && swizzle_value != 0xA5) {
+        return;
+    }
+
+    IR::Inst* const inst2{value_1.InstRecursive()};
+    if (inst2->GetOpcode() != IR::Opcode::ShuffleButterfly) {
+        return;
+    }
+    const IR::Value value_3{GetThroughCast(inst2->Arg(0).Resolve(), IR::Opcode::BitCastU32F32)};
+    if (value_2 != value_3) {
+        return;
+    }
+
+    const IR::Value index{inst2->Arg(1)};
+    const IR::Value clamp{inst2->Arg(2)};
+    const IR::Value segmentation_mask{inst2->Arg(3)};
+
+    if (!index.IsImmediate() || !clamp.IsImmediate() || !segmentation_mask.IsImmediate()) {
+        return;
+    }
+
+    if (clamp.U32() != 3 || segmentation_mask.U32() != 28) {
+        return;
+    }
+
+    if (swizzle_value == 0x99) {
+        // DPdxFine
+        if (index.U32() == 1) {
+            IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
+            inst.ReplaceUsesWith(ir.DPdxFine(IR::F32{value_2}));
+        }
+    } else if (swizzle_value == 0xA5) {
+        // DPdyFine
+        if (index.U32() == 2) {
+            IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
+            inst.ReplaceUsesWith(ir.DPdyFine(IR::F32{value_2}));
+        }
+    }
+}
+
 void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
     switch (inst.GetOpcode()) {
     case IR::Opcode::GetRegister:
@@ -532,6 +597,8 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
     case IR::Opcode::CompositeExtractF16x4:
         return FoldCompositeExtract(inst, IR::Opcode::CompositeConstructF16x4,
                                     IR::Opcode::CompositeInsertF16x4);
+    case IR::Opcode::FSwizzleAdd:
+        return FoldFSwizzleAdd(block, inst);
     default:
         break;
     }

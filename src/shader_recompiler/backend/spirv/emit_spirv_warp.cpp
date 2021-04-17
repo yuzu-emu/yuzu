@@ -183,4 +183,12 @@ Id EmitFSwizzleAdd(EmitContext& ctx, Id op_a, Id op_b, Id swizzle) {
     return ctx.OpFAdd(ctx.F32[1], result_a, result_b);
 }
 
+Id EmitDPdxFine(EmitContext& ctx, Id op_a) {
+    return ctx.OpDPdxFine(ctx.F32[1], op_a);
+}
+
+Id EmitDPdyFine(EmitContext& ctx, Id op_a) {
+    return ctx.OpDPdyFine(ctx.F32[1], op_a);
+}
+
 } // namespace Shader::Backend::SPIRV

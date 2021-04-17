@@ -341,6 +341,9 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
     if (!ctx.profile.xfb_varyings.empty()) {
         ctx.AddCapability(spv::Capability::TransformFeedback);
     }
+    if (info.uses_derivates) {
+        ctx.AddCapability(spv::Capability::DerivativeControl);
+    }
     // TODO: Track this usage
     ctx.AddCapability(spv::Capability::ImageGatherExtended);
     ctx.AddCapability(spv::Capability::ImageQuery);
