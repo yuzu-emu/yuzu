@@ -310,11 +310,22 @@ Id EmitBoundImageWrite(EmitContext&) {
 Id EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
                               Id bias_lc, const IR::Value& offset) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
-    const ImageOperands operands(ctx, info.has_bias != 0, false, info.has_lod_clamp != 0, bias_lc,
-                                 offset);
-    return Emit(&EmitContext::OpImageSparseSampleImplicitLod,
-                &EmitContext::OpImageSampleImplicitLod, ctx, inst, ctx.F32[4], Texture(ctx, index),
-                coords, operands.Mask(), operands.Span());
+    if (ctx.stage == Stage::Fragment) {
+        const ImageOperands operands(ctx, info.has_bias != 0, false, info.has_lod_clamp != 0,
+                                     bias_lc, offset);
+        return Emit(&EmitContext::OpImageSparseSampleImplicitLod,
+                    &EmitContext::OpImageSampleImplicitLod, ctx, inst, ctx.F32[4],
+                    Texture(ctx, index), coords, operands.Mask(), operands.Span());
+    } else {
+        // We can't use implicit lods on non-fragment stages on SPIR-V. Maxwell hardware behaves as
+        // if the lod was explicitly zero.  This may change on Turing with implicit compute
+        // derivatives
+        const Id lod{ctx.Const(0)};
+        const ImageOperands operands(ctx, false, true, info.has_lod_clamp != 0, lod, offset);
+        return Emit(&EmitContext::OpImageSparseSampleExplicitLod,
+                    &EmitContext::OpImageSampleExplicitLod, ctx, inst, ctx.F32[4],
+                    Texture(ctx, index), coords, operands.Mask(), operands.Span());
+    }
 }
 
 Id EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
