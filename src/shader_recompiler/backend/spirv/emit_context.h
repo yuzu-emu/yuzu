@@ -101,6 +101,10 @@ public:
         return Constant(U32[1], value);
     }
 
+    Id Const(f32 value) {
+        return Constant(F32[1], value);
+    }
+
     Id Const(u32 element_1, u32 element_2) {
         return ConstantComposite(U32[2], Const(element_1), Const(element_2));
     }

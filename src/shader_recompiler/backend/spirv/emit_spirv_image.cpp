@@ -320,7 +320,7 @@ Id EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value&
         // We can't use implicit lods on non-fragment stages on SPIR-V. Maxwell hardware behaves as
         // if the lod was explicitly zero.  This may change on Turing with implicit compute
         // derivatives
-        const Id lod{ctx.Const(0)};
+        const Id lod{ctx.Const(0.0f)};
         const ImageOperands operands(ctx, false, true, info.has_lod_clamp != 0, lod, offset);
         return Emit(&EmitContext::OpImageSparseSampleExplicitLod,
                     &EmitContext::OpImageSampleExplicitLod, ctx, inst, ctx.F32[4],
