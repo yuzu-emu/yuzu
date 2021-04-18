@@ -404,10 +404,7 @@ Id EmitIsHelperInvocation(EmitContext& ctx) {
 }
 
 Id EmitYDirection(EmitContext& ctx) {
-    if (ctx.profile.y_negate) {
-        return ctx.Constant(ctx.F32[1], -1.0f);
-    }
-    return ctx.Constant(ctx.F32[1], 1.0f);
+    return ctx.Constant(ctx.F32[1], ctx.profile.y_negate ? -1.0f : 1.0f);
 }
 
 Id EmitLoadLocal(EmitContext& ctx, Id word_offset) {
