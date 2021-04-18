@@ -22,4 +22,11 @@ void SsaRewritePass(IR::Program& program);
 void TexturePass(Environment& env, IR::Program& program);
 void VerificationPass(const IR::Program& program);
 
+// Dual Vertex
+void VertexATransformPass(IR::Program& program);
+void VertexBTransformPass(IR::Program& program);
+void DualVertexJoinPass(IR::Program& program);
+void JoinTextureInfo(Info& base, Info& source);
+void JoinStorageInfo(Info& base, Info& source);
+
 } // namespace Shader::Optimization

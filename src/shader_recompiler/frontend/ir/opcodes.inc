@@ -13,6 +13,7 @@ OPCODE(BranchConditional,                                   Void,           U1, 
 OPCODE(LoopMerge,                                           Void,           Label,          Label,                                                          )
 OPCODE(SelectionMerge,                                      Void,           Label,                                                                          )
 OPCODE(Return,                                              Void,                                                                                           )
+OPCODE(Join,                                                Void,                                                                                           )
 OPCODE(Unreachable,                                         Void,                                                                                           )
 OPCODE(DemoteToHelperInvocation,                            Void,           Label,                                                                          )
 

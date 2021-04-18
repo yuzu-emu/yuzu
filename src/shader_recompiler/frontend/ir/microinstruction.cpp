@@ -61,6 +61,7 @@ bool Inst::MayHaveSideEffects() const noexcept {
     case Opcode::LoopMerge:
     case Opcode::SelectionMerge:
     case Opcode::Return:
+    case Opcode::Join:
     case Opcode::Unreachable:
     case Opcode::DemoteToHelperInvocation:
     case Opcode::Barrier:

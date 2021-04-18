@@ -26,6 +26,10 @@ void EmitReturn(EmitContext& ctx) {
     ctx.OpReturn();
 }
 
+void EmitJoin(EmitContext&) {
+    throw NotImplementedException("Join shouldn't be emitted");
+}
+
 void EmitUnreachable(EmitContext& ctx) {
     ctx.OpUnreachable();
 }
