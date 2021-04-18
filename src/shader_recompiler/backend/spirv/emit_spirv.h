@@ -25,6 +25,7 @@ void EmitBranchConditional(EmitContext& ctx, Id condition, Id true_label, Id fal
 void EmitLoopMerge(EmitContext& ctx, Id merge_label, Id continue_label);
 void EmitSelectionMerge(EmitContext& ctx, Id merge_label);
 void EmitReturn(EmitContext& ctx);
+void EmitJoin(EmitContext& ctx);
 void EmitUnreachable(EmitContext& ctx);
 void EmitDemoteToHelperInvocation(EmitContext& ctx, Id continue_label);
 void EmitBarrier(EmitContext& ctx);

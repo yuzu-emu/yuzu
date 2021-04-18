@@ -21,4 +21,6 @@ namespace Shader::Maxwell {
                                            ObjectPool<IR::Block>& block_pool, Environment& env,
                                            Flow::CFG& cfg);
 
+[[nodiscard]] IR::Program MergeDualVertexPrograms(IR::Program& vertex_a, IR::Program& vertex_b,
+                                                  Environment& env_vertex_b);
 } // namespace Shader::Maxwell

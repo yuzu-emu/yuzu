@@ -499,4 +499,30 @@ void GlobalMemoryToStorageBufferPass(IR::Program& program) {
     }
 }
 
+template <typename Descriptors, typename Descriptor, typename Func>
+static u32 Add(Descriptors& descriptors, const Descriptor& desc, Func&& pred) {
+    // TODO: Handle arrays
+    const auto it{std::ranges::find_if(descriptors, pred)};
+    if (it != descriptors.end()) {
+        return static_cast<u32>(std::distance(descriptors.begin(), it));
+    }
+    descriptors.push_back(desc);
+    return static_cast<u32>(descriptors.size()) - 1;
+}
+
+void JoinStorageInfo(Info& base, Info& source) {
+    auto& descriptors = base.storage_buffers_descriptors;
+    for (auto& desc : source.storage_buffers_descriptors) {
+        auto it{std::ranges::find_if(descriptors, [&desc](const auto& existing) {
+            return desc.cbuf_index == existing.cbuf_index &&
+                   desc.cbuf_offset == existing.cbuf_offset && desc.count == existing.count;
+        })};
+        if (it != descriptors.end()) {
+            it->is_written |= desc.is_written;
+            continue;
+        }
+        descriptors.push_back(desc);
+    }
+}
+
 } // namespace Shader::Optimization

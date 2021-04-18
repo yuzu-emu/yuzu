@@ -426,4 +426,25 @@ void TexturePass(Environment& env, IR::Program& program) {
     }
 }
 
+void JoinTextureInfo(Info& base, Info& source) {
+    Descriptors descriptors{
+        base.texture_buffer_descriptors,
+        base.image_buffer_descriptors,
+        base.texture_descriptors,
+        base.image_descriptors,
+    };
+    for (auto& desc : source.texture_buffer_descriptors) {
+        descriptors.Add(desc);
+    }
+    for (auto& desc : source.image_buffer_descriptors) {
+        descriptors.Add(desc);
+    }
+    for (auto& desc : source.texture_descriptors) {
+        descriptors.Add(desc);
+    }
+    for (auto& desc : source.image_descriptors) {
+        descriptors.Add(desc);
+    }
+}
+
 } // namespace Shader::Optimization
