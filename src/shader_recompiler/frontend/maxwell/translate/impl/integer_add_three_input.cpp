@@ -83,7 +83,7 @@ void IADD3(TranslatorVisitor& v, u64 insn, IR::U32 op_b, IR::U32 op_c) {
         lhs = v.ir.IAdd(lhs, carry);
     }
     if (iadd3.cc != 0 && iadd3.shift == Shift::Left) {
-        IR::U32 high_bits{v.ir.ShiftRightLogical(lhs, v.ir.Imm32(16))};
+        const IR::U32 high_bits{v.ir.ShiftRightLogical(lhs, v.ir.Imm32(16))};
         of_1 = v.ir.LogicalOr(of_1, v.ir.INotEqual(v.ir.Imm32(0), high_bits));
     }
     lhs = IntegerShift(v.ir, lhs, iadd3.shift);
