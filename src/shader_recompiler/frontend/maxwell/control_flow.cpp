@@ -185,8 +185,20 @@ Function::Function(ObjectPool<Block>& block_pool, Location start_address)
     label.block->branch_false = nullptr;
 }
 
-CFG::CFG(Environment& env_, ObjectPool<Block>& block_pool_, Location start_address)
-    : env{env_}, block_pool{block_pool_}, program_start{start_address} {
+CFG::CFG(Environment& env_, ObjectPool<Block>& block_pool_, Location start_address,
+         bool exits_to_dispatcher_)
+    : env{env_}, block_pool{block_pool_}, program_start{start_address}, exits_to_dispatcher{
+                                                                            exits_to_dispatcher_} {
+    if (exits_to_dispatcher) {
+        dispatch_block = block_pool.Create(Block{});
+        dispatch_block->begin = {};
+        dispatch_block->end = {};
+        dispatch_block->end_class = EndClass::Exit;
+        dispatch_block->cond = IR::Condition(true);
+        dispatch_block->stack = {};
+        dispatch_block->branch_true = nullptr;
+        dispatch_block->branch_false = nullptr;
+    }
     functions.emplace_back(block_pool, start_address);
     for (FunctionId function_id = 0; function_id < functions.size(); ++function_id) {
         while (!functions[function_id].labels.empty()) {
@@ -195,6 +207,12 @@ CFG::CFG(Environment& env_, ObjectPool<Block>& block_pool_, Location start_addre
             function.labels.pop_back();
             AnalyzeLabel(function_id, label);
         }
+    }
+    if (exits_to_dispatcher) {
+        const auto it = functions[0].blocks.rbegin();
+        dispatch_block->begin = it->end + 1;
+        dispatch_block->end = it->end + 1;
+        functions[0].blocks.insert(*dispatch_block);
     }
 }
 
@@ -462,11 +480,22 @@ CFG::AnalysisState CFG::AnalyzeEXIT(Block* block, FunctionId function_id, Locati
         // EXIT will never be taken
         return AnalysisState::Continue;
     }
+    if (exits_to_dispatcher && function_id != 0) {
+        throw NotImplementedException("Dispatch EXIT on external function.");
+    }
     if (pred != Predicate{true} || flow_test != IR::FlowTest::T) {
         if (block->stack.Peek(Token::PEXIT).has_value()) {
             throw NotImplementedException("Conditional EXIT with PEXIT token");
         }
         const IR::Condition cond{flow_test, static_cast<IR::Pred>(pred.index), pred.negated};
+        if (exits_to_dispatcher) {
+            block->end = pc;
+            block->branch_true = dispatch_block;
+            block->end_class = EndClass::Branch;
+            block->cond = cond;
+            block->branch_false = AddLabel(block, block->stack, pc + 1, function_id);
+            return AnalysisState::Branch;
+        }
         AnalyzeCondInst(block, function_id, pc, EndClass::Exit, cond);
         return AnalysisState::Branch;
     }
@@ -474,6 +503,14 @@ CFG::AnalysisState CFG::AnalyzeEXIT(Block* block, FunctionId function_id, Locati
         const Stack popped_stack{block->stack.Remove(Token::PEXIT)};
         block->cond = IR::Condition{true};
         block->branch_true = AddLabel(block, popped_stack, *exit_pc, function_id);
+        block->branch_false = nullptr;
+        return AnalysisState::Branch;
+    }
+    if (exits_to_dispatcher) {
+        block->cond = IR::Condition{true};
+        block->end = pc;
+        block->end_class = EndClass::Branch;
+        block->branch_true = dispatch_block;
         block->branch_false = nullptr;
         return AnalysisState::Branch;
     }

@@ -111,7 +111,8 @@ class CFG {
     };
 
 public:
-    explicit CFG(Environment& env, ObjectPool<Block>& block_pool, Location start_address);
+    explicit CFG(Environment& env, ObjectPool<Block>& block_pool, Location start_address,
+                 bool exits_to_dispatcher = false);
 
     CFG& operator=(const CFG&) = delete;
     CFG(const CFG&) = delete;
@@ -126,6 +127,10 @@ public:
     }
     [[nodiscard]] std::span<Function> Functions() noexcept {
         return std::span(functions.data(), functions.size());
+    }
+
+    [[nodiscard]] bool ExitsToDispatcher() const {
+        return exits_to_dispatcher;
     }
 
 private:
@@ -158,6 +163,8 @@ private:
     boost::container::small_vector<Function, 1> functions;
     FunctionId current_function_id{0};
     Location program_start;
+    bool exits_to_dispatcher{};
+    Block* dispatch_block{};
 };
 
 } // namespace Shader::Maxwell::Flow
