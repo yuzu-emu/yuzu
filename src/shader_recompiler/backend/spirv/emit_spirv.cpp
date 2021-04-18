@@ -341,7 +341,7 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
     if (!ctx.profile.xfb_varyings.empty()) {
         ctx.AddCapability(spv::Capability::TransformFeedback);
     }
-    if (info.uses_derivates) {
+    if (info.uses_derivatives) {
         ctx.AddCapability(spv::Capability::DerivativeControl);
     }
     // TODO: Track this usage

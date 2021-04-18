@@ -534,7 +534,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::DPdyFine:
     case IR::Opcode::DPdxCoarse:
     case IR::Opcode::DPdyCoarse:
-        info.uses_derivates = true;
+        info.uses_derivatives = true;
         break;
     case IR::Opcode::LoadStorageU8:
     case IR::Opcode::LoadStorageS8:
