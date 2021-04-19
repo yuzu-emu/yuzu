@@ -187,6 +187,8 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::FPUnordGreaterThanEqual16:
     case IR::Opcode::FPIsNan16:
     case IR::Opcode::GlobalAtomicAddF16x2:
+    case IR::Opcode::GlobalAtomicMinF16x2:
+    case IR::Opcode::GlobalAtomicMaxF16x2:
     case IR::Opcode::StorageAtomicAddF16x2:
     case IR::Opcode::StorageAtomicMinF16x2:
     case IR::Opcode::StorageAtomicMaxF16x2:
@@ -373,7 +375,58 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::StorageAtomicAnd64:
     case IR::Opcode::StorageAtomicOr64:
     case IR::Opcode::StorageAtomicXor64:
+    case IR::Opcode::StorageAtomicExchange64:
         info.uses_int64 = true;
+        break;
+    default:
+        break;
+    }
+    switch (inst.GetOpcode()) {
+    case IR::Opcode::LoadGlobalU8:
+    case IR::Opcode::LoadGlobalS8:
+    case IR::Opcode::LoadGlobalU16:
+    case IR::Opcode::LoadGlobalS16:
+    case IR::Opcode::LoadGlobal32:
+    case IR::Opcode::LoadGlobal64:
+    case IR::Opcode::LoadGlobal128:
+    case IR::Opcode::WriteGlobalU8:
+    case IR::Opcode::WriteGlobalS8:
+    case IR::Opcode::WriteGlobalU16:
+    case IR::Opcode::WriteGlobalS16:
+    case IR::Opcode::WriteGlobal32:
+    case IR::Opcode::WriteGlobal64:
+    case IR::Opcode::WriteGlobal128:
+    case IR::Opcode::GlobalAtomicIAdd32:
+    case IR::Opcode::GlobalAtomicSMin32:
+    case IR::Opcode::GlobalAtomicUMin32:
+    case IR::Opcode::GlobalAtomicSMax32:
+    case IR::Opcode::GlobalAtomicUMax32:
+    case IR::Opcode::GlobalAtomicInc32:
+    case IR::Opcode::GlobalAtomicDec32:
+    case IR::Opcode::GlobalAtomicAnd32:
+    case IR::Opcode::GlobalAtomicOr32:
+    case IR::Opcode::GlobalAtomicXor32:
+    case IR::Opcode::GlobalAtomicExchange32:
+    case IR::Opcode::GlobalAtomicIAdd64:
+    case IR::Opcode::GlobalAtomicSMin64:
+    case IR::Opcode::GlobalAtomicUMin64:
+    case IR::Opcode::GlobalAtomicSMax64:
+    case IR::Opcode::GlobalAtomicUMax64:
+    case IR::Opcode::GlobalAtomicAnd64:
+    case IR::Opcode::GlobalAtomicOr64:
+    case IR::Opcode::GlobalAtomicXor64:
+    case IR::Opcode::GlobalAtomicExchange64:
+    case IR::Opcode::GlobalAtomicAddF32:
+    case IR::Opcode::GlobalAtomicAddF16x2:
+    case IR::Opcode::GlobalAtomicAddF32x2:
+    case IR::Opcode::GlobalAtomicMinF16x2:
+    case IR::Opcode::GlobalAtomicMinF32x2:
+    case IR::Opcode::GlobalAtomicMaxF16x2:
+    case IR::Opcode::GlobalAtomicMaxF32x2:
+        info.uses_int64 = true;
+        info.uses_global_memory = true;
+        info.used_constant_buffer_types |= IR::Type::U32 | IR::Type::U32x2;
+        info.used_storage_buffer_types |= IR::Type::U32 | IR::Type::U32x2 | IR::Type::U32x4;
         break;
     default:
         break;

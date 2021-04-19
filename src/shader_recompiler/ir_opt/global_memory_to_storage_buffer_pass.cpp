@@ -11,6 +11,7 @@
 #include <boost/container/flat_set.hpp>
 #include <boost/container/small_vector.hpp>
 
+#include "common/alignment.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/breadth_first_search.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
@@ -244,39 +245,6 @@ bool MeetsBias(const StorageBufferAddr& storage_buffer, const Bias& bias) noexce
            storage_buffer.offset < bias.offset_end;
 }
 
-/// Discards a global memory operation, reads return zero and writes are ignored
-void DiscardGlobalMemory(IR::Block& block, IR::Inst& inst) {
-    IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
-    const IR::Value zero{u32{0}};
-    switch (inst.GetOpcode()) {
-    case IR::Opcode::LoadGlobalS8:
-    case IR::Opcode::LoadGlobalU8:
-    case IR::Opcode::LoadGlobalS16:
-    case IR::Opcode::LoadGlobalU16:
-    case IR::Opcode::LoadGlobal32:
-        inst.ReplaceUsesWith(zero);
-        break;
-    case IR::Opcode::LoadGlobal64:
-        inst.ReplaceUsesWith(IR::Value{ir.CompositeConstruct(zero, zero)});
-        break;
-    case IR::Opcode::LoadGlobal128:
-        inst.ReplaceUsesWith(IR::Value{ir.CompositeConstruct(zero, zero, zero, zero)});
-        break;
-    case IR::Opcode::WriteGlobalS8:
-    case IR::Opcode::WriteGlobalU8:
-    case IR::Opcode::WriteGlobalS16:
-    case IR::Opcode::WriteGlobalU16:
-    case IR::Opcode::WriteGlobal32:
-    case IR::Opcode::WriteGlobal64:
-    case IR::Opcode::WriteGlobal128:
-        inst.Invalidate();
-        break;
-    default:
-        throw LogicError("Invalid opcode to discard its global memory operation {}",
-                         inst.GetOpcode());
-    }
-}
-
 struct LowAddrInfo {
     IR::U32 value;
     s32 imm_offset;
@@ -350,6 +318,10 @@ std::optional<StorageBufferAddr> Track(const IR::Value& value, const Bias* bias)
             .index{index.U32()},
             .offset{offset.U32()},
         };
+        if (!Common::IsAligned(storage_buffer.offset, 16)) {
+            // The SSBO pointer has to be aligned
+            return std::nullopt;
+        }
         if (bias && !MeetsBias(storage_buffer, *bias)) {
             // We have to blacklist some addresses in case we wrongly
             // point to them
@@ -372,19 +344,17 @@ void CollectStorageBuffers(IR::Block& block, IR::Inst& inst, StorageInfo& info) 
     // Track the low address of the instruction
     const std::optional<LowAddrInfo> low_addr_info{TrackLowAddress(&inst)};
     if (!low_addr_info) {
-        DiscardGlobalMemory(block, inst);
+        // Failed to track the low address, use NVN fallbacks
         return;
     }
     // First try to find storage buffers in the NVN address
     const IR::U32 low_addr{low_addr_info->value};
-    std::optional storage_buffer{Track(low_addr, &nvn_bias)};
+    std::optional<StorageBufferAddr> storage_buffer{Track(low_addr, &nvn_bias)};
     if (!storage_buffer) {
         // If it fails, track without a bias
         storage_buffer = Track(low_addr, nullptr);
         if (!storage_buffer) {
-            // If that also failed, drop the global memory usage
-            // LOG_ERROR
-            DiscardGlobalMemory(block, inst);
+            // If that also fails, use NVN fallbacks
             return;
         }
     }

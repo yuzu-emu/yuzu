@@ -411,6 +411,7 @@ EmitContext::EmitContext(const Profile& profile_, IR::Program& program, u32& bin
     DefineTextures(program.info, binding);
     DefineImages(program.info, binding);
     DefineAttributeMemAccess(program.info);
+    DefineGlobalMemoryFunctions(program.info);
     DefineLabels(program);
 }
 
@@ -760,6 +761,82 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
     if (info.stores_indexed_attributes) {
         indexed_store_func = make_store();
     }
+}
+
+void EmitContext::DefineGlobalMemoryFunctions(const Info& info) {
+    if (!info.uses_global_memory) {
+        return;
+    }
+    using DefPtr = Id StorageDefinitions::*;
+    const Id zero{u32_zero_value};
+    const auto define_body{[&](DefPtr ssbo_member, Id addr, Id element_pointer, u32 shift,
+                               auto&& callback) {
+        AddLabel();
+        const size_t num_buffers{info.storage_buffers_descriptors.size()};
+        for (size_t index = 0; index < num_buffers; ++index) {
+            const auto& ssbo{info.storage_buffers_descriptors[index]};
+            const Id ssbo_addr_cbuf_offset{Const(ssbo.cbuf_offset / 8)};
+            const Id ssbo_size_cbuf_offset{Const(ssbo.cbuf_offset / 4 + 2)};
+            const Id ssbo_addr_pointer{OpAccessChain(
+                uniform_types.U32x2, cbufs[ssbo.cbuf_index].U32x2, zero, ssbo_addr_cbuf_offset)};
+            const Id ssbo_size_pointer{OpAccessChain(uniform_types.U32, cbufs[ssbo.cbuf_index].U32,
+                                                     zero, ssbo_size_cbuf_offset)};
+
+            const Id ssbo_addr{OpBitcast(U64, OpLoad(U32[2], ssbo_addr_pointer))};
+            const Id ssbo_size{OpUConvert(U64, OpLoad(U32[1], ssbo_size_pointer))};
+            const Id ssbo_end{OpIAdd(U64, ssbo_addr, ssbo_size)};
+            const Id cond{OpLogicalAnd(U1, OpUGreaterThanEqual(U1, addr, ssbo_addr),
+                                       OpULessThan(U1, addr, ssbo_end))};
+            const Id then_label{OpLabel()};
+            const Id else_label{OpLabel()};
+            OpSelectionMerge(else_label, spv::SelectionControlMask::MaskNone);
+            OpBranchConditional(cond, then_label, else_label);
+            AddLabel(then_label);
+            const Id ssbo_id{ssbos[index].*ssbo_member};
+            const Id ssbo_offset{OpUConvert(U32[1], OpISub(U64, addr, ssbo_addr))};
+            const Id ssbo_index{OpShiftRightLogical(U32[1], ssbo_offset, Const(shift))};
+            const Id ssbo_pointer{OpAccessChain(element_pointer, ssbo_id, zero, ssbo_index)};
+            callback(ssbo_pointer);
+            AddLabel(else_label);
+        }
+    }};
+    const auto define_load{[&](DefPtr ssbo_member, Id element_pointer, Id type, u32 shift) {
+        const Id function_type{TypeFunction(type, U64)};
+        const Id func_id{OpFunction(type, spv::FunctionControlMask::MaskNone, function_type)};
+        const Id addr{OpFunctionParameter(U64)};
+        define_body(ssbo_member, addr, element_pointer, shift,
+                    [&](Id ssbo_pointer) { OpReturnValue(OpLoad(type, ssbo_pointer)); });
+        OpReturnValue(ConstantNull(type));
+        OpFunctionEnd();
+        return func_id;
+    }};
+    const auto define_write{[&](DefPtr ssbo_member, Id element_pointer, Id type, u32 shift) {
+        const Id function_type{TypeFunction(void_id, U64, type)};
+        const Id func_id{OpFunction(void_id, spv::FunctionControlMask::MaskNone, function_type)};
+        const Id addr{OpFunctionParameter(U64)};
+        const Id data{OpFunctionParameter(type)};
+        define_body(ssbo_member, addr, element_pointer, shift, [&](Id ssbo_pointer) {
+            OpStore(ssbo_pointer, data);
+            OpReturn();
+        });
+        OpReturn();
+        OpFunctionEnd();
+        return func_id;
+    }};
+    const auto define{
+        [&](DefPtr ssbo_member, const StorageTypeDefinition& type_def, Id type, size_t size) {
+            const Id element_type{type_def.element};
+            const u32 shift{static_cast<u32>(std::countr_zero(size))};
+            const Id load_func{define_load(ssbo_member, element_type, type, shift)};
+            const Id write_func{define_write(ssbo_member, element_type, type, shift)};
+            return std::make_pair(load_func, write_func);
+        }};
+    std::tie(load_global_func_u32, write_global_func_u32) =
+        define(&StorageDefinitions::U32, storage_types.U32, U32[1], sizeof(u32));
+    std::tie(load_global_func_u32x2, write_global_func_u32x2) =
+        define(&StorageDefinitions::U32x2, storage_types.U32x2, U32[2], sizeof(u32[2]));
+    std::tie(load_global_func_u32x4, write_global_func_u32x4) =
+        define(&StorageDefinitions::U32x4, storage_types.U32x4, U32[4], sizeof(u32[4]));
 }
 
 void EmitContext::DefineConstantBuffers(const Info& info, u32& binding) {

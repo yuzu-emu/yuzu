@@ -162,6 +162,7 @@ struct Info {
     bool uses_atomic_f32x2_min{};
     bool uses_atomic_f32x2_max{};
     bool uses_int64_bit_atomics{};
+    bool uses_global_memory{};
 
     IR::Type used_constant_buffer_types{};
     IR::Type used_storage_buffer_types{};

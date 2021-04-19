@@ -60,6 +60,48 @@ void CollectInterpolationInfo(Environment& env, IR::Program& program) {
         }();
     }
 }
+
+void AddNVNStorageBuffers(IR::Program& program) {
+    if (!program.info.uses_global_memory) {
+        return;
+    }
+    const u32 driver_cbuf{0};
+    const u32 descriptor_size{0x10};
+    const u32 num_buffers{16};
+    const u32 base{[&] {
+        switch (program.stage) {
+        case Stage::VertexA:
+        case Stage::VertexB:
+            return 0x110u;
+        case Stage::TessellationControl:
+            return 0x210u;
+        case Stage::TessellationEval:
+            return 0x310u;
+        case Stage::Geometry:
+            return 0x410u;
+        case Stage::Fragment:
+            return 0x510u;
+        case Stage::Compute:
+            return 0x310u;
+        }
+        throw InvalidArgument("Invalid stage {}", program.stage);
+    }()};
+    auto& descs{program.info.storage_buffers_descriptors};
+    for (u32 index = 0; index < num_buffers; ++index) {
+        const u32 offset{base + index * descriptor_size};
+        const auto it{std::ranges::find(descs, offset, &StorageBufferDescriptor::cbuf_offset)};
+        if (it != descs.end()) {
+            continue;
+        }
+        // Assume these are written for now
+        descs.push_back({
+            .cbuf_index = driver_cbuf,
+            .cbuf_offset = offset,
+            .count = 1,
+            .is_written = true,
+        });
+    }
+}
 } // Anonymous namespace
 
 IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
@@ -105,6 +147,7 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
     Optimization::VerificationPass(program);
     Optimization::CollectShaderInfoPass(env, program);
     CollectInterpolationInfo(env, program);
+    AddNVNStorageBuffers(program);
     return program;
 }
 
