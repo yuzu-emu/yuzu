@@ -34,6 +34,15 @@ IR::U32 Offset(TranslatorVisitor& v, u64 insn) {
     }
 }
 
+std::pair<IR::U32, IR::U32> WordOffset(TranslatorVisitor& v, u64 insn) {
+    const IR::U32 offset{Offset(v, insn)};
+    if (offset.IsImmediate()) {
+        return {v.ir.Imm32(offset.U32() / 4), offset};
+    } else {
+        return {v.ir.ShiftRightArithmetic(offset, v.ir.Imm32(2)), offset};
+    }
+}
+
 std::pair<int, bool> GetSize(u64 insn) {
     union {
         u64 raw;
@@ -79,9 +88,7 @@ IR::U32 ShortOffset(IR::IREmitter& ir, const IR::U32& offset) {
 } // Anonymous namespace
 
 void TranslatorVisitor::LDL(u64 insn) {
-    const IR::U32 offset{Offset(*this, insn)};
-    const IR::U32 word_offset{ir.ShiftRightArithmetic(offset, ir.Imm32(2))};
-
+    const auto [word_offset, offset]{WordOffset(*this, insn)};
     const IR::Reg dest{Reg(insn)};
     const auto [bit_size, is_signed]{GetSize(insn)};
     switch (bit_size) {
@@ -133,9 +140,7 @@ void TranslatorVisitor::LDS(u64 insn) {
 }
 
 void TranslatorVisitor::STL(u64 insn) {
-    const IR::U32 offset{Offset(*this, insn)};
-    const IR::U32 word_offset{ir.ShiftRightArithmetic(offset, ir.Imm32(2))};
-
+    const auto [word_offset, offset]{WordOffset(*this, insn)};
     const IR::Reg reg{Reg(insn)};
     const IR::U32 src{X(reg)};
     const int bit_size{GetSize(insn).first};
