@@ -11,14 +11,14 @@ namespace {
 Id StorageIndex(EmitContext& ctx, const IR::Value& offset, size_t element_size) {
     if (offset.IsImmediate()) {
         const u32 imm_offset{static_cast<u32>(offset.U32() / element_size)};
-        return ctx.Constant(ctx.U32[1], imm_offset);
+        return ctx.Const(imm_offset);
     }
     const u32 shift{static_cast<u32>(std::countr_zero(element_size))};
     const Id index{ctx.Def(offset)};
     if (shift == 0) {
         return index;
     }
-    const Id shift_id{ctx.Constant(ctx.U32[1], shift)};
+    const Id shift_id{ctx.Const(shift)};
     return ctx.OpShiftRightLogical(ctx.U32[1], index, shift_id);
 }
 

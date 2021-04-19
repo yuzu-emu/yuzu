@@ -69,7 +69,7 @@ std::optional<OutAttr> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
             return info.id;
         } else {
             const u32 index_element{element - info.first_element};
-            const Id index_id{ctx.Constant(ctx.U32[1], index_element)};
+            const Id index_id{ctx.Const(index_element)};
             return OutputAccessChain(ctx, ctx.output_f32, info.id, index_id);
         }
     }
@@ -81,7 +81,7 @@ std::optional<OutAttr> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
     case IR::Attribute::PositionZ:
     case IR::Attribute::PositionW: {
         const u32 element{static_cast<u32>(attr) % 4};
-        const Id element_id{ctx.Constant(ctx.U32[1], element)};
+        const Id element_id{ctx.Const(element)};
         return OutputAccessChain(ctx, ctx.output_f32, ctx.output_position, element_id);
     }
     case IR::Attribute::ClipDistance0:
@@ -94,7 +94,7 @@ std::optional<OutAttr> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
     case IR::Attribute::ClipDistance7: {
         const u32 base{static_cast<u32>(IR::Attribute::ClipDistance0)};
         const u32 index{static_cast<u32>(attr) - base};
-        const Id clip_num{ctx.Constant(ctx.U32[1], index)};
+        const Id clip_num{ctx.Const(index)};
         return OutputAccessChain(ctx, ctx.output_f32, ctx.clip_distances, clip_num);
     }
     case IR::Attribute::Layer:
@@ -131,7 +131,7 @@ Id GetCbuf(EmitContext& ctx, Id result_type, Id UniformDefinitions::*member_ptr,
         Id index{ctx.Def(offset)};
         if (element_size > 1) {
             const u32 log2_element_size{static_cast<u32>(std::countr_zero(element_size))};
-            const Id shift{ctx.Constant(ctx.U32[1], log2_element_size)};
+            const Id shift{ctx.Const(log2_element_size)};
             index = ctx.OpShiftRightArithmetic(ctx.U32[1], ctx.Def(offset), shift);
         }
         const Id access_chain{ctx.OpAccessChain(uniform_type, cbuf, ctx.u32_zero_value, index)};
@@ -140,7 +140,7 @@ Id GetCbuf(EmitContext& ctx, Id result_type, Id UniformDefinitions::*member_ptr,
     if (offset.U32() % element_size != 0) {
         throw NotImplementedException("Unaligned immediate constant buffer load");
     }
-    const Id imm_offset{ctx.Constant(ctx.U32[1], offset.U32() / element_size)};
+    const Id imm_offset{ctx.Const(offset.U32() / element_size)};
     const Id access_chain{ctx.OpAccessChain(uniform_type, cbuf, ctx.u32_zero_value, imm_offset)};
     return ctx.OpLoad(result_type, access_chain);
 }
@@ -212,13 +212,13 @@ Id EmitGetCbufU32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value&
 
 Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
     const u32 element{static_cast<u32>(attr) % 4};
-    const auto element_id{[&] { return ctx.Constant(ctx.U32[1], element); }};
+    const auto element_id{[&] { return ctx.Const(element); }};
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
         const std::optional<AttrInfo> type{AttrTypes(ctx, index)};
         if (!type) {
             // Attribute is disabled
-            return ctx.Constant(ctx.F32[1], 0.0f);
+            return ctx.Const(0.0f);
         }
         const Id generic_id{ctx.input_generics.at(index)};
         const Id pointer{AttrPointer(ctx, type->pointer, vertex, generic_id, element_id())};
@@ -252,20 +252,19 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
         }
     case IR::Attribute::FrontFace:
         return ctx.OpSelect(ctx.U32[1], ctx.OpLoad(ctx.U1, ctx.front_face),
-                            ctx.Constant(ctx.U32[1], std::numeric_limits<u32>::max()),
-                            ctx.u32_zero_value);
+                            ctx.Const(std::numeric_limits<u32>::max()), ctx.u32_zero_value);
     case IR::Attribute::PointSpriteS:
         return ctx.OpLoad(ctx.F32[1],
                           ctx.OpAccessChain(ctx.input_f32, ctx.point_coord, ctx.u32_zero_value));
     case IR::Attribute::PointSpriteT:
-        return ctx.OpLoad(ctx.F32[1], ctx.OpAccessChain(ctx.input_f32, ctx.point_coord,
-                                                        ctx.Constant(ctx.U32[1], 1U)));
+        return ctx.OpLoad(ctx.F32[1],
+                          ctx.OpAccessChain(ctx.input_f32, ctx.point_coord, ctx.Const(1U)));
     case IR::Attribute::TessellationEvaluationPointU:
         return ctx.OpLoad(ctx.F32[1],
                           ctx.OpAccessChain(ctx.input_f32, ctx.tess_coord, ctx.u32_zero_value));
     case IR::Attribute::TessellationEvaluationPointV:
-        return ctx.OpLoad(ctx.F32[1], ctx.OpAccessChain(ctx.input_f32, ctx.tess_coord,
-                                                        ctx.Constant(ctx.U32[1], 1U)));
+        return ctx.OpLoad(ctx.F32[1],
+                          ctx.OpAccessChain(ctx.input_f32, ctx.tess_coord, ctx.Const(1U)));
 
     default:
         throw NotImplementedException("Read attribute {}", attr);
@@ -303,7 +302,7 @@ Id EmitGetPatch(EmitContext& ctx, IR::Patch patch) {
         throw NotImplementedException("Non-generic patch load");
     }
     const u32 index{IR::GenericPatchIndex(patch)};
-    const Id element{ctx.Constant(ctx.U32[1], IR::GenericPatchElement(patch))};
+    const Id element{ctx.Const(IR::GenericPatchElement(patch))};
     const Id pointer{ctx.OpAccessChain(ctx.input_f32, ctx.patches.at(index), element)};
     return ctx.OpLoad(ctx.F32[1], pointer);
 }
@@ -312,7 +311,7 @@ void EmitSetPatch(EmitContext& ctx, IR::Patch patch, Id value) {
     const Id pointer{[&] {
         if (IR::IsGeneric(patch)) {
             const u32 index{IR::GenericPatchIndex(patch)};
-            const Id element{ctx.Constant(ctx.U32[1], IR::GenericPatchElement(patch))};
+            const Id element{ctx.Const(IR::GenericPatchElement(patch))};
             return ctx.OpAccessChain(ctx.output_f32, ctx.patches.at(index), element);
         }
         switch (patch) {
@@ -321,15 +320,14 @@ void EmitSetPatch(EmitContext& ctx, IR::Patch patch, Id value) {
         case IR::Patch::TessellationLodTop:
         case IR::Patch::TessellationLodBottom: {
             const u32 index{static_cast<u32>(patch) - u32(IR::Patch::TessellationLodLeft)};
-            const Id index_id{ctx.Constant(ctx.U32[1], index)};
+            const Id index_id{ctx.Const(index)};
             return ctx.OpAccessChain(ctx.output_f32, ctx.output_tess_level_outer, index_id);
         }
         case IR::Patch::TessellationLodInteriorU:
             return ctx.OpAccessChain(ctx.output_f32, ctx.output_tess_level_inner,
                                      ctx.u32_zero_value);
         case IR::Patch::TessellationLodInteriorV:
-            return ctx.OpAccessChain(ctx.output_f32, ctx.output_tess_level_inner,
-                                     ctx.Constant(ctx.U32[1], 1u));
+            return ctx.OpAccessChain(ctx.output_f32, ctx.output_tess_level_inner, ctx.Const(1u));
         default:
             throw NotImplementedException("Patch {}", patch);
         }
@@ -338,7 +336,7 @@ void EmitSetPatch(EmitContext& ctx, IR::Patch patch, Id value) {
 }
 
 void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, Id value) {
-    const Id component_id{ctx.Constant(ctx.U32[1], component)};
+    const Id component_id{ctx.Const(component)};
     const Id pointer{ctx.OpAccessChain(ctx.output_f32, ctx.frag_color.at(index), component_id)};
     ctx.OpStore(pointer, value);
 }
@@ -404,7 +402,7 @@ Id EmitIsHelperInvocation(EmitContext& ctx) {
 }
 
 Id EmitYDirection(EmitContext& ctx) {
-    return ctx.Constant(ctx.F32[1], ctx.profile.y_negate ? -1.0f : 1.0f);
+    return ctx.Const(ctx.profile.y_negate ? -1.0f : 1.0f);
 }
 
 Id EmitLoadLocal(EmitContext& ctx, Id word_offset) {

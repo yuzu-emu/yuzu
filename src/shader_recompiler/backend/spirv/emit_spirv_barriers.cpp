@@ -12,8 +12,7 @@ void MemoryBarrier(EmitContext& ctx, spv::Scope scope) {
         spv::MemorySemanticsMask::AcquireRelease | spv::MemorySemanticsMask::UniformMemory |
         spv::MemorySemanticsMask::WorkgroupMemory | spv::MemorySemanticsMask::AtomicCounterMemory |
         spv::MemorySemanticsMask::ImageMemory};
-    ctx.OpMemoryBarrier(ctx.Constant(ctx.U32[1], static_cast<u32>(scope)),
-                        ctx.Constant(ctx.U32[1], static_cast<u32>(semantics)));
+    ctx.OpMemoryBarrier(ctx.Const(static_cast<u32>(scope)), ctx.Const(static_cast<u32>(semantics)));
 }
 } // Anonymous namespace
 
@@ -22,9 +21,9 @@ void EmitBarrier(EmitContext& ctx) {
     const auto memory{spv::Scope::Workgroup};
     const auto memory_semantics{spv::MemorySemanticsMask::AcquireRelease |
                                 spv::MemorySemanticsMask::WorkgroupMemory};
-    ctx.OpControlBarrier(ctx.Constant(ctx.U32[1], static_cast<u32>(execution)),
-                         ctx.Constant(ctx.U32[1], static_cast<u32>(memory)),
-                         ctx.Constant(ctx.U32[1], static_cast<u32>(memory_semantics)));
+    ctx.OpControlBarrier(ctx.Const(static_cast<u32>(execution)),
+                         ctx.Const(static_cast<u32>(memory)),
+                         ctx.Const(static_cast<u32>(memory_semantics)));
 }
 
 void EmitWorkgroupMemoryBarrier(EmitContext& ctx) {

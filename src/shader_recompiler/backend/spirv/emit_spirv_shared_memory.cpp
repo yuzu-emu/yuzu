@@ -7,22 +7,22 @@
 namespace Shader::Backend::SPIRV {
 namespace {
 Id Pointer(EmitContext& ctx, Id pointer_type, Id array, Id offset, u32 shift) {
-    const Id shift_id{ctx.Constant(ctx.U32[1], shift)};
+    const Id shift_id{ctx.Const(shift)};
     const Id index{ctx.OpShiftRightArithmetic(ctx.U32[1], offset, shift_id)};
     return ctx.OpAccessChain(pointer_type, array, ctx.u32_zero_value, index);
 }
 
 Id Word(EmitContext& ctx, Id offset) {
-    const Id shift_id{ctx.Constant(ctx.U32[1], 2U)};
+    const Id shift_id{ctx.Const(2U)};
     const Id index{ctx.OpShiftRightArithmetic(ctx.U32[1], offset, shift_id)};
     const Id pointer{ctx.OpAccessChain(ctx.shared_u32, ctx.shared_memory_u32, index)};
     return ctx.OpLoad(ctx.U32[1], pointer);
 }
 
 std::pair<Id, Id> ExtractArgs(EmitContext& ctx, Id offset, u32 mask, u32 count) {
-    const Id shift{ctx.OpShiftLeftLogical(ctx.U32[1], offset, ctx.Constant(ctx.U32[1], 3U))};
-    const Id bit{ctx.OpBitwiseAnd(ctx.U32[1], shift, ctx.Constant(ctx.U32[1], mask))};
-    const Id count_id{ctx.Constant(ctx.U32[1], count)};
+    const Id shift{ctx.OpShiftLeftLogical(ctx.U32[1], offset, ctx.Const(3U))};
+    const Id bit{ctx.OpBitwiseAnd(ctx.U32[1], shift, ctx.Const(mask))};
+    const Id count_id{ctx.Const(count)};
     return {bit, count_id};
 }
 } // Anonymous namespace
@@ -83,9 +83,9 @@ Id EmitLoadSharedU64(EmitContext& ctx, Id offset) {
         const Id pointer{Pointer(ctx, ctx.shared_u32x2, ctx.shared_memory_u32x2, offset, 3)};
         return ctx.OpLoad(ctx.U32[2], pointer);
     } else {
-        const Id shift_id{ctx.Constant(ctx.U32[1], 2U)};
+        const Id shift_id{ctx.Const(2U)};
         const Id base_index{ctx.OpShiftRightArithmetic(ctx.U32[1], offset, shift_id)};
-        const Id next_index{ctx.OpIAdd(ctx.U32[1], base_index, ctx.Constant(ctx.U32[1], 1U))};
+        const Id next_index{ctx.OpIAdd(ctx.U32[1], base_index, ctx.Const(1U))};
         const Id lhs_pointer{ctx.OpAccessChain(ctx.shared_u32, ctx.shared_memory_u32, base_index)};
         const Id rhs_pointer{ctx.OpAccessChain(ctx.shared_u32, ctx.shared_memory_u32, next_index)};
         return ctx.OpCompositeConstruct(ctx.U32[2], ctx.OpLoad(ctx.U32[1], lhs_pointer),
@@ -98,12 +98,11 @@ Id EmitLoadSharedU128(EmitContext& ctx, Id offset) {
         const Id pointer{Pointer(ctx, ctx.shared_u32x4, ctx.shared_memory_u32x4, offset, 4)};
         return ctx.OpLoad(ctx.U32[4], pointer);
     }
-    const Id shift_id{ctx.Constant(ctx.U32[1], 2U)};
+    const Id shift_id{ctx.Const(2U)};
     const Id base_index{ctx.OpShiftRightArithmetic(ctx.U32[1], offset, shift_id)};
     std::array<Id, 4> values{};
     for (u32 i = 0; i < 4; ++i) {
-        const Id index{i == 0 ? base_index
-                              : ctx.OpIAdd(ctx.U32[1], base_index, ctx.Constant(ctx.U32[1], i))};
+        const Id index{i == 0 ? base_index : ctx.OpIAdd(ctx.U32[1], base_index, ctx.Const(i))};
         const Id pointer{ctx.OpAccessChain(ctx.shared_u32, ctx.shared_memory_u32, index)};
         values[i] = ctx.OpLoad(ctx.U32[1], pointer);
     }
@@ -134,7 +133,7 @@ void EmitWriteSharedU32(EmitContext& ctx, Id offset, Id value) {
     if (ctx.profile.support_explicit_workgroup_layout) {
         pointer = Pointer(ctx, ctx.shared_u32, ctx.shared_memory_u32, offset, 2);
     } else {
-        const Id shift{ctx.Constant(ctx.U32[1], 2U)};
+        const Id shift{ctx.Const(2U)};
         const Id word_offset{ctx.OpShiftRightArithmetic(ctx.U32[1], offset, shift)};
         pointer = ctx.OpAccessChain(ctx.shared_u32, ctx.shared_memory_u32, word_offset);
     }
@@ -147,9 +146,9 @@ void EmitWriteSharedU64(EmitContext& ctx, Id offset, Id value) {
         ctx.OpStore(pointer, value);
         return;
     }
-    const Id shift{ctx.Constant(ctx.U32[1], 2U)};
+    const Id shift{ctx.Const(2U)};
     const Id word_offset{ctx.OpShiftRightArithmetic(ctx.U32[1], offset, shift)};
-    const Id next_offset{ctx.OpIAdd(ctx.U32[1], word_offset, ctx.Constant(ctx.U32[1], 1U))};
+    const Id next_offset{ctx.OpIAdd(ctx.U32[1], word_offset, ctx.Const(1U))};
     const Id lhs_pointer{ctx.OpAccessChain(ctx.shared_u32, ctx.shared_memory_u32, word_offset)};
     const Id rhs_pointer{ctx.OpAccessChain(ctx.shared_u32, ctx.shared_memory_u32, next_offset)};
     ctx.OpStore(lhs_pointer, ctx.OpCompositeExtract(ctx.U32[1], value, 0U));
@@ -162,11 +161,10 @@ void EmitWriteSharedU128(EmitContext& ctx, Id offset, Id value) {
         ctx.OpStore(pointer, value);
         return;
     }
-    const Id shift{ctx.Constant(ctx.U32[1], 2U)};
+    const Id shift{ctx.Const(2U)};
     const Id base_index{ctx.OpShiftRightArithmetic(ctx.U32[1], offset, shift)};
     for (u32 i = 0; i < 4; ++i) {
-        const Id index{i == 0 ? base_index
-                              : ctx.OpIAdd(ctx.U32[1], base_index, ctx.Constant(ctx.U32[1], i))};
+        const Id index{i == 0 ? base_index : ctx.OpIAdd(ctx.U32[1], base_index, ctx.Const(i))};
         const Id pointer{ctx.OpAccessChain(ctx.shared_u32, ctx.shared_memory_u32, index)};
         ctx.OpStore(pointer, ctx.OpCompositeExtract(ctx.U32[1], value, i));
     }

@@ -131,13 +131,13 @@ Id DefineInput(EmitContext& ctx, Id type, bool per_invocation,
     case Stage::TessellationControl:
     case Stage::TessellationEval:
         if (per_invocation) {
-            type = ctx.TypeArray(type, ctx.Constant(ctx.U32[1], 32u));
+            type = ctx.TypeArray(type, ctx.Const(32u));
         }
         break;
     case Stage::Geometry:
         if (per_invocation) {
             const u32 num_vertices{NumVertices(ctx.profile.input_topology)};
-            type = ctx.TypeArray(type, ctx.Constant(ctx.U32[1], num_vertices));
+            type = ctx.TypeArray(type, ctx.Const(num_vertices));
         }
         break;
     default:
@@ -149,7 +149,7 @@ Id DefineInput(EmitContext& ctx, Id type, bool per_invocation,
 Id DefineOutput(EmitContext& ctx, Id type, std::optional<u32> invocations,
                 std::optional<spv::BuiltIn> builtin = std::nullopt) {
     if (invocations && ctx.stage == Stage::TessellationControl) {
-        type = ctx.TypeArray(type, ctx.Constant(ctx.U32[1], *invocations));
+        type = ctx.TypeArray(type, ctx.Const(*invocations));
     }
     return DefineVariable(ctx, type, builtin, spv::StorageClass::Output);
 }
@@ -224,7 +224,7 @@ std::optional<AttrInfo> AttrTypes(EmitContext& ctx, u32 index) {
 
 void DefineConstBuffers(EmitContext& ctx, const Info& info, Id UniformDefinitions::*member_type,
                         u32 binding, Id type, char type_char, u32 element_size) {
-    const Id array_type{ctx.TypeArray(type, ctx.Constant(ctx.U32[1], 65536U / element_size))};
+    const Id array_type{ctx.TypeArray(type, ctx.Const(65536U / element_size))};
     ctx.Decorate(array_type, spv::Decoration::ArrayStride, element_size);
 
     const Id struct_type{ctx.TypeStruct(array_type)};
@@ -328,7 +328,7 @@ Id CasLoop(EmitContext& ctx, Operation operation, Id array_pointer, Id element_p
     const bool is_struct{!is_shared || ctx.profile.support_explicit_workgroup_layout};
     const Id cas_func{CasFunction(ctx, operation, value_type)};
     const Id zero{ctx.u32_zero_value};
-    const Id scope_id{ctx.Constant(ctx.U32[1], static_cast<u32>(scope))};
+    const Id scope_id{ctx.Const(static_cast<u32>(scope))};
 
     const Id loop_header{ctx.OpLabel()};
     const Id continue_block{ctx.OpLabel()};
@@ -428,11 +428,11 @@ Id EmitContext::Def(const IR::Value& value) {
     case IR::Type::U1:
         return value.U1() ? true_value : false_value;
     case IR::Type::U32:
-        return Constant(U32[1], value.U32());
+        return Const(value.U32());
     case IR::Type::U64:
         return Constant(U64, value.U64());
     case IR::Type::F32:
-        return Constant(F32[1], value.F32());
+        return Const(value.F32());
     case IR::Type::F64:
         return Constant(F64[1], value.F64());
     case IR::Type::Label:
@@ -486,8 +486,8 @@ void EmitContext::DefineCommonTypes(const Info& info) {
 void EmitContext::DefineCommonConstants() {
     true_value = ConstantTrue(U1);
     false_value = ConstantFalse(U1);
-    u32_zero_value = Constant(U32[1], 0U);
-    f32_zero_value = Constant(F32[1], 0.0f);
+    u32_zero_value = Const(0U);
+    f32_zero_value = Const(0.0f);
 }
 
 void EmitContext::DefineInterfaces(const IR::Program& program) {
@@ -500,7 +500,7 @@ void EmitContext::DefineLocalMemory(const IR::Program& program) {
         return;
     }
     const u32 num_elements{Common::DivCeil(program.local_memory_size, 4U)};
-    const Id type{TypeArray(U32[1], Constant(U32[1], num_elements))};
+    const Id type{TypeArray(U32[1], Const(num_elements))};
     const Id pointer{TypePointer(spv::StorageClass::Private, type)};
     local_memory = AddGlobalVariable(pointer, spv::StorageClass::Private);
     if (profile.supported_spirv >= 0x00010400) {
@@ -514,7 +514,7 @@ void EmitContext::DefineSharedMemory(const IR::Program& program) {
     }
     const auto make{[&](Id element_type, u32 element_size) {
         const u32 num_elements{Common::DivCeil(program.shared_memory_size, element_size)};
-        const Id array_type{TypeArray(element_type, Constant(U32[1], num_elements))};
+        const Id array_type{TypeArray(element_type, Const(num_elements))};
         Decorate(array_type, spv::Decoration::ArrayStride, element_size);
 
         const Id struct_type{TypeStruct(array_type)};
@@ -549,7 +549,7 @@ void EmitContext::DefineSharedMemory(const IR::Program& program) {
         return;
     }
     const u32 num_elements{Common::DivCeil(program.shared_memory_size, 4U)};
-    const Id type{TypeArray(U32[1], Constant(U32[1], num_elements))};
+    const Id type{TypeArray(U32[1], Const(num_elements))};
     shared_memory_u32_type = TypePointer(spv::StorageClass::Workgroup, type);
 
     shared_u32 = TypePointer(spv::StorageClass::Workgroup, U32[1]);
@@ -569,10 +569,10 @@ void EmitContext::DefineSharedMemory(const IR::Program& program) {
         OpBranch(loop_header);
 
         AddLabel(loop_header);
-        const Id word_offset{OpShiftRightArithmetic(U32[1], offset, Constant(U32[1], 2U))};
-        const Id shift_offset{OpShiftLeftLogical(U32[1], offset, Constant(U32[1], 3U))};
-        const Id bit_offset{OpBitwiseAnd(U32[1], shift_offset, Constant(U32[1], mask))};
-        const Id count{Constant(U32[1], size)};
+        const Id word_offset{OpShiftRightArithmetic(U32[1], offset, Const(2U))};
+        const Id shift_offset{OpShiftLeftLogical(U32[1], offset, Const(3U))};
+        const Id bit_offset{OpBitwiseAnd(U32[1], shift_offset, Const(mask))};
+        const Id count{Const(size)};
         OpLoopMerge(merge_block, continue_block, spv::LoopControlMask::MaskNone);
         OpBranch(continue_block);
 
@@ -580,9 +580,8 @@ void EmitContext::DefineSharedMemory(const IR::Program& program) {
         const Id word_pointer{OpAccessChain(shared_u32, shared_memory_u32, word_offset)};
         const Id old_value{OpLoad(U32[1], word_pointer)};
         const Id new_value{OpBitFieldInsert(U32[1], old_value, insert_value, bit_offset, count)};
-        const Id atomic_res{OpAtomicCompareExchange(U32[1], word_pointer, Constant(U32[1], 1U),
-                                                    u32_zero_value, u32_zero_value, new_value,
-                                                    old_value)};
+        const Id atomic_res{OpAtomicCompareExchange(U32[1], word_pointer, Const(1U), u32_zero_value,
+                                                    u32_zero_value, new_value, old_value)};
         const Id success{OpIEqual(U1, atomic_res, old_value)};
         OpBranchConditional(success, merge_block, loop_header);
 
@@ -623,9 +622,9 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
         const Id vertex{is_array ? OpFunctionParameter(U32[1]) : Id{}};
 
         AddLabel();
-        const Id base_index{OpShiftRightArithmetic(U32[1], offset, Constant(U32[1], 2U))};
-        const Id masked_index{OpBitwiseAnd(U32[1], base_index, Constant(U32[1], 3U))};
-        const Id compare_index{OpShiftRightArithmetic(U32[1], base_index, Constant(U32[1], 2U))};
+        const Id base_index{OpShiftRightArithmetic(U32[1], offset, Const(2U))};
+        const Id masked_index{OpBitwiseAnd(U32[1], base_index, Const(3U))};
+        const Id compare_index{OpShiftRightArithmetic(U32[1], base_index, Const(2U))};
         std::vector<Sirit::Literal> literals;
         std::vector<Id> labels;
         if (info.loads_position) {
@@ -643,7 +642,7 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
         OpSelectionMerge(end_block, spv::SelectionControlMask::MaskNone);
         OpSwitch(compare_index, default_label, literals, labels);
         AddLabel(default_label);
-        OpReturnValue(Constant(F32[1], 0.0f));
+        OpReturnValue(Const(0.0f));
         size_t label_index{0};
         if (info.loads_position) {
             AddLabel(labels[label_index]);
@@ -661,7 +660,7 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
             AddLabel(labels[label_index]);
             const auto type{AttrTypes(*this, static_cast<u32>(i))};
             if (!type) {
-                OpReturnValue(Constant(F32[1], 0.0f));
+                OpReturnValue(Const(0.0f));
                 ++label_index;
                 continue;
             }
@@ -688,9 +687,9 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
         const Id offset{OpFunctionParameter(U32[1])};
         const Id store_value{OpFunctionParameter(F32[1])};
         AddLabel();
-        const Id base_index{OpShiftRightArithmetic(U32[1], offset, Constant(U32[1], 2U))};
-        const Id masked_index{OpBitwiseAnd(U32[1], base_index, Constant(U32[1], 3U))};
-        const Id compare_index{OpShiftRightArithmetic(U32[1], base_index, Constant(U32[1], 2U))};
+        const Id base_index{OpShiftRightArithmetic(U32[1], offset, Const(2U))};
+        const Id masked_index{OpBitwiseAnd(U32[1], base_index, Const(3U))};
+        const Id compare_index{OpShiftRightArithmetic(U32[1], base_index, Const(2U))};
         std::vector<Sirit::Literal> literals;
         std::vector<Id> labels;
         if (info.stores_position) {
@@ -744,7 +743,7 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
             OpReturn();
             ++label_index;
             AddLabel(labels[label_index]);
-            const Id fixed_index{OpIAdd(U32[1], masked_index, Constant(U32[1], 4))};
+            const Id fixed_index{OpIAdd(U32[1], masked_index, Const(4U))};
             const Id pointer2{OpAccessChain(output_f32, clip_distances, fixed_index)};
             OpStore(pointer2, store_value);
             OpReturn();
@@ -1018,9 +1017,9 @@ void EmitContext::DefineInputs(const Info& info) {
             DefineInput(*this, U32[1], false, spv::BuiltIn::SubgroupLocalInvocationId);
     }
     if (info.uses_fswzadd) {
-        const Id f32_one{Constant(F32[1], 1.0f)};
-        const Id f32_minus_one{Constant(F32[1], -1.0f)};
-        const Id f32_zero{Constant(F32[1], 0.0f)};
+        const Id f32_one{Const(1.0f)};
+        const Id f32_minus_one{Const(-1.0f)};
+        const Id f32_zero{Const(0.0f)};
         fswzadd_lut_a = ConstantComposite(F32[4], f32_minus_one, f32_one, f32_minus_one, f32_zero);
         fswzadd_lut_b =
             ConstantComposite(F32[4], f32_minus_one, f32_minus_one, f32_one, f32_minus_one);
@@ -1118,7 +1117,7 @@ void EmitContext::DefineOutputs(const IR::Program& program) {
         if (stage == Stage::Fragment) {
             throw NotImplementedException("Storing ClipDistance in fragment stage");
         }
-        const Id type{TypeArray(F32[1], Constant(U32[1], 8U))};
+        const Id type{TypeArray(F32[1], Const(8U))};
         clip_distances = DefineOutput(*this, type, invocations, spv::BuiltIn::ClipDistance);
     }
     if (info.stores_layer &&
@@ -1136,7 +1135,7 @@ void EmitContext::DefineOutputs(const IR::Program& program) {
         viewport_index = DefineOutput(*this, U32[1], invocations, spv::BuiltIn::ViewportIndex);
     }
     if (info.stores_viewport_mask && profile.support_viewport_mask) {
-        viewport_mask = DefineOutput(*this, TypeArray(U32[1], Constant(U32[1], 1u)), std::nullopt);
+        viewport_mask = DefineOutput(*this, TypeArray(U32[1], Const(1u)), std::nullopt);
     }
     for (size_t index = 0; index < info.stores_generics.size(); ++index) {
         if (info.stores_generics[index]) {
@@ -1146,13 +1145,13 @@ void EmitContext::DefineOutputs(const IR::Program& program) {
     switch (stage) {
     case Stage::TessellationControl:
         if (info.stores_tess_level_outer) {
-            const Id type{TypeArray(F32[1], Constant(U32[1], 4))};
+            const Id type{TypeArray(F32[1], Const(4U))};
             output_tess_level_outer =
                 DefineOutput(*this, type, std::nullopt, spv::BuiltIn::TessLevelOuter);
             Decorate(output_tess_level_outer, spv::Decoration::Patch);
         }
         if (info.stores_tess_level_inner) {
-            const Id type{TypeArray(F32[1], Constant(U32[1], 2))};
+            const Id type{TypeArray(F32[1], Const(2U))};
             output_tess_level_inner =
                 DefineOutput(*this, type, std::nullopt, spv::BuiltIn::TessLevelInner);
             Decorate(output_tess_level_inner, spv::Decoration::Patch);
