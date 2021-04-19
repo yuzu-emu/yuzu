@@ -1135,7 +1135,8 @@ void EmitContext::DefineOutputs(const IR::Program& program) {
         viewport_index = DefineOutput(*this, U32[1], invocations, spv::BuiltIn::ViewportIndex);
     }
     if (info.stores_viewport_mask && profile.support_viewport_mask) {
-        viewport_mask = DefineOutput(*this, TypeArray(U32[1], Const(1u)), std::nullopt);
+        viewport_mask = DefineOutput(*this, TypeArray(U32[1], Const(1u)), std::nullopt,
+                                     spv::BuiltIn::ViewportMaskNV);
     }
     for (size_t index = 0; index < info.stores_generics.size(); ++index) {
         if (info.stores_generics[index]) {
