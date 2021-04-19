@@ -482,6 +482,9 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
     case IR::Opcode::IMul32:
         FoldWhenAllImmediates(inst, [](u32 a, u32 b) { return a * b; });
         return;
+    case IR::Opcode::ShiftRightArithmetic32:
+        FoldWhenAllImmediates(inst, [](s32 a, s32 b) { return static_cast<u32>(a >> b); });
+        return;
     case IR::Opcode::BitCastF32U32:
         return FoldBitCast<IR::Opcode::BitCastF32U32, f32, u32>(inst, IR::Opcode::BitCastU32F32);
     case IR::Opcode::BitCastU32F32:
