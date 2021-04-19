@@ -64,16 +64,16 @@ void EmitLoadGlobalS16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitLoadGlobal32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitLoadGlobal32(EmitContext& ctx, Id address) {
+    return ctx.OpFunctionCall(ctx.U32[1], ctx.load_global_func_u32, address);
 }
 
-void EmitLoadGlobal64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitLoadGlobal64(EmitContext& ctx, Id address) {
+    return ctx.OpFunctionCall(ctx.U32[2], ctx.load_global_func_u32x2, address);
 }
 
-void EmitLoadGlobal128(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitLoadGlobal128(EmitContext& ctx, Id address) {
+    return ctx.OpFunctionCall(ctx.U32[4], ctx.load_global_func_u32x4, address);
 }
 
 void EmitWriteGlobalU8(EmitContext&) {
@@ -92,16 +92,16 @@ void EmitWriteGlobalS16(EmitContext&) {
     throw NotImplementedException("SPIR-V Instruction");
 }
 
-void EmitWriteGlobal32(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+void EmitWriteGlobal32(EmitContext& ctx, Id address, Id value) {
+    ctx.OpFunctionCall(ctx.void_id, ctx.write_global_func_u32, address, value);
 }
 
-void EmitWriteGlobal64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+void EmitWriteGlobal64(EmitContext& ctx, Id address, Id value) {
+    ctx.OpFunctionCall(ctx.void_id, ctx.write_global_func_u32x2, address, value);
 }
 
-void EmitWriteGlobal128(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+void EmitWriteGlobal128(EmitContext& ctx, Id address, Id value) {
+    ctx.OpFunctionCall(ctx.void_id, ctx.write_global_func_u32x4, address, value);
 }
 
 Id EmitLoadStorageU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {

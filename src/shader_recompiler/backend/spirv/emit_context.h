@@ -224,6 +224,13 @@ public:
     Id f32x2_min_cas{};
     Id f32x2_max_cas{};
 
+    Id load_global_func_u32{};
+    Id load_global_func_u32x2{};
+    Id load_global_func_u32x4{};
+    Id write_global_func_u32{};
+    Id write_global_func_u32x2{};
+    Id write_global_func_u32x4{};
+
     Id input_position{};
     std::array<Id, 32> input_generics{};
 
@@ -255,6 +262,7 @@ private:
     void DefineTextures(const Info& info, u32& binding);
     void DefineImages(const Info& info, u32& binding);
     void DefineAttributeMemAccess(const Info& info);
+    void DefineGlobalMemoryFunctions(const Info& info);
     void DefineLabels(IR::Program& program);
 
     void DefineInputs(const Info& info);

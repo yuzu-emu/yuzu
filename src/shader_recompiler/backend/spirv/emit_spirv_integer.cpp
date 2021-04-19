@@ -55,16 +55,16 @@ Id EmitIAdd32(EmitContext& ctx, IR::Inst* inst, Id a, Id b) {
     return result;
 }
 
-void EmitIAdd64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitIAdd64(EmitContext& ctx, Id a, Id b) {
+    return ctx.OpIAdd(ctx.U64, a, b);
 }
 
 Id EmitISub32(EmitContext& ctx, Id a, Id b) {
     return ctx.OpISub(ctx.U32[1], a, b);
 }
 
-void EmitISub64(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+Id EmitISub64(EmitContext& ctx, Id a, Id b) {
+    return ctx.OpISub(ctx.U64, a, b);
 }
 
 Id EmitIMul32(EmitContext& ctx, Id a, Id b) {
