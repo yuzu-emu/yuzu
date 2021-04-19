@@ -54,7 +54,7 @@ Id EmitLaneId(EmitContext& ctx) {
     if (!ctx.profile.warp_size_potentially_larger_than_guest) {
         return id;
     }
-    return ctx.OpBitwiseAnd(ctx.U32[1], id, ctx.Constant(ctx.U32[1], 31U));
+    return ctx.OpBitwiseAnd(ctx.U32[1], id, ctx.Const(31U));
 }
 
 Id EmitVoteAll(EmitContext& ctx, Id pred) {
@@ -168,10 +168,10 @@ Id EmitShuffleButterfly(EmitContext& ctx, IR::Inst* inst, Id value, Id index, Id
 }
 
 Id EmitFSwizzleAdd(EmitContext& ctx, Id op_a, Id op_b, Id swizzle) {
-    const Id three{ctx.Constant(ctx.U32[1], 3)};
+    const Id three{ctx.Const(3U)};
     Id mask{ctx.OpLoad(ctx.U32[1], ctx.subgroup_local_invocation_id)};
     mask = ctx.OpBitwiseAnd(ctx.U32[1], mask, three);
-    mask = ctx.OpShiftLeftLogical(ctx.U32[1], mask, ctx.Constant(ctx.U32[1], 1));
+    mask = ctx.OpShiftLeftLogical(ctx.U32[1], mask, ctx.Const(1U));
     mask = ctx.OpShiftRightLogical(ctx.U32[1], swizzle, mask);
     mask = ctx.OpBitwiseAnd(ctx.U32[1], mask, three);
 

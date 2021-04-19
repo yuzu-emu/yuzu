@@ -7,10 +7,10 @@
 namespace Shader::Backend::SPIRV {
 namespace {
 Id SharedPointer(EmitContext& ctx, Id offset, u32 index_offset = 0) {
-    const Id shift_id{ctx.Constant(ctx.U32[1], 2U)};
+    const Id shift_id{ctx.Const(2U)};
     Id index{ctx.OpShiftRightArithmetic(ctx.U32[1], offset, shift_id)};
     if (index_offset > 0) {
-        index = ctx.OpIAdd(ctx.U32[1], index, ctx.Constant(ctx.U32[1], index_offset));
+        index = ctx.OpIAdd(ctx.U32[1], index, ctx.Const(index_offset));
     }
     return ctx.profile.support_explicit_workgroup_layout
                ? ctx.OpAccessChain(ctx.shared_u32, ctx.shared_memory_u32, ctx.u32_zero_value, index)
@@ -20,14 +20,14 @@ Id SharedPointer(EmitContext& ctx, Id offset, u32 index_offset = 0) {
 Id StorageIndex(EmitContext& ctx, const IR::Value& offset, size_t element_size) {
     if (offset.IsImmediate()) {
         const u32 imm_offset{static_cast<u32>(offset.U32() / element_size)};
-        return ctx.Constant(ctx.U32[1], imm_offset);
+        return ctx.Const(imm_offset);
     }
     const u32 shift{static_cast<u32>(std::countr_zero(element_size))};
     const Id index{ctx.Def(offset)};
     if (shift == 0) {
         return index;
     }
-    const Id shift_id{ctx.Constant(ctx.U32[1], shift)};
+    const Id shift_id{ctx.Const(shift)};
     return ctx.OpShiftRightLogical(ctx.U32[1], index, shift_id);
 }
 
@@ -43,7 +43,7 @@ Id StoragePointer(EmitContext& ctx, const StorageTypeDefinition& type_def,
 }
 
 std::pair<Id, Id> AtomicArgs(EmitContext& ctx) {
-    const Id scope{ctx.Constant(ctx.U32[1], static_cast<u32>(spv::Scope::Device))};
+    const Id scope{ctx.Const(static_cast<u32>(spv::Scope::Device))};
     const Id semantics{ctx.u32_zero_value};
     return {scope, semantics};
 }
@@ -103,13 +103,13 @@ Id EmitSharedAtomicUMax32(EmitContext& ctx, Id offset, Id value) {
 }
 
 Id EmitSharedAtomicInc32(EmitContext& ctx, Id offset, Id value) {
-    const Id shift_id{ctx.Constant(ctx.U32[1], 2U)};
+    const Id shift_id{ctx.Const(2U)};
     const Id index{ctx.OpShiftRightArithmetic(ctx.U32[1], offset, shift_id)};
     return ctx.OpFunctionCall(ctx.U32[1], ctx.increment_cas_shared, index, value);
 }
 
 Id EmitSharedAtomicDec32(EmitContext& ctx, Id offset, Id value) {
-    const Id shift_id{ctx.Constant(ctx.U32[1], 2U)};
+    const Id shift_id{ctx.Const(2U)};
     const Id index{ctx.OpShiftRightArithmetic(ctx.U32[1], offset, shift_id)};
     return ctx.OpFunctionCall(ctx.U32[1], ctx.decrement_cas_shared, index, value);
 }
@@ -132,7 +132,7 @@ Id EmitSharedAtomicExchange32(EmitContext& ctx, Id offset, Id value) {
 
 Id EmitSharedAtomicExchange64(EmitContext& ctx, Id offset, Id value) {
     if (ctx.profile.support_int64_atomics && ctx.profile.support_explicit_workgroup_layout) {
-        const Id shift_id{ctx.Constant(ctx.U32[1], 3U)};
+        const Id shift_id{ctx.Const(3U)};
         const Id index{ctx.OpShiftRightArithmetic(ctx.U32[1], offset, shift_id)};
         const Id pointer{
             ctx.OpAccessChain(ctx.shared_u64, ctx.shared_memory_u64, ctx.u32_zero_value, index)};

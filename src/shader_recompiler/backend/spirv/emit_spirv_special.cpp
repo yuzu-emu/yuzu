@@ -19,7 +19,7 @@ void ConvertDepthMode(EmitContext& ctx) {
 void SetFixedPipelinePointSize(EmitContext& ctx) {
     if (ctx.profile.fixed_state_point_size) {
         const float point_size{*ctx.profile.fixed_state_point_size};
-        ctx.OpStore(ctx.output_point_size, ctx.Constant(ctx.F32[1], point_size));
+        ctx.OpStore(ctx.output_point_size, ctx.Const(point_size));
     }
 }
 
@@ -75,7 +75,7 @@ void AlphaTest(EmitContext& ctx) {
 
     const Id true_label{ctx.OpLabel()};
     const Id discard_label{ctx.OpLabel()};
-    const Id alpha_reference{ctx.Constant(ctx.F32[1], ctx.profile.alpha_test_reference)};
+    const Id alpha_reference{ctx.Const(ctx.profile.alpha_test_reference)};
     const Id condition{ComparisonFunction(ctx, comparison, alpha, alpha_reference)};
 
     ctx.OpSelectionMerge(true_label, spv::SelectionControlMask::MaskNone);
@@ -88,8 +88,8 @@ void AlphaTest(EmitContext& ctx) {
 
 void EmitPrologue(EmitContext& ctx) {
     if (ctx.stage == Stage::VertexB) {
-        const Id zero{ctx.Constant(ctx.F32[1], 0.0f)};
-        const Id one{ctx.Constant(ctx.F32[1], 1.0f)};
+        const Id zero{ctx.Const(0.0f)};
+        const Id one{ctx.Const(1.0f)};
         const Id default_vector{ctx.ConstantComposite(ctx.F32[4], zero, zero, zero, one)};
         ctx.OpStore(ctx.output_position, default_vector);
         for (const auto& info : ctx.output_generics) {

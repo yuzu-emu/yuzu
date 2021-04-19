@@ -45,16 +45,12 @@ public:
         if (opcode != values[1]->GetOpcode() || opcode != IR::Opcode::CompositeConstructU32x4) {
             throw LogicError("Invalid PTP arguments");
         }
-        auto read{[&](unsigned int a, unsigned int b) {
-            return ctx.Constant(ctx.U32[1], values[a]->Arg(b).U32());
-        }};
+        auto read{[&](unsigned int a, unsigned int b) { return values[a]->Arg(b).U32(); }};
 
-        const Id offsets{
-            ctx.ConstantComposite(ctx.TypeArray(ctx.U32[2], ctx.Constant(ctx.U32[1], 4)),
-                                  ctx.ConstantComposite(ctx.U32[2], read(0, 0), read(0, 1)),
-                                  ctx.ConstantComposite(ctx.U32[2], read(0, 2), read(0, 3)),
-                                  ctx.ConstantComposite(ctx.U32[2], read(1, 0), read(1, 1)),
-                                  ctx.ConstantComposite(ctx.U32[2], read(1, 2), read(1, 3)))};
+        const Id offsets{ctx.ConstantComposite(
+            ctx.TypeArray(ctx.U32[2], ctx.Const(4U)), ctx.Const(read(0, 0), read(0, 1)),
+            ctx.Const(read(0, 2), read(0, 3)), ctx.Const(read(1, 0), read(1, 1)),
+            ctx.Const(read(1, 2), read(1, 3)))};
         Add(spv::ImageOperandsMask::ConstOffsets, offsets);
     }
 
@@ -108,7 +104,7 @@ private:
             return;
         }
         if (offset.IsImmediate()) {
-            Add(spv::ImageOperandsMask::ConstOffset, ctx.Constant(ctx.U32[1], offset.U32()));
+            Add(spv::ImageOperandsMask::ConstOffset, ctx.Const(offset.U32()));
             return;
         }
         IR::Inst* const inst{offset.InstRecursive()};
@@ -361,9 +357,8 @@ Id EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id 
     const auto info{inst->Flags<IR::TextureInstInfo>()};
     const ImageOperands operands(ctx, offset, offset2);
     return Emit(&EmitContext::OpImageSparseGather, &EmitContext::OpImageGather, ctx, inst,
-                ctx.F32[4], Texture(ctx, index), coords,
-                ctx.Constant(ctx.U32[1], info.gather_component.Value()), operands.Mask(),
-                operands.Span());
+                ctx.F32[4], Texture(ctx, index), coords, ctx.Const(info.gather_component),
+                operands.Mask(), operands.Span());
 }
 
 Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,

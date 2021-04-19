@@ -117,7 +117,7 @@ Id EmitFPLog2(EmitContext& ctx, Id value) {
 }
 
 Id EmitFPRecip32(EmitContext& ctx, Id value) {
-    return ctx.OpFDiv(ctx.F32[1], ctx.Constant(ctx.F32[1], 1.0f), value);
+    return ctx.OpFDiv(ctx.F32[1], ctx.Const(1.0f), value);
 }
 
 Id EmitFPRecip64(EmitContext& ctx, Id value) {
@@ -143,8 +143,8 @@ Id EmitFPSaturate16(EmitContext& ctx, Id value) {
 }
 
 Id EmitFPSaturate32(EmitContext& ctx, Id value) {
-    const Id zero{ctx.Constant(ctx.F32[1], f32{0.0})};
-    const Id one{ctx.Constant(ctx.F32[1], f32{1.0})};
+    const Id zero{ctx.Const(f32{0.0})};
+    const Id one{ctx.Const(f32{1.0})};
     return Clamp(ctx, ctx.F32[1], value, zero, one);
 }
 
