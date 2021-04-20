@@ -19,6 +19,9 @@ namespace {
 struct ConstBufferAddr {
     u32 index;
     u32 offset;
+    u32 secondary_index;
+    u32 secondary_offset;
+    bool has_secondary;
 };
 
 struct TextureInst {
@@ -109,9 +112,38 @@ bool IsTextureInstruction(const IR::Inst& inst) {
     return IndexedInstruction(inst) != IR::Opcode::Void;
 }
 
+std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst);
+
+std::optional<ConstBufferAddr> Track(const IR::Value& value) {
+    return IR::BreadthFirstSearch(value, TryGetConstBuffer);
+}
+
 std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst) {
-    if (inst->GetOpcode() != IR::Opcode::GetCbufU32) {
+    switch (inst->GetOpcode()) {
+    default:
         return std::nullopt;
+    case IR::Opcode::BitwiseOr32: {
+        std::optional lhs{Track(inst->Arg(0))};
+        std::optional rhs{Track(inst->Arg(1))};
+        if (!lhs || !rhs) {
+            return std::nullopt;
+        }
+        if (lhs->has_secondary || rhs->has_secondary) {
+            return std::nullopt;
+        }
+        if (lhs->index > rhs->index || lhs->offset > rhs->offset) {
+            std::swap(lhs, rhs);
+        }
+        return ConstBufferAddr{
+            .index = lhs->index,
+            .offset = lhs->offset,
+            .secondary_index = rhs->index,
+            .secondary_offset = rhs->offset,
+            .has_secondary = true,
+        };
+    }
+    case IR::Opcode::GetCbufU32:
+        break;
     }
     const IR::Value index{inst->Arg(0)};
     const IR::Value offset{inst->Arg(1)};
@@ -127,11 +159,10 @@ std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst) {
     return ConstBufferAddr{
         .index{index.U32()},
         .offset{offset.U32()},
+        .secondary_index = 0,
+        .secondary_offset = 0,
+        .has_secondary = false,
     };
-}
-
-std::optional<ConstBufferAddr> Track(const IR::Value& value) {
-    return IR::BreadthFirstSearch(value, TryGetConstBuffer);
 }
 
 TextureInst MakeInst(Environment& env, IR::Block* block, IR::Inst& inst) {
@@ -146,6 +177,9 @@ TextureInst MakeInst(Environment& env, IR::Block* block, IR::Inst& inst) {
         addr = ConstBufferAddr{
             .index = env.TextureBoundBuffer(),
             .offset = inst.Arg(0).U32(),
+            .secondary_index = 0,
+            .secondary_offset = 0,
+            .has_secondary = false,
         };
     }
     return TextureInst{
@@ -153,6 +187,14 @@ TextureInst MakeInst(Environment& env, IR::Block* block, IR::Inst& inst) {
         .inst = &inst,
         .block = block,
     };
+}
+
+TextureType ReadTextureType(Environment& env, const ConstBufferAddr& cbuf) {
+    const u32 secondary_index{cbuf.has_secondary ? cbuf.index : cbuf.secondary_index};
+    const u32 secondary_offset{cbuf.has_secondary ? cbuf.offset : cbuf.secondary_offset};
+    const u32 lhs_raw{env.ReadCbufValue(cbuf.index, cbuf.offset)};
+    const u32 rhs_raw{env.ReadCbufValue(secondary_index, secondary_offset)};
+    return env.ReadTextureType(lhs_raw | rhs_raw);
 }
 
 class Descriptors {
@@ -167,8 +209,11 @@ public:
 
     u32 Add(const TextureBufferDescriptor& desc) {
         return Add(texture_buffer_descriptors, desc, [&desc](const auto& existing) {
-            return desc.cbuf_index == existing.cbuf_index &&
-                   desc.cbuf_offset == existing.cbuf_offset;
+            return desc.has_secondary == existing.has_secondary &&
+                   desc.cbuf_index == existing.cbuf_index &&
+                   desc.cbuf_offset == existing.cbuf_offset &&
+                   desc.secondary_cbuf_index == existing.secondary_cbuf_index &&
+                   desc.secondary_cbuf_offset == existing.secondary_cbuf_offset;
         });
     }
 
@@ -181,8 +226,12 @@ public:
 
     u32 Add(const TextureDescriptor& desc) {
         return Add(texture_descriptors, desc, [&desc](const auto& existing) {
-            return desc.cbuf_index == existing.cbuf_index &&
-                   desc.cbuf_offset == existing.cbuf_offset && desc.type == existing.type;
+            return desc.type == existing.type && desc.is_depth == existing.is_depth &&
+                   desc.has_secondary == existing.has_secondary &&
+                   desc.cbuf_index == existing.cbuf_index &&
+                   desc.cbuf_offset == existing.cbuf_offset &&
+                   desc.secondary_cbuf_index == existing.secondary_cbuf_index &&
+                   desc.secondary_cbuf_offset == existing.secondary_cbuf_offset;
         });
     }
 
@@ -247,14 +296,14 @@ void TexturePass(Environment& env, IR::Program& program) {
         auto flags{inst->Flags<IR::TextureInstInfo>()};
         switch (inst->GetOpcode()) {
         case IR::Opcode::ImageQueryDimensions:
-            flags.type.Assign(env.ReadTextureType(cbuf.index, cbuf.offset));
+            flags.type.Assign(ReadTextureType(env, cbuf));
             inst->SetFlags(flags);
             break;
         case IR::Opcode::ImageFetch:
             if (flags.type != TextureType::Color1D) {
                 break;
             }
-            if (env.ReadTextureType(cbuf.index, cbuf.offset) == TextureType::Buffer) {
+            if (ReadTextureType(env, cbuf) == TextureType::Buffer) {
                 // Replace with the bound texture type only when it's a texture buffer
                 // If the instruction is 1D and the bound type is 2D, don't change the code and let
                 // the rasterizer robustness handle it
@@ -270,6 +319,9 @@ void TexturePass(Environment& env, IR::Program& program) {
         switch (inst->GetOpcode()) {
         case IR::Opcode::ImageRead:
         case IR::Opcode::ImageWrite: {
+            if (cbuf.has_secondary) {
+                throw NotImplementedException("Unexpected separate sampler");
+            }
             const bool is_written{inst->GetOpcode() == IR::Opcode::ImageWrite};
             if (flags.type == TextureType::Buffer) {
                 index = descriptors.Add(ImageBufferDescriptor{
@@ -294,16 +346,22 @@ void TexturePass(Environment& env, IR::Program& program) {
         default:
             if (flags.type == TextureType::Buffer) {
                 index = descriptors.Add(TextureBufferDescriptor{
+                    .has_secondary = cbuf.has_secondary,
                     .cbuf_index = cbuf.index,
                     .cbuf_offset = cbuf.offset,
+                    .secondary_cbuf_index = cbuf.secondary_index,
+                    .secondary_cbuf_offset = cbuf.secondary_offset,
                     .count = 1,
                 });
             } else {
                 index = descriptors.Add(TextureDescriptor{
                     .type = flags.type,
                     .is_depth = flags.is_depth != 0,
+                    .has_secondary = cbuf.has_secondary,
                     .cbuf_index = cbuf.index,
                     .cbuf_offset = cbuf.offset,
+                    .secondary_cbuf_index = cbuf.secondary_index,
+                    .secondary_cbuf_offset = cbuf.secondary_offset,
                     .count = 1,
                 });
             }

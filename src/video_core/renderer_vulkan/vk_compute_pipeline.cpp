@@ -88,23 +88,34 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
     boost::container::static_vector<u32, max_elements> image_view_indices;
     boost::container::static_vector<VkSampler, max_elements> samplers;
 
-    const auto& launch_desc{kepler_compute.launch_description};
-    const auto& cbufs{launch_desc.const_buffer_config};
-    const bool via_header_index{launch_desc.linked_tsc};
-    const auto read_handle{[&](u32 cbuf_index, u32 cbuf_offset) {
-        ASSERT(((launch_desc.const_buffer_enable_mask >> cbuf_index) & 1) != 0);
-        const GPUVAddr addr{cbufs[cbuf_index].Address() + cbuf_offset};
-        const u32 raw_handle{gpu_memory.Read<u32>(addr)};
-        return TextureHandle(raw_handle, via_header_index);
+    const auto& qmd{kepler_compute.launch_description};
+    const auto& cbufs{qmd.const_buffer_config};
+    const bool via_header_index{qmd.linked_tsc != 0};
+    const auto read_handle{[&](const auto& desc) {
+        ASSERT(((qmd.const_buffer_enable_mask >> desc.cbuf_index) & 1) != 0);
+        const GPUVAddr addr{cbufs[desc.cbuf_index].Address() + desc.cbuf_offset};
+        if constexpr (std::is_same_v<decltype(desc), const Shader::TextureDescriptor&> ||
+                      std::is_same_v<decltype(desc), const Shader::TextureBufferDescriptor&>) {
+            if (desc.has_secondary) {
+                ASSERT(((qmd.const_buffer_enable_mask >> desc.secondary_cbuf_index) & 1) != 0);
+                const GPUVAddr separate_addr{cbufs[desc.secondary_cbuf_index].Address() +
+                                             desc.secondary_cbuf_offset};
+                const u32 lhs_raw{gpu_memory.Read<u32>(addr)};
+                const u32 rhs_raw{gpu_memory.Read<u32>(separate_addr)};
+                const u32 raw{lhs_raw | rhs_raw};
+                return TextureHandle{raw, via_header_index};
+            }
+        }
+        return TextureHandle{gpu_memory.Read<u32>(addr), via_header_index};
     }};
     const auto add_image{[&](const auto& desc) {
-        const TextureHandle handle{read_handle(desc.cbuf_index, desc.cbuf_offset)};
+        const TextureHandle handle{read_handle(desc)};
         image_view_indices.push_back(handle.image);
     }};
     std::ranges::for_each(info.texture_buffer_descriptors, add_image);
     std::ranges::for_each(info.image_buffer_descriptors, add_image);
     for (const auto& desc : info.texture_descriptors) {
-        const TextureHandle handle{read_handle(desc.cbuf_index, desc.cbuf_offset)};
+        const TextureHandle handle{read_handle(desc)};
         image_view_indices.push_back(handle.image);
 
         Sampler* const sampler = texture_cache.GetComputeSampler(handle.sampler);

@@ -188,9 +188,7 @@ protected:
     }
 
     Shader::TextureType ReadTextureTypeImpl(GPUVAddr tic_addr, u32 tic_limit, bool via_header_index,
-                                            GPUVAddr cbuf_addr, u32 cbuf_size, u32 cbuf_index,
-                                            u32 cbuf_offset) {
-        const u32 raw{cbuf_offset < cbuf_size ? gpu_memory->Read<u32>(cbuf_addr + cbuf_offset) : 0};
+                                            u32 raw) {
         const TextureHandle handle{raw, via_header_index};
         const GPUVAddr descriptor_addr{tic_addr + handle.image * sizeof(Tegra::Texture::TICEntry)};
         Tegra::Texture::TICEntry entry;
@@ -219,7 +217,7 @@ protected:
                 throw Shader::NotImplementedException("Unknown texture type");
             }
         }()};
-        texture_types.emplace(MakeCbufKey(cbuf_index, cbuf_offset), result);
+        texture_types.emplace(raw, result);
         return result;
     }
 
@@ -227,7 +225,7 @@ protected:
     GPUVAddr program_base{};
 
     std::vector<u64> code;
-    std::unordered_map<u64, Shader::TextureType> texture_types;
+    std::unordered_map<u32, Shader::TextureType> texture_types;
     std::unordered_map<u64, u32> cbuf_values;
 
     u32 local_memory_size{};
@@ -250,7 +248,7 @@ using Shader::Maxwell::TranslateProgram;
 
 // TODO: Move this to a separate file
 constexpr std::array<char, 8> MAGIC_NUMBER{'y', 'u', 'z', 'u', 'c', 'a', 'c', 'h'};
-constexpr u32 CACHE_VERSION{1};
+constexpr u32 CACHE_VERSION{2};
 
 class GraphicsEnvironment final : public GenericEnvironment {
 public:
@@ -308,13 +306,10 @@ public:
         return value;
     }
 
-    Shader::TextureType ReadTextureType(u32 cbuf_index, u32 cbuf_offset) override {
+    Shader::TextureType ReadTextureType(u32 handle) override {
         const auto& regs{maxwell3d->regs};
-        const auto& cbuf{maxwell3d->state.shader_stages[stage_index].const_buffers[cbuf_index]};
-        ASSERT(cbuf.enabled);
         const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};
-        return ReadTextureTypeImpl(regs.tic.Address(), regs.tic.limit, via_header_index,
-                                   cbuf.address, cbuf.size, cbuf_index, cbuf_offset);
+        return ReadTextureTypeImpl(regs.tic.Address(), regs.tic.limit, via_header_index, handle);
     }
 
 private:
@@ -352,13 +347,10 @@ public:
         return value;
     }
 
-    Shader::TextureType ReadTextureType(u32 cbuf_index, u32 cbuf_offset) override {
+    Shader::TextureType ReadTextureType(u32 handle) override {
         const auto& regs{kepler_compute->regs};
         const auto& qmd{kepler_compute->launch_description};
-        ASSERT(((qmd.const_buffer_enable_mask.Value() >> cbuf_index) & 1) != 0);
-        const auto& cbuf{qmd.const_buffer_config[cbuf_index]};
-        return ReadTextureTypeImpl(regs.tic.Address(), regs.tic.limit, qmd.linked_tsc != 0,
-                                   cbuf.Address(), cbuf.size, cbuf_index, cbuf_offset);
+        return ReadTextureTypeImpl(regs.tic.Address(), regs.tic.limit, qmd.linked_tsc != 0, handle);
     }
 
 private:
@@ -421,7 +413,7 @@ public:
         code = std::make_unique<u64[]>(Common::DivCeil(code_size, sizeof(u64)));
         file.read(reinterpret_cast<char*>(code.get()), code_size);
         for (size_t i = 0; i < num_texture_types; ++i) {
-            u64 key;
+            u32 key;
             Shader::TextureType type;
             file.read(reinterpret_cast<char*>(&key), sizeof(key))
                 .read(reinterpret_cast<char*>(&type), sizeof(type));
@@ -457,8 +449,8 @@ public:
         return it->second;
     }
 
-    Shader::TextureType ReadTextureType(u32 cbuf_index, u32 cbuf_offset) override {
-        const auto it{texture_types.find(MakeCbufKey(cbuf_index, cbuf_offset))};
+    Shader::TextureType ReadTextureType(u32 handle) override {
+        const auto it{texture_types.find(handle)};
         if (it == texture_types.end()) {
             throw Shader::LogicError("Uncached read texture type");
         }
@@ -483,7 +475,7 @@ public:
 
 private:
     std::unique_ptr<u64[]> code;
-    std::unordered_map<u64, Shader::TextureType> texture_types;
+    std::unordered_map<u32, Shader::TextureType> texture_types;
     std::unordered_map<u64, u32> cbuf_values;
     std::array<u32, 3> workgroup_size{};
     u32 local_memory_size{};

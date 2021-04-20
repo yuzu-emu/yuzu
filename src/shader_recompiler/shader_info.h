@@ -61,8 +61,11 @@ struct StorageBufferDescriptor {
 };
 
 struct TextureBufferDescriptor {
+    bool has_secondary;
     u32 cbuf_index;
     u32 cbuf_offset;
+    u32 secondary_cbuf_index;
+    u32 secondary_cbuf_offset;
     u32 count;
 };
 using TextureBufferDescriptors = boost::container::small_vector<TextureBufferDescriptor, 6>;
@@ -79,8 +82,11 @@ using ImageBufferDescriptors = boost::container::small_vector<ImageBufferDescrip
 struct TextureDescriptor {
     TextureType type;
     bool is_depth;
+    bool has_secondary;
     u32 cbuf_index;
     u32 cbuf_offset;
+    u32 secondary_cbuf_index;
+    u32 secondary_cbuf_offset;
     u32 count;
 };
 using TextureDescriptors = boost::container::small_vector<TextureDescriptor, 12>;
