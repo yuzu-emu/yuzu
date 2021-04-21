@@ -264,4 +264,27 @@ using U16U32U64 = TypedValue<Type::U16 | Type::U32 | Type::U64>;
 using F16F32F64 = TypedValue<Type::F16 | Type::F32 | Type::F64>;
 using UAny = TypedValue<Type::U8 | Type::U16 | Type::U32 | Type::U64>;
 
+inline bool Value::IsIdentity() const noexcept {
+    return type == Type::Opaque && inst->GetOpcode() == Opcode::Identity;
+}
+
+inline bool Value::IsPhi() const noexcept {
+    return type == Type::Opaque && inst->GetOpcode() == Opcode::Phi;
+}
+
+inline bool Value::IsEmpty() const noexcept {
+    return type == Type::Void;
+}
+
+inline bool Value::IsImmediate() const noexcept {
+    IR::Type current_type{type};
+    const IR::Inst* current_inst{inst};
+    while (current_type == Type::Opaque && current_inst->GetOpcode() == Opcode::Identity) {
+        const Value& arg{current_inst->Arg(0)};
+        current_type = arg.type;
+        current_inst = arg.inst;
+    }
+    return current_type != Type::Opaque;
+}
+
 } // namespace Shader::IR

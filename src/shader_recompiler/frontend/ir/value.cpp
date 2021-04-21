@@ -33,25 +33,6 @@ Value::Value(u64 value) noexcept : type{Type::U64}, imm_u64{value} {}
 
 Value::Value(f64 value) noexcept : type{Type::F64}, imm_f64{value} {}
 
-bool Value::IsIdentity() const noexcept {
-    return type == Type::Opaque && inst->GetOpcode() == Opcode::Identity;
-}
-
-bool Value::IsPhi() const noexcept {
-    return type == Type::Opaque && inst->GetOpcode() == Opcode::Phi;
-}
-
-bool Value::IsEmpty() const noexcept {
-    return type == Type::Void;
-}
-
-bool Value::IsImmediate() const noexcept {
-    if (IsIdentity()) {
-        return inst->Arg(0).IsImmediate();
-    }
-    return type != Type::Opaque;
-}
-
 bool Value::IsLabel() const noexcept {
     return type == Type::Label;
 }
