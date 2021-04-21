@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <array>
+#include <algorithm>
 #include <string_view>
 
 #include <fmt/format.h>
@@ -18,14 +20,80 @@ enum class Opcode {
 #undef OPCODE
 };
 
+namespace Detail {
+
+struct OpcodeMeta {
+    std::string_view name;
+    Type type;
+    std::array<Type, 5> arg_types;
+};
+
+// using enum Type;
+constexpr Type Void{Type::Void};
+constexpr Type Opaque{Type::Opaque};
+constexpr Type Label{Type::Label};
+constexpr Type Reg{Type::Reg};
+constexpr Type Pred{Type::Pred};
+constexpr Type Attribute{Type::Attribute};
+constexpr Type Patch{Type::Patch};
+constexpr Type U1{Type::U1};
+constexpr Type U8{Type::U8};
+constexpr Type U16{Type::U16};
+constexpr Type U32{Type::U32};
+constexpr Type U64{Type::U64};
+constexpr Type F16{Type::F16};
+constexpr Type F32{Type::F32};
+constexpr Type F64{Type::F64};
+constexpr Type U32x2{Type::U32x2};
+constexpr Type U32x3{Type::U32x3};
+constexpr Type U32x4{Type::U32x4};
+constexpr Type F16x2{Type::F16x2};
+constexpr Type F16x3{Type::F16x3};
+constexpr Type F16x4{Type::F16x4};
+constexpr Type F32x2{Type::F32x2};
+constexpr Type F32x3{Type::F32x3};
+constexpr Type F32x4{Type::F32x4};
+constexpr Type F64x2{Type::F64x2};
+constexpr Type F64x3{Type::F64x3};
+constexpr Type F64x4{Type::F64x4};
+
+constexpr std::array META_TABLE{
+#define OPCODE(name_token, type_token, ...)                                                        \
+    OpcodeMeta{                                                                                    \
+        .name{#name_token},                                                                        \
+        .type = type_token,                                                                        \
+        .arg_types{__VA_ARGS__},                                                                   \
+    },
+#include "opcodes.inc"
+#undef OPCODE
+};
+
+constexpr size_t CalculateNumArgsOf(Opcode op) {
+    const auto& arg_types{META_TABLE[static_cast<size_t>(op)].arg_types};
+    return std::distance(arg_types.begin(), std::ranges::find(arg_types, Type::Void));
+}
+
+constexpr std::array NUM_ARGS{
+#define OPCODE(name_token, type_token, ...) CalculateNumArgsOf(Opcode::name_token),
+#include "opcodes.inc"
+#undef OPCODE
+};
+} // namespace Detail
+
 /// Get return type of an opcode
-[[nodiscard]] Type TypeOf(Opcode op);
+[[nodiscard]] inline Type TypeOf(Opcode op) noexcept {
+    return Detail::META_TABLE[static_cast<size_t>(op)].type;
+}
 
 /// Get the number of arguments an opcode accepts
-[[nodiscard]] size_t NumArgsOf(Opcode op);
+[[nodiscard]] inline size_t NumArgsOf(Opcode op) noexcept {
+    return Detail::NUM_ARGS[static_cast<size_t>(op)];
+}
 
 /// Get the required type of an argument of an opcode
-[[nodiscard]] Type ArgTypeOf(Opcode op, size_t arg_index);
+[[nodiscard]] inline Type ArgTypeOf(Opcode op, size_t arg_index) noexcept {
+    return Detail::META_TABLE[static_cast<size_t>(op)].arg_types[arg_index];
+}
 
 /// Get the name of an opcode
 [[nodiscard]] std::string_view NameOf(Opcode op);

@@ -73,10 +73,19 @@ public:
     [[nodiscard]] IR::Type Type() const;
 
     /// Get the number of arguments this instruction has.
-    [[nodiscard]] size_t NumArgs() const;
+    [[nodiscard]] size_t NumArgs() const {
+        return op == Opcode::Phi ? phi_args.size() : NumArgsOf(op);
+    }
 
     /// Get the value of a given argument index.
-    [[nodiscard]] Value Arg(size_t index) const;
+    [[nodiscard]] Value Arg(size_t index) const noexcept {
+        if (op == Opcode::Phi) {
+            return phi_args[index].second;
+        } else {
+            return args[index];
+        }
+    }
+
     /// Set the value of a given argument index.
     void SetArg(size_t index, Value value);
 
