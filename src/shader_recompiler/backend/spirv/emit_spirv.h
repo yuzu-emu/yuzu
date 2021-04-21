@@ -8,7 +8,6 @@
 
 #include "common/common_types.h"
 #include "shader_recompiler/backend/spirv/emit_context.h"
-#include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/profile.h"
 

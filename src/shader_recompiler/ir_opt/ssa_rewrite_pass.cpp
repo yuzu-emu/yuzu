@@ -23,10 +23,10 @@
 #include <boost/container/flat_set.hpp>
 
 #include "shader_recompiler/frontend/ir/basic_block.h"
-#include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/opcodes.h"
 #include "shader_recompiler/frontend/ir/pred.h"
 #include "shader_recompiler/frontend/ir/reg.h"
+#include "shader_recompiler/frontend/ir/value.h"
 #include "shader_recompiler/ir_opt/passes.h"
 
 namespace Shader::Optimization {

@@ -36,7 +36,6 @@ add_library(shader_recompiler STATIC
     frontend/ir/ir_emitter.cpp
     frontend/ir/ir_emitter.h
     frontend/ir/microinstruction.cpp
-    frontend/ir/microinstruction.h
     frontend/ir/modifiers.h
     frontend/ir/opcodes.cpp
     frontend/ir/opcodes.h

@@ -11,7 +11,7 @@
 #include "common/bit_util.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
-#include "shader_recompiler/frontend/ir/microinstruction.h"
+#include "shader_recompiler/frontend/ir/value.h"
 #include "shader_recompiler/ir_opt/passes.h"
 
 namespace Shader::Optimization {

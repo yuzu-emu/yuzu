@@ -11,7 +11,7 @@
 
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
-#include "shader_recompiler/frontend/ir/microinstruction.h"
+#include "shader_recompiler/frontend/ir/value.h"
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
 #include "shader_recompiler/object_pool.h"
 
