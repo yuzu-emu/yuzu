@@ -222,27 +222,6 @@ std::string DumpTree(const Tree& tree, u32 indentation = 0) {
     return ret;
 }
 
-bool HasNode(const Tree& tree, ConstNode stmt) {
-    const auto end{tree.end()};
-    for (auto it = tree.begin(); it != end; ++it) {
-        if (it == stmt || (HasChildren(it->type) && HasNode(it->children, stmt))) {
-            return true;
-        }
-    }
-    return false;
-}
-
-Node FindStatementWithLabel(Tree& tree, ConstNode goto_stmt) {
-    const ConstNode label_stmt{goto_stmt->label};
-    const ConstNode end{tree.end()};
-    for (auto it = tree.begin(); it != end; ++it) {
-        if (it == label_stmt || (HasChildren(it->type) && HasNode(it->children, label_stmt))) {
-            return it;
-        }
-    }
-    throw LogicError("Lift label not in tree");
-}
-
 void SanitizeNoBreaks(const Tree& tree) {
     if (std::ranges::find(tree, StatementType::Break, &Statement::type) != tree.end()) {
         throw NotImplementedException("Capturing statement with break nodes");
@@ -288,22 +267,6 @@ bool IsIndirectlyRelated(Node goto_stmt, Node label_stmt) {
     return goto_stmt->up != label_stmt->up && !IsDirectlyRelated(goto_stmt, label_stmt);
 }
 
-bool SearchNode(const Tree& tree, ConstNode stmt, size_t& offset) {
-    ++offset;
-
-    const auto end = tree.end();
-    for (ConstNode it = tree.begin(); it != end; ++it) {
-        ++offset;
-        if (stmt == it) {
-            return true;
-        }
-        if (HasChildren(it->type) && SearchNode(it->children, stmt, offset)) {
-            return true;
-        }
-    }
-    return false;
-}
-
 bool AreSiblings(Node goto_stmt, Node label_stmt) noexcept {
     Node it{goto_stmt};
     do {
@@ -319,6 +282,30 @@ bool AreSiblings(Node goto_stmt, Node label_stmt) noexcept {
         ++it;
     }
     return false;
+}
+
+Node SiblingFromNephew(Node uncle, Node nephew) noexcept {
+    Statement* const parent{uncle->up};
+    Statement* it{&*nephew};
+    while (it->up != parent) {
+        it = it->up;
+    }
+    return Tree::s_iterator_to(*it);
+}
+
+bool AreOrdered(Node left_sibling, Node right_sibling) noexcept {
+    const Node end{right_sibling->up->children.end()};
+    for (auto it = right_sibling; it != end; ++it) {
+        if (it == left_sibling) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool NeedsLift(Node goto_stmt, Node label_stmt) noexcept {
+    const Node sibling{SiblingFromNephew(goto_stmt, label_stmt)};
+    return AreOrdered(sibling, goto_stmt);
 }
 
 class GotoPass {
@@ -358,7 +345,7 @@ private:
                     --goto_level;
                 }
             } else { // Level(goto_stmt) < Level(label_stmt)
-                if (Offset(goto_stmt) > Offset(label_stmt)) {
+                if (NeedsLift(goto_stmt, label_stmt)) {
                     // Lift goto_stmt to above stmt containing label_stmt using goto-lifting
                     // transformations
                     goto_stmt = Lift(goto_stmt);
@@ -378,7 +365,7 @@ private:
         if (std::next(goto_stmt) == label_stmt) {
             // Simply eliminate the goto if the label is next to it
             goto_stmt->up->children.erase(goto_stmt);
-        } else if (Offset(goto_stmt) < Offset(label_stmt)) {
+        } else if (AreOrdered(goto_stmt, label_stmt)) {
             // Eliminate goto_stmt with a conditional
             EliminateAsConditional(goto_stmt, label_stmt);
         } else {
@@ -523,8 +510,8 @@ private:
     [[nodiscard]] Node MoveInward(Node goto_stmt) {
         Statement* const parent{goto_stmt->up};
         Tree& body{parent->children};
-        const Node label_nested_stmt{FindStatementWithLabel(body, goto_stmt)};
         const Node label{goto_stmt->label};
+        const Node label_nested_stmt{SiblingFromNephew(goto_stmt, label)};
         const u32 label_id{label->id};
 
         Statement* const goto_cond{goto_stmt->cond};
@@ -562,7 +549,7 @@ private:
         Tree& body{parent->children};
         const Node label{goto_stmt->label};
         const u32 label_id{label->id};
-        const Node label_nested_stmt{FindStatementWithLabel(body, goto_stmt)};
+        const Node label_nested_stmt{SiblingFromNephew(goto_stmt, label)};
 
         Tree loop_body;
         loop_body.splice(loop_body.begin(), body, label_nested_stmt, goto_stmt);
@@ -625,14 +612,6 @@ private:
         Statement* const new_goto{pool.Create(Goto{}, new_goto_cond, goto_stmt->label, loop->up)};
         Tree& parent_tree{loop->up->children};
         return parent_tree.insert(std::next(loop), *new_goto);
-    }
-
-    size_t Offset(ConstNode stmt) const {
-        size_t offset{0};
-        if (!SearchNode(root_stmt.children, stmt, offset)) {
-            throw LogicError("Node not found in tree");
-        }
-        return offset;
     }
 
     ObjectPool<IR::Inst>& inst_pool;
