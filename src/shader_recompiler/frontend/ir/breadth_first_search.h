@@ -10,7 +10,6 @@
 
 #include <boost/container/small_vector.hpp>
 
-#include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::IR {

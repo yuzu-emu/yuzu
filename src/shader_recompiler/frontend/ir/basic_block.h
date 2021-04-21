@@ -13,7 +13,6 @@
 
 #include "common/bit_cast.h"
 #include "shader_recompiler/frontend/ir/condition.h"
-#include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/value.h"
 #include "shader_recompiler/object_pool.h"
 

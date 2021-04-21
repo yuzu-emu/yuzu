@@ -6,8 +6,8 @@
 #include <memory>
 
 #include "shader_recompiler/exception.h"
-#include "shader_recompiler/frontend/ir/microinstruction.h"
 #include "shader_recompiler/frontend/ir/type.h"
+#include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::IR {
 namespace {
