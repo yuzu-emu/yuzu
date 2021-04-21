@@ -175,7 +175,7 @@ add_library(shader_recompiler STATIC
     shader_info.h
 )
 
-target_link_libraries(shader_recompiler PUBLIC fmt::fmt sirit)
+target_link_libraries(shader_recompiler PUBLIC common fmt::fmt sirit)
 
 add_executable(shader_util main.cpp)
 target_link_libraries(shader_util PRIVATE shader_recompiler)
