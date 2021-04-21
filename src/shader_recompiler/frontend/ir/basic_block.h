@@ -59,15 +59,22 @@ public:
     /// Gets the end location for this basic block.
     [[nodiscard]] u32 LocationEnd() const noexcept;
 
-    /// Gets a mutable reference to the instruction list for this basic block.
-    [[nodiscard]] InstructionList& Instructions() noexcept;
-    /// Gets an immutable reference to the instruction list for this basic block.
-    [[nodiscard]] const InstructionList& Instructions() const noexcept;
-
     /// Adds a new immediate predecessor to this basic block.
     void AddImmediatePredecessor(Block* block);
+
+    /// Gets a mutable reference to the instruction list for this basic block.
+    [[nodiscard]] InstructionList& Instructions() noexcept {
+        return instructions;
+    }
+    /// Gets an immutable reference to the instruction list for this basic block.
+    [[nodiscard]] const InstructionList& Instructions() const noexcept {
+        return instructions;
+    }
+
     /// Gets an immutable span to the immediate predecessors.
-    [[nodiscard]] std::span<Block* const> ImmediatePredecessors() const noexcept;
+    [[nodiscard]] std::span<Block* const> ImmediatePredecessors() const noexcept {
+        return imm_predecessors;
+    }
 
     /// Intrusively store the host definition of this instruction.
     template <typename DefinitionType>
