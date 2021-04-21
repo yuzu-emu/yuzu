@@ -34,7 +34,7 @@ struct AssociatedInsts;
 
 class Value {
 public:
-    Value() noexcept : type{IR::Type::Void}, inst{nullptr} {}
+    Value() noexcept = default;
     explicit Value(IR::Inst* value) noexcept;
     explicit Value(IR::Block* value) noexcept;
     explicit Value(IR::Reg value) noexcept;
@@ -78,9 +78,9 @@ public:
 private:
     void ValidateAccess(IR::Type expected) const;
 
-    IR::Type type;
+    IR::Type type{};
     union {
-        IR::Inst* inst;
+        IR::Inst* inst{};
         IR::Block* label;
         IR::Reg reg;
         IR::Pred pred;
@@ -95,6 +95,7 @@ private:
         f64 imm_f64;
     };
 };
+static_assert(static_cast<u32>(IR::Type::Void) == 0, "memset relies on IR::Type being zero");
 static_assert(std::is_trivially_copyable_v<Value>);
 
 template <IR::Type type_>
