@@ -195,7 +195,7 @@ public:
             case Status::Start: {
                 if (const IR::Value& def = current_def.Def(block, variable); !def.IsEmpty()) {
                     stack.back().result = def;
-                } else if (!sealed_blocks.contains(block)) {
+                } else if (!block->IsSsaSealed()) {
                     // Incomplete CFG
                     IR::Inst* phi{&*block->PrependNewInst(block->begin(), IR::Opcode::Phi)};
                     phi->SetFlags(IR::TypeOf(UndefOpcode(variable)));
@@ -251,7 +251,7 @@ public:
                 std::visit([&](auto& variable) { AddPhiOperands(variable, *phi, block); }, variant);
             }
         }
-        sealed_blocks.insert(block);
+        block->SsaSeal();
     }
 
 private:
@@ -297,7 +297,6 @@ private:
         return same;
     }
 
-    boost::container::flat_set<IR::Block*> sealed_blocks;
     boost::container::flat_map<IR::Block*, boost::container::flat_map<Variant, IR::Inst*>>
         incomplete_phis;
     DefTable current_def;
