@@ -107,6 +107,13 @@ public:
         return ssa_reg_values[RegIndex(reg)];
     }
 
+    void SsaSeal() noexcept {
+        is_ssa_sealed = true;
+    }
+    [[nodiscard]] bool IsSsaSealed() const noexcept {
+        return is_ssa_sealed;
+    }
+
     [[nodiscard]] bool empty() const {
         return instructions.empty();
     }
@@ -190,6 +197,8 @@ private:
 
     /// Intrusively store the value of a register in the block.
     std::array<Value, NUM_REGS> ssa_reg_values;
+    /// Intrusively store if the block is sealed in the SSA pass.
+    bool is_ssa_sealed{false};
 
     /// Intrusively stored host definition of this block.
     u32 definition{};
