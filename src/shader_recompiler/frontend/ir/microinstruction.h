@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include <boost/container/small_vector.hpp>
 #include <boost/intrusive/list.hpp>
 
 #include "common/bit_cast.h"
@@ -131,7 +132,7 @@ private:
     u32 definition{};
     union {
         NonTriviallyDummy dummy{};
-        std::vector<std::pair<Block*, Value>> phi_args;
+        boost::container::small_vector<std::pair<Block*, Value>, 2> phi_args;
         std::array<Value, 5> args;
     };
     std::unique_ptr<AssociatedInsts> associated_insts;
