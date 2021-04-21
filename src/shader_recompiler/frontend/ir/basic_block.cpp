@@ -69,22 +69,10 @@ u32 Block::LocationEnd() const noexcept {
     return location_end;
 }
 
-Block::InstructionList& Block::Instructions() noexcept {
-    return instructions;
-}
-
-const Block::InstructionList& Block::Instructions() const noexcept {
-    return instructions;
-}
-
 void Block::AddImmediatePredecessor(Block* block) {
     if (std::ranges::find(imm_predecessors, block) == imm_predecessors.end()) {
         imm_predecessors.push_back(block);
     }
-}
-
-std::span<IR::Block* const> Block::ImmediatePredecessors() const noexcept {
-    return imm_predecessors;
 }
 
 static std::string BlockToIndex(const std::map<const Block*, size_t>& block_to_index,
