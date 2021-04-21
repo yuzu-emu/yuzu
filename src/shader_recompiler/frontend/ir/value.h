@@ -14,6 +14,7 @@
 #include <boost/container/small_vector.hpp>
 #include <boost/intrusive/list.hpp>
 
+#include "common/assert.h"
 #include "common/bit_cast.h"
 #include "common/common_types.h"
 #include "shader_recompiler/exception.h"
@@ -76,8 +77,6 @@ public:
     [[nodiscard]] bool operator!=(const Value& other) const;
 
 private:
-    void ValidateAccess(IR::Type expected) const;
-
     IR::Type type{};
     union {
         IR::Inst* inst{};
@@ -286,6 +285,107 @@ inline bool Value::IsImmediate() const noexcept {
         current_inst = arg.inst;
     }
     return current_type != Type::Opaque;
+}
+
+inline IR::Inst* Value::Inst() const {
+    DEBUG_ASSERT(type == Type::Opaque);
+    return inst;
+}
+
+inline IR::Block* Value::Label() const {
+    DEBUG_ASSERT(type == Type::Label);
+    return label;
+}
+
+inline IR::Inst* Value::InstRecursive() const {
+    DEBUG_ASSERT(type == Type::Opaque);
+    if (IsIdentity()) {
+        return inst->Arg(0).InstRecursive();
+    }
+    return inst;
+}
+
+inline IR::Value Value::Resolve() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).Resolve();
+    }
+    return *this;
+}
+
+inline IR::Reg Value::Reg() const {
+    DEBUG_ASSERT(type == Type::Reg);
+    return reg;
+}
+
+inline IR::Pred Value::Pred() const {
+    DEBUG_ASSERT(type == Type::Pred);
+    return pred;
+}
+
+inline IR::Attribute Value::Attribute() const {
+    DEBUG_ASSERT(type == Type::Attribute);
+    return attribute;
+}
+
+inline IR::Patch Value::Patch() const {
+    DEBUG_ASSERT(type == Type::Patch);
+    return patch;
+}
+
+inline bool Value::U1() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).U1();
+    }
+    DEBUG_ASSERT(type == Type::U1);
+    return imm_u1;
+}
+
+inline u8 Value::U8() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).U8();
+    }
+    DEBUG_ASSERT(type == Type::U8);
+    return imm_u8;
+}
+
+inline u16 Value::U16() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).U16();
+    }
+    DEBUG_ASSERT(type == Type::U16);
+    return imm_u16;
+}
+
+inline u32 Value::U32() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).U32();
+    }
+    DEBUG_ASSERT(type == Type::U32);
+    return imm_u32;
+}
+
+inline f32 Value::F32() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).F32();
+    }
+    DEBUG_ASSERT(type == Type::F32);
+    return imm_f32;
+}
+
+inline u64 Value::U64() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).U64();
+    }
+    DEBUG_ASSERT(type == Type::U64);
+    return imm_u64;
+}
+
+inline f64 Value::F64() const {
+    if (IsIdentity()) {
+        return inst->Arg(0).F64();
+    }
+    DEBUG_ASSERT(type == Type::F64);
+    return imm_f64;
 }
 
 } // namespace Shader::IR

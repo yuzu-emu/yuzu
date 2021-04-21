@@ -51,107 +51,6 @@ IR::Type Value::Type() const noexcept {
     return type;
 }
 
-IR::Inst* Value::Inst() const {
-    ValidateAccess(Type::Opaque);
-    return inst;
-}
-
-IR::Block* Value::Label() const {
-    ValidateAccess(Type::Label);
-    return label;
-}
-
-IR::Inst* Value::InstRecursive() const {
-    ValidateAccess(Type::Opaque);
-    if (IsIdentity()) {
-        return inst->Arg(0).InstRecursive();
-    }
-    return inst;
-}
-
-IR::Value Value::Resolve() const {
-    if (IsIdentity()) {
-        return inst->Arg(0).Resolve();
-    }
-    return *this;
-}
-
-IR::Reg Value::Reg() const {
-    ValidateAccess(Type::Reg);
-    return reg;
-}
-
-IR::Pred Value::Pred() const {
-    ValidateAccess(Type::Pred);
-    return pred;
-}
-
-IR::Attribute Value::Attribute() const {
-    ValidateAccess(Type::Attribute);
-    return attribute;
-}
-
-IR::Patch Value::Patch() const {
-    ValidateAccess(Type::Patch);
-    return patch;
-}
-
-bool Value::U1() const {
-    if (IsIdentity()) {
-        return inst->Arg(0).U1();
-    }
-    ValidateAccess(Type::U1);
-    return imm_u1;
-}
-
-u8 Value::U8() const {
-    if (IsIdentity()) {
-        return inst->Arg(0).U8();
-    }
-    ValidateAccess(Type::U8);
-    return imm_u8;
-}
-
-u16 Value::U16() const {
-    if (IsIdentity()) {
-        return inst->Arg(0).U16();
-    }
-    ValidateAccess(Type::U16);
-    return imm_u16;
-}
-
-u32 Value::U32() const {
-    if (IsIdentity()) {
-        return inst->Arg(0).U32();
-    }
-    ValidateAccess(Type::U32);
-    return imm_u32;
-}
-
-f32 Value::F32() const {
-    if (IsIdentity()) {
-        return inst->Arg(0).F32();
-    }
-    ValidateAccess(Type::F32);
-    return imm_f32;
-}
-
-u64 Value::U64() const {
-    if (IsIdentity()) {
-        return inst->Arg(0).U64();
-    }
-    ValidateAccess(Type::U64);
-    return imm_u64;
-}
-
-f64 Value::F64() const {
-    if (IsIdentity()) {
-        return inst->Arg(0).F64();
-    }
-    ValidateAccess(Type::F64);
-    return imm_f64;
-}
-
 bool Value::operator==(const Value& other) const {
     if (type != other.type) {
         return false;
@@ -203,12 +102,6 @@ bool Value::operator==(const Value& other) const {
 
 bool Value::operator!=(const Value& other) const {
     return !operator==(other);
-}
-
-void Value::ValidateAccess(IR::Type expected) const {
-    if (type != expected) {
-        throw LogicError("Reading {} out of {}", expected, type);
-    }
 }
 
 } // namespace Shader::IR
