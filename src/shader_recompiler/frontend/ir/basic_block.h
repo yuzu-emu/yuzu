@@ -101,6 +101,13 @@ public:
         return branch_false;
     }
 
+    void SetSsaRegValue(IR::Reg reg, const Value& value) noexcept {
+        ssa_reg_values[RegIndex(reg)] = value;
+    }
+    const Value& SsaRegValue(IR::Reg reg) const noexcept {
+        return ssa_reg_values[RegIndex(reg)];
+    }
+
     [[nodiscard]] bool empty() const {
         return instructions.empty();
     }
@@ -181,6 +188,9 @@ private:
     Block* branch_false{nullptr};
     /// Block immediate predecessors
     std::vector<Block*> imm_predecessors;
+
+    /// Intrusively store the value of a register in the block.
+    std::array<Value, NUM_REGS> ssa_reg_values;
 
     /// Intrusively stored host definition of this block.
     u32 definition{};
