@@ -267,7 +267,7 @@ bool IsIndirectlyRelated(Node goto_stmt, Node label_stmt) {
     return goto_stmt->up != label_stmt->up && !IsDirectlyRelated(goto_stmt, label_stmt);
 }
 
-bool AreSiblings(Node goto_stmt, Node label_stmt) noexcept {
+[[maybe_unused]] bool AreSiblings(Node goto_stmt, Node label_stmt) noexcept {
     Node it{goto_stmt};
     do {
         if (it == label_stmt) {
