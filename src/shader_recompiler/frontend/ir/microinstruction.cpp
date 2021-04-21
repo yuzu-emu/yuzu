@@ -282,7 +282,7 @@ void Inst::ClearArgs() {
         }
         // Reset arguments to null
         // std::memset was measured to be faster on MSVC than std::ranges:fill
-        std::memset(&args, 0, sizeof(args));
+        std::memset(reinterpret_cast<char*>(&args), 0, sizeof(args));
     }
 }
 
