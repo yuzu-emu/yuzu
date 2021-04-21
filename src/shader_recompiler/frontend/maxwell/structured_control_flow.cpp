@@ -304,6 +304,23 @@ bool SearchNode(const Tree& tree, ConstNode stmt, size_t& offset) {
     return false;
 }
 
+bool AreSiblings(Node goto_stmt, Node label_stmt) noexcept {
+    Node it{goto_stmt};
+    do {
+        if (it == label_stmt) {
+            return true;
+        }
+        --it;
+    } while (it != goto_stmt->up->children.begin());
+    while (it != goto_stmt->up->children.end()) {
+        if (it == label_stmt) {
+            return true;
+        }
+        ++it;
+    }
+    return false;
+}
+
 class GotoPass {
 public:
     explicit GotoPass(Flow::CFG& cfg, ObjectPool<IR::Inst>& inst_pool_,
@@ -353,22 +370,10 @@ private:
                 }
             }
         }
-        // TODO: Remove this
-        {
-            Node it{goto_stmt};
-            bool sibling{false};
-            do {
-                sibling |= it == label_stmt;
-                --it;
-            } while (it != goto_stmt->up->children.begin());
-            while (it != goto_stmt->up->children.end()) {
-                sibling |= it == label_stmt;
-                ++it;
-            }
-            if (!sibling) {
-                throw LogicError("Not siblings");
-            }
-        }
+        // Expensive operation:
+        // if (!AreSiblings(goto_stmt, label_stmt)) {
+        //     throw LogicError("Goto is not a sibling with the label");
+        // }
         // goto_stmt and label_stmt are guaranteed to be siblings, eliminate
         if (std::next(goto_stmt) == label_stmt) {
             // Simply eliminate the goto if the label is next to it
