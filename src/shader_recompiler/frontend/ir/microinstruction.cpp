@@ -279,8 +279,10 @@ void Inst::ClearArgs() {
             if (!value.IsImmediate()) {
                 UndoUse(value);
             }
-            value = {};
         }
+        // Reset arguments to null
+        // std::memset was measured to be faster on MSVC than std::ranges:fill
+        std::memset(&args, 0, sizeof(args));
     }
 }
 
