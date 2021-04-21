@@ -221,26 +221,8 @@ Inst* Inst::GetAssociatedPseudoOperation(IR::Opcode opcode) {
     }
 }
 
-size_t Inst::NumArgs() const {
-    return op == Opcode::Phi ? phi_args.size() : NumArgsOf(op);
-}
-
 IR::Type Inst::Type() const {
     return TypeOf(op);
-}
-
-Value Inst::Arg(size_t index) const {
-    if (op == Opcode::Phi) {
-        if (index >= phi_args.size()) {
-            throw InvalidArgument("Out of bounds argument index {} in phi instruction", index);
-        }
-        return phi_args[index].second;
-    } else {
-        if (index >= NumArgsOf(op)) {
-            throw InvalidArgument("Out of bounds argument index {} in opcode {}", index, op);
-        }
-        return args[index];
-    }
 }
 
 void Inst::SetArg(size_t index, Value value) {
