@@ -57,6 +57,17 @@ constexpr std::array META_TABLE{
 #undef OPCODE
 };
 
+constexpr size_t CalculateNumArgsOf(Opcode op) {
+    const auto& arg_types{META_TABLE[static_cast<size_t>(op)].arg_types};
+    return std::distance(arg_types.begin(), std::ranges::find(arg_types, Type::Void));
+}
+
+constexpr std::array NUM_ARGS{
+#define OPCODE(name_token, type_token, ...) CalculateNumArgsOf(Opcode::name_token),
+#include "opcodes.inc"
+#undef OPCODE
+};
+
 void ValidateOpcode(Opcode op) {
     const size_t raw{static_cast<size_t>(op)};
     if (raw >= META_TABLE.size()) {
@@ -72,9 +83,7 @@ Type TypeOf(Opcode op) {
 
 size_t NumArgsOf(Opcode op) {
     ValidateOpcode(op);
-    const auto& arg_types{META_TABLE[static_cast<size_t>(op)].arg_types};
-    const auto distance{std::distance(arg_types.begin(), std::ranges::find(arg_types, Type::Void))};
-    return static_cast<size_t>(distance);
+    return NUM_ARGS[static_cast<size_t>(op)];
 }
 
 Type ArgTypeOf(Opcode op, size_t arg_index) {
