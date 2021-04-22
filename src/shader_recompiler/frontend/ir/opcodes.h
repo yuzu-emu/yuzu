@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <string_view>
 
 #include <fmt/format.h>
@@ -21,7 +21,6 @@ enum class Opcode {
 };
 
 namespace Detail {
-
 struct OpcodeMeta {
     std::string_view name;
     Type type;
@@ -57,9 +56,9 @@ constexpr Type F64x2{Type::F64x2};
 constexpr Type F64x3{Type::F64x3};
 constexpr Type F64x4{Type::F64x4};
 
-constexpr std::array META_TABLE{
+constexpr OpcodeMeta META_TABLE[]{
 #define OPCODE(name_token, type_token, ...)                                                        \
-    OpcodeMeta{                                                                                    \
+    {                                                                                              \
         .name{#name_token},                                                                        \
         .type = type_token,                                                                        \
         .arg_types{__VA_ARGS__},                                                                   \
@@ -67,14 +66,13 @@ constexpr std::array META_TABLE{
 #include "opcodes.inc"
 #undef OPCODE
 };
-
 constexpr size_t CalculateNumArgsOf(Opcode op) {
     const auto& arg_types{META_TABLE[static_cast<size_t>(op)].arg_types};
     return std::distance(arg_types.begin(), std::ranges::find(arg_types, Type::Void));
 }
 
-constexpr std::array NUM_ARGS{
-#define OPCODE(name_token, type_token, ...) CalculateNumArgsOf(Opcode::name_token),
+constexpr u8 NUM_ARGS[]{
+#define OPCODE(name_token, type_token, ...) static_cast<u8>(CalculateNumArgsOf(Opcode::name_token)),
 #include "opcodes.inc"
 #undef OPCODE
 };
@@ -87,7 +85,7 @@ constexpr std::array NUM_ARGS{
 
 /// Get the number of arguments an opcode accepts
 [[nodiscard]] inline size_t NumArgsOf(Opcode op) noexcept {
-    return Detail::NUM_ARGS[static_cast<size_t>(op)];
+    return static_cast<size_t>(Detail::NUM_ARGS[static_cast<size_t>(op)]);
 }
 
 /// Get the required type of an argument of an opcode
