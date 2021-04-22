@@ -364,6 +364,10 @@ void Inst::UndoUse(const Value& value) {
         AllocAssociatedInsts(assoc_inst);
         RemovePseudoInstruction(assoc_inst->overflow_inst, Opcode::GetOverflowFromOp);
         break;
+    case Opcode::GetSparseFromOp:
+        AllocAssociatedInsts(assoc_inst);
+        RemovePseudoInstruction(assoc_inst->sparse_inst, Opcode::GetSparseFromOp);
+        break;
     case Opcode::GetInBoundsFromOp:
         AllocAssociatedInsts(assoc_inst);
         RemovePseudoInstruction(assoc_inst->in_bounds_inst, Opcode::GetInBoundsFromOp);
