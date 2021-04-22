@@ -143,7 +143,6 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
 
     Optimization::ConstantPropagationPass(program);
     Optimization::DeadCodeEliminationPass(program);
-    Optimization::IdentityRemovalPass(program);
     Optimization::VerificationPass(program);
     Optimization::CollectShaderInfoPass(env, program);
     CollectInterpolationInfo(env, program);
