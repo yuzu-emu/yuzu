@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#include <bit>
 #include <optional>
 
 #include <boost/container/small_vector.hpp>
@@ -21,6 +22,8 @@ struct ConstBufferAddr {
     u32 offset;
     u32 secondary_index;
     u32 secondary_offset;
+    IR::U32 dynamic_offset;
+    u32 count;
     bool has_secondary;
 };
 
@@ -31,6 +34,9 @@ struct TextureInst {
 };
 
 using TextureInstVector = boost::container::small_vector<TextureInst, 24>;
+
+constexpr u32 DESCRIPTOR_SIZE = 8;
+constexpr u32 DESCRIPTOR_SIZE_SHIFT = static_cast<u32>(std::countr_zero(DESCRIPTOR_SIZE));
 
 IR::Opcode IndexedInstruction(const IR::Inst& inst) {
     switch (inst.GetOpcode()) {
@@ -131,6 +137,9 @@ std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst) {
         if (lhs->has_secondary || rhs->has_secondary) {
             return std::nullopt;
         }
+        if (lhs->count > 1 || rhs->count > 1) {
+            return std::nullopt;
+        }
         if (lhs->index > rhs->index || lhs->offset > rhs->offset) {
             std::swap(lhs, rhs);
         }
@@ -139,9 +148,12 @@ std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst) {
             .offset = lhs->offset,
             .secondary_index = rhs->index,
             .secondary_offset = rhs->offset,
+            .dynamic_offset = {},
+            .count = 1,
             .has_secondary = true,
         };
     }
+    case IR::Opcode::GetCbufU32x2:
     case IR::Opcode::GetCbufU32:
         break;
     }
@@ -152,15 +164,39 @@ std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst) {
         // but not supported here at the moment
         return std::nullopt;
     }
-    if (!offset.IsImmediate()) {
-        // TODO: Support arrays of textures
+    if (offset.IsImmediate()) {
+        return ConstBufferAddr{
+            .index = index.U32(),
+            .offset = offset.U32(),
+            .secondary_index = 0,
+            .secondary_offset = 0,
+            .dynamic_offset = {},
+            .count = 1,
+            .has_secondary = false,
+        };
+    }
+    IR::Inst* const offset_inst{offset.InstRecursive()};
+    if (offset_inst->GetOpcode() != IR::Opcode::IAdd32) {
+        return std::nullopt;
+    }
+    u32 base_offset{};
+    IR::U32 dynamic_offset;
+    if (offset_inst->Arg(0).IsImmediate()) {
+        base_offset = offset_inst->Arg(0).U32();
+        dynamic_offset = IR::U32{offset_inst->Arg(1)};
+    } else if (offset_inst->Arg(1).IsImmediate()) {
+        base_offset = offset_inst->Arg(1).U32();
+        dynamic_offset = IR::U32{offset_inst->Arg(0)};
+    } else {
         return std::nullopt;
     }
     return ConstBufferAddr{
-        .index{index.U32()},
-        .offset{offset.U32()},
+        .index = index.U32(),
+        .offset = base_offset,
         .secondary_index = 0,
         .secondary_offset = 0,
+        .dynamic_offset = dynamic_offset,
+        .count = 8,
         .has_secondary = false,
     };
 }
@@ -179,11 +215,13 @@ TextureInst MakeInst(Environment& env, IR::Block* block, IR::Inst& inst) {
             .offset = inst.Arg(0).U32(),
             .secondary_index = 0,
             .secondary_offset = 0,
+            .dynamic_offset = {},
+            .count = 1,
             .has_secondary = false,
         };
     }
     return TextureInst{
-        .cbuf{addr},
+        .cbuf = addr,
         .inst = &inst,
         .block = block,
     };
@@ -209,18 +247,20 @@ public:
 
     u32 Add(const TextureBufferDescriptor& desc) {
         return Add(texture_buffer_descriptors, desc, [&desc](const auto& existing) {
-            return desc.has_secondary == existing.has_secondary &&
-                   desc.cbuf_index == existing.cbuf_index &&
+            return desc.cbuf_index == existing.cbuf_index &&
                    desc.cbuf_offset == existing.cbuf_offset &&
                    desc.secondary_cbuf_index == existing.secondary_cbuf_index &&
-                   desc.secondary_cbuf_offset == existing.secondary_cbuf_offset;
+                   desc.secondary_cbuf_offset == existing.secondary_cbuf_offset &&
+                   desc.count == existing.count && desc.size_shift == existing.size_shift &&
+                   desc.has_secondary == existing.has_secondary;
         });
     }
 
     u32 Add(const ImageBufferDescriptor& desc) {
         return Add(image_buffer_descriptors, desc, [&desc](const auto& existing) {
             return desc.format == existing.format && desc.cbuf_index == existing.cbuf_index &&
-                   desc.cbuf_offset == existing.cbuf_offset;
+                   desc.cbuf_offset == existing.cbuf_offset && desc.count == existing.count &&
+                   desc.size_shift == existing.size_shift;
         });
     }
 
@@ -231,7 +271,8 @@ public:
                    desc.cbuf_index == existing.cbuf_index &&
                    desc.cbuf_offset == existing.cbuf_offset &&
                    desc.secondary_cbuf_index == existing.secondary_cbuf_index &&
-                   desc.secondary_cbuf_offset == existing.secondary_cbuf_offset;
+                   desc.secondary_cbuf_offset == existing.secondary_cbuf_offset &&
+                   desc.count == existing.count && desc.size_shift == existing.size_shift;
         });
     }
 
@@ -239,7 +280,8 @@ public:
         const u32 index{Add(image_descriptors, desc, [&desc](const auto& existing) {
             return desc.type == existing.type && desc.format == existing.format &&
                    desc.cbuf_index == existing.cbuf_index &&
-                   desc.cbuf_offset == existing.cbuf_offset;
+                   desc.cbuf_offset == existing.cbuf_offset && desc.count == existing.count &&
+                   desc.size_shift == existing.size_shift;
         })};
         image_descriptors[index].is_written |= desc.is_written;
         return index;
@@ -310,7 +352,6 @@ void TexturePass(Environment& env, IR::Program& program) {
                 // This happens on Fire Emblem: Three Houses
                 flags.type.Assign(TextureType::Buffer);
             }
-            inst->SetFlags(flags);
             break;
         default:
             break;
@@ -329,7 +370,8 @@ void TexturePass(Environment& env, IR::Program& program) {
                     .is_written = is_written,
                     .cbuf_index = cbuf.index,
                     .cbuf_offset = cbuf.offset,
-                    .count = 1,
+                    .count = cbuf.count,
+                    .size_shift = DESCRIPTOR_SIZE_SHIFT,
                 });
             } else {
                 index = descriptors.Add(ImageDescriptor{
@@ -338,7 +380,8 @@ void TexturePass(Environment& env, IR::Program& program) {
                     .is_written = is_written,
                     .cbuf_index = cbuf.index,
                     .cbuf_offset = cbuf.offset,
-                    .count = 1,
+                    .count = cbuf.count,
+                    .size_shift = DESCRIPTOR_SIZE_SHIFT,
                 });
             }
             break;
@@ -351,7 +394,8 @@ void TexturePass(Environment& env, IR::Program& program) {
                     .cbuf_offset = cbuf.offset,
                     .secondary_cbuf_index = cbuf.secondary_index,
                     .secondary_cbuf_offset = cbuf.secondary_offset,
-                    .count = 1,
+                    .count = cbuf.count,
+                    .size_shift = DESCRIPTOR_SIZE_SHIFT,
                 });
             } else {
                 index = descriptors.Add(TextureDescriptor{
@@ -362,12 +406,23 @@ void TexturePass(Environment& env, IR::Program& program) {
                     .cbuf_offset = cbuf.offset,
                     .secondary_cbuf_index = cbuf.secondary_index,
                     .secondary_cbuf_offset = cbuf.secondary_offset,
-                    .count = 1,
+                    .count = cbuf.count,
+                    .size_shift = DESCRIPTOR_SIZE_SHIFT,
                 });
             }
             break;
         }
-        inst->SetArg(0, IR::Value{index});
+        flags.descriptor_index.Assign(index);
+        inst->SetFlags(flags);
+
+        if (cbuf.count > 1) {
+            const auto insert_point{IR::Block::InstructionList::s_iterator_to(*inst)};
+            IR::IREmitter ir{*texture_inst.block, insert_point};
+            const IR::U32 shift{ir.Imm32(std::countr_zero(DESCRIPTOR_SIZE))};
+            inst->SetArg(0, ir.ShiftRightArithmetic(cbuf.dynamic_offset, shift));
+        } else {
+            inst->SetArg(0, IR::Value{});
+        }
     }
 }
 

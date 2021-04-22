@@ -161,23 +161,26 @@ void GraphicsPipeline::Configure(bool is_indexed) {
         const Shader::Info& info{stage_infos[stage]};
         buffer_cache.SetEnabledUniformBuffers(stage, info.constant_buffer_mask);
         buffer_cache.UnbindGraphicsStorageBuffers(stage);
-        size_t index{};
+        size_t ssbo_index{};
         for (const auto& desc : info.storage_buffers_descriptors) {
             ASSERT(desc.count == 1);
-            buffer_cache.BindGraphicsStorageBuffer(stage, index, desc.cbuf_index, desc.cbuf_offset,
-                                                   desc.is_written);
-            ++index;
+            buffer_cache.BindGraphicsStorageBuffer(stage, ssbo_index, desc.cbuf_index,
+                                                   desc.cbuf_offset, desc.is_written);
+            ++ssbo_index;
         }
         const auto& cbufs{maxwell3d.state.shader_stages[stage].const_buffers};
-        const auto read_handle{[&](const auto& desc) {
+        const auto read_handle{[&](const auto& desc, u32 index) {
             ASSERT(cbufs[desc.cbuf_index].enabled);
-            const GPUVAddr addr{cbufs[desc.cbuf_index].address + desc.cbuf_offset};
+            const u32 index_offset{index << desc.size_shift};
+            const u32 offset{desc.cbuf_offset + index_offset};
+            const GPUVAddr addr{cbufs[desc.cbuf_index].address + offset};
             if constexpr (std::is_same_v<decltype(desc), const Shader::TextureDescriptor&> ||
                           std::is_same_v<decltype(desc), const Shader::TextureBufferDescriptor&>) {
                 if (desc.has_secondary) {
                     ASSERT(cbufs[desc.secondary_cbuf_index].enabled);
+                    const u32 second_offset{desc.secondary_cbuf_offset + index_offset};
                     const GPUVAddr separate_addr{cbufs[desc.secondary_cbuf_index].address +
-                                                 desc.secondary_cbuf_offset};
+                                                 second_offset};
                     const u32 lhs_raw{gpu_memory.Read<u32>(addr)};
                     const u32 rhs_raw{gpu_memory.Read<u32>(separate_addr)};
                     const u32 raw{lhs_raw | rhs_raw};
@@ -187,17 +190,21 @@ void GraphicsPipeline::Configure(bool is_indexed) {
             return TextureHandle{gpu_memory.Read<u32>(addr), via_header_index};
         }};
         const auto add_image{[&](const auto& desc) {
-            const TextureHandle handle{read_handle(desc)};
-            image_view_indices.push_back(handle.image);
+            for (u32 index = 0; index < desc.count; ++index) {
+                const TextureHandle handle{read_handle(desc, index)};
+                image_view_indices.push_back(handle.image);
+            }
         }};
         std::ranges::for_each(info.texture_buffer_descriptors, add_image);
         std::ranges::for_each(info.image_buffer_descriptors, add_image);
         for (const auto& desc : info.texture_descriptors) {
-            const TextureHandle handle{read_handle(desc)};
-            image_view_indices.push_back(handle.image);
+            for (u32 index = 0; index < desc.count; ++index) {
+                const TextureHandle handle{read_handle(desc, index)};
+                image_view_indices.push_back(handle.image);
 
-            Sampler* const sampler{texture_cache.GetGraphicsSampler(handle.sampler)};
-            samplers.push_back(sampler->Handle());
+                Sampler* const sampler{texture_cache.GetGraphicsSampler(handle.sampler)};
+                samplers.push_back(sampler->Handle());
+            }
         }
         std::ranges::for_each(info.image_descriptors, add_image);
     }
@@ -208,24 +215,30 @@ void GraphicsPipeline::Configure(bool is_indexed) {
     for (size_t stage = 0; stage < Maxwell::MaxShaderStage; ++stage) {
         size_t index{};
         const auto add_buffer{[&](const auto& desc) {
-            ASSERT(desc.count == 1);
-            bool is_written{false};
-            if constexpr (std::is_same_v<decltype(desc), const Shader::ImageBufferDescriptor&>) {
-                is_written = desc.is_written;
+            for (u32 index = 0; index < desc.count; ++index) {
+                bool is_written{false};
+                if constexpr (std::is_same_v<decltype(desc),
+                                             const Shader::ImageBufferDescriptor&>) {
+                    is_written = desc.is_written;
+                }
+                ImageView& image_view{texture_cache.GetImageView(*texture_buffer_index)};
+                buffer_cache.BindGraphicsTextureBuffer(stage, index, image_view.GpuAddr(),
+                                                       image_view.BufferSize(), image_view.format,
+                                                       is_written);
+                ++index;
+                ++texture_buffer_index;
             }
-            ImageView& image_view{texture_cache.GetImageView(*texture_buffer_index)};
-            buffer_cache.BindGraphicsTextureBuffer(stage, index, image_view.GpuAddr(),
-                                                   image_view.BufferSize(), image_view.format,
-                                                   is_written);
-            ++index;
-            ++texture_buffer_index;
         }};
         const Shader::Info& info{stage_infos[stage]};
         buffer_cache.UnbindGraphicsTextureBuffers(stage);
         std::ranges::for_each(info.texture_buffer_descriptors, add_buffer);
         std::ranges::for_each(info.image_buffer_descriptors, add_buffer);
-        texture_buffer_index += info.texture_descriptors.size();
-        texture_buffer_index += info.image_descriptors.size();
+        for (const auto& desc : info.texture_descriptors) {
+            texture_buffer_index += desc.count;
+        }
+        for (const auto& desc : info.image_descriptors) {
+            texture_buffer_index += desc.count;
+        }
     }
     buffer_cache.UpdateGraphicsBuffers(is_indexed);
 

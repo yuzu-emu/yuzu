@@ -32,17 +32,26 @@ private:
 struct TextureDefinition {
     Id id;
     Id sampled_type;
+    Id pointer_type;
     Id image_type;
+    u32 count;
+};
+
+struct TextureBufferDefinition {
+    Id id;
+    u32 count;
 };
 
 struct ImageBufferDefinition {
     Id id;
     Id image_type;
+    u32 count;
 };
 
 struct ImageDefinition {
     Id id;
     Id image_type;
+    u32 count;
 };
 
 struct UniformDefinitions {
@@ -162,7 +171,7 @@ public:
 
     std::array<UniformDefinitions, Info::MAX_CBUFS> cbufs{};
     std::array<StorageDefinitions, Info::MAX_SSBOS> ssbos{};
-    std::vector<Id> texture_buffers;
+    std::vector<TextureBufferDefinition> texture_buffers;
     std::vector<ImageBufferDefinition> image_buffers;
     std::vector<TextureDefinition> textures;
     std::vector<ImageDefinition> images;

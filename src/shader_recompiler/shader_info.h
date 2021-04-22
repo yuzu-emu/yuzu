@@ -67,6 +67,7 @@ struct TextureBufferDescriptor {
     u32 secondary_cbuf_index;
     u32 secondary_cbuf_offset;
     u32 count;
+    u32 size_shift;
 };
 using TextureBufferDescriptors = boost::container::small_vector<TextureBufferDescriptor, 6>;
 
@@ -76,6 +77,7 @@ struct ImageBufferDescriptor {
     u32 cbuf_index;
     u32 cbuf_offset;
     u32 count;
+    u32 size_shift;
 };
 using ImageBufferDescriptors = boost::container::small_vector<ImageBufferDescriptor, 2>;
 
@@ -88,6 +90,7 @@ struct TextureDescriptor {
     u32 secondary_cbuf_index;
     u32 secondary_cbuf_offset;
     u32 count;
+    u32 size_shift;
 };
 using TextureDescriptors = boost::container::small_vector<TextureDescriptor, 12>;
 
@@ -98,6 +101,7 @@ struct ImageDescriptor {
     u32 cbuf_index;
     u32 cbuf_offset;
     u32 count;
+    u32 size_shift;
 };
 using ImageDescriptors = boost::container::small_vector<ImageDescriptor, 4>;
 

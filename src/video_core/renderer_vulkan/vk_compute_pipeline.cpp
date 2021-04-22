@@ -91,35 +91,41 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
     const auto& qmd{kepler_compute.launch_description};
     const auto& cbufs{qmd.const_buffer_config};
     const bool via_header_index{qmd.linked_tsc != 0};
-    const auto read_handle{[&](const auto& desc) {
+    const auto read_handle{[&](const auto& desc, u32 index) {
         ASSERT(((qmd.const_buffer_enable_mask >> desc.cbuf_index) & 1) != 0);
+        const u32 index_offset{index << desc.size_shift};
+        const u32 offset{desc.cbuf_offset + index_offset};
         const GPUVAddr addr{cbufs[desc.cbuf_index].Address() + desc.cbuf_offset};
         if constexpr (std::is_same_v<decltype(desc), const Shader::TextureDescriptor&> ||
                       std::is_same_v<decltype(desc), const Shader::TextureBufferDescriptor&>) {
             if (desc.has_secondary) {
                 ASSERT(((qmd.const_buffer_enable_mask >> desc.secondary_cbuf_index) & 1) != 0);
+                const u32 secondary_offset{desc.secondary_cbuf_offset + index_offset};
                 const GPUVAddr separate_addr{cbufs[desc.secondary_cbuf_index].Address() +
-                                             desc.secondary_cbuf_offset};
+                                             secondary_offset};
                 const u32 lhs_raw{gpu_memory.Read<u32>(addr)};
                 const u32 rhs_raw{gpu_memory.Read<u32>(separate_addr)};
-                const u32 raw{lhs_raw | rhs_raw};
-                return TextureHandle{raw, via_header_index};
+                return TextureHandle{lhs_raw | rhs_raw, via_header_index};
             }
         }
         return TextureHandle{gpu_memory.Read<u32>(addr), via_header_index};
     }};
     const auto add_image{[&](const auto& desc) {
-        const TextureHandle handle{read_handle(desc)};
-        image_view_indices.push_back(handle.image);
+        for (u32 index = 0; index < desc.count; ++index) {
+            const TextureHandle handle{read_handle(desc, index)};
+            image_view_indices.push_back(handle.image);
+        }
     }};
     std::ranges::for_each(info.texture_buffer_descriptors, add_image);
     std::ranges::for_each(info.image_buffer_descriptors, add_image);
     for (const auto& desc : info.texture_descriptors) {
-        const TextureHandle handle{read_handle(desc)};
-        image_view_indices.push_back(handle.image);
+        for (u32 index = 0; index < desc.count; ++index) {
+            const TextureHandle handle{read_handle(desc, index)};
+            image_view_indices.push_back(handle.image);
 
-        Sampler* const sampler = texture_cache.GetComputeSampler(handle.sampler);
-        samplers.push_back(sampler->Handle());
+            Sampler* const sampler = texture_cache.GetComputeSampler(handle.sampler);
+            samplers.push_back(sampler->Handle());
+        }
     }
     std::ranges::for_each(info.image_descriptors, add_image);
 
@@ -130,16 +136,18 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
     ImageId* texture_buffer_ids{image_view_ids.data()};
     size_t index{};
     const auto add_buffer{[&](const auto& desc) {
-        ASSERT(desc.count == 1);
-        bool is_written{false};
-        if constexpr (std::is_same_v<decltype(desc), const Shader::ImageBufferDescriptor&>) {
-            is_written = desc.is_written;
+        for (u32 index = 0; index < desc.count; ++index) {
+            bool is_written{false};
+            if constexpr (std::is_same_v<decltype(desc), const Shader::ImageBufferDescriptor&>) {
+                is_written = desc.is_written;
+            }
+            ImageView& image_view = texture_cache.GetImageView(*texture_buffer_ids);
+            buffer_cache.BindComputeTextureBuffer(index, image_view.GpuAddr(),
+                                                  image_view.BufferSize(), image_view.format,
+                                                  is_written);
+            ++texture_buffer_ids;
+            ++index;
         }
-        ImageView& image_view = texture_cache.GetImageView(*texture_buffer_ids);
-        buffer_cache.BindComputeTextureBuffer(index, image_view.GpuAddr(), image_view.BufferSize(),
-                                              image_view.format, is_written);
-        ++texture_buffer_ids;
-        ++index;
     }};
     std::ranges::for_each(info.texture_buffer_descriptors, add_buffer);
     std::ranges::for_each(info.image_buffer_descriptors, add_buffer);
