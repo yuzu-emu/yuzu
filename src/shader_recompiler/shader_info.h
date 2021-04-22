@@ -107,7 +107,7 @@ using ImageDescriptors = boost::container::small_vector<ImageDescriptor, 4>;
 
 struct Info {
     static constexpr size_t MAX_CBUFS{18};
-    static constexpr size_t MAX_SSBOS{16};
+    static constexpr size_t MAX_SSBOS{32};
 
     bool uses_workgroup_id{};
     bool uses_local_invocation_id{};
