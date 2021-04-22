@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <map>
+#include <set>
 
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
@@ -50,9 +51,50 @@ static void ValidateUses(const IR::Program& program) {
     }
 }
 
+static void ValidateForwardDeclarations(const IR::Program& program) {
+    std::set<const IR::Inst*> definitions;
+    for (const IR::Block* const block : program.blocks) {
+        for (const IR::Inst& inst : *block) {
+            definitions.emplace(&inst);
+            if (inst.GetOpcode() == IR::Opcode::Phi) {
+                // Phi nodes can have forward declarations
+                continue;
+            }
+            const size_t num_args{inst.NumArgs()};
+            for (size_t arg = 0; arg < num_args; ++arg) {
+                if (inst.Arg(arg).IsImmediate()) {
+                    continue;
+                }
+                if (!definitions.contains(inst.Arg(arg).Inst())) {
+                    fmt::print("{}\n", IR::DumpBlock(*block));
+                    throw LogicError("Forward declaration in block: {}", IR::DumpBlock(*block));
+                }
+            }
+        }
+    }
+}
+
+static void ValidatePhiNodes(const IR::Program& program) {
+    for (const IR::Block* const block : program.blocks) {
+        bool no_more_phis{false};
+        for (const IR::Inst& inst : *block) {
+            if (inst.GetOpcode() == IR::Opcode::Phi) {
+                if (no_more_phis) {
+                    fmt::print("{}\n", IR::DumpBlock(*block));
+                    throw LogicError("Interleaved phi nodes: {}", IR::DumpBlock(*block));
+                }
+            } else {
+                no_more_phis = true;
+            }
+        }
+    }
+}
+
 void VerificationPass(const IR::Program& program) {
     ValidateTypes(program);
     ValidateUses(program);
+    ValidateForwardDeclarations(program);
+    ValidatePhiNodes(program);
 }
 
 } // namespace Shader::Optimization
