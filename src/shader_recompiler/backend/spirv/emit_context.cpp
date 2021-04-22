@@ -380,6 +380,24 @@ Id CasLoop(EmitContext& ctx, Operation operation, Id array_pointer, Id element_p
     ctx.OpFunctionEnd();
     return func;
 }
+
+template <typename Desc>
+std::string NameOf(const Desc& desc, std::string_view prefix) {
+    if (desc.count > 1) {
+        return fmt::format("{}{}_{:02x}x{}", prefix, desc.cbuf_index, desc.cbuf_offset, desc.count);
+    } else {
+        return fmt::format("{}{}_{:02x}", prefix, desc.cbuf_index, desc.cbuf_offset);
+    }
+}
+
+Id DescType(EmitContext& ctx, Id sampled_type, Id pointer_type, u32 count) {
+    if (count > 1) {
+        const Id array_type{ctx.TypeArray(sampled_type, ctx.Const(count))};
+        return ctx.TypePointer(spv::StorageClass::UniformConstant, array_type);
+    } else {
+        return pointer_type;
+    }
+}
 } // Anonymous namespace
 
 void VectorTypes::Define(Sirit::Module& sirit_ctx, Id base_type, std::string_view name) {
@@ -971,12 +989,15 @@ void EmitContext::DefineTextureBuffers(const Info& info, u32& binding) {
         const Id id{AddGlobalVariable(type, spv::StorageClass::UniformConstant)};
         Decorate(id, spv::Decoration::Binding, binding);
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
-        Name(id, fmt::format("texbuf{}_{:02x}", desc.cbuf_index, desc.cbuf_offset));
-        texture_buffers.insert(texture_buffers.end(), desc.count, id);
+        Name(id, NameOf(desc, "texbuf"));
+        texture_buffers.push_back({
+            .id = id,
+            .count = desc.count,
+        });
         if (profile.supported_spirv >= 0x00010400) {
             interfaces.push_back(id);
         }
-        binding += desc.count;
+        ++binding;
     }
 }
 
@@ -992,44 +1013,41 @@ void EmitContext::DefineImageBuffers(const Info& info, u32& binding) {
         const Id id{AddGlobalVariable(pointer_type, spv::StorageClass::UniformConstant)};
         Decorate(id, spv::Decoration::Binding, binding);
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
-        Name(id, fmt::format("imgbuf{}_{:02x}", desc.cbuf_index, desc.cbuf_offset));
-        const ImageBufferDefinition def{
+        Name(id, NameOf(desc, "imgbuf"));
+        image_buffers.push_back({
             .id = id,
             .image_type = image_type,
-        };
-        image_buffers.insert(image_buffers.end(), desc.count, def);
+            .count = desc.count,
+        });
         if (profile.supported_spirv >= 0x00010400) {
             interfaces.push_back(id);
         }
-        binding += desc.count;
+        ++binding;
     }
 }
 
 void EmitContext::DefineTextures(const Info& info, u32& binding) {
     textures.reserve(info.texture_descriptors.size());
     for (const TextureDescriptor& desc : info.texture_descriptors) {
-        if (desc.count != 1) {
-            throw NotImplementedException("Array of textures");
-        }
         const Id image_type{ImageType(*this, desc)};
         const Id sampled_type{TypeSampledImage(image_type)};
         const Id pointer_type{TypePointer(spv::StorageClass::UniformConstant, sampled_type)};
-        const Id id{AddGlobalVariable(pointer_type, spv::StorageClass::UniformConstant)};
+        const Id desc_type{DescType(*this, sampled_type, pointer_type, desc.count)};
+        const Id id{AddGlobalVariable(desc_type, spv::StorageClass::UniformConstant)};
         Decorate(id, spv::Decoration::Binding, binding);
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
-        Name(id, fmt::format("tex{}_{:02x}", desc.cbuf_index, desc.cbuf_offset));
-        for (u32 index = 0; index < desc.count; ++index) {
-            // TODO: Pass count info
-            textures.push_back(TextureDefinition{
-                .id{id},
-                .sampled_type{sampled_type},
-                .image_type{image_type},
-            });
-        }
+        Name(id, NameOf(desc, "tex"));
+        textures.push_back({
+            .id = id,
+            .sampled_type = sampled_type,
+            .pointer_type = pointer_type,
+            .image_type = image_type,
+            .count = desc.count,
+        });
         if (profile.supported_spirv >= 0x00010400) {
             interfaces.push_back(id);
         }
-        binding += desc.count;
+        ++binding;
     }
 }
 
@@ -1037,24 +1055,23 @@ void EmitContext::DefineImages(const Info& info, u32& binding) {
     images.reserve(info.image_descriptors.size());
     for (const ImageDescriptor& desc : info.image_descriptors) {
         if (desc.count != 1) {
-            throw NotImplementedException("Array of textures");
+            throw NotImplementedException("Array of images");
         }
         const Id image_type{ImageType(*this, desc)};
         const Id pointer_type{TypePointer(spv::StorageClass::UniformConstant, image_type)};
         const Id id{AddGlobalVariable(pointer_type, spv::StorageClass::UniformConstant)};
         Decorate(id, spv::Decoration::Binding, binding);
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
-        Name(id, fmt::format("img{}_{:02x}", desc.cbuf_index, desc.cbuf_offset));
-        for (u32 index = 0; index < desc.count; ++index) {
-            images.push_back(ImageDefinition{
-                .id{id},
-                .image_type{image_type},
-            });
-        }
+        Name(id, NameOf(desc, "img"));
+        images.push_back({
+            .id = id,
+            .image_type = image_type,
+            .count = desc.count,
+        });
         if (profile.supported_spirv >= 0x00010400) {
             interfaces.push_back(id);
         }
-        binding += desc.count;
+        ++binding;
     }
 }
 

@@ -85,28 +85,30 @@ public:
     }
 
     void Add(const Shader::Info& info, VkShaderStageFlags stage) {
-        Add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stage, info.constant_buffer_descriptors.size());
-        Add(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, stage, info.storage_buffers_descriptors.size());
-        Add(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, stage, info.texture_buffer_descriptors.size());
-        Add(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, stage, info.image_buffer_descriptors.size());
-        Add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage, info.texture_descriptors.size());
-        Add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, stage, info.image_descriptors.size());
+        Add(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stage, info.constant_buffer_descriptors);
+        Add(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, stage, info.storage_buffers_descriptors);
+        Add(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, stage, info.texture_buffer_descriptors);
+        Add(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, stage, info.image_buffer_descriptors);
+        Add(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage, info.texture_descriptors);
+        Add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, stage, info.image_descriptors);
     }
 
 private:
-    void Add(VkDescriptorType type, VkShaderStageFlags stage, size_t num) {
+    template <typename Descriptors>
+    void Add(VkDescriptorType type, VkShaderStageFlags stage, const Descriptors& descriptors) {
+        const size_t num{descriptors.size()};
         for (size_t i = 0; i < num; ++i) {
             bindings.push_back({
                 .binding = binding,
                 .descriptorType = type,
-                .descriptorCount = 1,
+                .descriptorCount = descriptors[i].count,
                 .stageFlags = stage,
                 .pImmutableSamplers = nullptr,
             });
             entries.push_back({
                 .dstBinding = binding,
                 .dstArrayElement = 0,
-                .descriptorCount = 1,
+                .descriptorCount = descriptors[i].count,
                 .descriptorType = type,
                 .offset = offset,
                 .stride = sizeof(DescriptorUpdateEntry),
@@ -126,21 +128,29 @@ private:
 inline void PushImageDescriptors(const Shader::Info& info, const VkSampler*& samplers,
                                  const ImageId*& image_view_ids, TextureCache& texture_cache,
                                  VKUpdateDescriptorQueue& update_descriptor_queue) {
-    image_view_ids += info.texture_buffer_descriptors.size();
-    image_view_ids += info.image_buffer_descriptors.size();
+    for (const auto& desc : info.texture_buffer_descriptors) {
+        image_view_ids += desc.count;
+    }
+    for (const auto& desc : info.image_buffer_descriptors) {
+        image_view_ids += desc.count;
+    }
     for (const auto& desc : info.texture_descriptors) {
-        const VkSampler sampler{*(samplers++)};
-        ImageView& image_view{texture_cache.GetImageView(*(image_view_ids++))};
-        const VkImageView vk_image_view{image_view.Handle(desc.type)};
-        update_descriptor_queue.AddSampledImage(vk_image_view, sampler);
+        for (u32 index = 0; index < desc.count; ++index) {
+            const VkSampler sampler{*(samplers++)};
+            ImageView& image_view{texture_cache.GetImageView(*(image_view_ids++))};
+            const VkImageView vk_image_view{image_view.Handle(desc.type)};
+            update_descriptor_queue.AddSampledImage(vk_image_view, sampler);
+        }
     }
     for (const auto& desc : info.image_descriptors) {
-        ImageView& image_view{texture_cache.GetImageView(*(image_view_ids++))};
-        if (desc.is_written) {
-            texture_cache.MarkModification(image_view.image_id);
+        for (u32 index = 0; index < desc.count; ++index) {
+            ImageView& image_view{texture_cache.GetImageView(*(image_view_ids++))};
+            if (desc.is_written) {
+                texture_cache.MarkModification(image_view.image_id);
+            }
+            const VkImageView vk_image_view{image_view.StorageView(desc.type, desc.format)};
+            update_descriptor_queue.AddImage(vk_image_view);
         }
-        const VkImageView vk_image_view{image_view.StorageView(desc.type, desc.format)};
-        update_descriptor_queue.AddImage(vk_image_view);
     }
 }
 
