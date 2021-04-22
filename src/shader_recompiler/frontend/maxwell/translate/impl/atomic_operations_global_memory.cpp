@@ -154,69 +154,61 @@ void StoreResult(TranslatorVisitor& v, IR::Reg dest_reg, const IR::Value& result
         break;
     }
 }
+
+IR::Value ApplyAtomOp(TranslatorVisitor& v, IR::Reg operand_reg, const IR::U64& offset,
+                      AtomSize size, AtomOp op) {
+    switch (size) {
+    case AtomSize::U32:
+    case AtomSize::S32:
+        return ApplyIntegerAtomOp(v.ir, offset, v.X(operand_reg), op, size == AtomSize::S32);
+    case AtomSize::U64:
+    case AtomSize::S64:
+        return ApplyIntegerAtomOp(v.ir, offset, v.L(operand_reg), op, size == AtomSize::S64);
+    case AtomSize::F32:
+        return ApplyFpAtomOp(v.ir, offset, v.F(operand_reg), op, size);
+    case AtomSize::F16x2: {
+        return ApplyFpAtomOp(v.ir, offset, v.ir.UnpackFloat2x16(v.X(operand_reg)), op, size);
+    }
+    default:
+        throw NotImplementedException("Atom Size {}", size);
+    }
+}
+
+void GlobalAtomic(TranslatorVisitor& v, IR::Reg dest_reg, IR::Reg operand_reg,
+                  const IR::U64& offset, AtomSize size, AtomOp op, bool write_dest) {
+    IR::Value result;
+    if (AtomOpNotApplicable(size, op)) {
+        result = LoadGlobal(v.ir, offset, size);
+    } else {
+        result = ApplyAtomOp(v, operand_reg, offset, size, op);
+    }
+    if (write_dest) {
+        StoreResult(v, dest_reg, result, size);
+    }
+}
 } // Anonymous namespace
 
 void TranslatorVisitor::ATOM(u64 insn) {
     union {
         u64 raw;
         BitField<0, 8, IR::Reg> dest_reg;
-        BitField<8, 8, IR::Reg> addr_reg;
-        BitField<20, 8, IR::Reg> src_reg_b;
+        BitField<20, 8, IR::Reg> operand_reg;
         BitField<49, 3, AtomSize> size;
         BitField<52, 4, AtomOp> op;
     } const atom{insn};
-
-    const bool size_64{atom.size == AtomSize::U64 || atom.size == AtomSize::S64};
-    const bool is_signed{atom.size == AtomSize::S32 || atom.size == AtomSize::S64};
-    const bool is_integer{atom.size != AtomSize::F32 && atom.size != AtomSize::F16x2};
     const IR::U64 offset{AtomOffset(*this, insn)};
-    IR::Value result;
-
-    if (AtomOpNotApplicable(atom.size, atom.op)) {
-        result = LoadGlobal(ir, offset, atom.size);
-    } else if (!is_integer) {
-        if (atom.size == AtomSize::F32) {
-            result = ApplyFpAtomOp(ir, offset, F(atom.src_reg_b), atom.op, atom.size);
-        } else {
-            const IR::Value src_b{ir.UnpackFloat2x16(X(atom.src_reg_b))};
-            result = ApplyFpAtomOp(ir, offset, src_b, atom.op, atom.size);
-        }
-    } else if (size_64) {
-        result = ApplyIntegerAtomOp(ir, offset, L(atom.src_reg_b), atom.op, is_signed);
-    } else {
-        result = ApplyIntegerAtomOp(ir, offset, X(atom.src_reg_b), atom.op, is_signed);
-    }
-    StoreResult(*this, atom.dest_reg, result, atom.size);
+    GlobalAtomic(*this, atom.dest_reg, atom.operand_reg, offset, atom.size, atom.op, true);
 }
 
 void TranslatorVisitor::RED(u64 insn) {
     union {
         u64 raw;
-        BitField<0, 8, IR::Reg> src_reg_b;
-        BitField<8, 8, IR::Reg> addr_reg;
+        BitField<0, 8, IR::Reg> operand_reg;
         BitField<20, 3, AtomSize> size;
         BitField<23, 3, AtomOp> op;
     } const red{insn};
-
-    if (AtomOpNotApplicable(red.size, red.op)) {
-        return;
-    }
-    const bool size_64{red.size == AtomSize::U64 || red.size == AtomSize::S64};
-    const bool is_signed{red.size == AtomSize::S32 || red.size == AtomSize::S64};
-    const bool is_integer{red.size != AtomSize::F32 && red.size != AtomSize::F16x2};
     const IR::U64 offset{AtomOffset(*this, insn)};
-    if (!is_integer) {
-        if (red.size == AtomSize::F32) {
-            ApplyFpAtomOp(ir, offset, F(red.src_reg_b), red.op, red.size);
-        } else {
-            const IR::Value src_b{ir.UnpackFloat2x16(X(red.src_reg_b))};
-            ApplyFpAtomOp(ir, offset, src_b, red.op, red.size);
-        }
-    } else if (size_64) {
-        ApplyIntegerAtomOp(ir, offset, L(red.src_reg_b), red.op, is_signed);
-    } else {
-        ApplyIntegerAtomOp(ir, offset, X(red.src_reg_b), red.op, is_signed);
-    }
+    GlobalAtomic(*this, IR::Reg::RZ, red.operand_reg, offset, red.size, red.op, true);
 }
 
 } // namespace Shader::Maxwell
