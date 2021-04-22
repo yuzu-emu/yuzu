@@ -278,20 +278,22 @@ private:
             }
             same = op;
         }
+        // Remove the phi node from the block, it will be reinserted
+        IR::Block::InstructionList& list{block->Instructions()};
+        list.erase(IR::Block::InstructionList::s_iterator_to(phi));
+
+        // Find the first non-phi instruction and use it as an insertion point
+        IR::Block::iterator reinsert_point{std::ranges::find_if_not(list, IsPhi)};
         if (same.IsEmpty()) {
             // The phi is unreachable or in the start block
-            // First remove the phi node from the block, it will be reinserted
-            IR::Block::InstructionList& list{block->Instructions()};
-            list.erase(IR::Block::InstructionList::s_iterator_to(phi));
-
-            // Insert an undef instruction after all phi nodes (to keep phi instructions on top)
-            const auto first_not_phi{std::ranges::find_if_not(list, IsPhi)};
-            same = IR::Value{&*block->PrependNewInst(first_not_phi, undef_opcode)};
-
-            // Insert the phi node after the undef opcode, this will be replaced with an identity
-            list.insert(first_not_phi, phi);
+            // Insert an undefined instruction and make it the phi node replacement
+            // The "phi" node reinsertion point is specified after this instruction
+            reinsert_point = block->PrependNewInst(reinsert_point, undef_opcode);
+            same = IR::Value{&*reinsert_point};
+            ++reinsert_point;
         }
-        // Reroute all uses of phi to same and remove phi
+        // Reinsert the phi node and reroute all its uses to the "same" value
+        list.insert(reinsert_point, phi);
         phi.ReplaceUsesWith(same);
         // TODO: Try to recursively remove all phi users, which might have become trivial
         return same;
