@@ -303,7 +303,8 @@ Id EmitGetPatch(EmitContext& ctx, IR::Patch patch) {
     }
     const u32 index{IR::GenericPatchIndex(patch)};
     const Id element{ctx.Const(IR::GenericPatchElement(patch))};
-    const Id pointer{ctx.OpAccessChain(ctx.input_f32, ctx.patches.at(index), element)};
+    const Id type{ctx.stage == Stage::TessellationControl ? ctx.output_f32 : ctx.input_f32};
+    const Id pointer{ctx.OpAccessChain(type, ctx.patches.at(index), element)};
     return ctx.OpLoad(ctx.F32[1], pointer);
 }
 
