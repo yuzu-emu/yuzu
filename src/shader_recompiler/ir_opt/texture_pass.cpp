@@ -76,6 +76,39 @@ IR::Opcode IndexedInstruction(const IR::Inst& inst) {
     case IR::Opcode::BoundImageWrite:
     case IR::Opcode::BindlessImageWrite:
         return IR::Opcode::ImageWrite;
+    case IR::Opcode::BoundImageAtomicIAdd32:
+    case IR::Opcode::BindlessImageAtomicIAdd32:
+        return IR::Opcode::ImageAtomicIAdd32;
+    case IR::Opcode::BoundImageAtomicSMin32:
+    case IR::Opcode::BindlessImageAtomicSMin32:
+        return IR::Opcode::ImageAtomicSMin32;
+    case IR::Opcode::BoundImageAtomicUMin32:
+    case IR::Opcode::BindlessImageAtomicUMin32:
+        return IR::Opcode::ImageAtomicUMin32;
+    case IR::Opcode::BoundImageAtomicSMax32:
+    case IR::Opcode::BindlessImageAtomicSMax32:
+        return IR::Opcode::ImageAtomicSMax32;
+    case IR::Opcode::BoundImageAtomicUMax32:
+    case IR::Opcode::BindlessImageAtomicUMax32:
+        return IR::Opcode::ImageAtomicUMax32;
+    case IR::Opcode::BoundImageAtomicInc32:
+    case IR::Opcode::BindlessImageAtomicInc32:
+        return IR::Opcode::ImageAtomicInc32;
+    case IR::Opcode::BoundImageAtomicDec32:
+    case IR::Opcode::BindlessImageAtomicDec32:
+        return IR::Opcode::ImageAtomicDec32;
+    case IR::Opcode::BoundImageAtomicAnd32:
+    case IR::Opcode::BindlessImageAtomicAnd32:
+        return IR::Opcode::ImageAtomicAnd32;
+    case IR::Opcode::BoundImageAtomicOr32:
+    case IR::Opcode::BindlessImageAtomicOr32:
+        return IR::Opcode::ImageAtomicOr32;
+    case IR::Opcode::BoundImageAtomicXor32:
+    case IR::Opcode::BindlessImageAtomicXor32:
+        return IR::Opcode::ImageAtomicXor32;
+    case IR::Opcode::BoundImageAtomicExchange32:
+    case IR::Opcode::BindlessImageAtomicExchange32:
+        return IR::Opcode::ImageAtomicExchange32;
     default:
         return IR::Opcode::Void;
     }
@@ -95,6 +128,17 @@ bool IsBindless(const IR::Inst& inst) {
     case IR::Opcode::BindlessImageGradient:
     case IR::Opcode::BindlessImageRead:
     case IR::Opcode::BindlessImageWrite:
+    case IR::Opcode::BindlessImageAtomicIAdd32:
+    case IR::Opcode::BindlessImageAtomicSMin32:
+    case IR::Opcode::BindlessImageAtomicUMin32:
+    case IR::Opcode::BindlessImageAtomicSMax32:
+    case IR::Opcode::BindlessImageAtomicUMax32:
+    case IR::Opcode::BindlessImageAtomicInc32:
+    case IR::Opcode::BindlessImageAtomicDec32:
+    case IR::Opcode::BindlessImageAtomicAnd32:
+    case IR::Opcode::BindlessImageAtomicOr32:
+    case IR::Opcode::BindlessImageAtomicXor32:
+    case IR::Opcode::BindlessImageAtomicExchange32:
         return true;
     case IR::Opcode::BoundImageSampleImplicitLod:
     case IR::Opcode::BoundImageSampleExplicitLod:
@@ -108,6 +152,17 @@ bool IsBindless(const IR::Inst& inst) {
     case IR::Opcode::BoundImageGradient:
     case IR::Opcode::BoundImageRead:
     case IR::Opcode::BoundImageWrite:
+    case IR::Opcode::BoundImageAtomicIAdd32:
+    case IR::Opcode::BoundImageAtomicSMin32:
+    case IR::Opcode::BoundImageAtomicUMin32:
+    case IR::Opcode::BoundImageAtomicSMax32:
+    case IR::Opcode::BoundImageAtomicUMax32:
+    case IR::Opcode::BoundImageAtomicInc32:
+    case IR::Opcode::BoundImageAtomicDec32:
+    case IR::Opcode::BoundImageAtomicAnd32:
+    case IR::Opcode::BoundImageAtomicOr32:
+    case IR::Opcode::BoundImageAtomicXor32:
+    case IR::Opcode::BoundImageAtomicExchange32:
         return false;
     default:
         throw InvalidArgument("Invalid opcode {}", inst.GetOpcode());
@@ -359,11 +414,22 @@ void TexturePass(Environment& env, IR::Program& program) {
         u32 index;
         switch (inst->GetOpcode()) {
         case IR::Opcode::ImageRead:
+        case IR::Opcode::ImageAtomicIAdd32:
+        case IR::Opcode::ImageAtomicSMin32:
+        case IR::Opcode::ImageAtomicUMin32:
+        case IR::Opcode::ImageAtomicSMax32:
+        case IR::Opcode::ImageAtomicUMax32:
+        case IR::Opcode::ImageAtomicInc32:
+        case IR::Opcode::ImageAtomicDec32:
+        case IR::Opcode::ImageAtomicAnd32:
+        case IR::Opcode::ImageAtomicOr32:
+        case IR::Opcode::ImageAtomicXor32:
+        case IR::Opcode::ImageAtomicExchange32:
         case IR::Opcode::ImageWrite: {
             if (cbuf.has_secondary) {
                 throw NotImplementedException("Unexpected separate sampler");
             }
-            const bool is_written{inst->GetOpcode() == IR::Opcode::ImageWrite};
+            const bool is_written{inst->GetOpcode() != IR::Opcode::ImageRead};
             if (flags.type == TextureType::Buffer) {
                 index = descriptors.Add(ImageBufferDescriptor{
                     .format = flags.image_format,

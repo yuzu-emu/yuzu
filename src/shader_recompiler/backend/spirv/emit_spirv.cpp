@@ -335,6 +335,9 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
     if (info.uses_typeless_image_writes) {
         ctx.AddCapability(spv::Capability::StorageImageWriteWithoutFormat);
     }
+    if (info.uses_image_buffers) {
+        ctx.AddCapability(spv::Capability::ImageBuffer);
+    }
     if (info.uses_sample_id) {
         ctx.AddCapability(spv::Capability::SampleRateShading);
     }

@@ -509,6 +509,50 @@ Id EmitImageGradient(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, I
                      Id derivates, Id offset, Id lod_clamp);
 Id EmitImageRead(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords);
 void EmitImageWrite(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords, Id color);
+Id EmitBindlessImageAtomicIAdd32(EmitContext&);
+Id EmitBindlessImageAtomicSMin32(EmitContext&);
+Id EmitBindlessImageAtomicUMin32(EmitContext&);
+Id EmitBindlessImageAtomicSMax32(EmitContext&);
+Id EmitBindlessImageAtomicUMax32(EmitContext&);
+Id EmitBindlessImageAtomicInc32(EmitContext&);
+Id EmitBindlessImageAtomicDec32(EmitContext&);
+Id EmitBindlessImageAtomicAnd32(EmitContext&);
+Id EmitBindlessImageAtomicOr32(EmitContext&);
+Id EmitBindlessImageAtomicXor32(EmitContext&);
+Id EmitBindlessImageAtomicExchange32(EmitContext&);
+Id EmitBoundImageAtomicIAdd32(EmitContext&);
+Id EmitBoundImageAtomicSMin32(EmitContext&);
+Id EmitBoundImageAtomicUMin32(EmitContext&);
+Id EmitBoundImageAtomicSMax32(EmitContext&);
+Id EmitBoundImageAtomicUMax32(EmitContext&);
+Id EmitBoundImageAtomicInc32(EmitContext&);
+Id EmitBoundImageAtomicDec32(EmitContext&);
+Id EmitBoundImageAtomicAnd32(EmitContext&);
+Id EmitBoundImageAtomicOr32(EmitContext&);
+Id EmitBoundImageAtomicXor32(EmitContext&);
+Id EmitBoundImageAtomicExchange32(EmitContext&);
+Id EmitImageAtomicIAdd32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                         Id value);
+Id EmitImageAtomicSMin32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                         Id value);
+Id EmitImageAtomicUMin32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                         Id value);
+Id EmitImageAtomicSMax32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                         Id value);
+Id EmitImageAtomicUMax32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                         Id value);
+Id EmitImageAtomicInc32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                        Id value);
+Id EmitImageAtomicDec32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                        Id value);
+Id EmitImageAtomicAnd32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                        Id value);
+Id EmitImageAtomicOr32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                       Id value);
+Id EmitImageAtomicXor32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                        Id value);
+Id EmitImageAtomicExchange32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
+                             Id value);
 Id EmitLaneId(EmitContext& ctx);
 Id EmitVoteAll(EmitContext& ctx, Id pred);
 Id EmitVoteAny(EmitContext& ctx, Id pred);

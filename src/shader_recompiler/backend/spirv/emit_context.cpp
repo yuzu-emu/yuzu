@@ -1107,6 +1107,9 @@ void EmitContext::DefineTextures(const Info& info, u32& binding) {
         }
         ++binding;
     }
+    if (info.uses_atomic_image_u32) {
+        image_u32 = TypePointer(spv::StorageClass::Image, U32[1]);
+    }
 }
 
 void EmitContext::DefineImages(const Info& info, u32& binding) {

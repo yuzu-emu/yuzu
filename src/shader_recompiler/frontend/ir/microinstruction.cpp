@@ -166,6 +166,39 @@ bool Inst::MayHaveSideEffects() const noexcept {
     case Opcode::BindlessImageWrite:
     case Opcode::BoundImageWrite:
     case Opcode::ImageWrite:
+    case IR::Opcode::BindlessImageAtomicIAdd32:
+    case IR::Opcode::BindlessImageAtomicSMin32:
+    case IR::Opcode::BindlessImageAtomicUMin32:
+    case IR::Opcode::BindlessImageAtomicSMax32:
+    case IR::Opcode::BindlessImageAtomicUMax32:
+    case IR::Opcode::BindlessImageAtomicInc32:
+    case IR::Opcode::BindlessImageAtomicDec32:
+    case IR::Opcode::BindlessImageAtomicAnd32:
+    case IR::Opcode::BindlessImageAtomicOr32:
+    case IR::Opcode::BindlessImageAtomicXor32:
+    case IR::Opcode::BindlessImageAtomicExchange32:
+    case IR::Opcode::BoundImageAtomicIAdd32:
+    case IR::Opcode::BoundImageAtomicSMin32:
+    case IR::Opcode::BoundImageAtomicUMin32:
+    case IR::Opcode::BoundImageAtomicSMax32:
+    case IR::Opcode::BoundImageAtomicUMax32:
+    case IR::Opcode::BoundImageAtomicInc32:
+    case IR::Opcode::BoundImageAtomicDec32:
+    case IR::Opcode::BoundImageAtomicAnd32:
+    case IR::Opcode::BoundImageAtomicOr32:
+    case IR::Opcode::BoundImageAtomicXor32:
+    case IR::Opcode::BoundImageAtomicExchange32:
+    case IR::Opcode::ImageAtomicIAdd32:
+    case IR::Opcode::ImageAtomicSMin32:
+    case IR::Opcode::ImageAtomicUMin32:
+    case IR::Opcode::ImageAtomicSMax32:
+    case IR::Opcode::ImageAtomicUMax32:
+    case IR::Opcode::ImageAtomicInc32:
+    case IR::Opcode::ImageAtomicDec32:
+    case IR::Opcode::ImageAtomicAnd32:
+    case IR::Opcode::ImageAtomicOr32:
+    case IR::Opcode::ImageAtomicXor32:
+    case IR::Opcode::ImageAtomicExchange32:
         return true;
     default:
         return false;

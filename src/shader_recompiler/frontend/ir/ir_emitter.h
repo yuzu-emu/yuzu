@@ -334,6 +334,32 @@ public:
     [[nodiscard]] void ImageWrite(const Value& handle, const Value& coords, const Value& color,
                                   TextureInstInfo info);
 
+    [[nodiscard]] Value ImageAtomicIAdd(const Value& handle, const Value& coords,
+                                        const Value& value, TextureInstInfo info);
+    [[nodiscard]] Value ImageAtomicSMin(const Value& handle, const Value& coords,
+                                        const Value& value, TextureInstInfo info);
+    [[nodiscard]] Value ImageAtomicUMin(const Value& handle, const Value& coords,
+                                        const Value& value, TextureInstInfo info);
+    [[nodiscard]] Value ImageAtomicIMin(const Value& handle, const Value& coords,
+                                        const Value& value, bool is_signed, TextureInstInfo info);
+    [[nodiscard]] Value ImageAtomicSMax(const Value& handle, const Value& coords,
+                                        const Value& value, TextureInstInfo info);
+    [[nodiscard]] Value ImageAtomicUMax(const Value& handle, const Value& coords,
+                                        const Value& value, TextureInstInfo info);
+    [[nodiscard]] Value ImageAtomicIMax(const Value& handle, const Value& coords,
+                                        const Value& value, bool is_signed, TextureInstInfo info);
+    [[nodiscard]] Value ImageAtomicInc(const Value& handle, const Value& coords, const Value& value,
+                                       TextureInstInfo info);
+    [[nodiscard]] Value ImageAtomicDec(const Value& handle, const Value& coords, const Value& value,
+                                       TextureInstInfo info);
+    [[nodiscard]] Value ImageAtomicAnd(const Value& handle, const Value& coords, const Value& value,
+                                       TextureInstInfo info);
+    [[nodiscard]] Value ImageAtomicOr(const Value& handle, const Value& coords, const Value& value,
+                                      TextureInstInfo info);
+    [[nodiscard]] Value ImageAtomicXor(const Value& handle, const Value& coords, const Value& value,
+                                       TextureInstInfo info);
+    [[nodiscard]] Value ImageAtomicExchange(const Value& handle, const Value& coords,
+                                            const Value& value, TextureInstInfo info);
     [[nodiscard]] U1 VoteAll(const U1& value);
     [[nodiscard]] U1 VoteAny(const U1& value);
     [[nodiscard]] U1 VoteEqual(const U1& value);

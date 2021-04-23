@@ -12,6 +12,7 @@ add_library(shader_recompiler STATIC
     backend/spirv/emit_spirv_convert.cpp
     backend/spirv/emit_spirv_floating_point.cpp
     backend/spirv/emit_spirv_image.cpp
+    backend/spirv/emit_spirv_image_atomic.cpp
     backend/spirv/emit_spirv_integer.cpp
     backend/spirv/emit_spirv_logical.cpp
     backend/spirv/emit_spirv_memory.cpp
@@ -138,6 +139,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/predicate_set_predicate.cpp
     frontend/maxwell/translate/impl/predicate_set_register.cpp
     frontend/maxwell/translate/impl/select_source_with_predicate.cpp
+    frontend/maxwell/translate/impl/surface_atomic_operations.cpp
     frontend/maxwell/translate/impl/surface_load_store.cpp
     frontend/maxwell/translate/impl/texture_fetch.cpp
     frontend/maxwell/translate/impl/texture_fetch_swizzled.cpp
