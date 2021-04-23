@@ -160,6 +160,7 @@ struct Info {
     bool uses_derivatives{};
     bool uses_typeless_image_reads{};
     bool uses_typeless_image_writes{};
+    bool uses_image_buffers{};
     bool uses_shared_increment{};
     bool uses_shared_decrement{};
     bool uses_global_increment{};
@@ -173,6 +174,7 @@ struct Info {
     bool uses_atomic_f32x2_max{};
     bool uses_int64_bit_atomics{};
     bool uses_global_memory{};
+    bool uses_atomic_image_u32{};
 
     IR::Type used_constant_buffer_types{};
     IR::Type used_storage_buffer_types{};

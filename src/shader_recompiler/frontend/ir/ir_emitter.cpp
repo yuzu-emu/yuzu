@@ -1869,6 +1869,95 @@ void IREmitter::ImageWrite(const Value& handle, const Value& coords, const Value
     Inst(op, Flags{info}, handle, coords, color);
 }
 
+Value IREmitter::ImageAtomicIAdd(const Value& handle, const Value& coords, const Value& value,
+                                 TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageAtomicIAdd32
+                                         : Opcode::BindlessImageAtomicIAdd32};
+    return Inst(op, Flags{info}, handle, coords, value);
+}
+
+Value IREmitter::ImageAtomicSMin(const Value& handle, const Value& coords, const Value& value,
+                                 TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageAtomicSMin32
+                                         : Opcode::BindlessImageAtomicSMin32};
+    return Inst(op, Flags{info}, handle, coords, value);
+}
+
+Value IREmitter::ImageAtomicUMin(const Value& handle, const Value& coords, const Value& value,
+                                 TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageAtomicUMin32
+                                         : Opcode::BindlessImageAtomicUMin32};
+    return Inst(op, Flags{info}, handle, coords, value);
+}
+
+Value IREmitter::ImageAtomicIMin(const Value& handle, const Value& coords, const Value& value,
+                                 bool is_signed, TextureInstInfo info) {
+    return is_signed ? ImageAtomicSMin(handle, coords, value, info)
+                     : ImageAtomicUMin(handle, coords, value, info);
+}
+
+Value IREmitter::ImageAtomicSMax(const Value& handle, const Value& coords, const Value& value,
+                                 TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageAtomicSMax32
+                                         : Opcode::BindlessImageAtomicSMax32};
+    return Inst(op, Flags{info}, handle, coords, value);
+}
+
+Value IREmitter::ImageAtomicUMax(const Value& handle, const Value& coords, const Value& value,
+                                 TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageAtomicUMax32
+                                         : Opcode::BindlessImageAtomicUMax32};
+    return Inst(op, Flags{info}, handle, coords, value);
+}
+
+Value IREmitter::ImageAtomicIMax(const Value& handle, const Value& coords, const Value& value,
+                                 bool is_signed, TextureInstInfo info) {
+    return is_signed ? ImageAtomicSMax(handle, coords, value, info)
+                     : ImageAtomicUMax(handle, coords, value, info);
+}
+
+Value IREmitter::ImageAtomicInc(const Value& handle, const Value& coords, const Value& value,
+                                TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageAtomicInc32
+                                         : Opcode::BindlessImageAtomicInc32};
+    return Inst(op, Flags{info}, handle, coords, value);
+}
+
+Value IREmitter::ImageAtomicDec(const Value& handle, const Value& coords, const Value& value,
+                                TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageAtomicDec32
+                                         : Opcode::BindlessImageAtomicDec32};
+    return Inst(op, Flags{info}, handle, coords, value);
+}
+
+Value IREmitter::ImageAtomicAnd(const Value& handle, const Value& coords, const Value& value,
+                                TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageAtomicAnd32
+                                         : Opcode::BindlessImageAtomicAnd32};
+    return Inst(op, Flags{info}, handle, coords, value);
+}
+
+Value IREmitter::ImageAtomicOr(const Value& handle, const Value& coords, const Value& value,
+                               TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageAtomicOr32
+                                         : Opcode::BindlessImageAtomicOr32};
+    return Inst(op, Flags{info}, handle, coords, value);
+}
+
+Value IREmitter::ImageAtomicXor(const Value& handle, const Value& coords, const Value& value,
+                                TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageAtomicXor32
+                                         : Opcode::BindlessImageAtomicXor32};
+    return Inst(op, Flags{info}, handle, coords, value);
+}
+
+Value IREmitter::ImageAtomicExchange(const Value& handle, const Value& coords, const Value& value,
+                                     TextureInstInfo info) {
+    const Opcode op{handle.IsImmediate() ? Opcode::BoundImageAtomicExchange32
+                                         : Opcode::BindlessImageAtomicExchange32};
+    return Inst(op, Flags{info}, handle, coords, value);
+}
+
 U1 IREmitter::VoteAll(const U1& value) {
     return Inst<U1>(Opcode::VoteAll, value);
 }

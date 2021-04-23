@@ -303,6 +303,7 @@ public:
     void STL(u64 insn);
     void STP(u64 insn);
     void STS(u64 insn);
+    void SUATOM(u64 insn);
     void SUATOM_cas(u64 insn);
     void SULD(u64 insn);
     void SURED(u64 insn);

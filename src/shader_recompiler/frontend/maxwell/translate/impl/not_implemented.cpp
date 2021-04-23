@@ -249,10 +249,6 @@ void TranslatorVisitor::SUATOM_cas(u64) {
     ThrowNotImplemented(Opcode::SUATOM_cas);
 }
 
-void TranslatorVisitor::SURED(u64) {
-    ThrowNotImplemented(Opcode::SURED);
-}
-
 void TranslatorVisitor::SYNC(u64) {
     ThrowNotImplemented(Opcode::SYNC);
 }
