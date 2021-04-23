@@ -69,13 +69,14 @@ void TranslatorVisitor::VSETP(u64 insn) {
     const IR::U32 src_b{is_b_imm ? ir.Imm32(static_cast<u32>(vsetp.src_b_imm)) : GetReg20(insn)};
 
     const u32 a_selector{static_cast<u32>(vsetp.src_a_selector)};
+    const u32 b_selector{static_cast<u32>(vsetp.src_b_selector)};
     const VideoWidth a_width{vsetp.src_a_width};
     const VideoWidth b_width{GetVideoSourceWidth(vsetp.src_b_width, is_b_imm)};
 
     const bool src_a_signed{vsetp.src_a_sign != 0};
     const bool src_b_signed{vsetp.src_b_sign != 0};
     const IR::U32 op_a{ExtractVideoOperandValue(ir, src_a, a_width, a_selector, src_a_signed)};
-    const IR::U32 op_b{ExtractVideoOperandValue(ir, src_b, b_width, a_selector, src_b_signed)};
+    const IR::U32 op_b{ExtractVideoOperandValue(ir, src_b, b_width, b_selector, src_b_signed)};
 
     // Compare operation's sign is only dependent on operand b's sign
     const bool compare_signed{src_b_signed};
