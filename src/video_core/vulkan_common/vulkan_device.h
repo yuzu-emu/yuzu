@@ -4,10 +4,10 @@
 
 #pragma once
 
+#include <span>
 #include <string>
 #include <string_view>
 #include <unordered_map>
-#include <span>
 #include <vector>
 
 #include "common/common_types.h"

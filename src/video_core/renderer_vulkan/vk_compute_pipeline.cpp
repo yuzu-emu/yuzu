@@ -95,7 +95,7 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
         ASSERT(((qmd.const_buffer_enable_mask >> desc.cbuf_index) & 1) != 0);
         const u32 index_offset{index << desc.size_shift};
         const u32 offset{desc.cbuf_offset + index_offset};
-        const GPUVAddr addr{cbufs[desc.cbuf_index].Address() + desc.cbuf_offset};
+        const GPUVAddr addr{cbufs[desc.cbuf_index].Address() + offset};
         if constexpr (std::is_same_v<decltype(desc), const Shader::TextureDescriptor&> ||
                       std::is_same_v<decltype(desc), const Shader::TextureBufferDescriptor&>) {
             if (desc.has_secondary) {
@@ -136,7 +136,7 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
     ImageId* texture_buffer_ids{image_view_ids.data()};
     size_t index{};
     const auto add_buffer{[&](const auto& desc) {
-        for (u32 index = 0; index < desc.count; ++index) {
+        for (u32 i = 0; index < desc.count; ++i) {
             bool is_written{false};
             if constexpr (std::is_same_v<decltype(desc), const Shader::ImageBufferDescriptor&>) {
                 is_written = desc.is_written;
