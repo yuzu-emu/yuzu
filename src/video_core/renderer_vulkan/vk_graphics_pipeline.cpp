@@ -345,12 +345,18 @@ void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pa
     if (!vertex_binding_divisors.empty()) {
         vertex_input_ci.pNext = &input_divisor_ci;
     }
-    const auto input_assembly_topology = MaxwellToVK::PrimitiveTopology(device, state.topology);
+    auto input_assembly_topology = MaxwellToVK::PrimitiveTopology(device, state.topology);
+    if (input_assembly_topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+        if (!spv_modules[1] && !spv_modules[2]) {
+            LOG_WARNING(Render_Vulkan, "Patch topology used without tessellation, using points");
+            input_assembly_topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        }
+    }
     const VkPipelineInputAssemblyStateCreateInfo input_assembly_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .topology = MaxwellToVK::PrimitiveTopology(device, state.topology),
+        .topology = input_assembly_topology,
         .primitiveRestartEnable = state.primitive_restart_enable != 0 &&
                                   SupportsPrimitiveRestart(input_assembly_topology),
     };
