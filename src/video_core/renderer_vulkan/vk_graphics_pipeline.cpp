@@ -105,6 +105,17 @@ RenderPassKey MakeRenderPassKey(const FixedPipelineState& state) {
     key.samples = MaxwellToVK::MsaaMode(state.msaa_mode);
     return key;
 }
+
+size_t NumAttachments(const FixedPipelineState& state) {
+    size_t num{};
+    for (size_t index = 0; index < Maxwell::NumRenderTargets; ++index) {
+        const auto format{static_cast<Tegra::RenderTargetFormat>(state.color_formats[index])};
+        if (format != Tegra::RenderTargetFormat::NONE) {
+            num = index + 1;
+        }
+    }
+    return num;
+}
 } // Anonymous namespace
 
 GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
@@ -418,17 +429,14 @@ void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pa
         .maxDepthBounds = 0.0f,
     };
     static_vector<VkPipelineColorBlendAttachmentState, Maxwell::NumRenderTargets> cb_attachments;
-    for (size_t index = 0; index < Maxwell::NumRenderTargets; ++index) {
+    const size_t num_attachments{NumAttachments(state)};
+    for (size_t index = 0; index < num_attachments; ++index) {
         static constexpr std::array mask_table{
             VK_COLOR_COMPONENT_R_BIT,
             VK_COLOR_COMPONENT_G_BIT,
             VK_COLOR_COMPONENT_B_BIT,
             VK_COLOR_COMPONENT_A_BIT,
         };
-        const auto format{static_cast<Tegra::RenderTargetFormat>(state.color_formats[index])};
-        if (format == Tegra::RenderTargetFormat::NONE) {
-            continue;
-        }
         const auto& blend{state.attachments[index]};
         const std::array mask{blend.Mask()};
         VkColorComponentFlags write_mask{};

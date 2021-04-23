@@ -16,18 +16,6 @@ namespace Vulkan {
 namespace {
 using VideoCore::Surface::PixelFormat;
 
-constexpr std::array ATTACHMENT_REFERENCES{
-    VkAttachmentReference{0, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{1, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{2, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{3, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{4, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{5, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{6, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{7, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{8, VK_IMAGE_LAYOUT_GENERAL},
-};
-
 VkAttachmentDescription AttachmentDescription(const Device& device, PixelFormat format,
                                               VkSampleCountFlagBits samples) {
     using MaxwellToVK::SurfaceFormat;
@@ -54,17 +42,29 @@ VkRenderPass RenderPassCache::Get(const RenderPassKey& key) {
         return *pair->second;
     }
     boost::container::static_vector<VkAttachmentDescription, 9> descriptions;
+    std::array<VkAttachmentReference, 8> references{};
+    u32 num_attachments{};
+    u32 num_colors{};
     for (size_t index = 0; index < key.color_formats.size(); ++index) {
         const PixelFormat format{key.color_formats[index]};
-        if (format == PixelFormat::Invalid) {
-            continue;
+        const bool is_valid{format != PixelFormat::Invalid};
+        references[index] = VkAttachmentReference{
+            .attachment = is_valid ? num_colors : VK_ATTACHMENT_UNUSED,
+            .layout = VK_IMAGE_LAYOUT_GENERAL,
+        };
+        if (is_valid) {
+            descriptions.push_back(AttachmentDescription(*device, format, key.samples));
+            num_attachments = static_cast<u32>(index + 1);
+            ++num_colors;
         }
-        descriptions.push_back(AttachmentDescription(*device, format, key.samples));
     }
-    const size_t num_colors{descriptions.size()};
-    const VkAttachmentReference* depth_attachment{};
+    const bool has_depth{key.depth_format != PixelFormat::Invalid};
+    VkAttachmentReference depth_reference{};
     if (key.depth_format != PixelFormat::Invalid) {
-        depth_attachment = &ATTACHMENT_REFERENCES[num_colors];
+        depth_reference = VkAttachmentReference{
+            .attachment = num_colors,
+            .layout = VK_IMAGE_LAYOUT_GENERAL,
+        };
         descriptions.push_back(AttachmentDescription(*device, key.depth_format, key.samples));
     }
     const VkSubpassDescription subpass{
@@ -72,10 +72,10 @@ VkRenderPass RenderPassCache::Get(const RenderPassKey& key) {
         .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
         .inputAttachmentCount = 0,
         .pInputAttachments = nullptr,
-        .colorAttachmentCount = static_cast<u32>(num_colors),
-        .pColorAttachments = num_colors != 0 ? ATTACHMENT_REFERENCES.data() : nullptr,
+        .colorAttachmentCount = num_attachments,
+        .pColorAttachments = references.data(),
         .pResolveAttachments = nullptr,
-        .pDepthStencilAttachment = depth_attachment,
+        .pDepthStencilAttachment = has_depth ? &depth_reference : nullptr,
         .preserveAttachmentCount = 0,
         .pPreserveAttachments = nullptr,
     };
