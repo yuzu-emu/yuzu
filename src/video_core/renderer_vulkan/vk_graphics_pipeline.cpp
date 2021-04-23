@@ -226,7 +226,7 @@ void GraphicsPipeline::Configure(bool is_indexed) {
     for (size_t stage = 0; stage < Maxwell::MaxShaderStage; ++stage) {
         size_t index{};
         const auto add_buffer{[&](const auto& desc) {
-            for (u32 index = 0; index < desc.count; ++index) {
+            for (u32 i = 0; i < desc.count; ++i) {
                 bool is_written{false};
                 if constexpr (std::is_same_v<decltype(desc),
                                              const Shader::ImageBufferDescriptor&>) {
