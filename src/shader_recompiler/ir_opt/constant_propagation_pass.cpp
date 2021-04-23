@@ -553,7 +553,7 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
         return;
     case IR::Opcode::BitFieldUExtract:
         FoldWhenAllImmediates(inst, [](u32 base, u32 shift, u32 count) {
-            if (static_cast<size_t>(shift) + static_cast<size_t>(count) > Common::BitSize<u32>()) {
+            if (static_cast<size_t>(shift) + static_cast<size_t>(count) > 32) {
                 throw LogicError("Undefined result in {}({}, {}, {})", IR::Opcode::BitFieldUExtract,
                                  base, shift, count);
             }
@@ -563,13 +563,22 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
     case IR::Opcode::BitFieldSExtract:
         FoldWhenAllImmediates(inst, [](s32 base, u32 shift, u32 count) {
             const size_t back_shift{static_cast<size_t>(shift) + static_cast<size_t>(count)};
-            if (back_shift > Common::BitSize<s32>()) {
+            const size_t left_shift{32 - back_shift};
+            const size_t right_shift{static_cast<size_t>(32 - count)};
+            if (back_shift >= 32 || left_shift >= 32 || right_shift >= 32) {
                 throw LogicError("Undefined result in {}({}, {}, {})", IR::Opcode::BitFieldSExtract,
                                  base, shift, count);
             }
-            const size_t left_shift{Common::BitSize<s32>() - back_shift};
-            return static_cast<u32>(static_cast<s32>(base << left_shift) >>
-                                    static_cast<size_t>(Common::BitSize<s32>() - count));
+            return static_cast<u32>((base << left_shift) >> right_shift);
+        });
+        return;
+    case IR::Opcode::BitFieldInsert:
+        FoldWhenAllImmediates(inst, [](u32 base, u32 insert, u32 offset, u32 bits) {
+            if (bits >= 32 || offset >= 32) {
+                throw LogicError("Undefined result in {}({}, {}, {}, {})",
+                                 IR::Opcode::BitFieldInsert, base, insert, offset, bits);
+            }
+            return (base & ~(~(~0u << bits) << offset)) | (insert << offset);
         });
         return;
     case IR::Opcode::BranchConditional:
