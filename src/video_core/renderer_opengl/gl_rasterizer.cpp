@@ -635,7 +635,7 @@ void RasterizerOpenGL::SyncDepthClamp() {
 
 void RasterizerOpenGL::SyncClipEnabled(u32 clip_mask) {
     auto& flags = maxwell3d.dirty.flags;
-    if (!flags[Dirty::ClipDistances] && !flags[Dirty::Shaders]) {
+    if (!flags[Dirty::ClipDistances] && !flags[VideoCommon::Dirty::Shaders]) {
         return;
     }
     flags[Dirty::ClipDistances] = false;
