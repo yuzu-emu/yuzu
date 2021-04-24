@@ -75,8 +75,6 @@ public:
                               std::array<vk::ShaderModule, NUM_STAGES> stages,
                               const std::array<const Shader::Info*, NUM_STAGES>& infos);
 
-    void Configure(bool is_indexed);
-
     GraphicsPipeline& operator=(GraphicsPipeline&&) noexcept = delete;
     GraphicsPipeline(GraphicsPipeline&&) noexcept = delete;
 
@@ -84,6 +82,10 @@ public:
     GraphicsPipeline(const GraphicsPipeline&) = delete;
 
     void AddTransition(GraphicsPipeline* transition);
+
+    void Configure(bool is_indexed) {
+        configure_func(this, is_indexed);
+    }
 
     GraphicsPipeline* Next(const GraphicsPipelineCacheKey& current_key) noexcept {
         if (key == current_key) {
@@ -94,8 +96,22 @@ public:
                                            : nullptr;
     }
 
+    template <typename Spec>
+    static auto MakeConfigureSpecFunc() {
+        return [](GraphicsPipeline* pipeline, bool is_indexed) {
+            pipeline->ConfigureImpl<Spec>(is_indexed);
+        };
+    }
+
 private:
+    template <typename Spec>
+    void ConfigureImpl(bool is_indexed);
+
+    void ConfigureDraw();
+
     void MakePipeline(const Device& device, VkRenderPass render_pass);
+
+    void Validate();
 
     const GraphicsPipelineCacheKey key;
     Tegra::Engines::Maxwell3D& maxwell3d;
@@ -104,6 +120,8 @@ private:
     BufferCache& buffer_cache;
     VKScheduler& scheduler;
     VKUpdateDescriptorQueue& update_descriptor_queue;
+
+    void (*configure_func)(GraphicsPipeline*, bool);
 
     std::vector<GraphicsPipelineCacheKey> transition_keys;
     std::vector<GraphicsPipeline*> transitions;

@@ -19,13 +19,23 @@
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
 #include "video_core/vulkan_common/vulkan_device.h"
 
+#ifdef _MSC_VER
+#define LAMBDA_FORCEINLINE [[msvc::forceinline]]
+#else
+#define LAMBDA_FORCEINLINE
+#endif
+
 namespace Vulkan {
 namespace {
 using boost::container::small_vector;
 using boost::container::static_vector;
+using Shader::ImageBufferDescriptor;
 using VideoCore::Surface::PixelFormat;
 using VideoCore::Surface::PixelFormatFromDepthFormat;
 using VideoCore::Surface::PixelFormatFromRenderTargetFormat;
+
+constexpr size_t NUM_STAGES = Maxwell::MaxShaderStage;
+constexpr size_t MAX_IMAGE_ELEMENTS = 64;
 
 DescriptorLayoutBuilder MakeBuilder(const Device& device, std::span<const Shader::Info> infos) {
     DescriptorLayoutBuilder builder{device.GetLogical()};
@@ -116,6 +126,80 @@ size_t NumAttachments(const FixedPipelineState& state) {
     }
     return num;
 }
+
+template <typename Spec>
+bool Passes(const std::array<vk::ShaderModule, NUM_STAGES>& modules,
+            const std::array<Shader::Info, NUM_STAGES>& stage_infos) {
+    for (size_t stage = 0; stage < NUM_STAGES; ++stage) {
+        if (!Spec::enabled_stages[stage] && modules[stage]) {
+            return false;
+        }
+        const auto& info{stage_infos[stage]};
+        if constexpr (!Spec::has_storage_buffers) {
+            if (!info.storage_buffers_descriptors.empty()) {
+                return false;
+            }
+        }
+        if constexpr (!Spec::has_texture_buffers) {
+            if (!info.texture_buffer_descriptors.empty()) {
+                return false;
+            }
+        }
+        if constexpr (!Spec::has_image_buffers) {
+            if (!info.image_buffer_descriptors.empty()) {
+                return false;
+            }
+        }
+        if constexpr (!Spec::has_images) {
+            if (!info.image_descriptors.empty()) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+using ConfigureFuncPtr = void (*)(GraphicsPipeline*, bool);
+
+template <typename Spec, typename... Specs>
+ConfigureFuncPtr FindSpec(const std::array<vk::ShaderModule, NUM_STAGES>& modules,
+                          const std::array<Shader::Info, NUM_STAGES>& stage_infos) {
+    if constexpr (sizeof...(Specs) > 0) {
+        if (!Passes<Spec>(modules, stage_infos)) {
+            return FindSpec<Specs...>(modules, stage_infos);
+        }
+    }
+    return GraphicsPipeline::MakeConfigureSpecFunc<Spec>();
+}
+
+struct SimpleVertexFragmentSpec {
+    static constexpr std::array<bool, 5> enabled_stages{true, false, false, false, true};
+    static constexpr bool has_storage_buffers = false;
+    static constexpr bool has_texture_buffers = false;
+    static constexpr bool has_image_buffers = false;
+    static constexpr bool has_images = false;
+};
+
+struct SimpleVertexSpec {
+    static constexpr std::array<bool, 5> enabled_stages{true, false, false, false, false};
+    static constexpr bool has_storage_buffers = false;
+    static constexpr bool has_texture_buffers = false;
+    static constexpr bool has_image_buffers = false;
+    static constexpr bool has_images = false;
+};
+
+struct DefaultSpec {
+    static constexpr std::array<bool, 5> enabled_stages{true, true, true, true, true};
+    static constexpr bool has_storage_buffers = true;
+    static constexpr bool has_texture_buffers = true;
+    static constexpr bool has_image_buffers = true;
+    static constexpr bool has_images = true;
+};
+
+ConfigureFuncPtr ConfigureFunc(const std::array<vk::ShaderModule, NUM_STAGES>& modules,
+                               const std::array<Shader::Info, NUM_STAGES>& infos) {
+    return FindSpec<SimpleVertexSpec, SimpleVertexFragmentSpec, DefaultSpec>(modules, infos);
+}
 } // Anonymous namespace
 
 GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
@@ -144,6 +228,7 @@ GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
         descriptor_update_template = builder.CreateTemplate(set_layout, *pipeline_layout);
 
         const VkRenderPass render_pass{render_pass_cache.Get(MakeRenderPassKey(key.state))};
+        Validate();
         MakePipeline(device, render_pass);
 
         std::lock_guard lock{build_mutex};
@@ -155,6 +240,7 @@ GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
     } else {
         func();
     }
+    configure_func = ConfigureFunc(spv_modules, stage_infos);
 }
 
 void GraphicsPipeline::AddTransition(GraphicsPipeline* transition) {
@@ -162,26 +248,29 @@ void GraphicsPipeline::AddTransition(GraphicsPipeline* transition) {
     transitions.push_back(transition);
 }
 
-void GraphicsPipeline::Configure(bool is_indexed) {
-    static constexpr size_t max_images_elements = 64;
-    std::array<ImageId, max_images_elements> image_view_ids;
-    static_vector<u32, max_images_elements> image_view_indices;
-    static_vector<VkSampler, max_images_elements> samplers;
+template <typename Spec>
+void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
+    std::array<ImageId, MAX_IMAGE_ELEMENTS> image_view_ids;
+    std::array<u32, MAX_IMAGE_ELEMENTS> image_view_indices;
+    std::array<VkSampler, MAX_IMAGE_ELEMENTS> samplers;
+    size_t image_index{};
 
     texture_cache.SynchronizeGraphicsDescriptors();
 
     const auto& regs{maxwell3d.regs};
     const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};
-    for (size_t stage = 0; stage < Maxwell::MaxShaderStage; ++stage) {
+    const auto config_stage{[&](size_t stage) LAMBDA_FORCEINLINE {
         const Shader::Info& info{stage_infos[stage]};
         buffer_cache.SetEnabledUniformBuffers(stage, info.constant_buffer_mask);
         buffer_cache.UnbindGraphicsStorageBuffers(stage);
-        size_t ssbo_index{};
-        for (const auto& desc : info.storage_buffers_descriptors) {
-            ASSERT(desc.count == 1);
-            buffer_cache.BindGraphicsStorageBuffer(stage, ssbo_index, desc.cbuf_index,
-                                                   desc.cbuf_offset, desc.is_written);
-            ++ssbo_index;
+        if constexpr (Spec::has_storage_buffers) {
+            size_t ssbo_index{};
+            for (const auto& desc : info.storage_buffers_descriptors) {
+                ASSERT(desc.count == 1);
+                buffer_cache.BindGraphicsStorageBuffer(stage, ssbo_index, desc.cbuf_index,
+                                                       desc.cbuf_offset, desc.is_written);
+                ++ssbo_index;
+            }
         }
         const auto& cbufs{maxwell3d.state.shader_stages[stage].const_buffers};
         const auto read_handle{[&](const auto& desc, u32 index) {
@@ -207,33 +296,60 @@ void GraphicsPipeline::Configure(bool is_indexed) {
         const auto add_image{[&](const auto& desc) {
             for (u32 index = 0; index < desc.count; ++index) {
                 const TextureHandle handle{read_handle(desc, index)};
-                image_view_indices.push_back(handle.image);
+                image_view_indices[image_index++] = handle.image;
             }
         }};
-        std::ranges::for_each(info.texture_buffer_descriptors, add_image);
-        std::ranges::for_each(info.image_buffer_descriptors, add_image);
+        if constexpr (Spec::has_texture_buffers) {
+            for (const auto& desc : info.texture_buffer_descriptors) {
+                add_image(desc);
+            }
+        }
+        if constexpr (Spec::has_image_buffers) {
+            for (const auto& desc : info.image_buffer_descriptors) {
+                add_image(desc);
+            }
+        }
         for (const auto& desc : info.texture_descriptors) {
             for (u32 index = 0; index < desc.count; ++index) {
                 const TextureHandle handle{read_handle(desc, index)};
-                image_view_indices.push_back(handle.image);
+                image_view_indices[image_index] = handle.image;
 
                 Sampler* const sampler{texture_cache.GetGraphicsSampler(handle.sampler)};
-                samplers.push_back(sampler->Handle());
+                samplers[image_index] = sampler->Handle();
+                ++image_index;
             }
         }
-        std::ranges::for_each(info.image_descriptors, add_image);
+        if constexpr (Spec::has_images) {
+            for (const auto& desc : info.image_descriptors) {
+                add_image(desc);
+            }
+        }
+    }};
+    if constexpr (Spec::enabled_stages[0]) {
+        config_stage(0);
     }
-    const std::span indices_span(image_view_indices.data(), image_view_indices.size());
+    if constexpr (Spec::enabled_stages[1]) {
+        config_stage(1);
+    }
+    if constexpr (Spec::enabled_stages[2]) {
+        config_stage(2);
+    }
+    if constexpr (Spec::enabled_stages[3]) {
+        config_stage(3);
+    }
+    if constexpr (Spec::enabled_stages[4]) {
+        config_stage(4);
+    }
+    const std::span indices_span(image_view_indices.data(), image_index);
     texture_cache.FillGraphicsImageViews(indices_span, image_view_ids);
 
     ImageId* texture_buffer_index{image_view_ids.data()};
-    for (size_t stage = 0; stage < Maxwell::MaxShaderStage; ++stage) {
+    const auto bind_stage_info{[&](size_t stage) LAMBDA_FORCEINLINE {
         size_t index{};
         const auto add_buffer{[&](const auto& desc) {
             for (u32 i = 0; i < desc.count; ++i) {
                 bool is_written{false};
-                if constexpr (std::is_same_v<decltype(desc),
-                                             const Shader::ImageBufferDescriptor&>) {
+                if constexpr (std::is_same_v<decltype(desc), const ImageBufferDescriptor&>) {
                     is_written = desc.is_written;
                 }
                 ImageView& image_view{texture_cache.GetImageView(*texture_buffer_index)};
@@ -245,29 +361,75 @@ void GraphicsPipeline::Configure(bool is_indexed) {
             }
         }};
         const Shader::Info& info{stage_infos[stage]};
-        buffer_cache.UnbindGraphicsTextureBuffers(stage);
-        std::ranges::for_each(info.texture_buffer_descriptors, add_buffer);
-        std::ranges::for_each(info.image_buffer_descriptors, add_buffer);
+        if constexpr (Spec::has_texture_buffers || Spec::has_image_buffers) {
+            buffer_cache.UnbindGraphicsTextureBuffers(stage);
+        }
+        if constexpr (Spec::has_texture_buffers) {
+            for (const auto& desc : info.texture_buffer_descriptors) {
+                add_buffer(desc);
+            }
+        }
+        if constexpr (Spec::has_image_buffers) {
+            for (const auto& desc : info.image_buffer_descriptors) {
+                add_buffer(desc);
+            }
+        }
         for (const auto& desc : info.texture_descriptors) {
             texture_buffer_index += desc.count;
         }
-        for (const auto& desc : info.image_descriptors) {
-            texture_buffer_index += desc.count;
+        if constexpr (Spec::has_images) {
+            for (const auto& desc : info.image_descriptors) {
+                texture_buffer_index += desc.count;
+            }
         }
+    }};
+    if constexpr (Spec::enabled_stages[0]) {
+        bind_stage_info(0);
     }
-    buffer_cache.UpdateGraphicsBuffers(is_indexed);
+    if constexpr (Spec::enabled_stages[1]) {
+        bind_stage_info(1);
+    }
+    if constexpr (Spec::enabled_stages[2]) {
+        bind_stage_info(2);
+    }
+    if constexpr (Spec::enabled_stages[3]) {
+        bind_stage_info(3);
+    }
+    if constexpr (Spec::enabled_stages[4]) {
+        bind_stage_info(4);
+    }
 
+    buffer_cache.UpdateGraphicsBuffers(is_indexed);
     buffer_cache.BindHostGeometryBuffers(is_indexed);
 
     update_descriptor_queue.Acquire();
 
     const VkSampler* samplers_it{samplers.data()};
     const ImageId* views_it{image_view_ids.data()};
-    for (size_t stage = 0; stage < Maxwell::MaxShaderStage; ++stage) {
+    const auto prepare_stage{[&](size_t stage) LAMBDA_FORCEINLINE {
         buffer_cache.BindHostStageBuffers(stage);
         PushImageDescriptors(stage_infos[stage], samplers_it, views_it, texture_cache,
                              update_descriptor_queue);
+    }};
+    if constexpr (Spec::enabled_stages[0]) {
+        prepare_stage(0);
     }
+    if constexpr (Spec::enabled_stages[1]) {
+        prepare_stage(1);
+    }
+    if constexpr (Spec::enabled_stages[2]) {
+        prepare_stage(2);
+    }
+    if constexpr (Spec::enabled_stages[3]) {
+        prepare_stage(3);
+    }
+    if constexpr (Spec::enabled_stages[4]) {
+        prepare_stage(4);
+    }
+    ConfigureDraw();
+}
+
+void GraphicsPipeline::ConfigureDraw() {
     texture_cache.UpdateRenderTargets(false);
     scheduler.RequestRenderpass(texture_cache.GetFramebuffer());
 
@@ -548,6 +710,25 @@ void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pa
         .basePipelineHandle = nullptr,
         .basePipelineIndex = 0,
     });
+}
+
+void GraphicsPipeline::Validate() {
+    size_t num_images{};
+    for (const auto& info : stage_infos) {
+        for (const auto& desc : info.texture_buffer_descriptors) {
+            num_images += desc.count;
+        }
+        for (const auto& desc : info.image_buffer_descriptors) {
+            num_images += desc.count;
+        }
+        for (const auto& desc : info.texture_descriptors) {
+            num_images += desc.count;
+        }
+        for (const auto& desc : info.image_descriptors) {
+            num_images += desc.count;
+        }
+    }
+    ASSERT(num_images <= MAX_IMAGE_ELEMENTS);
 }
 
 } // namespace Vulkan
