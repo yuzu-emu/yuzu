@@ -565,7 +565,7 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
             const size_t back_shift{static_cast<size_t>(shift) + static_cast<size_t>(count)};
             const size_t left_shift{32 - back_shift};
             const size_t right_shift{static_cast<size_t>(32 - count)};
-            if (back_shift >= 32 || left_shift >= 32 || right_shift >= 32) {
+            if (back_shift > 32 || left_shift >= 32 || right_shift >= 32) {
                 throw LogicError("Undefined result in {}({}, {}, {})", IR::Opcode::BitFieldSExtract,
                                  base, shift, count);
             }
