@@ -21,6 +21,7 @@
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
 #include "shader_recompiler/frontend/maxwell/program.h"
 #include "shader_recompiler/program_header.h"
+#include "video_core/dirty_flags.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/memory_manager.h"
@@ -700,17 +701,28 @@ GraphicsPipeline* PipelineCache::CurrentGraphicsPipeline() {
     MICROPROFILE_SCOPE(Vulkan_PipelineCache);
 
     if (!RefreshStages()) {
+        current_pipeline = nullptr;
         return nullptr;
     }
     graphics_key.state.Refresh(maxwell3d, device.IsExtExtendedDynamicStateSupported());
 
+    if (current_pipeline) {
+        GraphicsPipeline* const next{current_pipeline->Next(graphics_key)};
+        if (next) {
+            current_pipeline = next;
+            return current_pipeline;
+        }
+    }
     const auto [pair, is_new]{graphics_cache.try_emplace(graphics_key)};
     auto& pipeline{pair->second};
-    if (!is_new) {
-        return pipeline.get();
+    if (is_new) {
+        pipeline = CreateGraphicsPipeline();
     }
-    pipeline = CreateGraphicsPipeline();
-    return pipeline.get();
+    if (current_pipeline) {
+        current_pipeline->AddTransition(pipeline.get());
+    }
+    current_pipeline = pipeline.get();
+    return current_pipeline;
 }
 
 ComputePipeline* PipelineCache::CurrentComputePipeline() {
@@ -743,6 +755,12 @@ ComputePipeline* PipelineCache::CurrentComputePipeline() {
 }
 
 bool PipelineCache::RefreshStages() {
+    auto& dirty{maxwell3d.dirty.flags};
+    if (!dirty[VideoCommon::Dirty::Shaders]) {
+        return last_valid_shaders;
+    }
+    dirty[VideoCommon::Dirty::Shaders] = false;
+
     const GPUVAddr base_addr{maxwell3d.regs.code_address.CodeAddress()};
     for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
         if (!maxwell3d.regs.IsShaderConfigEnabled(index)) {
@@ -755,6 +773,7 @@ bool PipelineCache::RefreshStages() {
         const std::optional<VAddr> cpu_shader_addr{gpu_memory.GpuToCpuAddress(shader_addr)};
         if (!cpu_shader_addr) {
             LOG_ERROR(Render_Vulkan, "Invalid GPU address for shader 0x{:016x}", shader_addr);
+            last_valid_shaders = false;
             return false;
         }
         const ShaderInfo* shader_info{TryGet(*cpu_shader_addr)};
@@ -766,6 +785,7 @@ bool PipelineCache::RefreshStages() {
         shader_infos[index] = shader_info;
         graphics_key.unique_hashes[index] = shader_info->unique_hash;
     }
+    last_valid_shaders = true;
     return true;
 }
 
@@ -832,8 +852,7 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
     Common::ThreadWorker* const thread_worker{build_in_parallel ? &workers : nullptr};
     return std::make_unique<GraphicsPipeline>(
         maxwell3d, gpu_memory, scheduler, buffer_cache, texture_cache, device, descriptor_pool,
-        update_descriptor_queue, thread_worker, render_pass_cache, key.state, std::move(modules),
-        infos);
+        update_descriptor_queue, thread_worker, render_pass_cache, key, std::move(modules), infos);
 }
 
 std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline() {

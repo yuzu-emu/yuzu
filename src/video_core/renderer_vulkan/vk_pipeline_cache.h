@@ -58,26 +58,6 @@ static_assert(std::has_unique_object_representations_v<ComputePipelineCacheKey>)
 static_assert(std::is_trivially_copyable_v<ComputePipelineCacheKey>);
 static_assert(std::is_trivially_constructible_v<ComputePipelineCacheKey>);
 
-struct GraphicsPipelineCacheKey {
-    std::array<u128, 6> unique_hashes;
-    FixedPipelineState state;
-
-    size_t Hash() const noexcept;
-
-    bool operator==(const GraphicsPipelineCacheKey& rhs) const noexcept;
-
-    bool operator!=(const GraphicsPipelineCacheKey& rhs) const noexcept {
-        return !operator==(rhs);
-    }
-
-    size_t Size() const noexcept {
-        return sizeof(unique_hashes) + state.Size();
-    }
-};
-static_assert(std::has_unique_object_representations_v<GraphicsPipelineCacheKey>);
-static_assert(std::is_trivially_copyable_v<GraphicsPipelineCacheKey>);
-static_assert(std::is_trivially_constructible_v<GraphicsPipelineCacheKey>);
-
 } // namespace Vulkan
 
 namespace std {
@@ -85,13 +65,6 @@ namespace std {
 template <>
 struct hash<Vulkan::ComputePipelineCacheKey> {
     size_t operator()(const Vulkan::ComputePipelineCacheKey& k) const noexcept {
-        return k.Hash();
-    }
-};
-
-template <>
-struct hash<Vulkan::GraphicsPipelineCacheKey> {
-    size_t operator()(const Vulkan::GraphicsPipelineCacheKey& k) const noexcept {
         return k.Hash();
     }
 };
@@ -181,7 +154,10 @@ private:
     TextureCache& texture_cache;
 
     GraphicsPipelineCacheKey graphics_key{};
+    GraphicsPipeline* current_pipeline{};
+
     std::array<const ShaderInfo*, 6> shader_infos{};
+    bool last_valid_shaders{};
 
     std::unordered_map<ComputePipelineCacheKey, std::unique_ptr<ComputePipeline>> compute_cache;
     std::unordered_map<GraphicsPipelineCacheKey, std::unique_ptr<GraphicsPipeline>> graphics_cache;

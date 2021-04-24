@@ -52,7 +52,6 @@ enum : u8 {
     BlendState0,
     BlendState7 = BlendState0 + 7,
 
-    Shaders,
     ClipDistances,
 
     PolygonModes,

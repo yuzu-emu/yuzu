@@ -83,11 +83,6 @@ void SetupDirtyScissors(Tables& tables) {
     FillBlock(tables[1], OFF(scissor_test), NUM(scissor_test), Scissors);
 }
 
-void SetupDirtyShaders(Tables& tables) {
-    FillBlock(tables[0], OFF(shader_config[0]), NUM(shader_config[0]) * Regs::MaxShaderProgram,
-              Shaders);
-}
-
 void SetupDirtyPolygonModes(Tables& tables) {
     tables[0][OFF(polygon_mode_front)] = PolygonModeFront;
     tables[0][OFF(polygon_mode_back)] = PolygonModeBack;
@@ -217,7 +212,6 @@ StateTracker::StateTracker(Tegra::GPU& gpu) : flags{gpu.Maxwell3D().dirty.flags}
     SetupDirtyScissors(tables);
     SetupDirtyVertexInstances(tables);
     SetupDirtyVertexFormat(tables);
-    SetupDirtyShaders(tables);
     SetupDirtyPolygonModes(tables);
     SetupDirtyDepthTest(tables);
     SetupDirtyStencilTest(tables);

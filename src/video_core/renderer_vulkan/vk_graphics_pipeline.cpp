@@ -125,13 +125,12 @@ GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
                                    VKUpdateDescriptorQueue& update_descriptor_queue_,
                                    Common::ThreadWorker* worker_thread,
                                    RenderPassCache& render_pass_cache,
-                                   const FixedPipelineState& state_,
+                                   const GraphicsPipelineCacheKey& key_,
                                    std::array<vk::ShaderModule, NUM_STAGES> stages,
                                    const std::array<const Shader::Info*, NUM_STAGES>& infos)
-    : maxwell3d{maxwell3d_}, gpu_memory{gpu_memory_}, texture_cache{texture_cache_},
+    : key{key_}, maxwell3d{maxwell3d_}, gpu_memory{gpu_memory_}, texture_cache{texture_cache_},
       buffer_cache{buffer_cache_}, scheduler{scheduler_},
-      update_descriptor_queue{update_descriptor_queue_}, state{state_}, spv_modules{
-                                                                            std::move(stages)} {
+      update_descriptor_queue{update_descriptor_queue_}, spv_modules{std::move(stages)} {
     std::ranges::transform(infos, stage_infos.begin(),
                            [](const Shader::Info* info) { return info ? *info : Shader::Info{}; });
 
@@ -144,7 +143,7 @@ GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
         pipeline_layout = builder.CreatePipelineLayout(set_layout);
         descriptor_update_template = builder.CreateTemplate(set_layout, *pipeline_layout);
 
-        const VkRenderPass render_pass{render_pass_cache.Get(MakeRenderPassKey(state))};
+        const VkRenderPass render_pass{render_pass_cache.Get(MakeRenderPassKey(key.state))};
         MakePipeline(device, render_pass);
 
         std::lock_guard lock{build_mutex};
@@ -156,6 +155,11 @@ GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
     } else {
         func();
     }
+}
+
+void GraphicsPipeline::AddTransition(GraphicsPipeline* transition) {
+    transition_keys.push_back(transition->key);
+    transitions.push_back(transition);
 }
 
 void GraphicsPipeline::Configure(bool is_indexed) {
@@ -294,12 +298,12 @@ void GraphicsPipeline::Configure(bool is_indexed) {
 void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pass) {
     FixedPipelineState::DynamicState dynamic{};
     if (!device.IsExtExtendedDynamicStateSupported()) {
-        dynamic = state.dynamic_state;
+        dynamic = key.state.dynamic_state;
     }
     static_vector<VkVertexInputBindingDescription, 32> vertex_bindings;
     static_vector<VkVertexInputBindingDivisorDescriptionEXT, 32> vertex_binding_divisors;
     for (size_t index = 0; index < Maxwell::NumVertexArrays; ++index) {
-        const bool instanced = state.binding_divisors[index] != 0;
+        const bool instanced = key.state.binding_divisors[index] != 0;
         const auto rate = instanced ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
         vertex_bindings.push_back({
             .binding = static_cast<u32>(index),
@@ -309,14 +313,14 @@ void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pa
         if (instanced) {
             vertex_binding_divisors.push_back({
                 .binding = static_cast<u32>(index),
-                .divisor = state.binding_divisors[index],
+                .divisor = key.state.binding_divisors[index],
             });
         }
     }
     static_vector<VkVertexInputAttributeDescription, 32> vertex_attributes;
     const auto& input_attributes = stage_infos[0].input_generics;
-    for (size_t index = 0; index < state.attributes.size(); ++index) {
-        const auto& attribute = state.attributes[index];
+    for (size_t index = 0; index < key.state.attributes.size(); ++index) {
+        const auto& attribute = key.state.attributes[index];
         if (!attribute.enabled || !input_attributes[index].used) {
             continue;
         }
@@ -345,7 +349,7 @@ void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pa
     if (!vertex_binding_divisors.empty()) {
         vertex_input_ci.pNext = &input_divisor_ci;
     }
-    auto input_assembly_topology = MaxwellToVK::PrimitiveTopology(device, state.topology);
+    auto input_assembly_topology = MaxwellToVK::PrimitiveTopology(device, key.state.topology);
     if (input_assembly_topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
         if (!spv_modules[1] && !spv_modules[2]) {
             LOG_WARNING(Render_Vulkan, "Patch topology used without tessellation, using points");
@@ -357,14 +361,14 @@ void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pa
         .pNext = nullptr,
         .flags = 0,
         .topology = input_assembly_topology,
-        .primitiveRestartEnable = state.primitive_restart_enable != 0 &&
+        .primitiveRestartEnable = key.state.primitive_restart_enable != 0 &&
                                   SupportsPrimitiveRestart(input_assembly_topology),
     };
     const VkPipelineTessellationStateCreateInfo tessellation_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .patchControlPoints = state.patch_control_points_minus_one.Value() + 1,
+        .patchControlPoints = key.state.patch_control_points_minus_one.Value() + 1,
     };
     VkPipelineViewportStateCreateInfo viewport_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
@@ -376,7 +380,7 @@ void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pa
         .pScissors = nullptr,
     };
     std::array<VkViewportSwizzleNV, Maxwell::NumViewports> swizzles;
-    std::ranges::transform(state.viewport_swizzles, swizzles.begin(), UnpackViewportSwizzle);
+    std::ranges::transform(key.state.viewport_swizzles, swizzles.begin(), UnpackViewportSwizzle);
     VkPipelineViewportSwizzleStateCreateInfoNV swizzle_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SWIZZLE_STATE_CREATE_INFO_NV,
         .pNext = nullptr,
@@ -393,15 +397,15 @@ void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pa
         .pNext = nullptr,
         .flags = 0,
         .depthClampEnable =
-            static_cast<VkBool32>(state.depth_clamp_disabled == 0 ? VK_TRUE : VK_FALSE),
+            static_cast<VkBool32>(key.state.depth_clamp_disabled == 0 ? VK_TRUE : VK_FALSE),
         .rasterizerDiscardEnable =
-            static_cast<VkBool32>(state.rasterize_enable == 0 ? VK_TRUE : VK_FALSE),
+            static_cast<VkBool32>(key.state.rasterize_enable == 0 ? VK_TRUE : VK_FALSE),
         .polygonMode =
-            MaxwellToVK::PolygonMode(FixedPipelineState::UnpackPolygonMode(state.polygon_mode)),
+            MaxwellToVK::PolygonMode(FixedPipelineState::UnpackPolygonMode(key.state.polygon_mode)),
         .cullMode = static_cast<VkCullModeFlags>(
             dynamic.cull_enable ? MaxwellToVK::CullFace(dynamic.CullFace()) : VK_CULL_MODE_NONE),
         .frontFace = MaxwellToVK::FrontFace(dynamic.FrontFace()),
-        .depthBiasEnable = state.depth_bias_enable,
+        .depthBiasEnable = key.state.depth_bias_enable,
         .depthBiasConstantFactor = 0.0f,
         .depthBiasClamp = 0.0f,
         .depthBiasSlopeFactor = 0.0f,
@@ -411,7 +415,7 @@ void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pa
         .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .rasterizationSamples = MaxwellToVK::MsaaMode(state.msaa_mode),
+        .rasterizationSamples = MaxwellToVK::MsaaMode(key.state.msaa_mode),
         .sampleShadingEnable = VK_FALSE,
         .minSampleShading = 0.0f,
         .pSampleMask = nullptr,
@@ -435,7 +439,7 @@ void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pa
         .maxDepthBounds = 0.0f,
     };
     static_vector<VkPipelineColorBlendAttachmentState, Maxwell::NumRenderTargets> cb_attachments;
-    const size_t num_attachments{NumAttachments(state)};
+    const size_t num_attachments{NumAttachments(key.state)};
     for (size_t index = 0; index < num_attachments; ++index) {
         static constexpr std::array mask_table{
             VK_COLOR_COMPONENT_R_BIT,
@@ -443,7 +447,7 @@ void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pa
             VK_COLOR_COMPONENT_B_BIT,
             VK_COLOR_COMPONENT_A_BIT,
         };
-        const auto& blend{state.attachments[index]};
+        const auto& blend{key.state.attachments[index]};
         const std::array mask{blend.Mask()};
         VkColorComponentFlags write_mask{};
         for (size_t i = 0; i < mask_table.size(); ++i) {

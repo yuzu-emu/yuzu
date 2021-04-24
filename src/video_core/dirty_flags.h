@@ -36,6 +36,8 @@ enum : u8 {
 
     IndexBuffer,
 
+    Shaders,
+
     LastCommonEntry,
 };
 
