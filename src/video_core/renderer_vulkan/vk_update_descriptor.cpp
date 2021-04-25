@@ -36,13 +36,4 @@ void VKUpdateDescriptorQueue::Acquire() {
     upload_start = payload_cursor;
 }
 
-void VKUpdateDescriptorQueue::Send(const VkDescriptorUpdateTemplateKHR* update_template,
-                                   VkDescriptorSet set) {
-    const void* const data = upload_start;
-    const vk::Device* const logical = &device.GetLogical();
-    scheduler.Record([data, logical, set, update_template](vk::CommandBuffer) {
-        logical->UpdateDescriptorSet(set, *update_template, data);
-    });
-}
-
 } // namespace Vulkan

@@ -36,15 +36,14 @@ public:
     ~ComputePass();
 
 protected:
-    VkDescriptorSet CommitDescriptorSet(VKUpdateDescriptorQueue& update_descriptor_queue);
-
+    const Device& device;
     vk::DescriptorUpdateTemplateKHR descriptor_template;
     vk::PipelineLayout layout;
     vk::Pipeline pipeline;
-
-private:
     vk::DescriptorSetLayout descriptor_set_layout;
     DescriptorAllocator descriptor_allocator;
+
+private:
     vk::ShaderModule module;
 };
 
@@ -99,7 +98,6 @@ public:
 private:
     void MakeDataBuffer();
 
-    const Device& device;
     VKScheduler& scheduler;
     StagingBufferPool& staging_buffer_pool;
     VKUpdateDescriptorQueue& update_descriptor_queue;

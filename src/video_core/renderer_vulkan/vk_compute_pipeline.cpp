@@ -18,21 +18,22 @@
 
 namespace Vulkan {
 
-ComputePipeline::ComputePipeline(const Device& device, DescriptorPool& descriptor_pool,
+ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descriptor_pool,
                                  VKUpdateDescriptorQueue& update_descriptor_queue_,
                                  Common::ThreadWorker* thread_worker, const Shader::Info& info_,
                                  vk::ShaderModule spv_module_)
-    : update_descriptor_queue{update_descriptor_queue_}, info{info_},
+    : device{device_}, update_descriptor_queue{update_descriptor_queue_}, info{info_},
       spv_module(std::move(spv_module_)) {
-    DescriptorLayoutBuilder builder{device.GetLogical()};
-    builder.Add(info, VK_SHADER_STAGE_COMPUTE_BIT);
+    auto func{[this, &descriptor_pool] {
+        DescriptorLayoutBuilder builder{device.GetLogical()};
+        builder.Add(info, VK_SHADER_STAGE_COMPUTE_BIT);
 
-    descriptor_set_layout = builder.CreateDescriptorSetLayout();
-    pipeline_layout = builder.CreatePipelineLayout(*descriptor_set_layout);
-    descriptor_update_template = builder.CreateTemplate(*descriptor_set_layout, *pipeline_layout);
-    descriptor_allocator = descriptor_pool.Allocator(*descriptor_set_layout, info);
+        descriptor_set_layout = builder.CreateDescriptorSetLayout();
+        pipeline_layout = builder.CreatePipelineLayout(*descriptor_set_layout);
+        descriptor_update_template =
+            builder.CreateTemplate(*descriptor_set_layout, *pipeline_layout);
+        descriptor_allocator = descriptor_pool.Allocator(*descriptor_set_layout, info);
 
-    auto func{[this, &device] {
         const VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT subgroup_size_ci{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO_EXT,
             .pNext = nullptr,
@@ -166,15 +167,16 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
             build_condvar.wait(lock, [this] { return is_built.load(std::memory_order::relaxed); });
         });
     }
-    scheduler.Record([this](vk::CommandBuffer cmdbuf) {
+    const void* const descriptor_data{update_descriptor_queue.UpdateData()};
+    scheduler.Record([this, descriptor_data](vk::CommandBuffer cmdbuf) {
         cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline);
-    });
-    if (!descriptor_set_layout) {
-        return;
-    }
-    const VkDescriptorSet descriptor_set{descriptor_allocator.Commit()};
-    update_descriptor_queue.Send(descriptor_update_template.address(), descriptor_set);
-    scheduler.Record([this, descriptor_set](vk::CommandBuffer cmdbuf) {
+
+        if (!descriptor_set_layout) {
+            return;
+        }
+        const VkDescriptorSet descriptor_set{descriptor_allocator.Commit()};
+        const vk::Device& dev{device.GetLogical()};
+        dev.UpdateDescriptorSet(descriptor_set, *descriptor_update_template, descriptor_data);
         cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline_layout, 0,
                                   descriptor_set, nullptr);
     });
