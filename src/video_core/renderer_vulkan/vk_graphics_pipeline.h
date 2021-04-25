@@ -109,19 +109,20 @@ private:
 
     void ConfigureDraw();
 
-    void MakePipeline(const Device& device, VkRenderPass render_pass);
+    void MakePipeline(VkRenderPass render_pass);
 
     void Validate();
 
     const GraphicsPipelineCacheKey key;
     Tegra::Engines::Maxwell3D& maxwell3d;
     Tegra::MemoryManager& gpu_memory;
+    const Device& device;
     TextureCache& texture_cache;
     BufferCache& buffer_cache;
     VKScheduler& scheduler;
     VKUpdateDescriptorQueue& update_descriptor_queue;
 
-    void (*configure_func)(GraphicsPipeline*, bool);
+    void (*configure_func)(GraphicsPipeline*, bool){};
 
     std::vector<GraphicsPipelineCacheKey> transition_keys;
     std::vector<GraphicsPipeline*> transitions;

@@ -172,11 +172,12 @@ struct AstcPushConstants {
 };
 } // Anonymous namespace
 
-ComputePass::ComputePass(const Device& device, DescriptorPool& descriptor_pool,
+ComputePass::ComputePass(const Device& device_, DescriptorPool& descriptor_pool,
                          vk::Span<VkDescriptorSetLayoutBinding> bindings,
                          vk::Span<VkDescriptorUpdateTemplateEntryKHR> templates,
                          const DescriptorBankInfo& bank_info,
-                         vk::Span<VkPushConstantRange> push_constants, std::span<const u32> code) {
+                         vk::Span<VkPushConstantRange> push_constants, std::span<const u32> code)
+    : device{device_} {
     descriptor_set_layout = device.GetLogical().CreateDescriptorSetLayout({
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .pNext = nullptr,
@@ -237,15 +238,6 @@ ComputePass::ComputePass(const Device& device, DescriptorPool& descriptor_pool,
 
 ComputePass::~ComputePass() = default;
 
-VkDescriptorSet ComputePass::CommitDescriptorSet(VKUpdateDescriptorQueue& update_descriptor_queue) {
-    if (!descriptor_template) {
-        return nullptr;
-    }
-    const VkDescriptorSet set = descriptor_allocator.Commit();
-    update_descriptor_queue.Send(descriptor_template.address(), set);
-    return set;
-}
-
 Uint8Pass::Uint8Pass(const Device& device, VKScheduler& scheduler_, DescriptorPool& descriptor_pool,
                      StagingBufferPool& staging_buffer_pool_,
                      VKUpdateDescriptorQueue& update_descriptor_queue_)
@@ -265,10 +257,11 @@ std::pair<VkBuffer, VkDeviceSize> Uint8Pass::Assemble(u32 num_vertices, VkBuffer
     update_descriptor_queue.Acquire();
     update_descriptor_queue.AddBuffer(src_buffer, src_offset, num_vertices);
     update_descriptor_queue.AddBuffer(staging.buffer, staging.offset, staging_size);
-    const VkDescriptorSet set = CommitDescriptorSet(update_descriptor_queue);
+    const void* const descriptor_data{update_descriptor_queue.UpdateData()};
+    const VkBuffer buffer{staging.buffer};
 
     scheduler.RequestOutsideRenderPassOperationContext();
-    scheduler.Record([this, buffer = staging.buffer, set, num_vertices](vk::CommandBuffer cmdbuf) {
+    scheduler.Record([this, buffer, descriptor_data, num_vertices](vk::CommandBuffer cmdbuf) {
         static constexpr u32 DISPATCH_SIZE = 1024;
         static constexpr VkMemoryBarrier WRITE_BARRIER{
             .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -276,6 +269,8 @@ std::pair<VkBuffer, VkDeviceSize> Uint8Pass::Assemble(u32 num_vertices, VkBuffer
             .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
             .dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
         };
+        const VkDescriptorSet set = descriptor_allocator.Commit();
+        device.GetLogical().UpdateDescriptorSet(set, *descriptor_template, descriptor_data);
         cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline);
         cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, *layout, 0, set, {});
         cmdbuf.Dispatch(Common::DivCeil(num_vertices, DISPATCH_SIZE), 1, 1);
@@ -321,10 +316,10 @@ std::pair<VkBuffer, VkDeviceSize> QuadIndexedPass::Assemble(
     update_descriptor_queue.Acquire();
     update_descriptor_queue.AddBuffer(src_buffer, src_offset, input_size);
     update_descriptor_queue.AddBuffer(staging.buffer, staging.offset, staging_size);
-    const VkDescriptorSet set = CommitDescriptorSet(update_descriptor_queue);
+    const void* const descriptor_data{update_descriptor_queue.UpdateData()};
 
     scheduler.RequestOutsideRenderPassOperationContext();
-    scheduler.Record([this, buffer = staging.buffer, set, num_tri_vertices, base_vertex,
+    scheduler.Record([this, buffer = staging.buffer, descriptor_data, num_tri_vertices, base_vertex,
                       index_shift](vk::CommandBuffer cmdbuf) {
         static constexpr u32 DISPATCH_SIZE = 1024;
         static constexpr VkMemoryBarrier WRITE_BARRIER{
@@ -333,7 +328,9 @@ std::pair<VkBuffer, VkDeviceSize> QuadIndexedPass::Assemble(
             .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
             .dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
         };
-        const std::array push_constants = {base_vertex, index_shift};
+        const std::array push_constants{base_vertex, index_shift};
+        const VkDescriptorSet set = descriptor_allocator.Commit();
+        device.GetLogical().UpdateDescriptorSet(set, *descriptor_template, descriptor_data);
         cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline);
         cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, *layout, 0, set, {});
         cmdbuf.PushConstants(*layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants),
@@ -353,7 +350,7 @@ ASTCDecoderPass::ASTCDecoderPass(const Device& device_, VKScheduler& scheduler_,
     : ComputePass(device_, descriptor_pool_, ASTC_DESCRIPTOR_SET_BINDINGS,
                   ASTC_PASS_DESCRIPTOR_UPDATE_TEMPLATE_ENTRY, ASTC_BANK_INFO,
                   COMPUTE_PUSH_CONSTANT_RANGE<sizeof(AstcPushConstants)>, ASTC_DECODER_COMP_SPV),
-      device{device_}, scheduler{scheduler_}, staging_buffer_pool{staging_buffer_pool_},
+      scheduler{scheduler_}, staging_buffer_pool{staging_buffer_pool_},
       update_descriptor_queue{update_descriptor_queue_}, memory_allocator{memory_allocator_} {}
 
 ASTCDecoderPass::~ASTCDecoderPass() = default;
@@ -450,16 +447,14 @@ void ASTCDecoderPass::Assemble(Image& image, const StagingBufferRef& map,
         update_descriptor_queue.AddBuffer(*data_buffer, sizeof(ASTC_ENCODINGS_VALUES),
                                           sizeof(SWIZZLE_TABLE));
         update_descriptor_queue.AddImage(image.StorageImageView(swizzle.level));
-
-        const VkDescriptorSet set = CommitDescriptorSet(update_descriptor_queue);
-        const VkPipelineLayout vk_layout = *layout;
+        const void* const descriptor_data{update_descriptor_queue.UpdateData()};
 
         // To unswizzle the ASTC data
         const auto params = MakeBlockLinearSwizzle2DParams(swizzle, image.info);
         ASSERT(params.origin == (std::array<u32, 3>{0, 0, 0}));
         ASSERT(params.destination == (std::array<s32, 3>{0, 0, 0}));
-        scheduler.Record([vk_layout, num_dispatches_x, num_dispatches_y, num_dispatches_z,
-                          block_dims, params, set](vk::CommandBuffer cmdbuf) {
+        scheduler.Record([this, num_dispatches_x, num_dispatches_y, num_dispatches_z, block_dims,
+                          params, descriptor_data](vk::CommandBuffer cmdbuf) {
             const AstcPushConstants uniforms{
                 .blocks_dims = block_dims,
                 .bytes_per_block_log2 = params.bytes_per_block_log2,
@@ -469,8 +464,10 @@ void ASTCDecoderPass::Assemble(Image& image, const StagingBufferRef& map,
                 .block_height = params.block_height,
                 .block_height_mask = params.block_height_mask,
             };
-            cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, vk_layout, 0, set, {});
-            cmdbuf.PushConstants(vk_layout, VK_SHADER_STAGE_COMPUTE_BIT, uniforms);
+            const VkDescriptorSet set = descriptor_allocator.Commit();
+            device.GetLogical().UpdateDescriptorSet(set, *descriptor_template, descriptor_data);
+            cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, *layout, 0, set, {});
+            cmdbuf.PushConstants(*layout, VK_SHADER_STAGE_COMPUTE_BIT, uniforms);
             cmdbuf.Dispatch(num_dispatches_x, num_dispatches_y, num_dispatches_z);
         });
     }

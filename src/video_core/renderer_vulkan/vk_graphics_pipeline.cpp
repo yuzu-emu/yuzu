@@ -205,31 +205,31 @@ ConfigureFuncPtr ConfigureFunc(const std::array<vk::ShaderModule, NUM_STAGES>& m
 GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
                                    Tegra::MemoryManager& gpu_memory_, VKScheduler& scheduler_,
                                    BufferCache& buffer_cache_, TextureCache& texture_cache_,
-                                   const Device& device, DescriptorPool& descriptor_pool,
+                                   const Device& device_, DescriptorPool& descriptor_pool,
                                    VKUpdateDescriptorQueue& update_descriptor_queue_,
                                    Common::ThreadWorker* worker_thread,
                                    RenderPassCache& render_pass_cache,
                                    const GraphicsPipelineCacheKey& key_,
                                    std::array<vk::ShaderModule, NUM_STAGES> stages,
                                    const std::array<const Shader::Info*, NUM_STAGES>& infos)
-    : key{key_}, maxwell3d{maxwell3d_}, gpu_memory{gpu_memory_}, texture_cache{texture_cache_},
-      buffer_cache{buffer_cache_}, scheduler{scheduler_},
+    : key{key_}, maxwell3d{maxwell3d_}, gpu_memory{gpu_memory_}, device{device_},
+      texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, scheduler{scheduler_},
       update_descriptor_queue{update_descriptor_queue_}, spv_modules{std::move(stages)} {
     std::ranges::transform(infos, stage_infos.begin(),
                            [](const Shader::Info* info) { return info ? *info : Shader::Info{}; });
 
-    DescriptorLayoutBuilder builder{MakeBuilder(device, stage_infos)};
-    descriptor_set_layout = builder.CreateDescriptorSetLayout();
-    descriptor_allocator = descriptor_pool.Allocator(*descriptor_set_layout, stage_infos);
+    auto func{[this, &render_pass_cache, &descriptor_pool] {
+        DescriptorLayoutBuilder builder{MakeBuilder(device, stage_infos)};
+        descriptor_set_layout = builder.CreateDescriptorSetLayout();
+        descriptor_allocator = descriptor_pool.Allocator(*descriptor_set_layout, stage_infos);
 
-    auto func{[this, &device, &render_pass_cache, builder] {
         const VkDescriptorSetLayout set_layout{*descriptor_set_layout};
         pipeline_layout = builder.CreatePipelineLayout(set_layout);
         descriptor_update_template = builder.CreateTemplate(set_layout, *pipeline_layout);
 
         const VkRenderPass render_pass{render_pass_cache.Get(MakeRenderPassKey(key.state))};
         Validate();
-        MakePipeline(device, render_pass);
+        MakePipeline(render_pass);
 
         std::lock_guard lock{build_mutex};
         is_built = true;
@@ -440,24 +440,22 @@ void GraphicsPipeline::ConfigureDraw() {
             build_condvar.wait(lock, [this] { return is_built.load(std::memory_order::relaxed); });
         });
     }
-    if (scheduler.UpdateGraphicsPipeline(this)) {
-        scheduler.Record([this](vk::CommandBuffer cmdbuf) {
-            cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);
-        });
-    }
-    if (!descriptor_set_layout) {
-        return;
-    }
-    const VkDescriptorSet descriptor_set{descriptor_allocator.Commit()};
-    update_descriptor_queue.Send(descriptor_update_template.address(), descriptor_set);
-
-    scheduler.Record([this, descriptor_set](vk::CommandBuffer cmdbuf) {
+    const bool bind_pipeline{scheduler.UpdateGraphicsPipeline(this)};
+    const void* const descriptor_data{update_descriptor_queue.UpdateData()};
+    scheduler.Record([this, descriptor_data, bind_pipeline](vk::CommandBuffer cmdbuf) {
+        cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);
+        if (!descriptor_set_layout) {
+            return;
+        }
+        const VkDescriptorSet descriptor_set{descriptor_allocator.Commit()};
+        const vk::Device& dev{device.GetLogical()};
+        dev.UpdateDescriptorSet(descriptor_set, *descriptor_update_template, descriptor_data);
         cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, 0,
                                   descriptor_set, nullptr);
     });
 }
 
-void GraphicsPipeline::MakePipeline(const Device& device, VkRenderPass render_pass) {
+void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
     FixedPipelineState::DynamicState dynamic{};
     if (!device.IsExtExtendedDynamicStateSupported()) {
         dynamic = key.state.dynamic_state;

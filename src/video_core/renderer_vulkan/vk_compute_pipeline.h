@@ -40,6 +40,7 @@ public:
                    VKScheduler& scheduler, BufferCache& buffer_cache, TextureCache& texture_cache);
 
 private:
+    const Device& device;
     VKUpdateDescriptorQueue& update_descriptor_queue;
     Shader::Info info;
 
