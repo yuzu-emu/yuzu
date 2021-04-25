@@ -205,7 +205,7 @@ ConfigureFuncPtr ConfigureFunc(const std::array<vk::ShaderModule, NUM_STAGES>& m
 GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
                                    Tegra::MemoryManager& gpu_memory_, VKScheduler& scheduler_,
                                    BufferCache& buffer_cache_, TextureCache& texture_cache_,
-                                   const Device& device, VKDescriptorPool& descriptor_pool,
+                                   const Device& device, DescriptorPool& descriptor_pool,
                                    VKUpdateDescriptorQueue& update_descriptor_queue_,
                                    Common::ThreadWorker* worker_thread,
                                    RenderPassCache& render_pass_cache,
@@ -220,7 +220,7 @@ GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
 
     DescriptorLayoutBuilder builder{MakeBuilder(device, stage_infos)};
     descriptor_set_layout = builder.CreateDescriptorSetLayout();
-    descriptor_allocator = DescriptorAllocator(descriptor_pool, *descriptor_set_layout);
+    descriptor_allocator = descriptor_pool.Allocator(*descriptor_set_layout, stage_infos);
 
     auto func{[this, &device, &render_pass_cache, builder] {
         const VkDescriptorSetLayout set_layout{*descriptor_set_layout};

@@ -18,7 +18,7 @@
 
 namespace Vulkan {
 
-ComputePipeline::ComputePipeline(const Device& device, VKDescriptorPool& descriptor_pool,
+ComputePipeline::ComputePipeline(const Device& device, DescriptorPool& descriptor_pool,
                                  VKUpdateDescriptorQueue& update_descriptor_queue_,
                                  Common::ThreadWorker* thread_worker, const Shader::Info& info_,
                                  vk::ShaderModule spv_module_)
@@ -30,7 +30,7 @@ ComputePipeline::ComputePipeline(const Device& device, VKDescriptorPool& descrip
     descriptor_set_layout = builder.CreateDescriptorSetLayout();
     pipeline_layout = builder.CreatePipelineLayout(*descriptor_set_layout);
     descriptor_update_template = builder.CreateTemplate(*descriptor_set_layout, *pipeline_layout);
-    descriptor_allocator = DescriptorAllocator(descriptor_pool, *descriptor_set_layout);
+    descriptor_allocator = descriptor_pool.Allocator(*descriptor_set_layout, info);
 
     auto func{[this, &device] {
         const VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT subgroup_size_ci{

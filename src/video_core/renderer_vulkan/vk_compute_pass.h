@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <optional>
 #include <span>
 #include <utility>
 
@@ -27,13 +26,14 @@ class VKUpdateDescriptorQueue;
 class Image;
 struct StagingBufferRef;
 
-class VKComputePass {
+class ComputePass {
 public:
-    explicit VKComputePass(const Device& device, VKDescriptorPool& descriptor_pool,
-                           vk::Span<VkDescriptorSetLayoutBinding> bindings,
-                           vk::Span<VkDescriptorUpdateTemplateEntryKHR> templates,
-                           vk::Span<VkPushConstantRange> push_constants, std::span<const u32> code);
-    ~VKComputePass();
+    explicit ComputePass(const Device& device, DescriptorPool& descriptor_pool,
+                         vk::Span<VkDescriptorSetLayoutBinding> bindings,
+                         vk::Span<VkDescriptorUpdateTemplateEntryKHR> templates,
+                         const DescriptorBankInfo& bank_info,
+                         vk::Span<VkPushConstantRange> push_constants, std::span<const u32> code);
+    ~ComputePass();
 
 protected:
     VkDescriptorSet CommitDescriptorSet(VKUpdateDescriptorQueue& update_descriptor_queue);
@@ -44,14 +44,14 @@ protected:
 
 private:
     vk::DescriptorSetLayout descriptor_set_layout;
-    std::optional<DescriptorAllocator> descriptor_allocator;
+    DescriptorAllocator descriptor_allocator;
     vk::ShaderModule module;
 };
 
-class Uint8Pass final : public VKComputePass {
+class Uint8Pass final : public ComputePass {
 public:
     explicit Uint8Pass(const Device& device_, VKScheduler& scheduler_,
-                       VKDescriptorPool& descriptor_pool_, StagingBufferPool& staging_buffer_pool_,
+                       DescriptorPool& descriptor_pool_, StagingBufferPool& staging_buffer_pool_,
                        VKUpdateDescriptorQueue& update_descriptor_queue_);
     ~Uint8Pass();
 
@@ -66,10 +66,10 @@ private:
     VKUpdateDescriptorQueue& update_descriptor_queue;
 };
 
-class QuadIndexedPass final : public VKComputePass {
+class QuadIndexedPass final : public ComputePass {
 public:
     explicit QuadIndexedPass(const Device& device_, VKScheduler& scheduler_,
-                             VKDescriptorPool& descriptor_pool_,
+                             DescriptorPool& descriptor_pool_,
                              StagingBufferPool& staging_buffer_pool_,
                              VKUpdateDescriptorQueue& update_descriptor_queue_);
     ~QuadIndexedPass();
@@ -84,10 +84,10 @@ private:
     VKUpdateDescriptorQueue& update_descriptor_queue;
 };
 
-class ASTCDecoderPass final : public VKComputePass {
+class ASTCDecoderPass final : public ComputePass {
 public:
     explicit ASTCDecoderPass(const Device& device_, VKScheduler& scheduler_,
-                             VKDescriptorPool& descriptor_pool_,
+                             DescriptorPool& descriptor_pool_,
                              StagingBufferPool& staging_buffer_pool_,
                              VKUpdateDescriptorQueue& update_descriptor_queue_,
                              MemoryAllocator& memory_allocator_);

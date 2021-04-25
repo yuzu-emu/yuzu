@@ -145,7 +145,7 @@ private:
     VKScheduler& scheduler;
 
     StagingBufferPool staging_pool;
-    VKDescriptorPool descriptor_pool;
+    DescriptorPool descriptor_pool;
     VKUpdateDescriptorQueue update_descriptor_queue;
     BlitImageHelper blit_image;
     ASTCDecoderPass astc_decoder_pass;

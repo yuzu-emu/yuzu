@@ -67,7 +67,7 @@ public:
     explicit GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d,
                               Tegra::MemoryManager& gpu_memory, VKScheduler& scheduler,
                               BufferCache& buffer_cache, TextureCache& texture_cache,
-                              const Device& device, VKDescriptorPool& descriptor_pool,
+                              const Device& device, DescriptorPool& descriptor_pool,
                               VKUpdateDescriptorQueue& update_descriptor_queue,
                               Common::ThreadWorker* worker_thread,
                               RenderPassCache& render_pass_cache,
