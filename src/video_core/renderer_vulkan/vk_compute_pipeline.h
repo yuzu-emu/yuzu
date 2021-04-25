@@ -25,7 +25,7 @@ class VKScheduler;
 
 class ComputePipeline {
 public:
-    explicit ComputePipeline(const Device& device, VKDescriptorPool& descriptor_pool,
+    explicit ComputePipeline(const Device& device, DescriptorPool& descriptor_pool,
                              VKUpdateDescriptorQueue& update_descriptor_queue,
                              Common::ThreadWorker* thread_worker, const Shader::Info& info,
                              vk::ShaderModule spv_module);

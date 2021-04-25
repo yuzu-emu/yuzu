@@ -16,7 +16,7 @@
 namespace Vulkan {
 
 class Device;
-class VKDescriptorPool;
+class DescriptorPool;
 class VKScheduler;
 
 class BufferCacheRuntime;
@@ -61,7 +61,7 @@ public:
     explicit BufferCacheRuntime(const Device& device_, MemoryAllocator& memory_manager_,
                                 VKScheduler& scheduler_, StagingBufferPool& staging_pool_,
                                 VKUpdateDescriptorQueue& update_descriptor_queue_,
-                                VKDescriptorPool& descriptor_pool);
+                                DescriptorPool& descriptor_pool);
 
     void Finish();
 

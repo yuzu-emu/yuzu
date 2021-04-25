@@ -75,10 +75,10 @@ namespace Vulkan {
 
 class ComputePipeline;
 class Device;
+class DescriptorPool;
 class GenericEnvironment;
 class RasterizerVulkan;
 class RenderPassCache;
-class VKDescriptorPool;
 class VKScheduler;
 class VKUpdateDescriptorQueue;
 
@@ -105,7 +105,7 @@ public:
                            Tegra::Engines::Maxwell3D& maxwell3d,
                            Tegra::Engines::KeplerCompute& kepler_compute,
                            Tegra::MemoryManager& gpu_memory, const Device& device,
-                           VKScheduler& scheduler, VKDescriptorPool& descriptor_pool,
+                           VKScheduler& scheduler, DescriptorPool& descriptor_pool,
                            VKUpdateDescriptorQueue& update_descriptor_queue,
                            RenderPassCache& render_pass_cache, BufferCache& buffer_cache,
                            TextureCache& texture_cache);
@@ -147,7 +147,7 @@ private:
 
     const Device& device;
     VKScheduler& scheduler;
-    VKDescriptorPool& descriptor_pool;
+    DescriptorPool& descriptor_pool;
     VKUpdateDescriptorQueue& update_descriptor_queue;
     RenderPassCache& render_pass_cache;
     BufferCache& buffer_cache;

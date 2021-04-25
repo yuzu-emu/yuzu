@@ -41,80 +41,92 @@ constexpr u32 ASTC_BINDING_SWIZZLE_BUFFER = 2;
 constexpr u32 ASTC_BINDING_OUTPUT_IMAGE = 3;
 constexpr size_t ASTC_NUM_BINDINGS = 4;
 
-VkPushConstantRange BuildComputePushConstantRange(std::size_t size) {
-    return {
-        .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-        .offset = 0,
-        .size = static_cast<u32>(size),
-    };
-}
+template <size_t size>
+inline constexpr VkPushConstantRange COMPUTE_PUSH_CONSTANT_RANGE{
+    .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+    .offset = 0,
+    .size = static_cast<u32>(size),
+};
 
-std::array<VkDescriptorSetLayoutBinding, 2> BuildInputOutputDescriptorSetBindings() {
-    return {{
-        {
-            .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-            .pImmutableSamplers = nullptr,
-        },
-        {
-            .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-            .pImmutableSamplers = nullptr,
-        },
-    }};
-}
-
-std::array<VkDescriptorSetLayoutBinding, ASTC_NUM_BINDINGS> BuildASTCDescriptorSetBindings() {
-    return {{
-        {
-            .binding = ASTC_BINDING_INPUT_BUFFER,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-            .pImmutableSamplers = nullptr,
-        },
-        {
-            .binding = ASTC_BINDING_ENC_BUFFER,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-            .pImmutableSamplers = nullptr,
-        },
-        {
-            .binding = ASTC_BINDING_SWIZZLE_BUFFER,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-            .pImmutableSamplers = nullptr,
-        },
-        {
-            .binding = ASTC_BINDING_OUTPUT_IMAGE,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-            .pImmutableSamplers = nullptr,
-        },
-    }};
-}
-
-VkDescriptorUpdateTemplateEntryKHR BuildInputOutputDescriptorUpdateTemplate() {
-    return {
-        .dstBinding = 0,
-        .dstArrayElement = 0,
-        .descriptorCount = 2,
+constexpr std::array<VkDescriptorSetLayoutBinding, 2> INPUT_OUTPUT_DESCRIPTOR_SET_BINDINGS{{
+    {
+        .binding = 0,
         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        .offset = 0,
-        .stride = sizeof(DescriptorUpdateEntry),
-    };
-}
+        .descriptorCount = 1,
+        .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+        .pImmutableSamplers = nullptr,
+    },
+    {
+        .binding = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        .descriptorCount = 1,
+        .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+        .pImmutableSamplers = nullptr,
+    },
+}};
 
-std::array<VkDescriptorUpdateTemplateEntryKHR, ASTC_NUM_BINDINGS>
-BuildASTCPassDescriptorUpdateTemplateEntry() {
-    return {{
+constexpr DescriptorBankInfo INPUT_OUTPUT_BANK_INFO{
+    .uniform_buffers = 0,
+    .storage_buffers = 2,
+    .texture_buffers = 0,
+    .image_buffers = 0,
+    .textures = 0,
+    .images = 0,
+    .score = 2,
+};
+
+constexpr std::array<VkDescriptorSetLayoutBinding, 4> ASTC_DESCRIPTOR_SET_BINDINGS{{
+    {
+        .binding = ASTC_BINDING_INPUT_BUFFER,
+        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        .descriptorCount = 1,
+        .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+        .pImmutableSamplers = nullptr,
+    },
+    {
+        .binding = ASTC_BINDING_ENC_BUFFER,
+        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        .descriptorCount = 1,
+        .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+        .pImmutableSamplers = nullptr,
+    },
+    {
+        .binding = ASTC_BINDING_SWIZZLE_BUFFER,
+        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        .descriptorCount = 1,
+        .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+        .pImmutableSamplers = nullptr,
+    },
+    {
+        .binding = ASTC_BINDING_OUTPUT_IMAGE,
+        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        .descriptorCount = 1,
+        .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+        .pImmutableSamplers = nullptr,
+    },
+}};
+
+constexpr DescriptorBankInfo ASTC_BANK_INFO{
+    .uniform_buffers = 0,
+    .storage_buffers = 3,
+    .texture_buffers = 0,
+    .image_buffers = 0,
+    .textures = 0,
+    .images = 1,
+    .score = 4,
+};
+
+constexpr VkDescriptorUpdateTemplateEntryKHR INPUT_OUTPUT_DESCRIPTOR_UPDATE_TEMPLATE{
+    .dstBinding = 0,
+    .dstArrayElement = 0,
+    .descriptorCount = 2,
+    .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    .offset = 0,
+    .stride = sizeof(DescriptorUpdateEntry),
+};
+
+constexpr std::array<VkDescriptorUpdateTemplateEntryKHR, ASTC_NUM_BINDINGS>
+    ASTC_PASS_DESCRIPTOR_UPDATE_TEMPLATE_ENTRY{{
         {
             .dstBinding = ASTC_BINDING_INPUT_BUFFER,
             .dstArrayElement = 0,
@@ -148,7 +160,6 @@ BuildASTCPassDescriptorUpdateTemplateEntry() {
             .stride = sizeof(DescriptorUpdateEntry),
         },
     }};
-}
 
 struct AstcPushConstants {
     std::array<u32, 2> blocks_dims;
@@ -159,14 +170,13 @@ struct AstcPushConstants {
     u32 block_height;
     u32 block_height_mask;
 };
-
 } // Anonymous namespace
 
-VKComputePass::VKComputePass(const Device& device, VKDescriptorPool& descriptor_pool,
-                             vk::Span<VkDescriptorSetLayoutBinding> bindings,
-                             vk::Span<VkDescriptorUpdateTemplateEntryKHR> templates,
-                             vk::Span<VkPushConstantRange> push_constants,
-                             std::span<const u32> code) {
+ComputePass::ComputePass(const Device& device, DescriptorPool& descriptor_pool,
+                         vk::Span<VkDescriptorSetLayoutBinding> bindings,
+                         vk::Span<VkDescriptorUpdateTemplateEntryKHR> templates,
+                         const DescriptorBankInfo& bank_info,
+                         vk::Span<VkPushConstantRange> push_constants, std::span<const u32> code) {
     descriptor_set_layout = device.GetLogical().CreateDescriptorSetLayout({
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .pNext = nullptr,
@@ -196,8 +206,7 @@ VKComputePass::VKComputePass(const Device& device, VKDescriptorPool& descriptor_
             .pipelineLayout = *layout,
             .set = 0,
         });
-
-        descriptor_allocator.emplace(descriptor_pool, *descriptor_set_layout);
+        descriptor_allocator = descriptor_pool.Allocator(*descriptor_set_layout, bank_info);
     }
     module = device.GetLogical().CreateShaderModule({
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
@@ -226,23 +235,23 @@ VKComputePass::VKComputePass(const Device& device, VKDescriptorPool& descriptor_
     });
 }
 
-VKComputePass::~VKComputePass() = default;
+ComputePass::~ComputePass() = default;
 
-VkDescriptorSet VKComputePass::CommitDescriptorSet(
-    VKUpdateDescriptorQueue& update_descriptor_queue) {
+VkDescriptorSet ComputePass::CommitDescriptorSet(VKUpdateDescriptorQueue& update_descriptor_queue) {
     if (!descriptor_template) {
         return nullptr;
     }
-    const VkDescriptorSet set = descriptor_allocator->Commit();
+    const VkDescriptorSet set = descriptor_allocator.Commit();
     update_descriptor_queue.Send(descriptor_template.address(), set);
     return set;
 }
 
-Uint8Pass::Uint8Pass(const Device& device, VKScheduler& scheduler_,
-                     VKDescriptorPool& descriptor_pool, StagingBufferPool& staging_buffer_pool_,
+Uint8Pass::Uint8Pass(const Device& device, VKScheduler& scheduler_, DescriptorPool& descriptor_pool,
+                     StagingBufferPool& staging_buffer_pool_,
                      VKUpdateDescriptorQueue& update_descriptor_queue_)
-    : VKComputePass(device, descriptor_pool, BuildInputOutputDescriptorSetBindings(),
-                    BuildInputOutputDescriptorUpdateTemplate(), {}, VULKAN_UINT8_COMP_SPV),
+    : ComputePass(device, descriptor_pool, INPUT_OUTPUT_DESCRIPTOR_SET_BINDINGS,
+                  INPUT_OUTPUT_DESCRIPTOR_UPDATE_TEMPLATE, INPUT_OUTPUT_BANK_INFO, {},
+                  VULKAN_UINT8_COMP_SPV),
       scheduler{scheduler_}, staging_buffer_pool{staging_buffer_pool_},
       update_descriptor_queue{update_descriptor_queue_} {}
 
@@ -277,12 +286,12 @@ std::pair<VkBuffer, VkDeviceSize> Uint8Pass::Assemble(u32 num_vertices, VkBuffer
 }
 
 QuadIndexedPass::QuadIndexedPass(const Device& device_, VKScheduler& scheduler_,
-                                 VKDescriptorPool& descriptor_pool_,
+                                 DescriptorPool& descriptor_pool_,
                                  StagingBufferPool& staging_buffer_pool_,
                                  VKUpdateDescriptorQueue& update_descriptor_queue_)
-    : VKComputePass(device_, descriptor_pool_, BuildInputOutputDescriptorSetBindings(),
-                    BuildInputOutputDescriptorUpdateTemplate(),
-                    BuildComputePushConstantRange(sizeof(u32) * 2), VULKAN_QUAD_INDEXED_COMP_SPV),
+    : ComputePass(device_, descriptor_pool_, INPUT_OUTPUT_DESCRIPTOR_SET_BINDINGS,
+                  INPUT_OUTPUT_DESCRIPTOR_UPDATE_TEMPLATE, INPUT_OUTPUT_BANK_INFO,
+                  COMPUTE_PUSH_CONSTANT_RANGE<sizeof(u32) * 2>, VULKAN_QUAD_INDEXED_COMP_SPV),
       scheduler{scheduler_}, staging_buffer_pool{staging_buffer_pool_},
       update_descriptor_queue{update_descriptor_queue_} {}
 
@@ -337,14 +346,13 @@ std::pair<VkBuffer, VkDeviceSize> QuadIndexedPass::Assemble(
 }
 
 ASTCDecoderPass::ASTCDecoderPass(const Device& device_, VKScheduler& scheduler_,
-                                 VKDescriptorPool& descriptor_pool_,
+                                 DescriptorPool& descriptor_pool_,
                                  StagingBufferPool& staging_buffer_pool_,
                                  VKUpdateDescriptorQueue& update_descriptor_queue_,
                                  MemoryAllocator& memory_allocator_)
-    : VKComputePass(device_, descriptor_pool_, BuildASTCDescriptorSetBindings(),
-                    BuildASTCPassDescriptorUpdateTemplateEntry(),
-                    BuildComputePushConstantRange(sizeof(AstcPushConstants)),
-                    ASTC_DECODER_COMP_SPV),
+    : ComputePass(device_, descriptor_pool_, ASTC_DESCRIPTOR_SET_BINDINGS,
+                  ASTC_PASS_DESCRIPTOR_UPDATE_TEMPLATE_ENTRY, ASTC_BANK_INFO,
+                  COMPUTE_PUSH_CONSTANT_RANGE<sizeof(AstcPushConstants)>, ASTC_DECODER_COMP_SPV),
       device{device_}, scheduler{scheduler_}, staging_buffer_pool{staging_buffer_pool_},
       update_descriptor_queue{update_descriptor_queue_}, memory_allocator{memory_allocator_} {}
 

@@ -647,7 +647,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
                              Tegra::Engines::Maxwell3D& maxwell3d_,
                              Tegra::Engines::KeplerCompute& kepler_compute_,
                              Tegra::MemoryManager& gpu_memory_, const Device& device_,
-                             VKScheduler& scheduler_, VKDescriptorPool& descriptor_pool_,
+                             VKScheduler& scheduler_, DescriptorPool& descriptor_pool_,
                              VKUpdateDescriptorQueue& update_descriptor_queue_,
                              RenderPassCache& render_pass_cache_, BufferCache& buffer_cache_,
                              TextureCache& texture_cache_)
