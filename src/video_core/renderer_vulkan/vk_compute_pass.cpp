@@ -238,10 +238,10 @@ ComputePass::ComputePass(const Device& device_, DescriptorPool& descriptor_pool,
 
 ComputePass::~ComputePass() = default;
 
-Uint8Pass::Uint8Pass(const Device& device, VKScheduler& scheduler_, DescriptorPool& descriptor_pool,
-                     StagingBufferPool& staging_buffer_pool_,
+Uint8Pass::Uint8Pass(const Device& device_, VKScheduler& scheduler_,
+                     DescriptorPool& descriptor_pool, StagingBufferPool& staging_buffer_pool_,
                      VKUpdateDescriptorQueue& update_descriptor_queue_)
-    : ComputePass(device, descriptor_pool, INPUT_OUTPUT_DESCRIPTOR_SET_BINDINGS,
+    : ComputePass(device_, descriptor_pool, INPUT_OUTPUT_DESCRIPTOR_SET_BINDINGS,
                   INPUT_OUTPUT_DESCRIPTOR_UPDATE_TEMPLATE, INPUT_OUTPUT_BANK_INFO, {},
                   VULKAN_UINT8_COMP_SPV),
       scheduler{scheduler_}, staging_buffer_pool{staging_buffer_pool_},
