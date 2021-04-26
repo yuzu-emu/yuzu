@@ -23,7 +23,7 @@
 namespace Vulkan {
 
 struct GraphicsPipelineCacheKey {
-    std::array<u128, 6> unique_hashes;
+    std::array<u64, 6> unique_hashes;
     FixedPipelineState state;
 
     size_t Hash() const noexcept;

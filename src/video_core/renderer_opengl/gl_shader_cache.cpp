@@ -29,18 +29,13 @@
 
 namespace OpenGL {
 
-Shader::Shader() = default;
+ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindow& emu_window_,
+                         Tegra::GPU& gpu_, Tegra::Engines::Maxwell3D& maxwell3d_,
+                         Tegra::Engines::KeplerCompute& kepler_compute_,
+                         Tegra::MemoryManager& gpu_memory_, const Device& device_)
+    : VideoCommon::ShaderCache{rasterizer_, gpu_memory_, maxwell3d_, kepler_compute_},
+      emu_window{emu_window_}, gpu{gpu_}, device{device_} {}
 
-Shader::~Shader() = default;
-
-ShaderCacheOpenGL::ShaderCacheOpenGL(RasterizerOpenGL& rasterizer_,
-                                     Core::Frontend::EmuWindow& emu_window_, Tegra::GPU& gpu_,
-                                     Tegra::Engines::Maxwell3D& maxwell3d_,
-                                     Tegra::Engines::KeplerCompute& kepler_compute_,
-                                     Tegra::MemoryManager& gpu_memory_, const Device& device_)
-    : ShaderCache{rasterizer_}, emu_window{emu_window_}, gpu{gpu_}, gpu_memory{gpu_memory_},
-      maxwell3d{maxwell3d_}, kepler_compute{kepler_compute_}, device{device_} {}
-
-ShaderCacheOpenGL::~ShaderCacheOpenGL() = default;
+ShaderCache::~ShaderCache() = default;
 
 } // namespace OpenGL

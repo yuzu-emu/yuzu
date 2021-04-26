@@ -149,7 +149,7 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
       buffer_cache_runtime(device, memory_allocator, scheduler, staging_pool,
                            update_descriptor_queue, descriptor_pool),
       buffer_cache(*this, maxwell3d, kepler_compute, gpu_memory, cpu_memory_, buffer_cache_runtime),
-      pipeline_cache(*this, gpu, maxwell3d, kepler_compute, gpu_memory, device, scheduler,
+      pipeline_cache(*this, maxwell3d, kepler_compute, gpu_memory, device, scheduler,
                      descriptor_pool, update_descriptor_queue, render_pass_cache, buffer_cache,
                      texture_cache),
       query_cache{*this, maxwell3d, gpu_memory, device, scheduler}, accelerate_dma{ buffer_cache },

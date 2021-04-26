@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cstddef>
+#include <filesystem>
 #include <iosfwd>
 #include <memory>
 #include <type_traits>
@@ -42,7 +43,7 @@ namespace Vulkan {
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 
 struct ComputePipelineCacheKey {
-    u128 unique_hash;
+    u64 unique_hash;
     u32 shared_memory_size;
     std::array<u32, 3> workgroup_size;
 
@@ -76,16 +77,12 @@ namespace Vulkan {
 class ComputePipeline;
 class Device;
 class DescriptorPool;
-class GenericEnvironment;
 class RasterizerVulkan;
 class RenderPassCache;
 class VKScheduler;
 class VKUpdateDescriptorQueue;
 
-struct ShaderInfo {
-    u128 unique_hash{};
-    size_t size_bytes{};
-};
+using VideoCommon::ShaderInfo;
 
 struct ShaderPools {
     void ReleaseContents() {
@@ -99,17 +96,16 @@ struct ShaderPools {
     Shader::ObjectPool<Shader::Maxwell::Flow::Block> flow_block;
 };
 
-class PipelineCache final : public VideoCommon::ShaderCache<ShaderInfo> {
+class PipelineCache : public VideoCommon::ShaderCache {
 public:
-    explicit PipelineCache(RasterizerVulkan& rasterizer, Tegra::GPU& gpu,
-                           Tegra::Engines::Maxwell3D& maxwell3d,
+    explicit PipelineCache(RasterizerVulkan& rasterizer, Tegra::Engines::Maxwell3D& maxwell3d,
                            Tegra::Engines::KeplerCompute& kepler_compute,
                            Tegra::MemoryManager& gpu_memory, const Device& device,
                            VKScheduler& scheduler, DescriptorPool& descriptor_pool,
                            VKUpdateDescriptorQueue& update_descriptor_queue,
                            RenderPassCache& render_pass_cache, BufferCache& buffer_cache,
                            TextureCache& texture_cache);
-    ~PipelineCache() override;
+    ~PipelineCache();
 
     [[nodiscard]] GraphicsPipeline* CurrentGraphicsPipeline();
 
@@ -119,10 +115,6 @@ public:
                            const VideoCore::DiskResourceLoadCallback& callback);
 
 private:
-    bool RefreshStages();
-
-    const ShaderInfo* MakeShaderInfo(GenericEnvironment& env, VAddr cpu_addr);
-
     std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline();
 
     std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline(
@@ -140,11 +132,6 @@ private:
     Shader::Profile MakeProfile(const GraphicsPipelineCacheKey& key,
                                 const Shader::IR::Program& program);
 
-    Tegra::GPU& gpu;
-    Tegra::Engines::Maxwell3D& maxwell3d;
-    Tegra::Engines::KeplerCompute& kepler_compute;
-    Tegra::MemoryManager& gpu_memory;
-
     const Device& device;
     VKScheduler& scheduler;
     DescriptorPool& descriptor_pool;
@@ -156,16 +143,13 @@ private:
     GraphicsPipelineCacheKey graphics_key{};
     GraphicsPipeline* current_pipeline{};
 
-    std::array<const ShaderInfo*, 6> shader_infos{};
-    bool last_valid_shaders{};
-
     std::unordered_map<ComputePipelineCacheKey, std::unique_ptr<ComputePipeline>> compute_cache;
     std::unordered_map<GraphicsPipelineCacheKey, std::unique_ptr<GraphicsPipeline>> graphics_cache;
 
     ShaderPools main_pools;
 
     Shader::Profile base_profile;
-    std::string pipeline_cache_filename;
+    std::filesystem::path pipeline_cache_filename;
 
     Common::ThreadWorker workers;
     Common::ThreadWorker serialization_thread;
