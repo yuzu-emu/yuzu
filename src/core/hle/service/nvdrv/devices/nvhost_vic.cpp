@@ -12,8 +12,9 @@
 namespace Service::Nvidia::Devices {
 nvhost_vic::nvhost_vic(Core::System& system_, std::shared_ptr<nvmap> nvmap_dev_,
                        SyncpointManager& syncpoint_manager_)
-    : nvhost_nvdec_common{system_, std::move(nvmap_dev_), syncpoint_manager_} {}
-
+    : nvhost_nvdec_common(system_, std::move(nvmap_dev_), syncpoint_manager_) {
+    vic_device = true;
+}
 nvhost_vic::~nvhost_vic() = default;
 
 NvResult nvhost_vic::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,

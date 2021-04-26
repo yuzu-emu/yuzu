@@ -68,6 +68,7 @@ void nvhost_nvdec::OnOpen(DeviceFD fd) {}
 void nvhost_nvdec::OnClose(DeviceFD fd) {
     LOG_INFO(Service_NVDRV, "NVDEC video stream ended");
     system.GPU().ClearCdmaInstance();
+    system.GPU().MemoryManager().InvalidateQueuedCaches();
 }
 
 } // namespace Service::Nvidia::Devices

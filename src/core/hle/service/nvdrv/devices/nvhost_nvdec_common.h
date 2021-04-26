@@ -160,6 +160,7 @@ protected:
 
     s32_le nvmap_fd{};
     u32_le submit_timeout{};
+    bool vic_device{};
     std::shared_ptr<nvmap> nvmap_dev;
     SyncpointManager& syncpoint_manager;
     std::array<u32, MaxSyncPoints> device_syncpoints{};
