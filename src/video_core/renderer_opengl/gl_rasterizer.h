@@ -202,7 +202,7 @@ private:
     TextureCache texture_cache;
     BufferCacheRuntime buffer_cache_runtime;
     BufferCache buffer_cache;
-    ShaderCacheOpenGL shader_cache;
+    ShaderCache shader_cache;
     QueryCache query_cache;
     FenceManagerOpenGL fence_manager;
 
