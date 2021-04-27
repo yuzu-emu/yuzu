@@ -452,10 +452,11 @@ void RasterizerVulkan::TiledCacheBarrier() {
 }
 
 void RasterizerVulkan::FlushCommands() {
-    if (draw_counter > 0) {
-        draw_counter = 0;
-        scheduler.Flush();
+    if (draw_counter == 0) {
+        return;
     }
+    draw_counter = 0;
+    scheduler.Flush();
 }
 
 void RasterizerVulkan::TickFrame() {
