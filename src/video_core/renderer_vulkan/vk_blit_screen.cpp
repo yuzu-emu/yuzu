@@ -184,55 +184,51 @@ VkSemaphore VKBlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer, bool
                     .depth = 1,
                 },
         };
-        scheduler.Record(
-            [buffer = *buffer, image = *raw_images[image_index], copy](vk::CommandBuffer cmdbuf) {
-                const VkImageMemoryBarrier base_barrier{
-                    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-                    .pNext = nullptr,
-                    .srcAccessMask = 0,
-                    .dstAccessMask = 0,
-                    .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
-                    .newLayout = VK_IMAGE_LAYOUT_GENERAL,
-                    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                    .image = image,
-                    .subresourceRange =
-                        {
-                            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                            .baseMipLevel = 0,
-                            .levelCount = 1,
-                            .baseArrayLayer = 0,
-                            .layerCount = 1,
-                        },
-                };
-                VkImageMemoryBarrier read_barrier = base_barrier;
-                read_barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-                read_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                read_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        scheduler.Record([this, copy, image_index](vk::CommandBuffer cmdbuf) {
+            const VkImage image = *raw_images[image_index];
+            const VkImageMemoryBarrier base_barrier{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                .pNext = nullptr,
+                .srcAccessMask = 0,
+                .dstAccessMask = 0,
+                .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
+                .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .image = image,
+                .subresourceRange{
+                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .baseMipLevel = 0,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1,
+                },
+            };
+            VkImageMemoryBarrier read_barrier = base_barrier;
+            read_barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+            read_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            read_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-                VkImageMemoryBarrier write_barrier = base_barrier;
-                write_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                write_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            VkImageMemoryBarrier write_barrier = base_barrier;
+            write_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            write_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-                cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                       0, read_barrier);
-                cmdbuf.CopyBufferToImage(buffer, image, VK_IMAGE_LAYOUT_GENERAL, copy);
-                cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                       VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, write_barrier);
-            });
+            cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                                   read_barrier);
+            cmdbuf.CopyBufferToImage(*buffer, image, VK_IMAGE_LAYOUT_GENERAL, copy);
+            cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, write_barrier);
+        });
     }
-    scheduler.Record([renderpass = *renderpass, framebuffer = *framebuffers[image_index],
-                      descriptor_set = descriptor_sets[image_index], buffer = *buffer,
-                      size = swapchain.GetSize(), pipeline = *pipeline,
-                      layout = *pipeline_layout](vk::CommandBuffer cmdbuf) {
+    scheduler.Record([this, image_index, size = swapchain.GetSize()](vk::CommandBuffer cmdbuf) {
         const VkClearValue clear_color{
             .color = {.float32 = {0.0f, 0.0f, 0.0f, 0.0f}},
         };
         const VkRenderPassBeginInfo renderpass_bi{
             .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
             .pNext = nullptr,
-            .renderPass = renderpass,
-            .framebuffer = framebuffer,
+            .renderPass = *renderpass,
+            .framebuffer = *framebuffers[image_index],
             .renderArea =
                 {
                     .offset = {0, 0},
@@ -254,12 +250,13 @@ VkSemaphore VKBlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer, bool
             .extent = size,
         };
         cmdbuf.BeginRenderPass(renderpass_bi, VK_SUBPASS_CONTENTS_INLINE);
-        cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);
         cmdbuf.SetViewport(0, viewport);
         cmdbuf.SetScissor(0, scissor);
 
-        cmdbuf.BindVertexBuffer(0, buffer, offsetof(BufferData, vertices));
-        cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, descriptor_set, {});
+        cmdbuf.BindVertexBuffer(0, *buffer, offsetof(BufferData, vertices));
+        cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, 0,
+                                  descriptor_sets[image_index], {});
         cmdbuf.Draw(4, 1, 0, 0);
         cmdbuf.EndRenderPass();
     });
@@ -301,8 +298,7 @@ void VKBlitScreen::CreateShaders() {
 
 void VKBlitScreen::CreateSemaphores() {
     semaphores.resize(image_count);
-    std::generate(semaphores.begin(), semaphores.end(),
-                  [this] { return device.GetLogical().CreateSemaphore(); });
+    std::ranges::generate(semaphores, [this] { return device.GetLogical().CreateSemaphore(); });
 }
 
 void VKBlitScreen::CreateDescriptorPool() {
@@ -630,8 +626,8 @@ void VKBlitScreen::CreateFramebuffers() {
 }
 
 void VKBlitScreen::ReleaseRawImages() {
-    for (std::size_t i = 0; i < raw_images.size(); ++i) {
-        scheduler.Wait(resource_ticks.at(i));
+    for (const u64 tick : resource_ticks) {
+        scheduler.Wait(tick);
     }
     raw_images.clear();
     raw_buffer_commits.clear();

@@ -86,6 +86,10 @@ public:
 
     /// Waits for the given tick to trigger on the GPU.
     void Wait(u64 tick) {
+        if (tick >= master_semaphore->CurrentTick()) {
+            // Make sure we are not waiting for the current tick without signalling
+            Flush();
+        }
         master_semaphore->Wait(tick);
     }
 
@@ -155,8 +159,16 @@ private:
             return true;
         }
 
+        void MarkSubmit() {
+            submit = true;
+        }
+
         bool Empty() const {
             return command_offset == 0;
+        }
+
+        bool HasSubmit() const {
+            return submit;
         }
 
     private:
@@ -164,6 +176,7 @@ private:
         Command* last = nullptr;
 
         size_t command_offset = 0;
+        bool submit = false;
         alignas(std::max_align_t) std::array<u8, 0x8000> data{};
     };
 
@@ -175,6 +188,8 @@ private:
     };
 
     void WorkerThread();
+
+    void AllocateWorkerCommandBuffer();
 
     void SubmitExecution(VkSemaphore semaphore);
 

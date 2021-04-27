@@ -114,10 +114,13 @@ void HostCounter::EndQuery() {
 }
 
 u64 HostCounter::BlockingQuery() const {
-    if (tick >= cache.GetScheduler().CurrentTick()) {
-        cache.GetScheduler().Flush();
+    auto& scheduler{cache.GetScheduler()};
+    if (tick >= scheduler.CurrentTick()) {
+        scheduler.Flush();
+        // This may not be necessary, but it's better to play it safe and assume drivers don't
+        // support wait before signal on vkGetQueryPoolResults
+        scheduler.WaitWorker();
     }
-
     u64 data;
     const VkResult query_result = cache.GetDevice().GetLogical().GetQueryResults(
         query.first, query.second, 1, sizeof(data), &data, sizeof(data),

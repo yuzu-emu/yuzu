@@ -28,14 +28,20 @@ public:
     void Create(u32 width, u32 height, bool srgb);
 
     /// Acquires the next image in the swapchain, waits as needed.
-    bool AcquireNextImage();
+    void AcquireNextImage();
 
-    /// Presents the rendered image to the swapchain. Returns true when the swapchains had to be
-    /// recreated. Takes responsability for the ownership of fence.
-    bool Present(VkSemaphore render_semaphore);
+    /// Presents the rendered image to the swapchain.
+    void Present(VkSemaphore render_semaphore);
 
     /// Returns true when the framebuffer layout has changed.
-    bool HasFramebufferChanged(const Layout::FramebufferLayout& framebuffer) const;
+    bool HasDifferentLayout(u32 width, u32 height, bool is_srgb) const {
+        return extent.width != width || extent.height != height || current_srgb != is_srgb;
+    }
+
+    /// Returns true when the image has to be recreated.
+    bool NeedsRecreate() const {
+        return needs_recreate;
+    }
 
     VkExtent2D GetSize() const {
         return extent;
@@ -59,10 +65,6 @@ public:
 
     VkFormat GetImageFormat() const {
         return image_format;
-    }
-
-    bool GetSrgbState() const {
-        return current_srgb;
     }
 
 private:
@@ -92,9 +94,8 @@ private:
     VkFormat image_format{};
     VkExtent2D extent{};
 
-    u32 current_width{};
-    u32 current_height{};
     bool current_srgb{};
+    bool needs_recreate{};
 };
 
 } // namespace Vulkan
