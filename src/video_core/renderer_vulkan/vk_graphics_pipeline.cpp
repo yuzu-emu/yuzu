@@ -253,6 +253,7 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
     std::array<ImageId, MAX_IMAGE_ELEMENTS> image_view_ids;
     std::array<u32, MAX_IMAGE_ELEMENTS> image_view_indices;
     std::array<VkSampler, MAX_IMAGE_ELEMENTS> samplers;
+    size_t sampler_index{};
     size_t image_index{};
 
     texture_cache.SynchronizeGraphicsDescriptors();
@@ -312,11 +313,10 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
         for (const auto& desc : info.texture_descriptors) {
             for (u32 index = 0; index < desc.count; ++index) {
                 const TextureHandle handle{read_handle(desc, index)};
-                image_view_indices[image_index] = handle.image;
+                image_view_indices[image_index++] = handle.image;
 
                 Sampler* const sampler{texture_cache.GetGraphicsSampler(handle.sampler)};
-                samplers[image_index] = sampler->Handle();
-                ++image_index;
+                samplers[sampler_index++] = sampler->Handle();
             }
         }
         if constexpr (Spec::has_images) {
@@ -360,10 +360,9 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
                 ++texture_buffer_index;
             }
         }};
+        buffer_cache.UnbindGraphicsTextureBuffers(stage);
+
         const Shader::Info& info{stage_infos[stage]};
-        if constexpr (Spec::has_texture_buffers || Spec::has_image_buffers) {
-            buffer_cache.UnbindGraphicsTextureBuffers(stage);
-        }
         if constexpr (Spec::has_texture_buffers) {
             for (const auto& desc : info.texture_buffer_descriptors) {
                 add_buffer(desc);
@@ -443,7 +442,9 @@ void GraphicsPipeline::ConfigureDraw() {
     const bool bind_pipeline{scheduler.UpdateGraphicsPipeline(this)};
     const void* const descriptor_data{update_descriptor_queue.UpdateData()};
     scheduler.Record([this, descriptor_data, bind_pipeline](vk::CommandBuffer cmdbuf) {
-        cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);
+        if (bind_pipeline) {
+            cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);
+        }
         if (!descriptor_set_layout) {
             return;
         }
