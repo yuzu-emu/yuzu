@@ -23,4 +23,5 @@ namespace Shader::Maxwell {
 
 [[nodiscard]] IR::Program MergeDualVertexPrograms(IR::Program& vertex_a, IR::Program& vertex_b,
                                                   Environment& env_vertex_b);
+
 } // namespace Shader::Maxwell

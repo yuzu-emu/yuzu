@@ -288,32 +288,32 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
     LOG_INFO(Render_Vulkan, "0x{:016x}", key.Hash());
     size_t env_index{0};
     std::array<Shader::IR::Program, Maxwell::MaxShaderProgram> programs;
-    bool uses_vertex_a{};
-    std::size_t start_value_processing{};
+    const bool uses_vertex_a{key.unique_hashes[0] != 0};
+    const bool uses_vertex_b{key.unique_hashes[1] != 0};
     for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
         if (key.unique_hashes[index] == 0) {
             continue;
         }
-        uses_vertex_a |= index == 0;
         Shader::Environment& env{*envs[env_index]};
         ++env_index;
 
         const u32 cfg_offset{static_cast<u32>(env.StartAddress() + sizeof(Shader::ProgramHeader))};
         Shader::Maxwell::Flow::CFG cfg(env, pools.flow_block, cfg_offset, index == 0);
         if (!uses_vertex_a || index != 1) {
+            // Normal path
             programs[index] = TranslateProgram(pools.inst, pools.block, env, cfg);
-            continue;
+        } else {
+            // VertexB path when VertexA is present.
+            Shader::IR::Program& program_va{programs[0]};
+            Shader::IR::Program program_vb{TranslateProgram(pools.inst, pools.block, env, cfg)};
+            programs[index] = MergeDualVertexPrograms(program_va, program_vb, env);
         }
-        Shader::IR::Program& program_va{programs[0]};
-        Shader::IR::Program program_vb{TranslateProgram(pools.inst, pools.block, env, cfg)};
-        programs[index] = MergeDualVertexPrograms(program_va, program_vb, env);
-        start_value_processing = 1;
     }
     std::array<const Shader::Info*, Maxwell::MaxShaderStage> infos{};
     std::array<vk::ShaderModule, Maxwell::MaxShaderStage> modules;
 
     u32 binding{0};
-    for (size_t index = start_value_processing; index < Maxwell::MaxShaderProgram; ++index) {
+    for (size_t index = uses_vertex_a && uses_vertex_b ? 1 : 0; index < Maxwell::MaxShaderProgram; ++index) {
         if (key.unique_hashes[index] == 0) {
             continue;
         }
