@@ -132,6 +132,30 @@ void SetPatch(Info& info, IR::Patch patch) {
     }
 }
 
+void CheckCBufNVN(Info& info, IR::Inst& inst) {
+    const IR::Value cbuf_index{inst.Arg(0)};
+    if (!cbuf_index.IsImmediate()) {
+        info.nvn_buffer_used.set();
+        return;
+    }
+    const u32 index{cbuf_index.U32()};
+    if (index != 0) {
+        return;
+    }
+    const IR::Value cbuf_offset{inst.Arg(1)};
+    if (!cbuf_offset.IsImmediate()) {
+        info.nvn_buffer_used.set();
+        return;
+    }
+    const u32 offset{cbuf_offset.U32()};
+    const u32 descriptor_size{0x10};
+    const u32 upper_limit{info.nvn_buffer_base + descriptor_size * 16};
+    if (offset >= info.nvn_buffer_base && offset < upper_limit) {
+        const std::size_t nvn_index{(offset - info.nvn_buffer_base) / descriptor_size};
+        info.nvn_buffer_used.set(nvn_index, true);
+    }
+}
+
 void VisitUsages(Info& info, IR::Inst& inst) {
     switch (inst.GetOpcode()) {
     case IR::Opcode::CompositeConstructF16x2:
@@ -382,13 +406,6 @@ void VisitUsages(Info& info, IR::Inst& inst) {
         break;
     }
     switch (inst.GetOpcode()) {
-    case IR::Opcode::LoadGlobalU8:
-    case IR::Opcode::LoadGlobalS8:
-    case IR::Opcode::LoadGlobalU16:
-    case IR::Opcode::LoadGlobalS16:
-    case IR::Opcode::LoadGlobal32:
-    case IR::Opcode::LoadGlobal64:
-    case IR::Opcode::LoadGlobal128:
     case IR::Opcode::WriteGlobalU8:
     case IR::Opcode::WriteGlobalS8:
     case IR::Opcode::WriteGlobalU16:
@@ -423,6 +440,15 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::GlobalAtomicMinF32x2:
     case IR::Opcode::GlobalAtomicMaxF16x2:
     case IR::Opcode::GlobalAtomicMaxF32x2:
+        info.stores_global_memory = true;
+        [[fallthrough]];
+    case IR::Opcode::LoadGlobalU8:
+    case IR::Opcode::LoadGlobalS8:
+    case IR::Opcode::LoadGlobalU16:
+    case IR::Opcode::LoadGlobalS16:
+    case IR::Opcode::LoadGlobal32:
+    case IR::Opcode::LoadGlobal64:
+    case IR::Opcode::LoadGlobal128:
         info.uses_int64 = true;
         info.uses_global_memory = true;
         info.used_constant_buffer_types |= IR::Type::U32 | IR::Type::U32x2;
@@ -800,9 +826,27 @@ void VisitFpModifiers(Info& info, IR::Inst& inst) {
     }
 }
 
+void VisitCbufs(Info& info, IR::Inst& inst) {
+    switch (inst.GetOpcode()) {
+    case IR::Opcode::GetCbufU8:
+    case IR::Opcode::GetCbufS8:
+    case IR::Opcode::GetCbufU16:
+    case IR::Opcode::GetCbufS16:
+    case IR::Opcode::GetCbufU32:
+    case IR::Opcode::GetCbufF32:
+    case IR::Opcode::GetCbufU32x2: {
+        CheckCBufNVN(info, inst);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 void Visit(Info& info, IR::Inst& inst) {
     VisitUsages(info, inst);
     VisitFpModifiers(info, inst);
+    VisitCbufs(info, inst);
 }
 
 void GatherInfoFromHeader(Environment& env, Info& info) {
@@ -839,6 +883,26 @@ void GatherInfoFromHeader(Environment& env, Info& info) {
 
 void CollectShaderInfoPass(Environment& env, IR::Program& program) {
     Info& info{program.info};
+    const u32 base{[&] {
+        switch (program.stage) {
+        case Stage::VertexA:
+        case Stage::VertexB:
+            return 0x110u;
+        case Stage::TessellationControl:
+            return 0x210u;
+        case Stage::TessellationEval:
+            return 0x310u;
+        case Stage::Geometry:
+            return 0x410u;
+        case Stage::Fragment:
+            return 0x510u;
+        case Stage::Compute:
+            return 0x310u;
+        }
+        throw InvalidArgument("Invalid stage {}", program.stage);
+    }()};
+    info.nvn_buffer_base = base;
+
     for (IR::Block* const block : program.post_order_blocks) {
         for (IR::Inst& inst : block->Instructions()) {
             Visit(info, inst);

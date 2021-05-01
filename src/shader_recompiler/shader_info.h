@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <bitset>
 
 #include "common/common_types.h"
 #include "shader_recompiler/frontend/ir/type.h"
@@ -140,6 +141,7 @@ struct Info {
     bool stores_tess_level_outer{};
     bool stores_tess_level_inner{};
     bool stores_indexed_attributes{};
+    bool stores_global_memory{};
 
     bool uses_fp16{};
     bool uses_fp64{};
@@ -180,6 +182,8 @@ struct Info {
     IR::Type used_storage_buffer_types{};
 
     u32 constant_buffer_mask{};
+    u32 nvn_buffer_base{};
+    std::bitset<16> nvn_buffer_used{};
 
     boost::container::static_vector<ConstantBufferDescriptor, MAX_CBUFS>
         constant_buffer_descriptors;

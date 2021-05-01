@@ -88,17 +88,20 @@ void AddNVNStorageBuffers(IR::Program& program) {
     }()};
     auto& descs{program.info.storage_buffers_descriptors};
     for (u32 index = 0; index < num_buffers; ++index) {
+        if (!program.info.nvn_buffer_used[index]) {
+            continue;
+        }
         const u32 offset{base + index * descriptor_size};
         const auto it{std::ranges::find(descs, offset, &StorageBufferDescriptor::cbuf_offset)};
         if (it != descs.end()) {
+            it->is_written |= program.info.stores_global_memory;
             continue;
         }
-        // Assume these are written for now
         descs.push_back({
             .cbuf_index = driver_cbuf,
             .cbuf_offset = offset,
             .count = 1,
-            .is_written = true,
+            .is_written = program.info.stores_global_memory,
         });
     }
 }
