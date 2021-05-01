@@ -159,6 +159,9 @@ enum class SpecialRegister : u64 {
         return ir.SubgroupGeMask();
     case SpecialRegister::SR_Y_DIRECTION:
         return ir.BitCast<IR::U32>(ir.YDirection());
+    case SpecialRegister::SR_AFFINITY:
+        // LOG_WARNING(..., "SR_AFFINITY is stubbed");
+        return ir.Imm32(0); // This is the default value hardware returns.
     default:
         throw NotImplementedException("S2R special register {}", special_register);
     }
