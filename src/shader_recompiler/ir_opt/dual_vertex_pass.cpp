@@ -4,8 +4,6 @@
 
 #include <algorithm>
 #include <ranges>
-#include <tuple>
-#include <type_traits>
 
 #include "common/bit_cast.h"
 #include "common/bit_util.h"
@@ -40,7 +38,7 @@ void VertexATransformPass(IR::Program& program) {
 }
 
 void VertexBTransformPass(IR::Program& program) {
-    for (IR::Block* const block : program.post_order_blocks | std::views::reverse) {
+    for (IR::Block* const block : program.blocks) {
         for (IR::Inst& inst : block->Instructions()) {
             if (inst.GetOpcode() == IR::Opcode::Prologue) {
                 return inst.Invalidate();
@@ -51,24 +49,24 @@ void VertexBTransformPass(IR::Program& program) {
 
 void DualVertexJoinPass(IR::Program& program) {
     const auto& blocks = program.blocks;
-    s64 s = static_cast<s64>(blocks.size()) - 1;
-    if (s < 1) {
-        throw NotImplementedException("Dual Vertex Join pass failed, expected atleast 2 blocks!");
+    const s64 sub_size = static_cast<s64>(blocks.size()) - 1;
+    if (sub_size < 1) {
+        throw LogicError("Dual Vertex Join pass failed, expected atleast 2 blocks");
     }
-    for (s64 index = 0; index < s; index++) {
-        IR::Block* const current_block = blocks[index];
-        IR::Block* const next_block = blocks[index + 1];
+    for (s64 index = 0; index < sub_size; ++index) {
+        IR::Block* const current_block{blocks[index]};
+        IR::Block* const next_block{blocks[index + 1]};
         for (IR::Inst& inst : current_block->Instructions()) {
             if (inst.GetOpcode() == IR::Opcode::Join) {
                 IR::IREmitter ir{*current_block, IR::Block::InstructionList::s_iterator_to(inst)};
                 ir.Branch(next_block);
                 inst.Invalidate();
-                // only 1 join should exist
+                // Only 1 join should exist
                 return;
             }
         }
     }
-    throw NotImplementedException("Dual Vertex Join pass failed, no join present!");
+    throw LogicError("Dual Vertex Join pass failed, no join present");
 }
 
 } // namespace Shader::Optimization

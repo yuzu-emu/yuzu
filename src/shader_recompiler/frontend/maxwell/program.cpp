@@ -151,31 +151,30 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
 }
 
 IR::Program MergeDualVertexPrograms(IR::Program& vertex_a, IR::Program& vertex_b,
-                                    Environment& env2) {
-    IR::Program program{};
+                                    Environment& env_vertex_b) {
+    IR::Program result{};
     Optimization::VertexATransformPass(vertex_a);
     Optimization::VertexBTransformPass(vertex_b);
-    program.blocks.swap(vertex_a.blocks);
+    std::swap(result.blocks, vertex_a.blocks);
     for (IR::Block* block : vertex_b.blocks) {
-        program.blocks.push_back(block);
+        result.blocks.push_back(block);
     }
-    program.stage = Stage::VertexB;
-    program.info = vertex_a.info;
-    program.local_memory_size = std::max(vertex_a.local_memory_size, vertex_b.local_memory_size);
+    result.stage = Stage::VertexB;
+    result.info = vertex_a.info;
+    result.local_memory_size = std::max(vertex_a.local_memory_size, vertex_b.local_memory_size);
 
-    for (size_t index = 0; index < 32; index++) {
-        program.info.input_generics[index].used |= vertex_b.info.input_generics[index].used;
-        program.info.stores_generics[index] |= vertex_b.info.stores_generics[index];
+    for (size_t index = 0; index < 32; ++index) {
+        result.info.input_generics[index].used |= vertex_b.info.input_generics[index].used;
+        result.info.stores_generics[index] |= vertex_b.info.stores_generics[index];
     }
-    Optimization::JoinTextureInfo(program.info, vertex_b.info);
-    Optimization::JoinStorageInfo(program.info, vertex_b.info);
-    Optimization::DualVertexJoinPass(program);
-    program.post_order_blocks = PostOrder(program.blocks);
-    Optimization::DeadCodeEliminationPass(program);
-    Optimization::IdentityRemovalPass(program);
-    Optimization::VerificationPass(program);
-    Optimization::CollectShaderInfoPass(env2, program);
-    return program;
+    Optimization::JoinTextureInfo(result.info, vertex_b.info);
+    Optimization::JoinStorageInfo(result.info, vertex_b.info);
+    Optimization::DualVertexJoinPass(result);
+    result.post_order_blocks = PostOrder(result.blocks);
+    Optimization::DeadCodeEliminationPass(result);
+    Optimization::VerificationPass(result);
+    Optimization::CollectShaderInfoPass(env_vertex_b, result);
+    return result;
 }
 
 } // namespace Shader::Maxwell
