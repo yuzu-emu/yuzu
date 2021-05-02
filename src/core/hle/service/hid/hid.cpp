@@ -21,6 +21,7 @@
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/hid/errors.h"
 #include "core/hle/service/hid/hid.h"
+#include "core/hle/service/hid/hidbus.h"
 #include "core/hle/service/hid/irs.h"
 #include "core/hle/service/hid/xcd.h"
 #include "core/hle/service/service.h"
@@ -1987,32 +1988,6 @@ public:
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, nullptr, "GetConsoleSixAxisSensorCalibrationValues"},
-        };
-        // clang-format on
-
-        RegisterHandlers(functions);
-    }
-};
-
-class HidBus final : public ServiceFramework<HidBus> {
-public:
-    explicit HidBus(Core::System& system_) : ServiceFramework{system_, "hidbus"} {
-        // clang-format off
-        static const FunctionInfo functions[] = {
-            {1, nullptr, "GetBusHandle"},
-            {2, nullptr, "IsExternalDeviceConnected"},
-            {3, nullptr, "Initialize"},
-            {4, nullptr, "Finalize"},
-            {5, nullptr, "EnableExternalDevice"},
-            {6, nullptr, "GetExternalDeviceId"},
-            {7, nullptr, "SendCommandAsync"},
-            {8, nullptr, "GetSendCommandAsynceResult"},
-            {9, nullptr, "SetEventForSendCommandAsycResult"},
-            {10, nullptr, "GetSharedMemoryHandle"},
-            {11, nullptr, "EnableJoyPollingReceiveMode"},
-            {12, nullptr, "DisableJoyPollingReceiveMode"},
-            {13, nullptr, "GetPollingData"},
-            {14, nullptr, "SetStatusManagerType"},
         };
         // clang-format on
 
