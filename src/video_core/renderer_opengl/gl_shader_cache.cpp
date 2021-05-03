@@ -254,7 +254,7 @@ std::unique_ptr<GraphicsProgram> ShaderCache::CreateGraphicsProgram(
     OGLProgram gl_program;
     gl_program.handle = glCreateProgram();
 
-    Shader::Backend::SPIRV::Bindings binding;
+    Shader::Backend::Bindings binding;
     for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
         if (key.unique_hashes[index] == 0) {
             continue;
@@ -297,8 +297,7 @@ std::unique_ptr<ComputeProgram> ShaderCache::CreateComputeProgram(ShaderPools& p
 
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
     Shader::IR::Program program{TranslateProgram(pools.inst, pools.block, env, cfg)};
-    Shader::Backend::SPIRV::Bindings binding;
-    const std::vector<u32> code{EmitSPIRV(profile, program, binding)};
+    const std::vector<u32> code{EmitSPIRV(profile, program)};
     OGLProgram gl_program;
     gl_program.handle = glCreateProgram();
     AddShader(GL_COMPUTE_SHADER, gl_program.handle, code);
