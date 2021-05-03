@@ -315,8 +315,9 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
     std::array<const Shader::Info*, Maxwell::MaxShaderStage> infos{};
     std::array<vk::ShaderModule, Maxwell::MaxShaderStage> modules;
 
-    Shader::Backend::SPIRV::Bindings binding;
-    for (size_t index = uses_vertex_a && uses_vertex_b ? 1 : 0; index < Maxwell::MaxShaderProgram; ++index) {
+    Shader::Backend::Bindings binding;
+    for (size_t index = uses_vertex_a && uses_vertex_b ? 1 : 0; index < Maxwell::MaxShaderProgram;
+         ++index) {
         if (key.unique_hashes[index] == 0) {
             continue;
         }
@@ -388,8 +389,7 @@ std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
 
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
     Shader::IR::Program program{TranslateProgram(pools.inst, pools.block, env, cfg)};
-    Shader::Backend::SPIRV::Bindings binding;
-    const std::vector<u32> code{EmitSPIRV(base_profile, program, binding)};
+    const std::vector<u32> code{EmitSPIRV(base_profile, program)};
     device.SaveShader(code);
     vk::ShaderModule spv_module{BuildShader(device, code)};
     if (device.HasDebuggingToolAttached()) {

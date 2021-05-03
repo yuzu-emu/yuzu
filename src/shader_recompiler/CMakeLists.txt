@@ -1,4 +1,5 @@
 add_library(shader_recompiler STATIC
+    backend/bindings.h
     backend/spirv/emit_context.cpp
     backend/spirv/emit_context.h
     backend/spirv/emit_spirv.cpp
@@ -13,6 +14,7 @@ add_library(shader_recompiler STATIC
     backend/spirv/emit_spirv_floating_point.cpp
     backend/spirv/emit_spirv_image.cpp
     backend/spirv/emit_spirv_image_atomic.cpp
+    backend/spirv/emit_spirv_instructions.h
     backend/spirv/emit_spirv_integer.cpp
     backend/spirv/emit_spirv_logical.cpp
     backend/spirv/emit_spirv_memory.cpp

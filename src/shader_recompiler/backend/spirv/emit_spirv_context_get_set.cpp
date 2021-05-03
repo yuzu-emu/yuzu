@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
+#include "shader_recompiler/backend/spirv/emit_spirv_instructions.h"
 
 namespace Shader::Backend::SPIRV {
 namespace {

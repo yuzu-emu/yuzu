@@ -9,6 +9,7 @@
 
 #include <sirit/sirit.h>
 
+#include "shader_recompiler/backend/bindings.h"
 #include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/profile.h"
 #include "shader_recompiler/shader_info.h"
@@ -16,14 +17,6 @@
 namespace Shader::Backend::SPIRV {
 
 using Sirit::Id;
-
-struct Bindings {
-    u32 unified{};
-    u32 uniform_buffer{};
-    u32 storage_buffer{};
-    u32 texture{};
-    u32 image{};
-};
 
 class VectorTypes {
 public:
