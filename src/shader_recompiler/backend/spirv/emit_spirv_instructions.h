@@ -6,12 +6,12 @@
 
 #include "common/common_types.h"
 
-namespace IR {
+namespace Shader::IR {
 enum class Attribute : u64;
 enum class Patch : u64;
 class Inst;
 class Value;
-} // namespace IR
+} // namespace Shader::IR
 
 namespace Shader::Backend::SPIRV {
 
