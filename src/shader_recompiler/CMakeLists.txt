@@ -1,5 +1,31 @@
 add_library(shader_recompiler STATIC
     backend/bindings.h
+    backend/glasm/emit_context.cpp
+    backend/glasm/emit_context.h
+    backend/glasm/emit_glasm.cpp
+    backend/glasm/emit_glasm.h
+    backend/glasm/emit_glasm_atomic.cpp
+    backend/glasm/emit_glasm_barriers.cpp
+    backend/glasm/emit_glasm_bitwise_conversion.cpp
+    backend/glasm/emit_glasm_composite.cpp
+    backend/glasm/emit_glasm_context_get_set.cpp
+    backend/glasm/emit_glasm_control_flow.cpp
+    backend/glasm/emit_glasm_convert.cpp
+    backend/glasm/emit_glasm_floating_point.cpp
+    backend/glasm/emit_glasm_image.cpp
+    backend/glasm/emit_glasm_image_atomic.cpp
+    backend/glasm/emit_glasm_instructions.h
+    backend/glasm/emit_glasm_integer.cpp
+    backend/glasm/emit_glasm_logical.cpp
+    backend/glasm/emit_glasm_memory.cpp
+    backend/glasm/emit_glasm_not_implemented.cpp
+    backend/glasm/emit_glasm_select.cpp
+    backend/glasm/emit_glasm_shared_memory.cpp
+    backend/glasm/emit_glasm_special.cpp
+    backend/glasm/emit_glasm_undefined.cpp
+    backend/glasm/emit_glasm_warp.cpp
+    backend/glasm/reg_alloc.cpp
+    backend/glasm/reg_alloc.h
     backend/spirv/emit_context.cpp
     backend/spirv/emit_context.h
     backend/spirv/emit_spirv.cpp
@@ -104,8 +130,8 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/half_floating_point_helper.cpp
     frontend/maxwell/translate/impl/half_floating_point_helper.h
     frontend/maxwell/translate/impl/half_floating_point_multiply.cpp
-    frontend/maxwell/translate/impl/half_floating_point_set_predicate.cpp
     frontend/maxwell/translate/impl/half_floating_point_set.cpp
+    frontend/maxwell/translate/impl/half_floating_point_set_predicate.cpp
     frontend/maxwell/translate/impl/impl.cpp
     frontend/maxwell/translate/impl/impl.h
     frontend/maxwell/translate/impl/integer_add.cpp
@@ -145,11 +171,11 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/surface_load_store.cpp
     frontend/maxwell/translate/impl/texture_fetch.cpp
     frontend/maxwell/translate/impl/texture_fetch_swizzled.cpp
-    frontend/maxwell/translate/impl/texture_gather_swizzled.cpp
     frontend/maxwell/translate/impl/texture_gather.cpp
+    frontend/maxwell/translate/impl/texture_gather_swizzled.cpp
     frontend/maxwell/translate/impl/texture_gradient.cpp
-    frontend/maxwell/translate/impl/texture_load_swizzled.cpp
     frontend/maxwell/translate/impl/texture_load.cpp
+    frontend/maxwell/translate/impl/texture_load_swizzled.cpp
     frontend/maxwell/translate/impl/texture_mipmap_level.cpp
     frontend/maxwell/translate/impl/texture_query.cpp
     frontend/maxwell/translate/impl/video_helper.cpp
@@ -173,8 +199,8 @@ add_library(shader_recompiler STATIC
     ir_opt/texture_pass.cpp
     ir_opt/verification_pass.cpp
     object_pool.h
-    program_header.h
     profile.h
+    program_header.h
     shader_info.h
 )
 

@@ -218,6 +218,12 @@ public:
         return Common::BitCast<DefinitionType>(definition);
     }
 
+    /// Destructively remove one reference count from the instruction
+    /// Useful for register allocation
+    void DestructiveRemoveUsage() {
+        --use_count;
+    }
+
 private:
     struct NonTriviallyDummy {
         NonTriviallyDummy() noexcept {}
