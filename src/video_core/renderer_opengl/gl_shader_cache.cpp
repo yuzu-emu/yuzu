@@ -266,9 +266,6 @@ std::unique_ptr<GraphicsProgram> ShaderCache::CreateGraphicsProgram(
         infos[stage_index] = &program.info;
 
         const std::vector<u32> code{EmitSPIRV(profile, program, binding)};
-        FILE* file = fopen("D:\\shader.spv", "wb");
-        fwrite(code.data(), 4, code.size(), file);
-        fclose(file);
         AddShader(Stage(stage_index), gl_program.handle, code);
     }
     LinkProgram(gl_program.handle);
