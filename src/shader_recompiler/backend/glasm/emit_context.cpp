@@ -2,6 +2,10 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#pragma once
-
 #include "shader_recompiler/backend/glasm/emit_context.h"
+
+namespace Shader::Backend::GLASM {
+
+EmitContext::EmitContext() = default;
+
+} // namespace Shader::Backend::GLASM

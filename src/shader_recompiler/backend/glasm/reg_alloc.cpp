@@ -3,18 +3,16 @@
 // Refer to the license.txt file included.
 
 #include <string>
-#include <string_view>
 
 #include <fmt/format.h>
 
+#include "shader_recompiler/backend/glasm/emit_context.h"
 #include "shader_recompiler/backend/glasm/reg_alloc.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLASM {
 namespace {
-constexpr std::string_view SWIZZLE = "xyzw";
-
 std::string Representation(Id id) {
     if (id.is_condition_code != 0) {
         throw NotImplementedException("Condition code");
@@ -22,27 +20,36 @@ std::string Representation(Id id) {
     if (id.is_spill != 0) {
         throw NotImplementedException("Spilling");
     }
-    const u32 num_elements{id.num_elements_minus_one + 1};
     const u32 index{static_cast<u32>(id.index)};
-    if (num_elements == 4) {
-        return fmt::format("R{}", index);
-    } else {
-        return fmt::format("R{}.{}", index, SWIZZLE.substr(id.base_element, num_elements));
+    return fmt::format("R{}.x", index);
+}
+
+std::string ImmValue(const IR::Value& value) {
+    switch (value.Type()) {
+    case IR::Type::U1:
+        return value.U1() ? "-1" : "0";
+    case IR::Type::U32:
+        return fmt::format("{}", value.U32());
+    case IR::Type::F32:
+        return fmt::format("{}", value.F32());
+    default:
+        throw NotImplementedException("Immediate type", value.Type());
     }
 }
 } // Anonymous namespace
 
-std::string RegAlloc::Define(IR::Inst& inst, u32 num_elements, u32 alignment) {
-    const Id id{Alloc(num_elements, alignment)};
+std::string RegAlloc::Define(IR::Inst& inst) {
+    const Id id{Alloc()};
     inst.SetDefinition<Id>(id);
     return Representation(id);
 }
 
 std::string RegAlloc::Consume(const IR::Value& value) {
-    if (!value.IsImmediate()) {
-        return Consume(*value.Inst());
+    if (value.IsImmediate()) {
+        return ImmValue(value);
+    } else {
+        return Consume(*value.InstRecursive());
     }
-    throw NotImplementedException("Immediate loading");
 }
 
 std::string RegAlloc::Consume(IR::Inst& inst) {
@@ -54,7 +61,7 @@ std::string RegAlloc::Consume(IR::Inst& inst) {
     return Representation(inst.Definition<Id>());
 }
 
-Id RegAlloc::Alloc(u32 num_elements, [[maybe_unused]] u32 alignment) {
+Id RegAlloc::Alloc() {
     for (size_t reg = 0; reg < NUM_REGS; ++reg) {
         if (register_use[reg]) {
             continue;
@@ -62,8 +69,6 @@ Id RegAlloc::Alloc(u32 num_elements, [[maybe_unused]] u32 alignment) {
         num_used_registers = std::max(num_used_registers, reg + 1);
         register_use[reg] = true;
         return Id{
-            .base_element = 0,
-            .num_elements_minus_one = num_elements - 1,
             .index = static_cast<u32>(reg),
             .is_spill = 0,
             .is_condition_code = 0,
