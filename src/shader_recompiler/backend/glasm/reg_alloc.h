@@ -15,27 +15,35 @@ class Value;
 
 namespace Shader::Backend::GLASM {
 
+class EmitContext;
+
 struct Id {
-    u32 base_element : 2;
-    u32 num_elements_minus_one : 2;
-    u32 index : 26;
+    u32 index : 30;
     u32 is_spill : 1;
     u32 is_condition_code : 1;
 };
 
 class RegAlloc {
 public:
-    std::string Define(IR::Inst& inst, u32 num_elements = 1, u32 alignment = 1);
+    RegAlloc(EmitContext& ctx_) : ctx{ctx_} {}
+
+    std::string Define(IR::Inst& inst);
 
     std::string Consume(const IR::Value& value);
+
+    [[nodiscard]] size_t NumUsedRegisters() const noexcept {
+        return num_used_registers;
+    }
 
 private:
     static constexpr size_t NUM_REGS = 4096;
     static constexpr size_t NUM_ELEMENTS = 4;
 
+    EmitContext& ctx;
+
     std::string Consume(IR::Inst& inst);
 
-    Id Alloc(u32 num_elements, u32 alignment);
+    Id Alloc();
 
     void Free(Id id);
 
