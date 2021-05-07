@@ -47,8 +47,11 @@ VKScheduler::VKScheduler(const Device& device_, StateTracker& state_tracker_)
 }
 
 VKScheduler::~VKScheduler() {
-    quit = true;
-    cv.notify_all();
+    {
+        std::lock_guard lock{work_mutex};
+        quit = true;
+    }
+    work_cv.notify_all();
     worker_thread.join();
 }
 
@@ -69,20 +72,19 @@ void VKScheduler::WaitWorker() {
     MICROPROFILE_SCOPE(Vulkan_WaitForWorker);
     DispatchWork();
 
-    bool finished = false;
-    do {
-        cv.notify_all();
-        std::unique_lock lock{mutex};
-        finished = chunk_queue.Empty();
-    } while (!finished);
+    std::unique_lock lock{work_mutex};
+    wait_cv.wait(lock, [this] { return work_queue.empty(); });
 }
 
 void VKScheduler::DispatchWork() {
     if (chunk->Empty()) {
         return;
     }
-    chunk_queue.Push(std::move(chunk));
-    cv.notify_all();
+    {
+        std::lock_guard lock{work_mutex};
+        work_queue.push(std::move(chunk));
+    }
+    work_cv.notify_one();
     AcquireNewChunk();
 }
 
@@ -135,22 +137,27 @@ bool VKScheduler::UpdateGraphicsPipeline(GraphicsPipeline* pipeline) {
 
 void VKScheduler::WorkerThread() {
     Common::SetCurrentThreadName("yuzu:VulkanWorker");
-    std::unique_lock lock{mutex};
     do {
-        cv.wait(lock, [this] { return !chunk_queue.Empty() || quit; });
-        if (quit) {
-            continue;
+        if (work_queue.empty()) {
+            wait_cv.notify_all();
         }
-        while (!chunk_queue.Empty()) {
-            auto extracted_chunk = std::move(chunk_queue.Front());
-            chunk_queue.Pop();
-            const bool has_submit = extracted_chunk->HasSubmit();
-            extracted_chunk->ExecuteAll(current_cmdbuf);
-            if (has_submit) {
-                AllocateWorkerCommandBuffer();
+        std::unique_ptr<CommandChunk> work;
+        {
+            std::unique_lock lock{work_mutex};
+            work_cv.wait(lock, [this] { return !work_queue.empty() || quit; });
+            if (quit) {
+                continue;
             }
-            chunk_reserve.Push(std::move(extracted_chunk));
+            work = std::move(work_queue.front());
+            work_queue.pop();
         }
+        const bool has_submit = work->HasSubmit();
+        work->ExecuteAll(current_cmdbuf);
+        if (has_submit) {
+            AllocateWorkerCommandBuffer();
+        }
+        std::lock_guard reserve_lock{reserve_mutex};
+        chunk_reserve.push_back(std::move(work));
     } while (!quit);
 }
 
@@ -269,12 +276,13 @@ void VKScheduler::EndRenderPass() {
 }
 
 void VKScheduler::AcquireNewChunk() {
-    if (chunk_reserve.Empty()) {
+    std::lock_guard lock{reserve_mutex};
+    if (chunk_reserve.empty()) {
         chunk = std::make_unique<CommandChunk>();
         return;
     }
-    chunk = std::move(chunk_reserve.Front());
-    chunk_reserve.Pop();
+    chunk = std::move(chunk_reserve.back());
+    chunk_reserve.pop_back();
 }
 
 } // namespace Vulkan

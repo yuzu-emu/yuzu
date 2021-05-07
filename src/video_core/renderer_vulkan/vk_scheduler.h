@@ -6,14 +6,14 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <queue>
 #include <cstddef>
 #include <memory>
-#include <stack>
 #include <thread>
 #include <utility>
+
 #include "common/alignment.h"
 #include "common/common_types.h"
-#include "common/threadsafe_queue.h"
 #include "video_core/renderer_vulkan/vk_master_semaphore.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
@@ -220,11 +220,13 @@ private:
     std::array<VkImage, 9> renderpass_images{};
     std::array<VkImageSubresourceRange, 9> renderpass_image_ranges{};
 
-    Common::SPSCQueue<std::unique_ptr<CommandChunk>> chunk_queue;
-    Common::SPSCQueue<std::unique_ptr<CommandChunk>> chunk_reserve;
-    std::mutex mutex;
-    std::condition_variable cv;
-    bool quit = false;
+    std::queue<std::unique_ptr<CommandChunk>> work_queue;
+    std::vector<std::unique_ptr<CommandChunk>> chunk_reserve;
+    std::mutex reserve_mutex;
+    std::mutex work_mutex;
+    std::condition_variable work_cv;
+    std::condition_variable wait_cv;
+    std::atomic_bool quit{};
 };
 
 } // namespace Vulkan
