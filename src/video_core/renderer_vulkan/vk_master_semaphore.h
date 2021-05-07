@@ -39,9 +39,9 @@ public:
         return KnownGpuTick() >= tick;
     }
 
-    /// Advance to the logical tick.
-    void NextTick() noexcept {
-        ++current_tick;
+    /// Advance to the logical tick and return the old one
+    [[nodiscard]] u64 NextTick() noexcept {
+        return current_tick.fetch_add(1, std::memory_order::relaxed);
     }
 
     /// Refresh the known GPU tick

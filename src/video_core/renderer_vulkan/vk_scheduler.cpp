@@ -168,9 +168,7 @@ void VKScheduler::SubmitExecution(VkSemaphore semaphore) {
     EndPendingOperations();
     InvalidateState();
 
-    const u64 signal_value = master_semaphore->CurrentTick();
-    master_semaphore->NextTick();
-
+    const u64 signal_value = master_semaphore->NextTick();
     Record([semaphore, signal_value, this](vk::CommandBuffer cmdbuf) {
         cmdbuf.End();
 
