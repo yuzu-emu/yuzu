@@ -124,31 +124,31 @@ std::string EmitGLASM(const Profile&, IR::Program& program, Bindings&) {
     return ctx.code;
 }
 
-void EmitIdentity(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
+void EmitIdentity(EmitContext&, IR::Inst& inst, const IR::Value& value) {
     Identity(inst, value);
 }
 
-void EmitBitCastU16F16(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
+void EmitBitCastU16F16(EmitContext&, IR::Inst& inst, const IR::Value& value) {
     Identity(inst, value);
 }
 
-void EmitBitCastU32F32(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
+void EmitBitCastU32F32(EmitContext&, IR::Inst& inst, const IR::Value& value) {
     Identity(inst, value);
 }
 
-void EmitBitCastU64F64(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
+void EmitBitCastU64F64(EmitContext&, IR::Inst& inst, const IR::Value& value) {
     Identity(inst, value);
 }
 
-void EmitBitCastF16U16(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
+void EmitBitCastF16U16(EmitContext&, IR::Inst& inst, const IR::Value& value) {
     Identity(inst, value);
 }
 
-void EmitBitCastF32U32(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
+void EmitBitCastF32U32(EmitContext&, IR::Inst& inst, const IR::Value& value) {
     Identity(inst, value);
 }
 
-void EmitBitCastF64U64(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
+void EmitBitCastF64U64(EmitContext&, IR::Inst& inst, const IR::Value& value) {
     Identity(inst, value);
 }
 
