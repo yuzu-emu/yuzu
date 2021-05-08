@@ -33,7 +33,7 @@ std::string ImmValue(const IR::Value& value) {
     case IR::Type::F32:
         return fmt::format("{}", value.F32());
     default:
-        throw NotImplementedException("Immediate type", value.Type());
+        throw NotImplementedException("Immediate type {}", value.Type());
     }
 }
 } // Anonymous namespace

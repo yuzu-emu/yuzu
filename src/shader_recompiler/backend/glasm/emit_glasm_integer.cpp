@@ -93,7 +93,7 @@ void EmitShiftRightArithmetic64([[maybe_unused]] EmitContext& ctx,
 
 void EmitBitwiseAnd32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLASM instruction");
+    ctx.Add("AND {},{},{};", inst, a, b);
 }
 
 void EmitBitwiseOr32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -103,7 +103,7 @@ void EmitBitwiseOr32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Ins
 
 void EmitBitwiseXor32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLASM instruction");
+    ctx.Add("XOR {},{},{};", inst, a, b);
 }
 
 void EmitBitFieldInsert(EmitContext& ctx, IR::Inst& inst, std::string_view base,
@@ -136,7 +136,7 @@ void EmitBitCount32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
 
 void EmitBitwiseNot32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLASM instruction");
+    ctx.Add("NOT {},{};", inst, value);
 }
 
 void EmitFindSMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -222,7 +222,7 @@ void EmitUGreaterThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::In
 
 void EmitINotEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                    [[maybe_unused]] std::string_view lhs, [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLASM instruction");
+    ctx.Add("SNE.U {},{},{};", inst, lhs, rhs);
 }
 
 void EmitSGreaterThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
