@@ -16,6 +16,7 @@
 #include "common/scope_exit.h"
 #include "core/core.h"
 #include "core/frontend/emu_window.h"
+#include "shader_recompiler/backend/glasm/emit_glasm.h"
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 #include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
@@ -89,6 +90,7 @@ const Shader::Profile profile{
     .xfb_varyings = {},
 };
 
+using Shader::Backend::GLASM::EmitGLASM;
 using Shader::Backend::SPIRV::EmitSPIRV;
 using Shader::Maxwell::TranslateProgram;
 using VideoCommon::ComputeEnvironment;
@@ -149,6 +151,22 @@ void LinkProgram(GLuint program) {
     } else {
         LOG_WARNING(Render_OpenGL, "{}", log);
     }
+}
+
+OGLAssemblyProgram CompileProgram(std::string_view code, GLenum target) {
+    OGLAssemblyProgram program;
+    glGenProgramsARB(1, &program.handle);
+    glNamedProgramStringEXT(program.handle, target, GL_PROGRAM_FORMAT_ASCII_ARB,
+                            static_cast<GLsizei>(code.size()), code.data());
+    if (!Settings::values.renderer_debug) {
+        return program;
+    }
+    const auto err = reinterpret_cast<const char*>(glGetString(GL_PROGRAM_ERROR_STRING_NV));
+    if (err && *err) {
+        LOG_CRITICAL(Render_OpenGL, "{}", err);
+        LOG_INFO(Render_OpenGL, "{}", code);
+    }
+    return program;
 }
 
 GLenum Stage(size_t stage_index) {
@@ -294,13 +312,20 @@ std::unique_ptr<ComputeProgram> ShaderCache::CreateComputeProgram(ShaderPools& p
 
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
     Shader::IR::Program program{TranslateProgram(pools.inst, pools.block, env, cfg)};
-    const std::vector<u32> code{EmitSPIRV(profile, program)};
-    OGLProgram gl_program;
-    gl_program.handle = glCreateProgram();
-    AddShader(GL_COMPUTE_SHADER, gl_program.handle, code);
-    LinkProgram(gl_program.handle);
+    OGLAssemblyProgram asm_program;
+    OGLProgram source_program;
+    if (device.UseAssemblyShaders()) {
+        const std::string code{EmitGLASM(profile, program)};
+        asm_program = CompileProgram(code, GL_COMPUTE_PROGRAM_NV);
+    } else {
+        const std::vector<u32> code{EmitSPIRV(profile, program)};
+        source_program.handle = glCreateProgram();
+        AddShader(GL_COMPUTE_SHADER, source_program.handle, code);
+        LinkProgram(source_program.handle);
+    }
     return std::make_unique<ComputeProgram>(texture_cache, buffer_cache, gpu_memory, kepler_compute,
-                                            program_manager, std::move(gl_program), program.info);
+                                            program_manager, program.info,
+                                            std::move(source_program), std::move(asm_program));
 }
 
 } // namespace OpenGL

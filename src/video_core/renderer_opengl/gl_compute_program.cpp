@@ -29,11 +29,11 @@ bool ComputeProgramKey::operator==(const ComputeProgramKey& rhs) const noexcept 
 ComputeProgram::ComputeProgram(TextureCache& texture_cache_, BufferCache& buffer_cache_,
                                Tegra::MemoryManager& gpu_memory_,
                                Tegra::Engines::KeplerCompute& kepler_compute_,
-                               ProgramManager& program_manager_, OGLProgram program_,
-                               const Shader::Info& info_)
+                               ProgramManager& program_manager_, const Shader::Info& info_,
+                               OGLProgram source_program_, OGLAssemblyProgram assembly_program_)
     : texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, gpu_memory{gpu_memory_},
-      kepler_compute{kepler_compute_},
-      program_manager{program_manager_}, program{std::move(program_)}, info{info_} {
+      kepler_compute{kepler_compute_}, program_manager{program_manager_}, info{info_},
+      source_program{std::move(source_program_)}, assembly_program{std::move(assembly_program_)} {
     for (const auto& desc : info.texture_buffer_descriptors) {
         num_texture_buffers += desc.count;
     }
@@ -124,6 +124,14 @@ void ComputeProgram::Configure() {
     const std::span indices_span(image_view_indices.data(), image_view_indices.size());
     texture_cache.FillComputeImageViews(indices_span, image_view_ids);
 
+    if (assembly_program.handle != 0) {
+        // FIXME: State track this
+        glEnable(GL_COMPUTE_PROGRAM_NV);
+        glBindProgramARB(GL_COMPUTE_PROGRAM_NV, assembly_program.handle);
+        program_manager.BindProgram(0);
+    } else {
+        program_manager.BindProgram(source_program.handle);
+    }
     buffer_cache.UnbindComputeTextureBuffers();
     size_t texbuf_index{};
     const auto add_buffer{[&](const auto& desc) {
@@ -172,7 +180,6 @@ void ComputeProgram::Configure() {
     if (image_binding != 0) {
         glBindImageTextures(0, image_binding, images.data());
     }
-    program_manager.BindProgram(program.handle);
 }
 
 } // namespace OpenGL

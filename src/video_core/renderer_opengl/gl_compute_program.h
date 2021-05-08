@@ -52,8 +52,8 @@ public:
     explicit ComputeProgram(TextureCache& texture_cache_, BufferCache& buffer_cache_,
                             Tegra::MemoryManager& gpu_memory_,
                             Tegra::Engines::KeplerCompute& kepler_compute_,
-                            ProgramManager& program_manager_, OGLProgram program_,
-                            const Shader::Info& info_);
+                            ProgramManager& program_manager_, const Shader::Info& info_,
+                            OGLProgram source_program_, OGLAssemblyProgram assembly_program_);
 
     void Configure();
 
@@ -64,8 +64,9 @@ private:
     Tegra::Engines::KeplerCompute& kepler_compute;
     ProgramManager& program_manager;
 
-    OGLProgram program;
     Shader::Info info;
+    OGLProgram source_program;
+    OGLAssemblyProgram assembly_program;
 
     u32 num_texture_buffers{};
     u32 num_image_buffers{};
