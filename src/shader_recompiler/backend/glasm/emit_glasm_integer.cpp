@@ -12,42 +12,46 @@ namespace Shader::Backend::GLASM {
 
 void EmitIAdd32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
+    ctx.Add("ADD {},{},{};", inst, a, b);
+}
+
+void EmitIAdd64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitIAdd64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view a,
-                [[maybe_unused]] std::string_view b) {
+void EmitISub32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
+    ctx.Add("SUB {},{},{};", inst, a, b);
+}
+
+void EmitISub64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitISub32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view a,
-                [[maybe_unused]] std::string_view b) {
+void EmitIMul32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitISub64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view a,
-                [[maybe_unused]] std::string_view b) {
+void EmitINeg32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                [[maybe_unused]] std::string_view value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitIMul32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view a,
-                [[maybe_unused]] std::string_view b) {
+void EmitINeg64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                [[maybe_unused]] std::string_view value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitINeg32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view value) {
+void EmitIAbs32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                [[maybe_unused]] std::string_view value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitINeg64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitIAbs32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitIAbs64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view value) {
+void EmitIAbs64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                [[maybe_unused]] std::string_view value) {
     throw NotImplementedException("GLASM instruction");
 }
 
@@ -94,7 +98,7 @@ void EmitBitwiseAnd32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::In
 
 void EmitBitwiseOr32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                      [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLASM instruction");
+    ctx.Add("OR {},{},{};", inst, a, b);
 }
 
 void EmitBitwiseXor32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -102,64 +106,66 @@ void EmitBitwiseXor32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::In
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitBitFieldInsert([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view base,
-                        [[maybe_unused]] std::string_view insert,
-                        [[maybe_unused]] std::string_view offset,
-                        [[maybe_unused]] std::string_view count) {
+void EmitBitFieldInsert(EmitContext& ctx, IR::Inst& inst, std::string_view base,
+                        std::string_view insert, std::string_view offset, std::string_view count) {
+    ctx.Add("MOV.U RC.x,{};MOV.U RC.y,{};", count, offset);
+    ctx.Add("BFI.U {},RC,{},{};", inst, insert, base);
+}
+
+void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst& inst, std::string_view base,
+                          std::string_view offset, std::string_view count) {
+    ctx.Add("MOV.U RC.x,{};MOV.U RC.y,{};", count, offset);
+    ctx.Add("BFE.S {},RC,{};", inst, base);
+}
+
+void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst& inst, std::string_view base,
+                          std::string_view offset, std::string_view count) {
+    ctx.Add("MOV.U RC.x,{};MOV.U RC.y,{};", count, offset);
+    ctx.Add("BFE.U {},RC,{};", inst, base);
+}
+
+void EmitBitReverse32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                      [[maybe_unused]] std::string_view value) {
+    ctx.Add("BFR {},{};", inst, value);
+}
+
+void EmitBitCount32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                    [[maybe_unused]] std::string_view value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitBitFieldSExtract([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                          [[maybe_unused]] std::string_view base,
-                          [[maybe_unused]] std::string_view offset,
-                          [[maybe_unused]] std::string_view count) {
+void EmitBitwiseNot32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                      [[maybe_unused]] std::string_view value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitBitFieldUExtract([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                          [[maybe_unused]] std::string_view base,
-                          [[maybe_unused]] std::string_view offset,
-                          [[maybe_unused]] std::string_view count) {
+void EmitFindSMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                    [[maybe_unused]] std::string_view value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitBitReverse32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view value) {
+void EmitFindUMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                    [[maybe_unused]] std::string_view value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitBitCount32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view value) {
+void EmitSMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitBitwiseNot32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view value) {
+void EmitUMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFindSMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view value) {
+void EmitSMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFindUMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitSMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view a,
-                [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitUMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view a,
-                [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitSMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view a,
-                [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitUMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view a,
-                [[maybe_unused]] std::string_view b) {
+void EmitUMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
     throw NotImplementedException("GLASM instruction");
 }
 
@@ -175,54 +181,60 @@ void EmitUClamp32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& 
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitSLessThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
-                   [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitSLessThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                   [[maybe_unused]] std::string_view lhs, [[maybe_unused]] std::string_view rhs) {
+    ctx.Add("SLT.S {},{},{};", inst, lhs, rhs);
 }
 
-void EmitULessThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
-                   [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitULessThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                   [[maybe_unused]] std::string_view lhs, [[maybe_unused]] std::string_view rhs) {
+    ctx.Add("SLT.U {},{},{};", inst, lhs, rhs);
 }
 
-void EmitIEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
-                [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitIEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                [[maybe_unused]] std::string_view lhs, [[maybe_unused]] std::string_view rhs) {
+    ctx.Add("SEQ {},{},{};", inst, lhs, rhs);
 }
 
-void EmitSLessThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
+void EmitSLessThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                        [[maybe_unused]] std::string_view lhs,
                         [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLASM instruction");
+    ctx.Add("SLE.S {},{},{};", inst, lhs, rhs);
 }
 
-void EmitULessThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
+void EmitULessThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                        [[maybe_unused]] std::string_view lhs,
                         [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLASM instruction");
+    ctx.Add("SLE.U {},{},{};", inst, lhs, rhs);
 }
 
-void EmitSGreaterThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
+void EmitSGreaterThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                      [[maybe_unused]] std::string_view lhs,
                       [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLASM instruction");
+    ctx.Add("SGT.S {},{},{};", inst, lhs, rhs);
 }
 
-void EmitUGreaterThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
+void EmitUGreaterThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                      [[maybe_unused]] std::string_view lhs,
                       [[maybe_unused]] std::string_view rhs) {
+    ctx.Add("SGT.U {},{},{};", inst, lhs, rhs);
+}
+
+void EmitINotEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                   [[maybe_unused]] std::string_view lhs, [[maybe_unused]] std::string_view rhs) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitINotEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
-                   [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitSGreaterThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
+void EmitSGreaterThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                           [[maybe_unused]] std::string_view lhs,
                            [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLASM instruction");
+    ctx.Add("SGE.S {},{},{};", inst, lhs, rhs);
 }
 
-void EmitUGreaterThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
+void EmitUGreaterThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                           [[maybe_unused]] std::string_view lhs,
                            [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLASM instruction");
+    ctx.Add("SGE.U {},{},{};", inst, lhs, rhs);
 }
 
 } // namespace Shader::Backend::GLASM
