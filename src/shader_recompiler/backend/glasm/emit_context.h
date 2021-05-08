@@ -13,13 +13,14 @@
 
 namespace Shader::IR {
 class Inst;
-}
+struct Program;
+} // namespace Shader::IR
 
 namespace Shader::Backend::GLASM {
 
 class EmitContext {
 public:
-    explicit EmitContext();
+    explicit EmitContext(IR::Program& program);
 
     template <typename... Args>
     void Add(const char* fmt, IR::Inst& inst, Args&&... args) {
