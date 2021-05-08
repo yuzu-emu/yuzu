@@ -208,8 +208,8 @@ void EmitSelectU8(EmitContext& ctx, std::string_view cond, std::string_view true
                   std::string_view false_value);
 void EmitSelectU16(EmitContext& ctx, std::string_view cond, std::string_view true_value,
                    std::string_view false_value);
-void EmitSelectU32(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                   std::string_view false_value);
+void EmitSelectU32(EmitContext& ctx, IR::Inst& inst, std::string_view cond,
+                   std::string_view true_value, std::string_view false_value);
 void EmitSelectU64(EmitContext& ctx, std::string_view cond, std::string_view true_value,
                    std::string_view false_value);
 void EmitSelectF16(EmitContext& ctx, std::string_view cond, std::string_view true_value,
@@ -332,14 +332,14 @@ void EmitFPIsNan16(EmitContext& ctx, std::string_view value);
 void EmitFPIsNan32(EmitContext& ctx, std::string_view value);
 void EmitFPIsNan64(EmitContext& ctx, std::string_view value);
 void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
-void EmitIAdd64(EmitContext& ctx, std::string_view a, std::string_view b);
-void EmitISub32(EmitContext& ctx, std::string_view a, std::string_view b);
-void EmitISub64(EmitContext& ctx, std::string_view a, std::string_view b);
-void EmitIMul32(EmitContext& ctx, std::string_view a, std::string_view b);
-void EmitINeg32(EmitContext& ctx, std::string_view value);
-void EmitINeg64(EmitContext& ctx, std::string_view value);
-void EmitIAbs32(EmitContext& ctx, std::string_view value);
-void EmitIAbs64(EmitContext& ctx, std::string_view value);
+void EmitIAdd64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
+void EmitISub32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
+void EmitISub64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
+void EmitIMul32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
+void EmitINeg32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
+void EmitINeg64(EmitContext& ctx, IR::Inst& inst, std::string_view value);
+void EmitIAbs32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
+void EmitIAbs64(EmitContext& ctx, IR::Inst& inst, std::string_view value);
 void EmitShiftLeftLogical32(EmitContext& ctx, std::string_view base, std::string_view shift);
 void EmitShiftLeftLogical64(EmitContext& ctx, std::string_view base, std::string_view shift);
 void EmitShiftRightLogical32(EmitContext& ctx, std::string_view base, std::string_view shift);
@@ -349,35 +349,39 @@ void EmitShiftRightArithmetic64(EmitContext& ctx, std::string_view base, std::st
 void EmitBitwiseAnd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
 void EmitBitwiseOr32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
 void EmitBitwiseXor32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
-void EmitBitFieldInsert(EmitContext& ctx, std::string_view base, std::string_view insert,
-                        std::string_view offset, std::string_view count);
+void EmitBitFieldInsert(EmitContext& ctx, IR::Inst& inst, std::string_view base,
+                        std::string_view insert, std::string_view offset, std::string_view count);
 void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst& inst, std::string_view base,
                           std::string_view offset, std::string_view count);
 void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst& inst, std::string_view base,
                           std::string_view offset, std::string_view count);
-void EmitBitReverse32(EmitContext& ctx, std::string_view value);
-void EmitBitCount32(EmitContext& ctx, std::string_view value);
-void EmitBitwiseNot32(EmitContext& ctx, std::string_view value);
-void EmitFindSMsb32(EmitContext& ctx, std::string_view value);
-void EmitFindUMsb32(EmitContext& ctx, std::string_view value);
-void EmitSMin32(EmitContext& ctx, std::string_view a, std::string_view b);
-void EmitUMin32(EmitContext& ctx, std::string_view a, std::string_view b);
-void EmitSMax32(EmitContext& ctx, std::string_view a, std::string_view b);
-void EmitUMax32(EmitContext& ctx, std::string_view a, std::string_view b);
+void EmitBitReverse32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
+void EmitBitCount32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
+void EmitBitwiseNot32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
+void EmitFindSMsb32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
+void EmitFindUMsb32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
+void EmitSMin32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
+void EmitUMin32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
+void EmitSMax32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
+void EmitUMax32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b);
 void EmitSClamp32(EmitContext& ctx, IR::Inst& inst, std::string_view value, std::string_view min,
                   std::string_view max);
 void EmitUClamp32(EmitContext& ctx, IR::Inst& inst, std::string_view value, std::string_view min,
                   std::string_view max);
-void EmitSLessThan(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
-void EmitULessThan(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
-void EmitIEqual(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
-void EmitSLessThanEqual(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
-void EmitULessThanEqual(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
-void EmitSGreaterThan(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
-void EmitUGreaterThan(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
-void EmitINotEqual(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
-void EmitSGreaterThanEqual(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
-void EmitUGreaterThanEqual(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
+void EmitSLessThan(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs);
+void EmitULessThan(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs);
+void EmitIEqual(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs);
+void EmitSLessThanEqual(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
+                        std::string_view rhs);
+void EmitULessThanEqual(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
+                        std::string_view rhs);
+void EmitSGreaterThan(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs);
+void EmitUGreaterThan(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs);
+void EmitINotEqual(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs);
+void EmitSGreaterThanEqual(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
+                           std::string_view rhs);
+void EmitUGreaterThanEqual(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
+                           std::string_view rhs);
 void EmitSharedAtomicIAdd32(EmitContext& ctx, std::string_view pointer_offset,
                             std::string_view value);
 void EmitSharedAtomicSMin32(EmitContext& ctx, std::string_view pointer_offset,

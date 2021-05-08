@@ -413,46 +413,6 @@ void EmitCompositeInsertF64x4(EmitContext& ctx, std::string_view composite, std:
     NotImplemented();
 }
 
-void EmitSelectU1(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                  std::string_view false_value) {
-    NotImplemented();
-}
-
-void EmitSelectU8(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                  std::string_view false_value) {
-    NotImplemented();
-}
-
-void EmitSelectU16(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                   std::string_view false_value) {
-    NotImplemented();
-}
-
-void EmitSelectU32(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                   std::string_view false_value) {
-    NotImplemented();
-}
-
-void EmitSelectU64(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                   std::string_view false_value) {
-    NotImplemented();
-}
-
-void EmitSelectF16(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                   std::string_view false_value) {
-    NotImplemented();
-}
-
-void EmitSelectF32(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                   std::string_view false_value) {
-    NotImplemented();
-}
-
-void EmitSelectF64(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                   std::string_view false_value) {
-    NotImplemented();
-}
-
 void EmitPackUint2x32(EmitContext& ctx, std::string_view value) {
     NotImplemented();
 }
