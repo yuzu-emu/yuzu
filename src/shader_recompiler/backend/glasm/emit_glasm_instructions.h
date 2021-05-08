@@ -214,8 +214,8 @@ void EmitSelectU64(EmitContext& ctx, std::string_view cond, std::string_view tru
                    std::string_view false_value);
 void EmitSelectF16(EmitContext& ctx, std::string_view cond, std::string_view true_value,
                    std::string_view false_value);
-void EmitSelectF32(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                   std::string_view false_value);
+void EmitSelectF32(EmitContext& ctx, IR::Inst& inst, std::string_view cond,
+                   std::string_view true_value, std::string_view false_value);
 void EmitSelectF64(EmitContext& ctx, std::string_view cond, std::string_view true_value,
                    std::string_view false_value);
 void EmitBitCastU16F16(EmitContext& ctx, IR::Inst& inst, const IR::Value& value);

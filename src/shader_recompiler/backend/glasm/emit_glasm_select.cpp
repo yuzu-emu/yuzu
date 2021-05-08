@@ -24,12 +24,7 @@ void EmitSelectU16(EmitContext&, std::string_view, std::string_view, std::string
 
 void EmitSelectU32(EmitContext& ctx, IR::Inst& inst, std::string_view cond,
                    std::string_view true_value, std::string_view false_value) {
-    ctx.Add("MOV.U.CC RC,{};", cond);
-    ctx.Add("IF NE.x;");
-    ctx.Add("MOV.U {},{};", inst, true_value);
-    ctx.Add("ELSE;");
-    ctx.Add("MOV.U {},{};", inst, false_value);
-    ctx.Add("ENDIF;");
+    ctx.Add("CMP.S {},{},{},{};", inst, cond, true_value, false_value);
 }
 
 void EmitSelectU64(EmitContext&, std::string_view, std::string_view, std::string_view) {
@@ -40,8 +35,9 @@ void EmitSelectF16(EmitContext&, std::string_view, std::string_view, std::string
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitSelectF32(EmitContext&, std::string_view, std::string_view, std::string_view) {
-    throw NotImplementedException("GLASM instruction");
+void EmitSelectF32(EmitContext& ctx, IR::Inst& inst, std::string_view cond,
+                   std::string_view true_value, std::string_view false_value) {
+    ctx.Add("CMP.S {},{},{},{};", inst, cond, true_value, false_value);
 }
 
 void EmitSelectF64(EmitContext&, std::string_view, std::string_view, std::string_view) {
