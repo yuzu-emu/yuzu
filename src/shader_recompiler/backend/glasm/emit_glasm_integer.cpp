@@ -12,7 +12,7 @@ namespace Shader::Backend::GLASM {
 
 void EmitIAdd32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    ctx.Add("ADD {},{},{};", inst, a, b);
+    ctx.Add("ADD.U {},{},{};", inst, a, b);
 }
 
 void EmitIAdd64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -22,7 +22,7 @@ void EmitIAdd64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& in
 
 void EmitISub32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    ctx.Add("SUB {},{},{};", inst, a, b);
+    ctx.Add("SUB.U {},{},{};", inst, a, b);
 }
 
 void EmitISub64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
