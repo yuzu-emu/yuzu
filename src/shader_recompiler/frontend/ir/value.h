@@ -224,6 +224,12 @@ public:
         --use_count;
     }
 
+    /// Destructively add usages to the instruction
+    /// Useful for register allocation
+    void DestructiveAddUsage(int count) {
+        use_count += count;
+    }
+
 private:
     struct NonTriviallyDummy {
         NonTriviallyDummy() noexcept {}

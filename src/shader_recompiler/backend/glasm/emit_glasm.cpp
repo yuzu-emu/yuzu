@@ -50,7 +50,7 @@ template <auto func, bool is_first_arg_inst, size_t... I>
 void Invoke(EmitContext& ctx, IR::Inst* inst, std::index_sequence<I...>) {
     using Traits = FuncTraits<decltype(func)>;
     if constexpr (is_first_arg_inst) {
-        func(ctx, inst, Arg<typename Traits::template ArgType<I + 2>>(ctx, inst->Arg(I))...);
+        func(ctx, *inst, Arg<typename Traits::template ArgType<I + 2>>(ctx, inst->Arg(I))...);
     } else {
         func(ctx, Arg<typename Traits::template ArgType<I + 1>>(ctx, inst->Arg(I))...);
     }
@@ -64,7 +64,7 @@ void Invoke(EmitContext& ctx, IR::Inst* inst) {
         Invoke<func, false>(ctx, inst, std::make_index_sequence<0>{});
     } else {
         using FirstArgType = typename Traits::template ArgType<1>;
-        static constexpr bool is_first_arg_inst = std::is_same_v<FirstArgType, IR::Inst*>;
+        static constexpr bool is_first_arg_inst = std::is_same_v<FirstArgType, IR::Inst&>;
         using Indices = std::make_index_sequence<Traits::NUM_ARGS - (is_first_arg_inst ? 2 : 1)>;
         Invoke<func, is_first_arg_inst>(ctx, inst, Indices{});
     }
@@ -80,16 +80,76 @@ void EmitInst(EmitContext& ctx, IR::Inst* inst) {
     }
     throw LogicError("Invalid opcode {}", inst->GetOpcode());
 }
+
+void Identity(IR::Inst& inst, const IR::Value& value) {
+    if (value.IsImmediate()) {
+        return;
+    }
+    IR::Inst* const value_inst{value.InstRecursive()};
+    if (inst.GetOpcode() == IR::Opcode::Identity) {
+        value_inst->DestructiveAddUsage(inst.UseCount());
+        value_inst->DestructiveRemoveUsage();
+    }
+    inst.SetDefinition(value_inst->Definition<Id>());
+}
 } // Anonymous namespace
 
 std::string EmitGLASM(const Profile&, IR::Program& program, Bindings&) {
-    EmitContext ctx;
+    EmitContext ctx{program};
     for (IR::Block* const block : program.blocks) {
         for (IR::Inst& inst : block->Instructions()) {
             EmitInst(ctx, &inst);
         }
     }
+    std::string header = "!!NVcp5.0\n"
+                         "OPTION NV_internal;";
+    switch (program.stage) {
+    case Stage::Compute:
+        header += fmt::format("GROUP_SIZE {} {} {};", program.workgroup_size[0],
+                              program.workgroup_size[1], program.workgroup_size[2]);
+        break;
+    default:
+        break;
+    }
+    header += "TEMP ";
+    for (size_t index = 0; index < ctx.reg_alloc.NumUsedRegisters(); ++index) {
+        header += fmt::format("R{},", index);
+    }
+    header += "RC;";
+    if (!program.info.storage_buffers_descriptors.empty()) {
+        header += "LONG TEMP LC;";
+    }
+    ctx.code.insert(0, header);
+    ctx.code += "END";
     return ctx.code;
+}
+
+void EmitIdentity(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
+    Identity(inst, value);
+}
+
+void EmitBitCastU16F16(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
+    Identity(inst, value);
+}
+
+void EmitBitCastU32F32(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
+    Identity(inst, value);
+}
+
+void EmitBitCastU64F64(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
+    Identity(inst, value);
+}
+
+void EmitBitCastF16U16(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
+    Identity(inst, value);
+}
+
+void EmitBitCastF32U32(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
+    Identity(inst, value);
+}
+
+void EmitBitCastF64U64(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
+    Identity(inst, value);
 }
 
 } // namespace Shader::Backend::GLASM
