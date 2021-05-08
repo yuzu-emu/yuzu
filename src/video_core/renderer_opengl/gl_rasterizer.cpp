@@ -473,6 +473,14 @@ void RasterizerOpenGL::FlushCommands() {
         return;
     }
     num_queued_commands = 0;
+
+    // Make sure memory stored from the previous GL command stream is visible
+    // This is only needed on assembly shaders where we write to GPU memory with raw pointers
+    // TODO: Call this only when NV_shader_buffer_load or NV_shader_buffer_store have been used
+    //       and prefer using NV_shader_storage_buffer_object when possible
+    if (Settings::values.use_assembly_shaders.GetValue()) {
+        glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
+    }
     glFlush();
 }
 
