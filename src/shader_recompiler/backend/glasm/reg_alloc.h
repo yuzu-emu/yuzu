@@ -6,6 +6,7 @@
 
 #include <bitset>
 
+#include "common/bit_field.h"
 #include "common/common_types.h"
 
 namespace Shader::IR {
@@ -18,9 +19,12 @@ namespace Shader::Backend::GLASM {
 class EmitContext;
 
 struct Id {
-    u32 index : 30;
-    u32 is_spill : 1;
-    u32 is_condition_code : 1;
+    union {
+        u32 raw;
+        BitField<0, 30, u32> index;
+        BitField<30, 1, u32> is_spill;
+        BitField<31, 1, u32> is_condition_code;
+    };
 };
 
 class RegAlloc {

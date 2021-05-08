@@ -68,11 +68,11 @@ Id RegAlloc::Alloc() {
         }
         num_used_registers = std::max(num_used_registers, reg + 1);
         register_use[reg] = true;
-        return Id{
-            .index = static_cast<u32>(reg),
-            .is_spill = 0,
-            .is_condition_code = 0,
-        };
+        Id ret{};
+        ret.index.Assign(static_cast<u32>(reg));
+        ret.is_spill.Assign(0);
+        ret.is_condition_code.Assign(0);
+        return ret;
     }
     throw NotImplementedException("Register spilling");
 }
