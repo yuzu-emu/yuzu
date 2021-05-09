@@ -30,16 +30,16 @@ void EmitIMul32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
     ctx.Add("MUL.S {}.x,{},{};", inst, a, b);
 }
 
-void EmitINeg32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitINeg32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value) {
+    ctx.Add("MOV.S {},-{};", inst, value);
 }
 
 void EmitINeg64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitIAbs32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitIAbs32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value) {
+    ctx.Add("ABS.S {},{};", inst, value);
 }
 
 void EmitIAbs64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
@@ -55,9 +55,8 @@ void EmitShiftLeftLogical64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] 
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitShiftRightLogical32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 base,
-                             [[maybe_unused]] ScalarU32 shift) {
-    throw NotImplementedException("GLASM instruction");
+void EmitShiftRightLogical32(EmitContext& ctx, IR::Inst& inst, ScalarU32 base, ScalarU32 shift) {
+    ctx.Add("SHR.U {}.x,{},{};", inst, base, shift);
 }
 
 void EmitShiftRightLogical64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register base,
@@ -65,9 +64,8 @@ void EmitShiftRightLogical64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]]
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitShiftRightArithmetic32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 base,
-                                [[maybe_unused]] ScalarS32 shift) {
-    throw NotImplementedException("GLASM instruction");
+void EmitShiftRightArithmetic32(EmitContext& ctx, IR::Inst& inst, ScalarS32 base, ScalarS32 shift) {
+    ctx.Add("SHR.S {}.x,{},{};", inst, base, shift);
 }
 
 void EmitShiftRightArithmetic64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register base,
@@ -109,52 +107,48 @@ void EmitBitReverse32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value) {
     ctx.Add("BFR {},{};", inst, value);
 }
 
-void EmitBitCount32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitBitCount32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value) {
+    ctx.Add("BTC {},{};", inst, value);
 }
 
 void EmitBitwiseNot32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value) {
     ctx.Add("NOT.S {},{};", inst, value);
 }
 
-void EmitFindSMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFindSMsb32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value) {
+    ctx.Add("BTFM.S {},{};", inst, value);
 }
 
-void EmitFindUMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFindUMsb32(EmitContext& ctx, IR::Inst& inst, ScalarU32 value) {
+    ctx.Add("BTFM.U {},{};", inst, value);
 }
 
-void EmitSMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 a,
-                [[maybe_unused]] ScalarS32 b) {
-    throw NotImplementedException("GLASM instruction");
+void EmitSMin32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
+    ctx.Add("MIN.S {},{},{};", inst, a, b);
 }
 
-void EmitUMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 a,
-                [[maybe_unused]] ScalarU32 b) {
-    throw NotImplementedException("GLASM instruction");
+void EmitUMin32(EmitContext& ctx, IR::Inst& inst, ScalarU32 a, ScalarU32 b) {
+    ctx.Add("MIN.U {},{},{};", inst, a, b);
 }
 
-void EmitSMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 a,
-                [[maybe_unused]] ScalarS32 b) {
-    throw NotImplementedException("GLASM instruction");
+void EmitSMax32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
+    ctx.Add("MAX.S {},{},{};", inst, a, b);
 }
 
-void EmitUMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 a,
-                [[maybe_unused]] ScalarU32 b) {
-    throw NotImplementedException("GLASM instruction");
+void EmitUMax32(EmitContext& ctx, IR::Inst& inst, ScalarU32 a, ScalarU32 b) {
+    ctx.Add("MAX.U {},{},{};", inst, a, b);
 }
 
-void EmitSClamp32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                  [[maybe_unused]] ScalarS32 value, [[maybe_unused]] ScalarS32 min,
-                  [[maybe_unused]] ScalarS32 max) {
-    throw NotImplementedException("GLASM instruction");
+void EmitSClamp32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value, ScalarS32 min, ScalarS32 max) {
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    ctx.Add("MIN.S  {}.x,{},{};", ret, max, value);
+    ctx.Add("MAX.S  {}.x,{},{};", ret, ret, min);
 }
 
-void EmitUClamp32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                  [[maybe_unused]] ScalarU32 value, [[maybe_unused]] ScalarU32 min,
-                  [[maybe_unused]] ScalarU32 max) {
-    throw NotImplementedException("GLASM instruction");
+void EmitUClamp32(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU32 min, ScalarU32 max) {
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    ctx.Add("MIN.U  {}.x,{},{};", ret, max, value);
+    ctx.Add("MAX.U  {}.x,{},{};", ret, ret, min);
 }
 
 void EmitSLessThan(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs) {
