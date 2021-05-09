@@ -72,4 +72,12 @@ void EmitUnpackHalf2x16(EmitContext& ctx, IR::Inst& inst, Register value) {
     ctx.Add("UP2H {}.xy,{}.x;", inst, value);
 }
 
+void EmitPackDouble2x32(EmitContext& ctx, IR::Inst& inst, Register value) {
+    ctx.LongAdd("PK64 {}.x,{};", inst, value);
+}
+
+void EmitUnpackDouble2x32(EmitContext& ctx, IR::Inst& inst, Register value) {
+    ctx.Add("UP64 {}.xy,{}.x;", inst, value);
+}
+
 } // namespace Shader::Backend::GLASM

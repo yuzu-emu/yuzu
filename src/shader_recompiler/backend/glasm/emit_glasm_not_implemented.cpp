@@ -281,14 +281,6 @@ void EmitSelectF64(EmitContext& ctx, ScalarS32 cond, Register true_value, Regist
     NotImplemented();
 }
 
-void EmitPackDouble2x32(EmitContext& ctx, Register value) {
-    NotImplemented();
-}
-
-void EmitUnpackDouble2x32(EmitContext& ctx, Register value) {
-    NotImplemented();
-}
-
 void EmitGetZeroFromOp(EmitContext& ctx) {
     NotImplemented();
 }

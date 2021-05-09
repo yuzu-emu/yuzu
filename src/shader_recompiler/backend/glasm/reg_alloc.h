@@ -27,12 +27,14 @@ enum class Type : u32 {
     U32,
     S32,
     F32,
+    F64,
 };
 
 struct Id {
     union {
         u32 raw;
-        BitField<0, 30, u32> index;
+        BitField<0, 29, u32> index;
+        BitField<29, 1, u32> is_long;
         BitField<30, 1, u32> is_spill;
         BitField<31, 1, u32> is_condition_code;
     };
@@ -53,6 +55,7 @@ struct Value {
         u32 imm_u32;
         s32 imm_s32;
         f32 imm_f32;
+        f64 imm_f64;
     };
 
     bool operator==(const Value& rhs) const noexcept {
@@ -68,6 +71,8 @@ struct Value {
             return imm_s32 == rhs.imm_s32;
         case Type::F32:
             return Common::BitCast<u32>(imm_f32) == Common::BitCast<u32>(rhs.imm_f32);
+        case Type::F64:
+            return Common::BitCast<u64>(imm_f64) == Common::BitCast<u64>(rhs.imm_f64);
         }
         return false;
     }
@@ -80,6 +85,7 @@ struct ScalarRegister : Value {};
 struct ScalarU32 : Value {};
 struct ScalarS32 : Value {};
 struct ScalarF32 : Value {};
+struct ScalarF64 : Value {};
 
 class RegAlloc {
 public:
@@ -87,9 +93,13 @@ public:
 
     Register Define(IR::Inst& inst);
 
+    Register LongDefine(IR::Inst& inst);
+
     Value Consume(const IR::Value& value);
 
-    Register AllocReg();
+    [[nodiscard]] Register AllocReg();
+
+    [[nodiscard]] Register AllocLongReg();
 
     void FreeReg(Register reg);
 
@@ -97,19 +107,27 @@ public:
         return num_used_registers;
     }
 
+    [[nodiscard]] size_t NumUsedLongRegisters() const noexcept {
+        return num_used_long_registers;
+    }
+
 private:
     static constexpr size_t NUM_REGS = 4096;
     static constexpr size_t NUM_ELEMENTS = 4;
 
+    Register Define(IR::Inst& inst, bool is_long);
+
     Value Consume(IR::Inst& inst);
 
-    Id Alloc();
+    Id Alloc(bool is_long);
 
     void Free(Id id);
 
     EmitContext& ctx;
     size_t num_used_registers{};
+    size_t num_used_long_registers{};
     std::bitset<NUM_REGS> register_use{};
+    std::bitset<NUM_REGS> long_register_use{};
 };
 
 template <bool scalar, typename FormatContext>
@@ -121,9 +139,17 @@ auto FormatTo(FormatContext& ctx, Id id) {
         throw NotImplementedException("Spill emission");
     }
     if constexpr (scalar) {
-        return fmt::format_to(ctx.out(), "R{}.x", id.index.Value());
+        if (id.is_long != 0) {
+            return fmt::format_to(ctx.out(), "D{}.x", id.index.Value());
+        } else {
+            return fmt::format_to(ctx.out(), "R{}.x", id.index.Value());
+        }
     } else {
-        return fmt::format_to(ctx.out(), "R{}", id.index.Value());
+        if (id.is_long != 0) {
+            return fmt::format_to(ctx.out(), "D{}", id.index.Value());
+        } else {
+            return fmt::format_to(ctx.out(), "R{}", id.index.Value());
+        }
     }
 }
 
@@ -184,6 +210,8 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarU32> {
             return fmt::format_to(ctx.out(), "{}", static_cast<u32>(value.imm_s32));
         case Shader::Backend::GLASM::Type::F32:
             return fmt::format_to(ctx.out(), "{}", Common::BitCast<u32>(value.imm_f32));
+        case Shader::Backend::GLASM::Type::F64:
+            break;
         }
         throw Shader::InvalidArgument("Invalid value type {}", value.type);
     }
@@ -205,6 +233,8 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarS32> {
             return fmt::format_to(ctx.out(), "{}", value.imm_s32);
         case Shader::Backend::GLASM::Type::F32:
             return fmt::format_to(ctx.out(), "{}", Common::BitCast<s32>(value.imm_f32));
+        case Shader::Backend::GLASM::Type::F64:
+            break;
         }
         throw Shader::InvalidArgument("Invalid value type {}", value.type);
     }
@@ -226,6 +256,29 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarF32> {
             return fmt::format_to(ctx.out(), "{}", Common::BitCast<s32>(value.imm_s32));
         case Shader::Backend::GLASM::Type::F32:
             return fmt::format_to(ctx.out(), "{}", value.imm_f32);
+        case Shader::Backend::GLASM::Type::F64:
+            break;
+        }
+        throw Shader::InvalidArgument("Invalid value type {}", value.type);
+    }
+};
+
+template <>
+struct fmt::formatter<Shader::Backend::GLASM::ScalarF64> {
+    constexpr auto parse(format_parse_context& ctx) {
+        return ctx.begin();
+    }
+    template <typename FormatContext>
+    auto format(const Shader::Backend::GLASM::ScalarF64& value, FormatContext& ctx) {
+        switch (value.type) {
+        case Shader::Backend::GLASM::Type::Register:
+            return Shader::Backend::GLASM::FormatTo<true>(ctx, value.id);
+        case Shader::Backend::GLASM::Type::U32:
+        case Shader::Backend::GLASM::Type::S32:
+        case Shader::Backend::GLASM::Type::F32:
+            break;
+        case Shader::Backend::GLASM::Type::F64:
+            return format_to(ctx.out(), "{}", value.imm_f64);
         }
         throw Shader::InvalidArgument("Invalid value type {}", value.type);
     }
