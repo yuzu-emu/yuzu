@@ -42,7 +42,11 @@ template <bool scalar>
 struct RegWrapper {
     RegWrapper(EmitContext& ctx, Value value)
         : reg_alloc{ctx.reg_alloc}, allocated{value.type != Type::Register} {
-        reg = allocated ? reg_alloc.AllocReg() : Register{value};
+        if (allocated) {
+            reg = value.type == Type::F64 ? reg_alloc.AllocLongReg() : reg_alloc.AllocReg();
+        } else {
+            reg = Register{value};
+        }
         switch (value.type) {
         case Type::Register:
             break;
@@ -54,6 +58,9 @@ struct RegWrapper {
             break;
         case Type::F32:
             ctx.Add("MOV.F {}.x,{};", reg, value.imm_f32);
+            break;
+        case Type::F64:
+            ctx.Add("MOV.F64 {}.x,{};", reg, value.imm_f64);
             break;
         }
     }
@@ -162,10 +169,12 @@ std::string EmitGLASM(const Profile&, IR::Program& program, Bindings&) {
     for (size_t index = 0; index < ctx.reg_alloc.NumUsedRegisters(); ++index) {
         header += fmt::format("R{},", index);
     }
-    header += "RC;";
-    if (!program.info.storage_buffers_descriptors.empty()) {
-        header += "LONG TEMP LC;";
+    header += "RC;"
+              "LONG TEMP ";
+    for (size_t index = 0; index < ctx.reg_alloc.NumUsedLongRegisters(); ++index) {
+        header += fmt::format("D{},", index);
     }
+    header += "DC;";
     ctx.code.insert(0, header);
     ctx.code += "END";
     return ctx.code;

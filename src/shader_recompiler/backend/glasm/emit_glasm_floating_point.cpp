@@ -10,7 +10,8 @@
 
 namespace Shader::Backend::GLASM {
 
-void EmitFPAbs16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
+void EmitFPAbs16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                 [[maybe_unused]] Register value) {
     throw NotImplementedException("GLASM instruction");
 }
 
@@ -18,8 +19,8 @@ void EmitFPAbs32(EmitContext& ctx, IR::Inst& inst, ScalarF32 value) {
     ctx.Add("MOV.F {}.x,|{}|;", inst, value);
 }
 
-void EmitFPAbs64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPAbs64(EmitContext& ctx, IR::Inst& inst, ScalarF64 value) {
+    ctx.LongAdd("MOV.F64 {}.x,|{}|;", inst, value);
 }
 
 void EmitFPAdd16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -31,9 +32,8 @@ void EmitFPAdd32(EmitContext& ctx, IR::Inst& inst, ScalarF32 a, ScalarF32 b) {
     ctx.Add("ADD.F {}.x,{},{};", inst, a, b);
 }
 
-void EmitFPAdd64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                 [[maybe_unused]] Register a, [[maybe_unused]] Register b) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPAdd64(EmitContext& ctx, IR::Inst& inst, ScalarF64 a, ScalarF64 b) {
+    ctx.LongAdd("ADD.F64 {}.x,{},{};", inst, a, b);
 }
 
 void EmitFPFma16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -94,8 +94,8 @@ void EmitFPNeg32(EmitContext& ctx, IR::Inst& inst, ScalarRegister value) {
     ctx.Add("MOV.F {}.x,-{};", inst, value);
 }
 
-void EmitFPNeg64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPNeg64(EmitContext& ctx, IR::Inst& inst, Register value) {
+    ctx.LongAdd("MOV.F64 {}.x,-{};", inst, value);
 }
 
 void EmitFPSin([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {

@@ -17,9 +17,9 @@ void StorageOp(EmitContext& ctx, const IR::Value& binding, ScalarU32 offset,
     // address = c[binding].xy
     // length  = c[binding].z
     const u32 sb_binding{binding.U32()};
-    ctx.Add("PK64.U LC,c[{}];"           // pointer = address
-            "CVT.U64.U32 LC.z,{};"       // offset = uint64_t(offset)
-            "ADD.U64 LC.x,LC.x,LC.z;"    // pointer += offset
+    ctx.Add("PK64.U DC,c[{}];"           // pointer = address
+            "CVT.U64.U32 DC.z,{};"       // offset = uint64_t(offset)
+            "ADD.U64 DC.x,DC.x,DC.z;"    // pointer += offset
             "SLT.U.CC RC.x,{},c[{}].z;", // cc = offset < length
             sb_binding, offset, offset, sb_binding);
     if (else_expr.empty()) {
@@ -32,13 +32,13 @@ void StorageOp(EmitContext& ctx, const IR::Value& binding, ScalarU32 offset,
 template <typename ValueType>
 void Store(EmitContext& ctx, const IR::Value& binding, ScalarU32 offset, ValueType value,
            std::string_view size) {
-    StorageOp(ctx, binding, offset, fmt::format("STORE.{} {},LC.x;", size, value));
+    StorageOp(ctx, binding, offset, fmt::format("STORE.{} {},DC.x;", size, value));
 }
 
 void Load(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU32 offset,
           std::string_view size) {
     const Register ret{ctx.reg_alloc.Define(inst)};
-    StorageOp(ctx, binding, offset, fmt::format("STORE.{} {},LC.x;", size, ret),
+    StorageOp(ctx, binding, offset, fmt::format("STORE.{} {},DC.x;", size, ret),
               fmt::format("MOV.U {},{{0,0,0,0}};", ret));
 }
 } // Anonymous namespace
