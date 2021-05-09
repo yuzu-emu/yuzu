@@ -281,30 +281,6 @@ void EmitSelectF64(EmitContext& ctx, ScalarS32 cond, Register true_value, Regist
     NotImplemented();
 }
 
-void EmitPackUint2x32(EmitContext& ctx, Register value) {
-    NotImplemented();
-}
-
-void EmitUnpackUint2x32(EmitContext& ctx, Register value) {
-    NotImplemented();
-}
-
-void EmitPackFloat2x16(EmitContext& ctx, Register value) {
-    NotImplemented();
-}
-
-void EmitUnpackFloat2x16(EmitContext& ctx, Register value) {
-    NotImplemented();
-}
-
-void EmitPackHalf2x16(EmitContext& ctx, Register value) {
-    NotImplemented();
-}
-
-void EmitUnpackHalf2x16(EmitContext& ctx, Register value) {
-    NotImplemented();
-}
-
 void EmitPackDouble2x32(EmitContext& ctx, Register value) {
     NotImplemented();
 }
