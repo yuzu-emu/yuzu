@@ -158,16 +158,21 @@ void EmitCompositeExtractF16x4(EmitContext& ctx, Register composite, u32 index);
 void EmitCompositeInsertF16x2(EmitContext& ctx, Register composite, Register object, u32 index);
 void EmitCompositeInsertF16x3(EmitContext& ctx, Register composite, Register object, u32 index);
 void EmitCompositeInsertF16x4(EmitContext& ctx, Register composite, Register object, u32 index);
-void EmitCompositeConstructF32x2(EmitContext& ctx, ScalarF32 e1, ScalarF32 e2);
-void EmitCompositeConstructF32x3(EmitContext& ctx, ScalarF32 e1, ScalarF32 e2, ScalarF32 e3);
-void EmitCompositeConstructF32x4(EmitContext& ctx, ScalarF32 e1, ScalarF32 e2, ScalarF32 e3,
-                                 ScalarF32 e4);
-void EmitCompositeExtractF32x2(EmitContext& ctx, Register composite, u32 index);
-void EmitCompositeExtractF32x3(EmitContext& ctx, Register composite, u32 index);
-void EmitCompositeExtractF32x4(EmitContext& ctx, Register composite, u32 index);
-void EmitCompositeInsertF32x2(EmitContext& ctx, Register composite, ScalarF32 object, u32 index);
-void EmitCompositeInsertF32x3(EmitContext& ctx, Register composite, ScalarF32 object, u32 index);
-void EmitCompositeInsertF32x4(EmitContext& ctx, Register composite, ScalarF32 object, u32 index);
+void EmitCompositeConstructF32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& e1,
+                                 const IR::Value& e2);
+void EmitCompositeConstructF32x3(EmitContext& ctx, IR::Inst& inst, const IR::Value& e1,
+                                 const IR::Value& e2, const IR::Value& e3);
+void EmitCompositeConstructF32x4(EmitContext& ctx, IR::Inst& inst, const IR::Value& e1,
+                                 const IR::Value& e2, const IR::Value& e3, const IR::Value& e4);
+void EmitCompositeExtractF32x2(EmitContext& ctx, IR::Inst& inst, Register composite, u32 index);
+void EmitCompositeExtractF32x3(EmitContext& ctx, IR::Inst& inst, Register composite, u32 index);
+void EmitCompositeExtractF32x4(EmitContext& ctx, IR::Inst& inst, Register composite, u32 index);
+void EmitCompositeInsertF32x2(EmitContext& ctx, IR::Inst& inst, Register composite,
+                              ScalarF32 object, u32 index);
+void EmitCompositeInsertF32x3(EmitContext& ctx, IR::Inst& inst, Register composite,
+                              ScalarF32 object, u32 index);
+void EmitCompositeInsertF32x4(EmitContext& ctx, IR::Inst& inst, Register composite,
+                              ScalarF32 object, u32 index);
 void EmitCompositeConstructF64x2(EmitContext& ctx);
 void EmitCompositeConstructF64x3(EmitContext& ctx);
 void EmitCompositeConstructF64x4(EmitContext& ctx);
