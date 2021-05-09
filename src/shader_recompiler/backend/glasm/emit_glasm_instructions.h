@@ -185,10 +185,12 @@ void EmitCompositeInsertF64x4(EmitContext& ctx, Register composite, Register obj
 void EmitSelectU1(EmitContext& ctx, ScalarS32 cond, ScalarS32 true_value, ScalarS32 false_value);
 void EmitSelectU8(EmitContext& ctx, ScalarS32 cond, ScalarS32 true_value, ScalarS32 false_value);
 void EmitSelectU16(EmitContext& ctx, ScalarS32 cond, ScalarS32 true_value, ScalarS32 false_value);
-void EmitSelectU32(EmitContext& ctx, ScalarS32 cond, ScalarS32 true_value, ScalarS32 false_value);
+void EmitSelectU32(EmitContext& ctx, IR::Inst& inst, ScalarS32 cond, ScalarS32 true_value,
+                   ScalarS32 false_value);
 void EmitSelectU64(EmitContext& ctx, ScalarS32 cond, Register true_value, Register false_value);
 void EmitSelectF16(EmitContext& ctx, ScalarS32 cond, Register true_value, Register false_value);
-void EmitSelectF32(EmitContext& ctx, ScalarS32 cond, ScalarS32 true_value, ScalarS32 false_value);
+void EmitSelectF32(EmitContext& ctx, IR::Inst& inst, ScalarS32 cond, ScalarS32 true_value,
+                   ScalarS32 false_value);
 void EmitSelectF64(EmitContext& ctx, ScalarS32 cond, Register true_value, Register false_value);
 void EmitBitCastU16F16(EmitContext& ctx, IR::Inst& inst, const IR::Value& value);
 void EmitBitCastU32F32(EmitContext& ctx, IR::Inst& inst, const IR::Value& value);
@@ -313,15 +315,15 @@ void EmitShiftRightArithmetic64(EmitContext& ctx, Register base, Register shift)
 void EmitBitwiseAnd32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b);
 void EmitBitwiseOr32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b);
 void EmitBitwiseXor32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b);
-void EmitBitFieldInsert(EmitContext& ctx, ScalarS32 base, ScalarS32 insert, ScalarS32 offset,
-                        ScalarS32 count);
+void EmitBitFieldInsert(EmitContext& ctx, IR::Inst& inst, ScalarS32 base, ScalarS32 insert,
+                        ScalarS32 offset, ScalarS32 count);
 void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst& inst, ScalarS32 base, ScalarS32 offset,
                           ScalarS32 count);
 void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst& inst, ScalarU32 base, ScalarU32 offset,
                           ScalarU32 count);
-void EmitBitReverse32(EmitContext& ctx, ScalarS32 value);
+void EmitBitReverse32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value);
 void EmitBitCount32(EmitContext& ctx, ScalarS32 value);
-void EmitBitwiseNot32(EmitContext& ctx, ScalarS32 value);
+void EmitBitwiseNot32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value);
 void EmitFindSMsb32(EmitContext& ctx, ScalarS32 value);
 void EmitFindUMsb32(EmitContext& ctx, ScalarU32 value);
 void EmitSMin32(EmitContext& ctx, ScalarS32 a, ScalarS32 b);
@@ -330,16 +332,16 @@ void EmitSMax32(EmitContext& ctx, ScalarS32 a, ScalarS32 b);
 void EmitUMax32(EmitContext& ctx, ScalarU32 a, ScalarU32 b);
 void EmitSClamp32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value, ScalarS32 min, ScalarS32 max);
 void EmitUClamp32(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU32 min, ScalarU32 max);
-void EmitSLessThan(EmitContext& ctx, ScalarS32 lhs, ScalarS32 rhs);
-void EmitULessThan(EmitContext& ctx, ScalarU32 lhs, ScalarU32 rhs);
-void EmitIEqual(EmitContext& ctx, ScalarS32 lhs, ScalarS32 rhs);
-void EmitSLessThanEqual(EmitContext& ctx, ScalarS32 lhs, ScalarS32 rhs);
-void EmitULessThanEqual(EmitContext& ctx, ScalarU32 lhs, ScalarU32 rhs);
-void EmitSGreaterThan(EmitContext& ctx, ScalarS32 lhs, ScalarS32 rhs);
-void EmitUGreaterThan(EmitContext& ctx, ScalarU32 lhs, ScalarU32 rhs);
-void EmitINotEqual(EmitContext& ctx, ScalarS32 lhs, ScalarS32 rhs);
-void EmitSGreaterThanEqual(EmitContext& ctx, ScalarS32 lhs, ScalarS32 rhs);
-void EmitUGreaterThanEqual(EmitContext& ctx, ScalarU32 lhs, ScalarU32 rhs);
+void EmitSLessThan(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs);
+void EmitULessThan(EmitContext& ctx, IR::Inst& inst, ScalarU32 lhs, ScalarU32 rhs);
+void EmitIEqual(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs);
+void EmitSLessThanEqual(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs);
+void EmitULessThanEqual(EmitContext& ctx, IR::Inst& inst, ScalarU32 lhs, ScalarU32 rhs);
+void EmitSGreaterThan(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs);
+void EmitUGreaterThan(EmitContext& ctx, IR::Inst& inst, ScalarU32 lhs, ScalarU32 rhs);
+void EmitINotEqual(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs);
+void EmitSGreaterThanEqual(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs);
+void EmitUGreaterThanEqual(EmitContext& ctx, IR::Inst& inst, ScalarU32 lhs, ScalarU32 rhs);
 void EmitSharedAtomicIAdd32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value);
 void EmitSharedAtomicSMin32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarS32 value);
 void EmitSharedAtomicUMin32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value);

@@ -87,34 +87,34 @@ void EmitBitwiseXor32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b
     ctx.Add("XOR.S {}.x,{},{};", inst, a, b);
 }
 
-void EmitBitFieldInsert([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 base,
-                        [[maybe_unused]] ScalarS32 insert, [[maybe_unused]] ScalarS32 offset,
-                        [[maybe_unused]] ScalarS32 count) {
-    throw NotImplementedException("GLASM instruction");
+void EmitBitFieldInsert(EmitContext& ctx, IR::Inst& inst, ScalarS32 base, ScalarS32 insert,
+                        ScalarS32 offset, ScalarS32 count) {
+    ctx.Add("MOV.U RC.x,{};MOV.U RC.y,{};", count, offset);
+    ctx.Add("BFI.S {},RC,{},{};", inst, insert, base);
 }
 
-void EmitBitFieldSExtract([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                          [[maybe_unused]] ScalarS32 base, [[maybe_unused]] ScalarS32 offset,
-                          [[maybe_unused]] ScalarS32 count) {
-    throw NotImplementedException("GLASM instruction");
+void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst& inst, ScalarS32 base, ScalarS32 offset,
+                          ScalarS32 count) {
+    ctx.Add("MOV.U RC.x,{};MOV.U RC.y,{};", count, offset);
+    ctx.Add("BFE.S {},RC,{};", inst, base);
 }
 
-void EmitBitFieldUExtract([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                          [[maybe_unused]] ScalarU32 base, [[maybe_unused]] ScalarU32 offset,
-                          [[maybe_unused]] ScalarU32 count) {
-    throw NotImplementedException("GLASM instruction");
+void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst& inst, ScalarU32 base, ScalarU32 offset,
+                          ScalarU32 count) {
+    ctx.Add("MOV.U RC.x,{};MOV.U RC.y,{};", count, offset);
+    ctx.Add("BFE.U {},RC,{};", inst, base);
 }
 
-void EmitBitReverse32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitBitReverse32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value) {
+    ctx.Add("BFR {},{};", inst, value);
 }
 
 void EmitBitCount32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitBitwiseNot32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitBitwiseNot32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value) {
+    ctx.Add("NOT.S {},{};", inst, value);
 }
 
 void EmitFindSMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 value) {
@@ -157,54 +157,44 @@ void EmitUClamp32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& 
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitSLessThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 lhs,
-                   [[maybe_unused]] ScalarS32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitSLessThan(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs) {
+    ctx.Add("SLT.S {},{},{};", inst, lhs, rhs);
 }
 
-void EmitULessThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 lhs,
-                   [[maybe_unused]] ScalarU32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitULessThan(EmitContext& ctx, IR::Inst& inst, ScalarU32 lhs, ScalarU32 rhs) {
+    ctx.Add("SLT.U {},{},{};", inst, lhs, rhs);
 }
 
-void EmitIEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 lhs,
-                [[maybe_unused]] ScalarS32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitIEqual(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs) {
+    ctx.Add("SEQ.S {},{},{};", inst, lhs, rhs);
 }
 
-void EmitSLessThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 lhs,
-                        [[maybe_unused]] ScalarS32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitSLessThanEqual(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs) {
+    ctx.Add("SLE.S {},{},{};", inst, lhs, rhs);
 }
 
-void EmitULessThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 lhs,
-                        [[maybe_unused]] ScalarU32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitULessThanEqual(EmitContext& ctx, IR::Inst& inst, ScalarU32 lhs, ScalarU32 rhs) {
+    ctx.Add("SLE.U {},{},{};", inst, lhs, rhs);
 }
 
-void EmitSGreaterThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 lhs,
-                      [[maybe_unused]] ScalarS32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitSGreaterThan(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs) {
+    ctx.Add("SGT.S {},{},{};", inst, lhs, rhs);
 }
 
-void EmitUGreaterThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 lhs,
-                      [[maybe_unused]] ScalarU32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitUGreaterThan(EmitContext& ctx, IR::Inst& inst, ScalarU32 lhs, ScalarU32 rhs) {
+    ctx.Add("SGT.U {},{},{};", inst, lhs, rhs);
 }
 
-void EmitINotEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 lhs,
-                   [[maybe_unused]] ScalarS32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitINotEqual(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs) {
+    ctx.Add("SNE.U {},{},{};", inst, lhs, rhs);
 }
 
-void EmitSGreaterThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 lhs,
-                           [[maybe_unused]] ScalarS32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitSGreaterThanEqual(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs) {
+    ctx.Add("SGE.S {},{},{};", inst, lhs, rhs);
 }
 
-void EmitUGreaterThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 lhs,
-                           [[maybe_unused]] ScalarU32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitUGreaterThanEqual(EmitContext& ctx, IR::Inst& inst, ScalarU32 lhs, ScalarU32 rhs) {
+    ctx.Add("SGE.U {},{},{};", inst, lhs, rhs);
 }
 
 } // namespace Shader::Backend::GLASM

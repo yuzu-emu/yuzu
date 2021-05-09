@@ -249,35 +249,11 @@ void EmitWriteSharedU128(EmitContext& ctx, ScalarU32 offset, Register value) {
     NotImplemented();
 }
 
-void EmitSelectU1(EmitContext& ctx, ScalarS32 cond, ScalarS32 true_value, ScalarS32 false_value) {
+void EmitPackDouble2x32(EmitContext& ctx, Register value) {
     NotImplemented();
 }
 
-void EmitSelectU8(EmitContext& ctx, ScalarS32 cond, ScalarS32 true_value, ScalarS32 false_value) {
-    NotImplemented();
-}
-
-void EmitSelectU16(EmitContext& ctx, ScalarS32 cond, ScalarS32 true_value, ScalarS32 false_value) {
-    NotImplemented();
-}
-
-void EmitSelectU32(EmitContext& ctx, ScalarS32 cond, ScalarS32 true_value, ScalarS32 false_value) {
-    NotImplemented();
-}
-
-void EmitSelectU64(EmitContext& ctx, ScalarS32 cond, Register true_value, Register false_value) {
-    NotImplemented();
-}
-
-void EmitSelectF16(EmitContext& ctx, ScalarS32 cond, Register true_value, Register false_value) {
-    NotImplemented();
-}
-
-void EmitSelectF32(EmitContext& ctx, ScalarS32 cond, ScalarS32 true_value, ScalarS32 false_value) {
-    NotImplemented();
-}
-
-void EmitSelectF64(EmitContext& ctx, ScalarS32 cond, Register true_value, Register false_value) {
+void EmitUnpackDouble2x32(EmitContext& ctx, Register value) {
     NotImplemented();
 }
 
