@@ -136,7 +136,7 @@ struct fmt::formatter<Shader::Backend::GLASM::Id> {
     }
     template <typename FormatContext>
     auto format(Shader::Backend::GLASM::Id id, FormatContext& ctx) {
-        return FormatTo<true>(ctx, id);
+        return Shader::Backend::GLASM::FormatTo<true>(ctx, id);
     }
 };
 
@@ -150,7 +150,7 @@ struct fmt::formatter<Shader::Backend::GLASM::Register> {
         if (value.type != Shader::Backend::GLASM::Type::Register) {
             throw Shader::InvalidArgument("Register value type is not register");
         }
-        return FormatTo<false>(ctx, value.id);
+        return Shader::Backend::GLASM::FormatTo<false>(ctx, value.id);
     }
 };
 
@@ -164,7 +164,7 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarRegister> {
         if (value.type != Shader::Backend::GLASM::Type::Register) {
             throw Shader::InvalidArgument("Register value type is not register");
         }
-        return FormatTo<true>(ctx, value.id);
+        return Shader::Backend::GLASM::FormatTo<true>(ctx, value.id);
     }
 };
 
@@ -177,7 +177,7 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarU32> {
     auto format(const Shader::Backend::GLASM::ScalarU32& value, FormatContext& ctx) {
         switch (value.type) {
         case Shader::Backend::GLASM::Type::Register:
-            return FormatTo<true>(ctx, value.id);
+            return Shader::Backend::GLASM::FormatTo<true>(ctx, value.id);
         case Shader::Backend::GLASM::Type::U32:
             return fmt::format_to(ctx.out(), "{}", value.imm_u32);
         case Shader::Backend::GLASM::Type::S32:
@@ -198,7 +198,7 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarS32> {
     auto format(const Shader::Backend::GLASM::ScalarS32& value, FormatContext& ctx) {
         switch (value.type) {
         case Shader::Backend::GLASM::Type::Register:
-            return FormatTo<true>(ctx, value.id);
+            return Shader::Backend::GLASM::FormatTo<true>(ctx, value.id);
         case Shader::Backend::GLASM::Type::U32:
             return fmt::format_to(ctx.out(), "{}", static_cast<s32>(value.imm_u32));
         case Shader::Backend::GLASM::Type::S32:
@@ -219,7 +219,7 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarF32> {
     auto format(const Shader::Backend::GLASM::ScalarF32& value, FormatContext& ctx) {
         switch (value.type) {
         case Shader::Backend::GLASM::Type::Register:
-            return FormatTo<true>(ctx, value.id);
+            return Shader::Backend::GLASM::FormatTo<true>(ctx, value.id);
         case Shader::Backend::GLASM::Type::U32:
             return fmt::format_to(ctx.out(), "{}", Common::BitCast<u32>(value.imm_u32));
         case Shader::Backend::GLASM::Type::S32:
