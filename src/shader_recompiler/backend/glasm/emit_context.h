@@ -23,15 +23,15 @@ public:
     explicit EmitContext(IR::Program& program);
 
     template <typename... Args>
-    void Add(const char* fmt, IR::Inst& inst, Args&&... args) {
-        code += fmt::format(fmt, reg_alloc.Define(inst), std::forward<Args>(args)...);
+    void Add(const char* format_str, IR::Inst& inst, Args&&... args) {
+        code += fmt::format(format_str, reg_alloc.Define(inst), std::forward<Args>(args)...);
         // TODO: Remove this
         code += '\n';
     }
 
     template <typename... Args>
-    void Add(const char* fmt, Args&&... args) {
-        code += fmt::format(fmt, std::forward<Args>(args)...);
+    void Add(const char* format_str, Args&&... args) {
+        code += fmt::format(format_str, std::forward<Args>(args)...);
         // TODO: Remove this
         code += '\n';
     }

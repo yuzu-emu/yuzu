@@ -10,64 +10,58 @@
 
 namespace Shader::Backend::GLASM {
 namespace {
-void GetCbuf(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, const IR::Value& offset,
+void GetCbuf(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU32 offset,
              std::string_view size) {
     if (!binding.IsImmediate()) {
         throw NotImplementedException("Indirect constant buffer loading");
     }
-    const std::string ret{ctx.reg_alloc.Define(inst)};
-    ctx.Add("LDC.{} {},c{}[{}];", size, ret, binding.U32(), ctx.reg_alloc.Consume(offset));
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    ctx.Add("LDC.{} {},c{}[{}];", size, ret, binding.U32(), offset);
 }
 } // Anonymous namespace
 
-void EmitGetCbufU8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
-                   const IR::Value& offset) {
+void EmitGetCbufU8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU32 offset) {
     GetCbuf(ctx, inst, binding, offset, "U8");
 }
 
-void EmitGetCbufS8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
-                   const IR::Value& offset) {
+void EmitGetCbufS8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU32 offset) {
     GetCbuf(ctx, inst, binding, offset, "S8");
 }
 
-void EmitGetCbufU16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
-                    const IR::Value& offset) {
+void EmitGetCbufU16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU32 offset) {
     GetCbuf(ctx, inst, binding, offset, "U16");
 }
 
-void EmitGetCbufS16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
-                    const IR::Value& offset) {
+void EmitGetCbufS16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU32 offset) {
     GetCbuf(ctx, inst, binding, offset, "S16");
 }
 
-void EmitGetCbufU32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
-                    const IR::Value& offset) {
+void EmitGetCbufU32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU32 offset) {
     GetCbuf(ctx, inst, binding, offset, "U32");
 }
 
-void EmitGetCbufF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
-                    const IR::Value& offset) {
+void EmitGetCbufF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU32 offset) {
     GetCbuf(ctx, inst, binding, offset, "F32");
 }
 
 void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
-                      const IR::Value& offset) {
+                      ScalarU32 offset) {
     GetCbuf(ctx, inst, binding, offset, "U32X2");
 }
 
 void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
-                      [[maybe_unused]] std::string_view vertex) {
+                      [[maybe_unused]] ScalarU32 vertex) {
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
         const u32 element{IR::GenericAttributeElement(attr)};
-        ctx.Add("MOV.F {},in_attr{}.{};", inst, index, "xyzw"[element]);
+        ctx.Add("MOV.F {}.x,in_attr{}.{};", inst, index, "xyzw"[element]);
         return;
     }
     throw NotImplementedException("Get attribute {}", attr);
 }
 
-void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view value,
-                      [[maybe_unused]] std::string_view vertex) {
+void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, ScalarF32 value,
+                      [[maybe_unused]] ScalarU32 vertex) {
     const u32 element{static_cast<u32>(attr) % 4};
     const char swizzle{"xyzw"[element]};
     if (IR::IsGeneric(attr)) {
@@ -87,16 +81,13 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     }
 }
 
-void EmitGetAttributeIndexed([[maybe_unused]] EmitContext& ctx,
-                             [[maybe_unused]] std::string_view offset,
-                             [[maybe_unused]] std::string_view vertex) {
+void EmitGetAttributeIndexed([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 offset,
+                             [[maybe_unused]] ScalarU32 vertex) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitSetAttributeIndexed([[maybe_unused]] EmitContext& ctx,
-                             [[maybe_unused]] std::string_view offset,
-                             [[maybe_unused]] std::string_view value,
-                             [[maybe_unused]] std::string_view vertex) {
+void EmitSetAttributeIndexed([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 offset,
+                             [[maybe_unused]] ScalarF32 value, [[maybe_unused]] ScalarU32 vertex) {
     throw NotImplementedException("GLASM instruction");
 }
 
@@ -105,20 +96,20 @@ void EmitGetPatch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Patch 
 }
 
 void EmitSetPatch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Patch patch,
-                  [[maybe_unused]] std::string_view value) {
+                  [[maybe_unused]] ScalarF32 value) {
     throw NotImplementedException("GLASM instruction");
 }
 
 void EmitSetFragColor([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] u32 index,
-                      [[maybe_unused]] u32 component, [[maybe_unused]] std::string_view value) {
+                      [[maybe_unused]] u32 component, [[maybe_unused]] ScalarF32 value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitSetSampleMask([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view value) {
+void EmitSetSampleMask([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitSetFragDepth([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view value) {
+void EmitSetFragDepth([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {
     throw NotImplementedException("GLASM instruction");
 }
 
