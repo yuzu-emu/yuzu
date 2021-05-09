@@ -12,53 +12,61 @@
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLASM {
-namespace {
-std::string Representation(Id id) {
-    if (id.is_condition_code != 0) {
-        throw NotImplementedException("Condition code");
-    }
-    if (id.is_spill != 0) {
-        throw NotImplementedException("Spilling");
-    }
-    const u32 index{static_cast<u32>(id.index)};
-    return fmt::format("R{}.x", index);
+
+Register RegAlloc::Define(IR::Inst& inst) {
+    const Id id{Alloc()};
+    inst.SetDefinition<Id>(id);
+    Register ret;
+    ret.type = Type::Register;
+    ret.id = id;
+    return ret;
 }
 
-std::string ImmValue(const IR::Value& value) {
+Value RegAlloc::Consume(const IR::Value& value) {
+    if (!value.IsImmediate()) {
+        return Consume(*value.InstRecursive());
+    }
+    Value ret;
     switch (value.Type()) {
     case IR::Type::U1:
-        return value.U1() ? "-1" : "0";
+        ret.type = Type::U32;
+        ret.imm_u32 = value.U1() ? 0xffffffff : 0;
+        break;
     case IR::Type::U32:
-        return fmt::format("{}", value.U32());
+        ret.type = Type::U32;
+        ret.imm_u32 = value.U32();
+        break;
     case IR::Type::F32:
-        return fmt::format("{}", value.F32());
+        ret.type = Type::F32;
+        ret.imm_f32 = value.F32();
+        break;
     default:
         throw NotImplementedException("Immediate type {}", value.Type());
     }
-}
-} // Anonymous namespace
-
-std::string RegAlloc::Define(IR::Inst& inst) {
-    const Id id{Alloc()};
-    inst.SetDefinition<Id>(id);
-    return Representation(id);
+    return ret;
 }
 
-std::string RegAlloc::Consume(const IR::Value& value) {
-    if (value.IsImmediate()) {
-        return ImmValue(value);
-    } else {
-        return Consume(*value.InstRecursive());
-    }
+Register RegAlloc::AllocReg() {
+    Register ret;
+    ret.type = Type::Register;
+    ret.id = Alloc();
+    return ret;
 }
 
-std::string RegAlloc::Consume(IR::Inst& inst) {
+void RegAlloc::FreeReg(Register reg) {
+    Free(reg.id);
+}
+
+Value RegAlloc::Consume(IR::Inst& inst) {
     const Id id{inst.Definition<Id>()};
     inst.DestructiveRemoveUsage();
     if (!inst.HasUses()) {
         Free(id);
     }
-    return Representation(inst.Definition<Id>());
+    Value ret;
+    ret.type = Type::Register;
+    ret.id = id;
+    return ret;
 }
 
 Id RegAlloc::Alloc() {

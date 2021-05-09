@@ -27,22 +27,80 @@ struct FuncTraits<ReturnType_ (*)(Args...)> {
     using ArgType = std::tuple_element_t<I, std::tuple<Args...>>;
 };
 
+template <typename T>
+struct Identity {
+    Identity(const T& data_) : data{data_} {}
+
+    const T& Extract() {
+        return data;
+    }
+
+    T data;
+};
+
+template <bool scalar>
+struct RegWrapper {
+    RegWrapper(EmitContext& ctx, Value value)
+        : reg_alloc{ctx.reg_alloc}, allocated{value.type != Type::Register} {
+        reg = allocated ? reg_alloc.AllocReg() : Register{value};
+        switch (value.type) {
+        case Type::Register:
+            break;
+        case Type::U32:
+            ctx.Add("MOV.U {}.x,{};", reg, value.imm_u32);
+            break;
+        case Type::S32:
+            ctx.Add("MOV.S {}.x,{};", reg, value.imm_s32);
+            break;
+        case Type::F32:
+            ctx.Add("MOV.F {}.x,{};", reg, value.imm_f32);
+            break;
+        }
+    }
+    ~RegWrapper() {
+        if (allocated) {
+            reg_alloc.FreeReg(reg);
+        }
+    }
+
+    auto Extract() {
+        return std::conditional_t<scalar, ScalarRegister, Register>{Value{reg}};
+    }
+
+    RegAlloc& reg_alloc;
+    Register reg{};
+    bool allocated{};
+};
+
 template <typename ArgType>
 auto Arg(EmitContext& ctx, const IR::Value& arg) {
-    if constexpr (std::is_same_v<ArgType, std::string_view>) {
-        return ctx.reg_alloc.Consume(arg);
+    if constexpr (std::is_same_v<ArgType, Register>) {
+        return RegWrapper<false>{ctx, ctx.reg_alloc.Consume(arg)};
+    } else if constexpr (std::is_same_v<ArgType, ScalarRegister>) {
+        return RegWrapper<true>{ctx, ctx.reg_alloc.Consume(arg)};
+    } else if constexpr (std::is_base_of_v<Value, ArgType>) {
+        return Identity{ArgType{ctx.reg_alloc.Consume(arg)}};
     } else if constexpr (std::is_same_v<ArgType, const IR::Value&>) {
-        return arg;
+        return Identity{arg};
     } else if constexpr (std::is_same_v<ArgType, u32>) {
-        return arg.U32();
+        return Identity{arg.U32()};
     } else if constexpr (std::is_same_v<ArgType, IR::Block*>) {
-        return arg.Label();
+        return Identity{arg.Label()};
     } else if constexpr (std::is_same_v<ArgType, IR::Attribute>) {
-        return arg.Attribute();
+        return Identity{arg.Attribute()};
     } else if constexpr (std::is_same_v<ArgType, IR::Patch>) {
-        return arg.Patch();
+        return Identity{arg.Patch()};
     } else if constexpr (std::is_same_v<ArgType, IR::Reg>) {
-        return arg.Reg();
+        return Identity{arg.Reg()};
+    }
+}
+
+template <auto func, bool is_first_arg_inst, typename... Args>
+void InvokeCall(EmitContext& ctx, IR::Inst* inst, Args&&... args) {
+    if constexpr (is_first_arg_inst) {
+        func(ctx, *inst, std::forward<Args>(args.Extract())...);
+    } else {
+        func(ctx, std::forward<Args>(args.Extract())...);
     }
 }
 
@@ -50,9 +108,10 @@ template <auto func, bool is_first_arg_inst, size_t... I>
 void Invoke(EmitContext& ctx, IR::Inst* inst, std::index_sequence<I...>) {
     using Traits = FuncTraits<decltype(func)>;
     if constexpr (is_first_arg_inst) {
-        func(ctx, *inst, Arg<typename Traits::template ArgType<I + 2>>(ctx, inst->Arg(I))...);
+        func(ctx, *inst,
+             Arg<typename Traits::template ArgType<I + 2>>(ctx, inst->Arg(I)).Extract()...);
     } else {
-        func(ctx, Arg<typename Traits::template ArgType<I + 1>>(ctx, inst->Arg(I))...);
+        func(ctx, Arg<typename Traits::template ArgType<I + 1>>(ctx, inst->Arg(I)).Extract()...);
     }
 }
 
@@ -81,7 +140,7 @@ void EmitInst(EmitContext& ctx, IR::Inst* inst) {
     throw LogicError("Invalid opcode {}", inst->GetOpcode());
 }
 
-void Identity(IR::Inst& inst, const IR::Value& value) {
+void Alias(IR::Inst& inst, const IR::Value& value) {
     if (value.IsImmediate()) {
         return;
     }
@@ -125,31 +184,31 @@ std::string EmitGLASM(const Profile&, IR::Program& program, Bindings&) {
 }
 
 void EmitIdentity(EmitContext&, IR::Inst& inst, const IR::Value& value) {
-    Identity(inst, value);
+    Alias(inst, value);
 }
 
 void EmitBitCastU16F16(EmitContext&, IR::Inst& inst, const IR::Value& value) {
-    Identity(inst, value);
+    Alias(inst, value);
 }
 
 void EmitBitCastU32F32(EmitContext&, IR::Inst& inst, const IR::Value& value) {
-    Identity(inst, value);
+    Alias(inst, value);
 }
 
 void EmitBitCastU64F64(EmitContext&, IR::Inst& inst, const IR::Value& value) {
-    Identity(inst, value);
+    Alias(inst, value);
 }
 
 void EmitBitCastF16U16(EmitContext&, IR::Inst& inst, const IR::Value& value) {
-    Identity(inst, value);
+    Alias(inst, value);
 }
 
 void EmitBitCastF32U32(EmitContext&, IR::Inst& inst, const IR::Value& value) {
-    Identity(inst, value);
+    Alias(inst, value);
 }
 
 void EmitBitCastF64U64(EmitContext&, IR::Inst& inst, const IR::Value& value) {
-    Identity(inst, value);
+    Alias(inst, value);
 }
 
 } // namespace Shader::Backend::GLASM
