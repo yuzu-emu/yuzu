@@ -139,18 +139,6 @@ void EmitInst(EmitContext& ctx, IR::Inst* inst) {
     }
     throw LogicError("Invalid opcode {}", inst->GetOpcode());
 }
-
-void Alias(IR::Inst& inst, const IR::Value& value) {
-    if (value.IsImmediate()) {
-        return;
-    }
-    IR::Inst* const value_inst{value.InstRecursive()};
-    if (inst.GetOpcode() == IR::Opcode::Identity) {
-        value_inst->DestructiveAddUsage(inst.UseCount());
-        value_inst->DestructiveRemoveUsage();
-    }
-    inst.SetDefinition(value_inst->Definition<Id>());
-}
 } // Anonymous namespace
 
 std::string EmitGLASM(const Profile&, IR::Program& program, Bindings&) {
@@ -181,34 +169,6 @@ std::string EmitGLASM(const Profile&, IR::Program& program, Bindings&) {
     ctx.code.insert(0, header);
     ctx.code += "END";
     return ctx.code;
-}
-
-void EmitIdentity(EmitContext&, IR::Inst& inst, const IR::Value& value) {
-    Alias(inst, value);
-}
-
-void EmitBitCastU16F16(EmitContext&, IR::Inst& inst, const IR::Value& value) {
-    Alias(inst, value);
-}
-
-void EmitBitCastU32F32(EmitContext&, IR::Inst& inst, const IR::Value& value) {
-    Alias(inst, value);
-}
-
-void EmitBitCastU64F64(EmitContext&, IR::Inst& inst, const IR::Value& value) {
-    Alias(inst, value);
-}
-
-void EmitBitCastF16U16(EmitContext&, IR::Inst& inst, const IR::Value& value) {
-    Alias(inst, value);
-}
-
-void EmitBitCastF32U32(EmitContext&, IR::Inst& inst, const IR::Value& value) {
-    Alias(inst, value);
-}
-
-void EmitBitCastF64U64(EmitContext&, IR::Inst& inst, const IR::Value& value) {
-    Alias(inst, value);
 }
 
 } // namespace Shader::Backend::GLASM
