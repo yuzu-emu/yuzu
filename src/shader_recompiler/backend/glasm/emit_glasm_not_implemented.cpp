@@ -281,18 +281,6 @@ void EmitSelectF64(EmitContext& ctx, ScalarS32 cond, Register true_value, Regist
     NotImplemented();
 }
 
-void EmitSelectF16(EmitContext& ctx, Register cond, Register true_value, Register false_value) {
-    NotImplemented();
-}
-
-void EmitSelectF32(EmitContext& ctx, Register cond, Register true_value, Register false_value) {
-    NotImplemented();
-}
-
-void EmitSelectF64(EmitContext& ctx, Register cond, Register true_value, Register false_value) {
-    NotImplemented();
-}
-
 void EmitPackUint2x32(EmitContext& ctx, Register value) {
     NotImplemented();
 }
