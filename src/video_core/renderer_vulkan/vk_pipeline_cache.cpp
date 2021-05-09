@@ -128,6 +128,8 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxw
         .supported_spirv = device.IsKhrSpirv1_4Supported() ? 0x00010400U : 0x00010000U,
         .unified_descriptor_binding = true,
         .support_descriptor_aliasing = true,
+        .support_int8 = true,
+        .support_int16 = true,
         .support_vertex_instance_id = false,
         .support_float_controls = true,
         .support_separate_denorm_behavior = float_control.denormBehaviorIndependence ==
