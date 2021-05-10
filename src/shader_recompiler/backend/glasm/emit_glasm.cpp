@@ -128,24 +128,27 @@ auto Arg(EmitContext& ctx, const IR::Value& arg) {
     }
 }
 
-template <auto func, bool is_first_arg_inst, typename... Args>
-void InvokeCall(EmitContext& ctx, IR::Inst* inst, Args&&... args) {
-    if constexpr (is_first_arg_inst) {
-        func(ctx, *inst, args.Extract()...);
-    } else {
-        func(ctx, args.Extract()...);
+template <auto func, bool is_first_arg_inst>
+struct InvokeCall {
+    template <typename... Args>
+    InvokeCall(EmitContext& ctx, IR::Inst* inst, Args&&... args) {
+        if constexpr (is_first_arg_inst) {
+            func(ctx, *inst, args.Extract()...);
+        } else {
+            func(ctx, args.Extract()...);
+        }
     }
-}
+};
 
 template <auto func, bool is_first_arg_inst, size_t... I>
 void Invoke(EmitContext& ctx, IR::Inst* inst, std::index_sequence<I...>) {
     using Traits = FuncTraits<decltype(func)>;
     if constexpr (is_first_arg_inst) {
-        InvokeCall<func, is_first_arg_inst>(
-            ctx, inst, Arg<typename Traits::template ArgType<I + 2>>(ctx, inst->Arg(I))...);
+        InvokeCall<func, is_first_arg_inst>{
+            ctx, inst, Arg<typename Traits::template ArgType<I + 2>>(ctx, inst->Arg(I))...};
     } else {
-        InvokeCall<func, is_first_arg_inst>(
-            ctx, inst, Arg<typename Traits::template ArgType<I + 1>>(ctx, inst->Arg(I))...);
+        InvokeCall<func, is_first_arg_inst>{
+            ctx, inst, Arg<typename Traits::template ArgType<I + 1>>(ctx, inst->Arg(I))...};
     }
 }
 
