@@ -34,16 +34,16 @@ void EmitINeg32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value) {
     ctx.Add("MOV.S {},-{};", inst, value);
 }
 
-void EmitINeg64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitINeg64(EmitContext& ctx, IR::Inst& inst, Register value) {
+    ctx.LongAdd("MOV.S64 {},-{};", inst, value);
 }
 
 void EmitIAbs32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value) {
     ctx.Add("ABS.S {},{};", inst, value);
 }
 
-void EmitIAbs64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitIAbs64(EmitContext& ctx, IR::Inst& inst, Register value) {
+    ctx.LongAdd("MOV.S64 {},|{}|;", inst, value);
 }
 
 void EmitShiftLeftLogical32(EmitContext& ctx, IR::Inst& inst, ScalarU32 base, ScalarU32 shift) {
