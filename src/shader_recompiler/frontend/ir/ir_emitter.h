@@ -291,12 +291,12 @@ public:
     [[nodiscard]] U32U64 ConvertFToS(size_t bitsize, const F16F32F64& value);
     [[nodiscard]] U32U64 ConvertFToU(size_t bitsize, const F16F32F64& value);
     [[nodiscard]] U32U64 ConvertFToI(size_t bitsize, bool is_signed, const F16F32F64& value);
-    [[nodiscard]] F16F32F64 ConvertSToF(size_t dest_bitsize, size_t src_bitsize,
-                                        const Value& value);
-    [[nodiscard]] F16F32F64 ConvertUToF(size_t dest_bitsize, size_t src_bitsize,
-                                        const Value& value);
+    [[nodiscard]] F16F32F64 ConvertSToF(size_t dest_bitsize, size_t src_bitsize, const Value& value,
+                                        FpControl control = {});
+    [[nodiscard]] F16F32F64 ConvertUToF(size_t dest_bitsize, size_t src_bitsize, const Value& value,
+                                        FpControl control = {});
     [[nodiscard]] F16F32F64 ConvertIToF(size_t dest_bitsize, size_t src_bitsize, bool is_signed,
-                                        const Value& value);
+                                        const Value& value, FpControl control = {});
 
     [[nodiscard]] U32U64 UConvert(size_t result_bitsize, const U32U64& value);
     [[nodiscard]] F16F32F64 FPConvert(size_t result_bitsize, const F16F32F64& value,
