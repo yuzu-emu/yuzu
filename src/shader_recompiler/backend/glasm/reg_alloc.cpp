@@ -21,10 +21,40 @@ Register RegAlloc::LongDefine(IR::Inst& inst) {
     return Define(inst, true);
 }
 
+Value RegAlloc::Peek(const IR::Value& value) {
+    return value.IsImmediate() ? MakeImm(value) : PeekInst(*value.InstRecursive());
+}
+
 Value RegAlloc::Consume(const IR::Value& value) {
-    if (!value.IsImmediate()) {
-        return Consume(*value.InstRecursive());
+    return value.IsImmediate() ? MakeImm(value) : ConsumeInst(*value.InstRecursive());
+}
+
+void RegAlloc::Unref(IR::Inst& inst) {
+    inst.DestructiveRemoveUsage();
+    if (!inst.HasUses()) {
+        Free(inst.Definition<Id>());
     }
+}
+
+Register RegAlloc::AllocReg() {
+    Register ret;
+    ret.type = Type::Register;
+    ret.id = Alloc(false);
+    return ret;
+}
+
+Register RegAlloc::AllocLongReg() {
+    Register ret;
+    ret.type = Type::Register;
+    ret.id = Alloc(true);
+    return ret;
+}
+
+void RegAlloc::FreeReg(Register reg) {
+    Free(reg.id);
+}
+
+Value RegAlloc::MakeImm(const IR::Value& value) {
     Value ret;
     switch (value.Type()) {
     case IR::Type::U1:
@@ -53,43 +83,24 @@ Value RegAlloc::Consume(const IR::Value& value) {
     return ret;
 }
 
-Register RegAlloc::AllocReg() {
-    Register ret;
-    ret.type = Type::Register;
-    ret.id = Alloc(false);
-    return ret;
-}
-
-Register RegAlloc::AllocLongReg() {
-    Register ret;
-    ret.type = Type::Register;
-    ret.id = Alloc(true);
-    return ret;
-}
-
-void RegAlloc::FreeReg(Register reg) {
-    Free(reg.id);
-}
-
 Register RegAlloc::Define(IR::Inst& inst, bool is_long) {
-    const Id id{Alloc(is_long)};
-    inst.SetDefinition<Id>(id);
-    Register ret;
-    ret.type = Type::Register;
-    ret.id = id;
-    return ret;
+    inst.SetDefinition<Id>(Alloc(is_long));
+    return Register{PeekInst(inst)};
 }
 
-Value RegAlloc::Consume(IR::Inst& inst) {
-    const Id id{inst.Definition<Id>()};
-    inst.DestructiveRemoveUsage();
-    if (!inst.HasUses()) {
-        Free(id);
-    }
+Value RegAlloc::PeekInst(IR::Inst& inst) {
     Value ret;
     ret.type = Type::Register;
-    ret.id = id;
+    ret.id = inst.Definition<Id>();
     return ret;
+}
+
+Value RegAlloc::ConsumeInst(IR::Inst& inst) {
+    inst.DestructiveRemoveUsage();
+    if (!inst.HasUses()) {
+        Free(inst.Definition<Id>());
+    }
+    return PeekInst(inst);
 }
 
 Id RegAlloc::Alloc(bool is_long) {

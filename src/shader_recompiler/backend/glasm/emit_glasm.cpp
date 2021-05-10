@@ -39,14 +39,16 @@ struct Identity {
 };
 
 template <bool scalar>
-struct RegWrapper {
-    RegWrapper(EmitContext& ctx, Value value)
-        : reg_alloc{ctx.reg_alloc}, allocated{value.type != Type::Register} {
-        if (allocated) {
+class RegWrapper {
+public:
+    RegWrapper(EmitContext& ctx, const IR::Value& ir_value) : reg_alloc{ctx.reg_alloc} {
+        const Value value{reg_alloc.Peek(ir_value)};
+        if (value.type == Type::Register) {
+            inst = ir_value.InstRecursive();
+            reg = Register{value};
+        } else {
             const bool is_long{value.type == Type::F64 || value.type == Type::U64};
             reg = is_long ? reg_alloc.AllocLongReg() : reg_alloc.AllocReg();
-        } else {
-            reg = Register{value};
         }
         switch (value.type) {
         case Type::Register:
@@ -68,8 +70,11 @@ struct RegWrapper {
             break;
         }
     }
+
     ~RegWrapper() {
-        if (allocated) {
+        if (inst) {
+            reg_alloc.Unref(*inst);
+        } else {
             reg_alloc.FreeReg(reg);
         }
     }
@@ -78,19 +83,42 @@ struct RegWrapper {
         return std::conditional_t<scalar, ScalarRegister, Register>{Value{reg}};
     }
 
+private:
     RegAlloc& reg_alloc;
+    IR::Inst* inst{};
     Register reg{};
-    bool allocated{};
+};
+
+template <typename ArgType>
+class ValueWrapper {
+public:
+    ValueWrapper(EmitContext& ctx, const IR::Value& ir_value_)
+        : reg_alloc{ctx.reg_alloc}, ir_value{ir_value_}, value{reg_alloc.Peek(ir_value)} {}
+
+    ~ValueWrapper() {
+        if (!ir_value.IsImmediate()) {
+            reg_alloc.Unref(*ir_value.InstRecursive());
+        }
+    }
+
+    ArgType Extract() {
+        return value;
+    }
+
+private:
+    RegAlloc& reg_alloc;
+    const IR::Value& ir_value;
+    ArgType value;
 };
 
 template <typename ArgType>
 auto Arg(EmitContext& ctx, const IR::Value& arg) {
     if constexpr (std::is_same_v<ArgType, Register>) {
-        return RegWrapper<false>{ctx, ctx.reg_alloc.Consume(arg)};
+        return RegWrapper<false>{ctx, arg};
     } else if constexpr (std::is_same_v<ArgType, ScalarRegister>) {
-        return RegWrapper<true>{ctx, ctx.reg_alloc.Consume(arg)};
+        return RegWrapper<true>{ctx, arg};
     } else if constexpr (std::is_base_of_v<Value, ArgType>) {
-        return Identity{ArgType{ctx.reg_alloc.Consume(arg)}};
+        return ValueWrapper<ArgType>{ctx, arg};
     } else if constexpr (std::is_same_v<ArgType, const IR::Value&>) {
         return Identity{arg};
     } else if constexpr (std::is_same_v<ArgType, u32>) {
