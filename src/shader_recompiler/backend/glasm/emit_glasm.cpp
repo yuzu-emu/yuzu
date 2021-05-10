@@ -29,9 +29,9 @@ struct FuncTraits<ReturnType_ (*)(Args...)> {
 
 template <typename T>
 struct Identity {
-    Identity(const T& data_) : data{data_} {}
+    Identity(T data_) : data{data_} {}
 
-    const T& Extract() {
+    T Extract() {
         return data;
     }
 
@@ -71,15 +71,12 @@ public:
         }
     }
 
-    ~RegWrapper() {
+    auto Extract() {
         if (inst) {
             reg_alloc.Unref(*inst);
         } else {
             reg_alloc.FreeReg(reg);
         }
-    }
-
-    auto Extract() {
         return std::conditional_t<scalar, ScalarRegister, Register>{Value{reg}};
     }
 
@@ -95,13 +92,10 @@ public:
     ValueWrapper(EmitContext& ctx, const IR::Value& ir_value_)
         : reg_alloc{ctx.reg_alloc}, ir_value{ir_value_}, value{reg_alloc.Peek(ir_value)} {}
 
-    ~ValueWrapper() {
+    ArgType Extract() {
         if (!ir_value.IsImmediate()) {
             reg_alloc.Unref(*ir_value.InstRecursive());
         }
-    }
-
-    ArgType Extract() {
         return value;
     }
 
@@ -120,7 +114,7 @@ auto Arg(EmitContext& ctx, const IR::Value& arg) {
     } else if constexpr (std::is_base_of_v<Value, ArgType>) {
         return ValueWrapper<ArgType>{ctx, arg};
     } else if constexpr (std::is_same_v<ArgType, const IR::Value&>) {
-        return Identity{arg};
+        return Identity<const IR::Value&>{arg};
     } else if constexpr (std::is_same_v<ArgType, u32>) {
         return Identity{arg.U32()};
     } else if constexpr (std::is_same_v<ArgType, IR::Block*>) {
@@ -137,9 +131,9 @@ auto Arg(EmitContext& ctx, const IR::Value& arg) {
 template <auto func, bool is_first_arg_inst, typename... Args>
 void InvokeCall(EmitContext& ctx, IR::Inst* inst, Args&&... args) {
     if constexpr (is_first_arg_inst) {
-        func(ctx, *inst, std::forward<Args>(args.Extract())...);
+        func(ctx, *inst, args.Extract()...);
     } else {
-        func(ctx, std::forward<Args>(args.Extract())...);
+        func(ctx, args.Extract()...);
     }
 }
 
@@ -147,10 +141,11 @@ template <auto func, bool is_first_arg_inst, size_t... I>
 void Invoke(EmitContext& ctx, IR::Inst* inst, std::index_sequence<I...>) {
     using Traits = FuncTraits<decltype(func)>;
     if constexpr (is_first_arg_inst) {
-        func(ctx, *inst,
-             Arg<typename Traits::template ArgType<I + 2>>(ctx, inst->Arg(I)).Extract()...);
+        InvokeCall<func, is_first_arg_inst>(
+            ctx, inst, Arg<typename Traits::template ArgType<I + 2>>(ctx, inst->Arg(I))...);
     } else {
-        func(ctx, Arg<typename Traits::template ArgType<I + 1>>(ctx, inst->Arg(I)).Extract()...);
+        InvokeCall<func, is_first_arg_inst>(
+            ctx, inst, Arg<typename Traits::template ArgType<I + 1>>(ctx, inst->Arg(I))...);
     }
 }
 
