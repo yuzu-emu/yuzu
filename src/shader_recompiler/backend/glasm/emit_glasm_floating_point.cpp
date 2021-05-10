@@ -36,11 +36,11 @@ void Compare(EmitContext& ctx, IR::Inst& inst, InputType lhs, InputType rhs, std
 
 template <typename InputType>
 void Clamp(EmitContext& ctx, Register ret, InputType value, InputType min_value,
-           InputType max_value) {
+           InputType max_value, std::string_view type) {
     // Call MAX first to properly clamp nan to min_value instead
-    ctx.Add("MAX.F {}.x,{},{};"
-            "MIN.F {}.x,{},{};",
-            ret, min_value, value, ret, ret, max_value);
+    ctx.Add("MAX.{} {}.x,{},{};"
+            "MIN.{} {}.x,{}.x,{};",
+            type, ret, min_value, value, type, ret, ret, max_value);
 }
 } // Anonymous namespace
 
@@ -180,12 +180,12 @@ void EmitFPClamp16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register 
 
 void EmitFPClamp32(EmitContext& ctx, IR::Inst& inst, ScalarF32 value, ScalarF32 min_value,
                    ScalarF32 max_value) {
-    Clamp(ctx, ctx.reg_alloc.Define(inst), value, min_value, max_value);
+    Clamp(ctx, ctx.reg_alloc.Define(inst), value, min_value, max_value, "F");
 }
 
 void EmitFPClamp64(EmitContext& ctx, IR::Inst& inst, ScalarF64 value, ScalarF64 min_value,
                    ScalarF64 max_value) {
-    Clamp(ctx, ctx.reg_alloc.LongDefine(inst), value, min_value, max_value);
+    Clamp(ctx, ctx.reg_alloc.LongDefine(inst), value, min_value, max_value, "F64");
 }
 
 void EmitFPRoundEven16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
