@@ -21,9 +21,7 @@ void EmitPhi(EmitContext& ctx, IR::Inst& inst) {
     NotImplemented();
 }
 
-void EmitVoid(EmitContext& ctx) {
-    NotImplemented();
-}
+void EmitVoid(EmitContext&) {}
 
 void EmitBranch(EmitContext& ctx) {
     NotImplemented();
@@ -633,86 +631,6 @@ void EmitImageAtomicXor32(EmitContext& ctx, IR::Inst& inst, const IR::Value& ind
 
 void EmitImageAtomicExchange32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                Register coords, ScalarU32 value) {
-    NotImplemented();
-}
-
-void EmitLaneId(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitVoteAll(EmitContext& ctx, ScalarS32 pred) {
-    NotImplemented();
-}
-
-void EmitVoteAny(EmitContext& ctx, ScalarS32 pred) {
-    NotImplemented();
-}
-
-void EmitVoteEqual(EmitContext& ctx, ScalarS32 pred) {
-    NotImplemented();
-}
-
-void EmitSubgroupBallot(EmitContext& ctx, ScalarS32 pred) {
-    NotImplemented();
-}
-
-void EmitSubgroupEqMask(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitSubgroupLtMask(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitSubgroupLeMask(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitSubgroupGtMask(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitSubgroupGeMask(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitShuffleIndex(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU32 index,
-                      ScalarU32 clamp, ScalarU32 segmentation_mask) {
-    NotImplemented();
-}
-
-void EmitShuffleUp(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU32 index,
-                   ScalarU32 clamp, ScalarU32 segmentation_mask) {
-    NotImplemented();
-}
-
-void EmitShuffleDown(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU32 index,
-                     ScalarU32 clamp, ScalarU32 segmentation_mask) {
-    NotImplemented();
-}
-
-void EmitShuffleButterfly(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU32 index,
-                          ScalarU32 clamp, ScalarU32 segmentation_mask) {
-    NotImplemented();
-}
-
-void EmitFSwizzleAdd(EmitContext& ctx, ScalarF32 op_a, ScalarF32 op_b, ScalarU32 swizzle) {
-    NotImplemented();
-}
-
-void EmitDPdxFine(EmitContext& ctx, ScalarF32 op_a) {
-    NotImplemented();
-}
-
-void EmitDPdyFine(EmitContext& ctx, ScalarF32 op_a) {
-    NotImplemented();
-}
-
-void EmitDPdxCoarse(EmitContext& ctx, ScalarF32 op_a) {
-    NotImplemented();
-}
-
-void EmitDPdyCoarse(EmitContext& ctx, ScalarF32 op_a) {
     NotImplemented();
 }
 

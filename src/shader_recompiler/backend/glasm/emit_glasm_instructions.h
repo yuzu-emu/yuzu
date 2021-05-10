@@ -584,24 +584,24 @@ void EmitImageAtomicXor32(EmitContext& ctx, IR::Inst& inst, const IR::Value& ind
                           ScalarU32 value);
 void EmitImageAtomicExchange32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                Register coords, ScalarU32 value);
-void EmitLaneId(EmitContext& ctx);
-void EmitVoteAll(EmitContext& ctx, ScalarS32 pred);
-void EmitVoteAny(EmitContext& ctx, ScalarS32 pred);
-void EmitVoteEqual(EmitContext& ctx, ScalarS32 pred);
-void EmitSubgroupBallot(EmitContext& ctx, ScalarS32 pred);
-void EmitSubgroupEqMask(EmitContext& ctx);
-void EmitSubgroupLtMask(EmitContext& ctx);
-void EmitSubgroupLeMask(EmitContext& ctx);
-void EmitSubgroupGtMask(EmitContext& ctx);
-void EmitSubgroupGeMask(EmitContext& ctx);
+void EmitLaneId(EmitContext& ctx, IR::Inst& inst);
+void EmitVoteAll(EmitContext& ctx, IR::Inst& inst, ScalarS32 pred);
+void EmitVoteAny(EmitContext& ctx, IR::Inst& inst, ScalarS32 pred);
+void EmitVoteEqual(EmitContext& ctx, IR::Inst& inst, ScalarS32 pred);
+void EmitSubgroupBallot(EmitContext& ctx, IR::Inst& inst, ScalarS32 pred);
+void EmitSubgroupEqMask(EmitContext& ctx, IR::Inst& inst);
+void EmitSubgroupLtMask(EmitContext& ctx, IR::Inst& inst);
+void EmitSubgroupLeMask(EmitContext& ctx, IR::Inst& inst);
+void EmitSubgroupGtMask(EmitContext& ctx, IR::Inst& inst);
+void EmitSubgroupGeMask(EmitContext& ctx, IR::Inst& inst);
 void EmitShuffleIndex(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU32 index,
-                      ScalarU32 clamp, ScalarU32 segmentation_mask);
+                      const IR::Value& clamp, const IR::Value& segmentation_mask);
 void EmitShuffleUp(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU32 index,
-                   ScalarU32 clamp, ScalarU32 segmentation_mask);
+                   const IR::Value& clamp, const IR::Value& segmentation_mask);
 void EmitShuffleDown(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU32 index,
-                     ScalarU32 clamp, ScalarU32 segmentation_mask);
+                     const IR::Value& clamp, const IR::Value& segmentation_mask);
 void EmitShuffleButterfly(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU32 index,
-                          ScalarU32 clamp, ScalarU32 segmentation_mask);
+                          const IR::Value& clamp, const IR::Value& segmentation_mask);
 void EmitFSwizzleAdd(EmitContext& ctx, ScalarF32 op_a, ScalarF32 op_b, ScalarU32 swizzle);
 void EmitDPdxFine(EmitContext& ctx, ScalarF32 op_a);
 void EmitDPdyFine(EmitContext& ctx, ScalarF32 op_a);

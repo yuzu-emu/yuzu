@@ -45,6 +45,8 @@ public:
 
     std::string code;
     RegAlloc reg_alloc{*this};
+
+    std::string_view stage_name = "invalid";
 };
 
 } // namespace Shader::Backend::GLASM

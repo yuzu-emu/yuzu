@@ -504,11 +504,13 @@ void VisitUsages(Info& info, IR::Inst& inst) {
         info.uses_is_helper_invocation = true;
         break;
     case IR::Opcode::LaneId:
+        info.uses_subgroup_invocation_id = true;
+        break;
     case IR::Opcode::ShuffleIndex:
     case IR::Opcode::ShuffleUp:
     case IR::Opcode::ShuffleDown:
     case IR::Opcode::ShuffleButterfly:
-        info.uses_subgroup_invocation_id = true;
+        info.uses_subgroup_shuffles = true;
         break;
     case IR::Opcode::GetCbufU8:
     case IR::Opcode::GetCbufS8:
