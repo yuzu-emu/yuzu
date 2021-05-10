@@ -43,7 +43,8 @@ struct RegWrapper {
     RegWrapper(EmitContext& ctx, Value value)
         : reg_alloc{ctx.reg_alloc}, allocated{value.type != Type::Register} {
         if (allocated) {
-            reg = value.type == Type::F64 ? reg_alloc.AllocLongReg() : reg_alloc.AllocReg();
+            const bool is_long{value.type == Type::F64 || value.type == Type::U64};
+            reg = is_long ? reg_alloc.AllocLongReg() : reg_alloc.AllocReg();
         } else {
             reg = Register{value};
         }
