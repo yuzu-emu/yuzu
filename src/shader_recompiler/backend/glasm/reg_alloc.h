@@ -289,9 +289,9 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarF64> {
         case Shader::Backend::GLASM::Type::F32:
             break;
         case Shader::Backend::GLASM::Type::U64:
-            return format_to(ctx.out(), "{}", Common::BitCast<f64>(value.imm_u64));
+            return fmt::format_to(ctx.out(), "{}", Common::BitCast<f64>(value.imm_u64));
         case Shader::Backend::GLASM::Type::F64:
-            return format_to(ctx.out(), "{}", value.imm_f64);
+            return fmt::format_to(ctx.out(), "{}", value.imm_f64);
         }
         throw Shader::InvalidArgument("Invalid value type {}", value.type);
     }
