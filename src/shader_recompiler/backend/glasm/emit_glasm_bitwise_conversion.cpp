@@ -48,12 +48,12 @@ void EmitBitCastF64U64(EmitContext&, IR::Inst& inst, const IR::Value& value) {
     Alias(inst, value);
 }
 
-void EmitPackUint2x32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitPackUint2x32(EmitContext& ctx, IR::Inst& inst, Register value) {
+    ctx.LongAdd("PK64.U {}.x,{};", inst, value);
 }
 
-void EmitUnpackUint2x32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitUnpackUint2x32(EmitContext& ctx, IR::Inst& inst, Register value) {
+    ctx.Add("UP64.U {}.xy,{}.x;", inst, value);
 }
 
 void EmitPackFloat2x16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {

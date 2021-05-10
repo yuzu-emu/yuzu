@@ -169,62 +169,68 @@ void EmitFPClamp16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register 
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPClamp32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value,
-                   [[maybe_unused]] ScalarF32 min_value, [[maybe_unused]] ScalarF32 max_value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPClamp32(EmitContext& ctx, IR::Inst& inst, ScalarF32 value, ScalarF32 min_value,
+                   ScalarF32 max_value) {
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    ctx.Add("MIN.F {}.x,{},{};"
+            "MAX.F {}.x,{},{};",
+            ret, max_value, value, ret, ret, min_value);
 }
 
-void EmitFPClamp64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value,
-                   [[maybe_unused]] Register min_value, [[maybe_unused]] Register max_value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPClamp64(EmitContext& ctx, IR::Inst& inst, ScalarF64 value, ScalarF64 min_value,
+                   ScalarF64 max_value) {
+    const Register ret{ctx.reg_alloc.LongDefine(inst)};
+    ctx.Add("MIN.F64 {}.x,{},{};"
+            "MAX.F64 {}.x,{},{};",
+            ret, max_value, value, ret, ret, min_value);
 }
 
 void EmitFPRoundEven16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPRoundEven32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPRoundEven32(EmitContext& ctx, IR::Inst& inst, ScalarF32 value) {
+    ctx.Add("ROUND.F {}.x,{};", inst, value);
 }
 
-void EmitFPRoundEven64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPRoundEven64(EmitContext& ctx, IR::Inst& inst, ScalarF64 value) {
+    ctx.LongAdd("ROUND.F64 {}.x,{};", inst, value);
 }
 
 void EmitFPFloor16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPFloor32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPFloor32(EmitContext& ctx, IR::Inst& inst, ScalarF32 value) {
+    ctx.Add("FLR.F {}.x,{};", inst, value);
 }
 
-void EmitFPFloor64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPFloor64(EmitContext& ctx, IR::Inst& inst, ScalarF64 value) {
+    ctx.LongAdd("FLR.F64 {}.x,{};", inst, value);
 }
 
 void EmitFPCeil16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPCeil32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPCeil32(EmitContext& ctx, IR::Inst& inst, ScalarF32 value) {
+    ctx.Add("CEIL.F {}.x,{};", inst, value);
 }
 
-void EmitFPCeil64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPCeil64(EmitContext& ctx, IR::Inst& inst, ScalarF64 value) {
+    ctx.LongAdd("CEIL.F64 {}.x,{};", inst, value);
 }
 
 void EmitFPTrunc16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPTrunc32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPTrunc32(EmitContext& ctx, IR::Inst& inst, ScalarF32 value) {
+    ctx.Add("TRUNC.F {}.x,{};", inst, value);
 }
 
-void EmitFPTrunc64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPTrunc64(EmitContext& ctx, IR::Inst& inst, ScalarF64 value) {
+    ctx.LongAdd("TRUNC.F64 {}.x,{};", inst, value);
 }
 
 void EmitFPOrdEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,

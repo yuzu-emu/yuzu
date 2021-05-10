@@ -59,6 +59,9 @@ struct RegWrapper {
         case Type::F32:
             ctx.Add("MOV.F {}.x,{};", reg, value.imm_f32);
             break;
+        case Type::U64:
+            ctx.Add("MOV.U64 {}.x,{};", reg, value.imm_u64);
+            break;
         case Type::F64:
             ctx.Add("MOV.F64 {}.x,{};", reg, value.imm_f64);
             break;

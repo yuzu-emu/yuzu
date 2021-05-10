@@ -27,6 +27,7 @@ enum class Type : u32 {
     U32,
     S32,
     F32,
+    U64,
     F64,
 };
 
@@ -55,6 +56,7 @@ struct Value {
         u32 imm_u32;
         s32 imm_s32;
         f32 imm_f32;
+        u64 imm_u64;
         f64 imm_f64;
     };
 
@@ -71,6 +73,8 @@ struct Value {
             return imm_s32 == rhs.imm_s32;
         case Type::F32:
             return Common::BitCast<u32>(imm_f32) == Common::BitCast<u32>(rhs.imm_f32);
+        case Type::U64:
+            return imm_u64 == rhs.imm_u64;
         case Type::F64:
             return Common::BitCast<u64>(imm_f64) == Common::BitCast<u64>(rhs.imm_f64);
         }
@@ -102,6 +106,10 @@ public:
     [[nodiscard]] Register AllocLongReg();
 
     void FreeReg(Register reg);
+
+    void InvalidateConditionCodes() {
+        // This does nothing for now
+    }
 
     [[nodiscard]] size_t NumUsedRegisters() const noexcept {
         return num_used_registers;
@@ -210,6 +218,7 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarU32> {
             return fmt::format_to(ctx.out(), "{}", static_cast<u32>(value.imm_s32));
         case Shader::Backend::GLASM::Type::F32:
             return fmt::format_to(ctx.out(), "{}", Common::BitCast<u32>(value.imm_f32));
+        case Shader::Backend::GLASM::Type::U64:
         case Shader::Backend::GLASM::Type::F64:
             break;
         }
@@ -233,6 +242,7 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarS32> {
             return fmt::format_to(ctx.out(), "{}", value.imm_s32);
         case Shader::Backend::GLASM::Type::F32:
             return fmt::format_to(ctx.out(), "{}", Common::BitCast<s32>(value.imm_f32));
+        case Shader::Backend::GLASM::Type::U64:
         case Shader::Backend::GLASM::Type::F64:
             break;
         }
@@ -256,6 +266,7 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarF32> {
             return fmt::format_to(ctx.out(), "{}", Common::BitCast<s32>(value.imm_s32));
         case Shader::Backend::GLASM::Type::F32:
             return fmt::format_to(ctx.out(), "{}", value.imm_f32);
+        case Shader::Backend::GLASM::Type::U64:
         case Shader::Backend::GLASM::Type::F64:
             break;
         }
@@ -277,6 +288,8 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarF64> {
         case Shader::Backend::GLASM::Type::S32:
         case Shader::Backend::GLASM::Type::F32:
             break;
+        case Shader::Backend::GLASM::Type::U64:
+            return format_to(ctx.out(), "{}", Common::BitCast<f64>(value.imm_u64));
         case Shader::Backend::GLASM::Type::F64:
             return format_to(ctx.out(), "{}", value.imm_f64);
         }

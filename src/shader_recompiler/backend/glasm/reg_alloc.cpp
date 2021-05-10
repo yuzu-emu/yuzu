@@ -39,6 +39,10 @@ Value RegAlloc::Consume(const IR::Value& value) {
         ret.type = Type::F32;
         ret.imm_f32 = value.F32();
         break;
+    case IR::Type::U64:
+        ret.type = Type::U64;
+        ret.imm_u64 = value.U64();
+        break;
     case IR::Type::F64:
         ret.type = Type::F64;
         ret.imm_f64 = value.F64();

@@ -141,14 +141,16 @@ void EmitUMax32(EmitContext& ctx, IR::Inst& inst, ScalarU32 a, ScalarU32 b) {
 
 void EmitSClamp32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value, ScalarS32 min, ScalarS32 max) {
     const Register ret{ctx.reg_alloc.Define(inst)};
-    ctx.Add("MIN.S {}.x,{},{};", ret, max, value);
-    ctx.Add("MAX.S {}.x,{},{};", ret, ret, min);
+    ctx.Add("MIN.S {}.x,{},{};"
+            "MAX.S {}.x,{},{};",
+            ret, max, value, ret, ret, min);
 }
 
 void EmitUClamp32(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU32 min, ScalarU32 max) {
     const Register ret{ctx.reg_alloc.Define(inst)};
-    ctx.Add("MIN.U {}.x,{},{};", ret, max, value);
-    ctx.Add("MAX.U {}.x,{},{};", ret, ret, min);
+    ctx.Add("MIN.U {}.x,{},{};"
+            "MAX.U {}.x,{},{};",
+            ret, max, value, ret, ret, min);
 }
 
 void EmitSLessThan(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs) {
