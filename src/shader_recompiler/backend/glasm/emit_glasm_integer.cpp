@@ -87,20 +87,38 @@ void EmitBitwiseXor32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b
 
 void EmitBitFieldInsert(EmitContext& ctx, IR::Inst& inst, ScalarS32 base, ScalarS32 insert,
                         ScalarS32 offset, ScalarS32 count) {
-    ctx.Add("MOV.U RC.x,{};MOV.U RC.y,{};", count, offset);
-    ctx.Add("BFI.S {},RC,{},{};", inst, insert, base);
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    if (count.type != Type::Register && offset.type != Type::Register) {
+        ctx.Add("BFI.S {},{{{},{},0,0}},{},{};", ret, count, offset, insert, base);
+    } else {
+        ctx.Add("MOV.S RC.x,{};MOV.U RC.y,{};"
+                "BFI.S {},RC,{},{};",
+                count, offset, ret, insert, base);
+    }
 }
 
 void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst& inst, ScalarS32 base, ScalarS32 offset,
                           ScalarS32 count) {
-    ctx.Add("MOV.U RC.x,{};MOV.U RC.y,{};", count, offset);
-    ctx.Add("BFE.S {},RC,{};", inst, base);
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    if (count.type != Type::Register && offset.type != Type::Register) {
+        ctx.Add("BFE.S {},{{{},{},0,0}},{};", ret, count, offset, base);
+    } else {
+        ctx.Add("MOV.S RC.x,{};MOV.U RC.y,{};"
+                "BFE.S {},RC,{};",
+                count, offset, ret, base);
+    }
 }
 
 void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst& inst, ScalarU32 base, ScalarU32 offset,
                           ScalarU32 count) {
-    ctx.Add("MOV.U RC.x,{};MOV.U RC.y,{};", count, offset);
-    ctx.Add("BFE.U {},RC,{};", inst, base);
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    if (count.type != Type::Register && offset.type != Type::Register) {
+        ctx.Add("BFE.U {},{{{},{},0,0}},{};", ret, count, offset, base);
+    } else {
+        ctx.Add("MOV.U RC.x,{};MOV.U RC.y,{};"
+                "BFE.U {},RC,{};",
+                count, offset, ret, base);
+    }
 }
 
 void EmitBitReverse32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value) {
@@ -141,16 +159,16 @@ void EmitUMax32(EmitContext& ctx, IR::Inst& inst, ScalarU32 a, ScalarU32 b) {
 
 void EmitSClamp32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value, ScalarS32 min, ScalarS32 max) {
     const Register ret{ctx.reg_alloc.Define(inst)};
-    ctx.Add("MIN.S {}.x,{},{};"
-            "MAX.S {}.x,{},{};",
-            ret, max, value, ret, ret, min);
+    ctx.Add("MIN.S RC.x,{},{};"
+            "MAX.S {}.x,RC.x,{};",
+            max, value, ret, min);
 }
 
 void EmitUClamp32(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU32 min, ScalarU32 max) {
     const Register ret{ctx.reg_alloc.Define(inst)};
-    ctx.Add("MIN.U {}.x,{},{};"
-            "MAX.U {}.x,{},{};",
-            ret, max, value, ret, ret, min);
+    ctx.Add("MIN.U RC.x,{},{};"
+            "MAX.U {}.x,RC.x,{};",
+            max, value, ret, min);
 }
 
 void EmitSLessThan(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs) {
