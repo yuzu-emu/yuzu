@@ -25,6 +25,23 @@ EmitContext::EmitContext(IR::Program& program) {
     if (const size_t num = program.info.storage_buffers_descriptors.size(); num > 0) {
         Add("PARAM c[{}]={{program.local[0..{}]}};", num, num - 1);
     }
+    switch (program.stage) {
+    case Stage::VertexA:
+    case Stage::VertexB:
+        stage_name = "vertex";
+        break;
+    case Stage::TessellationControl:
+    case Stage::TessellationEval:
+    case Stage::Geometry:
+        stage_name = "primitive";
+        break;
+    case Stage::Fragment:
+        stage_name = "fragment";
+        break;
+    case Stage::Compute:
+        stage_name = "compute";
+        break;
+    }
 }
 
 } // namespace Shader::Backend::GLASM

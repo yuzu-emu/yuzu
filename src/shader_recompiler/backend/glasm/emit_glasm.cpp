@@ -189,6 +189,12 @@ void SetupOptions(std::string& header, Info info) {
     if (info.uses_atomic_f16x2_add || info.uses_atomic_f16x2_min || info.uses_atomic_f16x2_max) {
         header += "OPTION NV_shader_atomic_fp16_vector;";
     }
+    if (info.uses_subgroup_invocation_id || info.uses_subgroup_mask) {
+        header += "OPTION NV_shader_thread_group;";
+    }
+    if (info.uses_subgroup_shuffles) {
+        header += "OPTION NV_shader_thread_shuffle;";
+    }
 }
 } // Anonymous namespace
 

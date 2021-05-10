@@ -116,6 +116,7 @@ struct Info {
     bool uses_sample_id{};
     bool uses_is_helper_invocation{};
     bool uses_subgroup_invocation_id{};
+    bool uses_subgroup_shuffles{};
     std::array<bool, 30> uses_patches{};
 
     std::array<InputVarying, 32> input_generics{};
