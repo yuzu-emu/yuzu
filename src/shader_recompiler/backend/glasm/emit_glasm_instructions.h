@@ -187,7 +187,8 @@ void EmitSelectU8(EmitContext& ctx, ScalarS32 cond, ScalarS32 true_value, Scalar
 void EmitSelectU16(EmitContext& ctx, ScalarS32 cond, ScalarS32 true_value, ScalarS32 false_value);
 void EmitSelectU32(EmitContext& ctx, IR::Inst& inst, ScalarS32 cond, ScalarS32 true_value,
                    ScalarS32 false_value);
-void EmitSelectU64(EmitContext& ctx, ScalarS32 cond, Register true_value, Register false_value);
+void EmitSelectU64(EmitContext& ctx, IR::Inst& inst, ScalarS32 cond, Register true_value,
+                   Register false_value);
 void EmitSelectF16(EmitContext& ctx, ScalarS32 cond, Register true_value, Register false_value);
 void EmitSelectF32(EmitContext& ctx, IR::Inst& inst, ScalarS32 cond, ScalarS32 true_value,
                    ScalarS32 false_value);
