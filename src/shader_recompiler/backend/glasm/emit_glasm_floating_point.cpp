@@ -75,22 +75,20 @@ void EmitFPFma64(EmitContext& ctx, IR::Inst& inst, ScalarF64 a, ScalarF64 b, Sca
     ctx.LongAdd("MAD.F64 {}.x,{},{},{};", inst, a, b, c);
 }
 
-void EmitFPMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 a,
-                 [[maybe_unused]] ScalarF32 b) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPMax32(EmitContext& ctx, IR::Inst& inst, ScalarF32 a, ScalarF32 b) {
+    ctx.Add("MAX.F {}.x,{},{};", inst, a, b);
 }
 
 void EmitFPMax64(EmitContext& ctx, IR::Inst& inst, ScalarF64 a, ScalarF64 b) {
-    ctx.LongAdd("MAX.F64 {},{},{};", inst, a, b);
+    ctx.LongAdd("MAX.F64 {}.x,{},{};", inst, a, b);
 }
 
-void EmitFPMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 a,
-                 [[maybe_unused]] ScalarF32 b) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPMin32(EmitContext& ctx, IR::Inst& inst, ScalarF32 a, ScalarF32 b) {
+    ctx.Add("MIN.F {}.x,{},{};", inst, a, b);
 }
 
 void EmitFPMin64(EmitContext& ctx, IR::Inst& inst, ScalarF64 a, ScalarF64 b) {
-    ctx.LongAdd("MIN.F64 {},{},{};", inst, a, b);
+    ctx.LongAdd("MIN.F64 {}.x,{},{};", inst, a, b);
 }
 
 void EmitFPMul16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
