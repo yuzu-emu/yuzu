@@ -43,7 +43,7 @@ void EmitSelectU64(EmitContext& ctx, IR::Inst& inst, ScalarS32 cond, Register tr
                 cond, ret, true_value);
     } else {
         ctx.Add("MOV.S.CC RC.x,{};"
-                "MOV.U64 {}.x(EQ.x),{};"
+                "MOV.U64 {}.x,{};"
                 "MOV.U64 {}.x(NE.x),{};",
                 cond, ret, false_value, ret, true_value);
     }

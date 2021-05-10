@@ -41,10 +41,23 @@ template <typename ObjectType>
 void CompositeInsert(EmitContext& ctx, IR::Inst& inst, Register composite, ObjectType object,
                      u32 index, char type) {
     const Register ret{ctx.reg_alloc.Define(inst)};
-    if (ret != composite) {
-        ctx.Add("MOV.{} {},{};", type, ret, composite);
+    const char swizzle{"xyzw"[index]};
+    if (ret != composite && ret == object) {
+        // The object is aliased with the return value, so we have to use a temporary to insert
+        ctx.Add("MOV.{} RC,{};"
+                "MOV.{} RC.{},{};"
+                "MOV.{} {},RC;",
+                type, composite, type, swizzle, object, type, ret);
+    } else if (ret != composite) {
+        // The input composite is not aliased with the return value so we have to copy it before
+        // hand. But the insert object is not aliased with the return value, so we don't have to
+        // worry about that
+        ctx.Add("MOV.{} {},{};MOV.{},{}.{},{};", type, ret, composite, type, ret, swizzle, object);
+    } else {
+        // The return value is alised so we can just insert the object, it doesn't matter if it's
+        // aliased
+        ctx.Add("MOV.{} {}.{},{};", type, ret, swizzle, object);
     }
-    ctx.Add("MOV.{} {}.{},{};", type, ret, "xyzw"[index], object);
 }
 } // Anonymous namespace
 

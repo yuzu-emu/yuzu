@@ -38,9 +38,9 @@ template <typename InputType>
 void Clamp(EmitContext& ctx, Register ret, InputType value, InputType min_value,
            InputType max_value, std::string_view type) {
     // Call MAX first to properly clamp nan to min_value instead
-    ctx.Add("MAX.{} {}.x,{},{};"
-            "MIN.{} {}.x,{}.x,{};",
-            type, ret, min_value, value, type, ret, ret, max_value);
+    ctx.Add("MAX.{} RC.x,{},{};"
+            "MIN.{} {}.x,RC.x,{};",
+            type, min_value, value, type, ret, max_value);
 }
 } // Anonymous namespace
 
@@ -159,7 +159,7 @@ void EmitFPRecipSqrt64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Regis
 
 void EmitFPSqrt(EmitContext& ctx, IR::Inst& inst, ScalarF32 value) {
     const Register ret{ctx.reg_alloc.Define(inst)};
-    ctx.Add("RSQ {}.x,{};RCP {}.x,{}.x;", ret, value, ret, ret);
+    ctx.Add("RSQ RC.x,{};RCP {}.x,RC.x;", value, ret);
 }
 
 void EmitFPSaturate16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
