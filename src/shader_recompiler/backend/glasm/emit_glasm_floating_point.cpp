@@ -9,11 +9,10 @@
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLASM {
-
+namespace {
 template <typename InputType>
-static void Compare(EmitContext& ctx, IR::Inst& inst, InputType lhs, InputType rhs,
-                    std::string_view op, std::string_view type, bool ordered,
-                    bool inequality = false) {
+void Compare(EmitContext& ctx, IR::Inst& inst, InputType lhs, InputType rhs, std::string_view op,
+             std::string_view type, bool ordered, bool inequality = false) {
     const Register ret{ctx.reg_alloc.Define(inst)};
     ctx.Add("{}.{} RC.x,{},{};", op, type, lhs, rhs);
     if (ordered && inequality) {
@@ -34,6 +33,16 @@ static void Compare(EmitContext& ctx, IR::Inst& inst, InputType lhs, InputType r
                 type, lhs, lhs, type, rhs, rhs, ret);
     }
 }
+
+template <typename InputType>
+void Clamp(EmitContext& ctx, Register ret, InputType value, InputType min_value,
+           InputType max_value) {
+    // Call MAX first to properly clamp nan to min_value instead
+    ctx.Add("MAX.F {}.x,{},{};"
+            "MIN.F {}.x,{},{};",
+            ret, min_value, value, ret, ret, max_value);
+}
+} // Anonymous namespace
 
 void EmitFPAbs16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                  [[maybe_unused]] Register value) {
@@ -171,18 +180,12 @@ void EmitFPClamp16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register 
 
 void EmitFPClamp32(EmitContext& ctx, IR::Inst& inst, ScalarF32 value, ScalarF32 min_value,
                    ScalarF32 max_value) {
-    const Register ret{ctx.reg_alloc.Define(inst)};
-    ctx.Add("MIN.F {}.x,{},{};"
-            "MAX.F {}.x,{},{};",
-            ret, max_value, value, ret, ret, min_value);
+    Clamp(ctx, ctx.reg_alloc.Define(inst), value, min_value, max_value);
 }
 
 void EmitFPClamp64(EmitContext& ctx, IR::Inst& inst, ScalarF64 value, ScalarF64 min_value,
                    ScalarF64 max_value) {
-    const Register ret{ctx.reg_alloc.LongDefine(inst)};
-    ctx.Add("MIN.F64 {}.x,{},{};"
-            "MAX.F64 {}.x,{},{};",
-            ret, max_value, value, ret, ret, min_value);
+    Clamp(ctx, ctx.reg_alloc.LongDefine(inst), value, min_value, max_value);
 }
 
 void EmitFPRoundEven16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
