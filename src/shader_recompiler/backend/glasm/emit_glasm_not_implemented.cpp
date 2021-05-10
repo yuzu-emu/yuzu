@@ -572,20 +572,20 @@ void EmitGlobalAtomicMaxF32x2(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitLogicalOr(EmitContext& ctx, ScalarS32 a, ScalarS32 b) {
-    NotImplemented();
+void EmitLogicalOr(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
+    ctx.Add("OR.S {},{},{};", inst, a, b);
 }
 
-void EmitLogicalAnd(EmitContext& ctx, ScalarS32 a, ScalarS32 b) {
-    NotImplemented();
+void EmitLogicalAnd(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
+    ctx.Add("AND.S {},{},{};", inst, a, b);
 }
 
-void EmitLogicalXor(EmitContext& ctx, ScalarS32 a, ScalarS32 b) {
-    NotImplemented();
+void EmitLogicalXor(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
+    ctx.Add("XOR.S {},{},{};", inst, a, b);
 }
 
-void EmitLogicalNot(EmitContext& ctx, ScalarS32 value) {
-    NotImplemented();
+void EmitLogicalNot(EmitContext& ctx, IR::Inst& inst, ScalarS32 value) {
+    ctx.Add("SEQ.S {},{},0;", inst, value);
 }
 
 void EmitConvertS16F16(EmitContext& ctx, Register value) {
