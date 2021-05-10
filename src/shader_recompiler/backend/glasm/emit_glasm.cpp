@@ -149,6 +149,18 @@ void EmitInst(EmitContext& ctx, IR::Inst* inst) {
     }
     throw LogicError("Invalid opcode {}", inst->GetOpcode());
 }
+
+void SetupOptions(std::string& header, Info info) {
+    if (info.uses_int64_bit_atomics) {
+        header += "OPTION NV_shader_atomic_int64;";
+    }
+    if (info.uses_atomic_f32_add) {
+        header += "OPTION NV_shader_atomic_float;";
+    }
+    if (info.uses_atomic_f16x2_add || info.uses_atomic_f16x2_min || info.uses_atomic_f16x2_max) {
+        header += "OPTION NV_shader_atomic_fp16_vector;";
+    }
+}
 } // Anonymous namespace
 
 std::string EmitGLASM(const Profile&, IR::Program& program, Bindings&) {
@@ -160,6 +172,7 @@ std::string EmitGLASM(const Profile&, IR::Program& program, Bindings&) {
     }
     std::string header = "!!NVcp5.0\n"
                          "OPTION NV_internal;";
+    SetupOptions(header, program.info);
     switch (program.stage) {
     case Stage::Compute:
         header += fmt::format("GROUP_SIZE {} {} {};", program.workgroup_size[0],

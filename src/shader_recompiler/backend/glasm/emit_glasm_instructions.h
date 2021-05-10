@@ -356,60 +356,60 @@ void EmitSharedAtomicOr32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 
 void EmitSharedAtomicXor32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value);
 void EmitSharedAtomicExchange32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value);
 void EmitSharedAtomicExchange64(EmitContext& ctx, ScalarU32 pointer_offset, Register value);
-void EmitStorageAtomicIAdd32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             ScalarU32 value);
-void EmitStorageAtomicSMin32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             ScalarS32 value);
-void EmitStorageAtomicUMin32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             ScalarU32 value);
-void EmitStorageAtomicSMax32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             ScalarS32 value);
-void EmitStorageAtomicUMax32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             ScalarU32 value);
-void EmitStorageAtomicInc32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                            ScalarU32 value);
-void EmitStorageAtomicDec32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                            ScalarU32 value);
-void EmitStorageAtomicAnd32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                            ScalarU32 value);
-void EmitStorageAtomicOr32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                           ScalarU32 value);
-void EmitStorageAtomicXor32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                            ScalarU32 value);
-void EmitStorageAtomicExchange32(EmitContext& ctx, const IR::Value& binding,
-                                 const IR::Value& offset, ScalarU32 value);
-void EmitStorageAtomicIAdd64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             Register value);
-void EmitStorageAtomicSMin64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             Register value);
-void EmitStorageAtomicUMin64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             Register value);
-void EmitStorageAtomicSMax64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             Register value);
-void EmitStorageAtomicUMax64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             Register value);
-void EmitStorageAtomicAnd64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                            Register value);
-void EmitStorageAtomicOr64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                           Register value);
-void EmitStorageAtomicXor64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                            Register value);
-void EmitStorageAtomicExchange64(EmitContext& ctx, const IR::Value& binding,
-                                 const IR::Value& offset, Register value);
-void EmitStorageAtomicAddF32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             ScalarF32 value);
-void EmitStorageAtomicAddF16x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                               Register value);
-void EmitStorageAtomicAddF32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                               Register value);
-void EmitStorageAtomicMinF16x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                               Register value);
-void EmitStorageAtomicMinF32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                               Register value);
-void EmitStorageAtomicMaxF16x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                               Register value);
-void EmitStorageAtomicMaxF32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                               Register value);
+void EmitStorageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                             ScalarU32 offset, ScalarU32 value);
+void EmitStorageAtomicSMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                             ScalarU32 offset, ScalarS32 value);
+void EmitStorageAtomicUMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                             ScalarU32 offset, ScalarU32 value);
+void EmitStorageAtomicSMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                             ScalarU32 offset, ScalarS32 value);
+void EmitStorageAtomicUMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                             ScalarU32 offset, ScalarU32 value);
+void EmitStorageAtomicInc32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                            ScalarU32 offset, ScalarU32 value);
+void EmitStorageAtomicDec32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                            ScalarU32 offset, ScalarU32 value);
+void EmitStorageAtomicAnd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                            ScalarU32 offset, ScalarU32 value);
+void EmitStorageAtomicOr32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                           ScalarU32 offset, ScalarU32 value);
+void EmitStorageAtomicXor32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                            ScalarU32 offset, ScalarU32 value);
+void EmitStorageAtomicExchange32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                                 ScalarU32 offset, ScalarU32 value);
+void EmitStorageAtomicIAdd64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                             ScalarU32 offset, Register value);
+void EmitStorageAtomicSMin64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                             ScalarU32 offset, Register value);
+void EmitStorageAtomicUMin64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                             ScalarU32 offset, Register value);
+void EmitStorageAtomicSMax64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                             ScalarU32 offset, Register value);
+void EmitStorageAtomicUMax64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                             ScalarU32 offset, Register value);
+void EmitStorageAtomicAnd64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                            ScalarU32 offset, Register value);
+void EmitStorageAtomicOr64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                           ScalarU32 offset, Register value);
+void EmitStorageAtomicXor64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                            ScalarU32 offset, Register value);
+void EmitStorageAtomicExchange64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                                 ScalarU32 offset, Register value);
+void EmitStorageAtomicAddF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                             ScalarU32 offset, ScalarF32 value);
+void EmitStorageAtomicAddF16x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               ScalarU32 offset, Register value);
+void EmitStorageAtomicAddF32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               ScalarU32 offset, Register value);
+void EmitStorageAtomicMinF16x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               ScalarU32 offset, Register value);
+void EmitStorageAtomicMinF32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               ScalarU32 offset, Register value);
+void EmitStorageAtomicMaxF16x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               ScalarU32 offset, Register value);
+void EmitStorageAtomicMaxF32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               ScalarU32 offset, Register value);
 void EmitGlobalAtomicIAdd32(EmitContext& ctx);
 void EmitGlobalAtomicSMin32(EmitContext& ctx);
 void EmitGlobalAtomicUMin32(EmitContext& ctx);
