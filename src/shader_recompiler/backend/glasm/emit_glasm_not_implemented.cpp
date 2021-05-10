@@ -281,18 +281,6 @@ void EmitGetInBoundsFromOp(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitFPIsNan16(EmitContext& ctx, Register value) {
-    NotImplemented();
-}
-
-void EmitFPIsNan32(EmitContext& ctx, ScalarF32 value) {
-    NotImplemented();
-}
-
-void EmitFPIsNan64(EmitContext& ctx, Register value) {
-    NotImplemented();
-}
-
 void EmitSharedAtomicIAdd32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value) {
     NotImplemented();
 }
