@@ -99,7 +99,12 @@ void I2F(TranslatorVisitor& v, u64 insn, IR::U32U64 src) {
     }
     const int conversion_src_bitsize{i2f.int_format == IntFormat::U64 ? 64 : 32};
     const int dst_bitsize{BitSize(i2f.float_format)};
-    IR::F16F32F64 value{v.ir.ConvertIToF(dst_bitsize, conversion_src_bitsize, is_signed, src)};
+    const IR::FpControl fp_control{
+        .no_contraction = false,
+        .rounding = CastFpRounding(i2f.fp_rounding),
+        .fmz_mode = IR::FmzMode::DontCare,
+    };
+    auto value{v.ir.ConvertIToF(dst_bitsize, conversion_src_bitsize, is_signed, src, fp_control)};
     if (i2f.neg != 0) {
         if (i2f.abs != 0 || !is_signed) {
             // We know the value is positive

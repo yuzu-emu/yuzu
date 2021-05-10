@@ -1622,84 +1622,86 @@ U32U64 IREmitter::ConvertFToI(size_t bitsize, bool is_signed, const F16F32F64& v
     return is_signed ? ConvertFToS(bitsize, value) : ConvertFToU(bitsize, value);
 }
 
-F16F32F64 IREmitter::ConvertSToF(size_t dest_bitsize, size_t src_bitsize, const Value& value) {
+F16F32F64 IREmitter::ConvertSToF(size_t dest_bitsize, size_t src_bitsize, const Value& value,
+                                 FpControl control) {
     switch (dest_bitsize) {
     case 16:
         switch (src_bitsize) {
         case 8:
-            return Inst<F16>(Opcode::ConvertF16S8, value);
+            return Inst<F16>(Opcode::ConvertF16S8, Flags{control}, value);
         case 16:
-            return Inst<F16>(Opcode::ConvertF16S16, value);
+            return Inst<F16>(Opcode::ConvertF16S16, Flags{control}, value);
         case 32:
-            return Inst<F16>(Opcode::ConvertF16S32, value);
+            return Inst<F16>(Opcode::ConvertF16S32, Flags{control}, value);
         case 64:
-            return Inst<F16>(Opcode::ConvertF16S64, value);
+            return Inst<F16>(Opcode::ConvertF16S64, Flags{control}, value);
         }
         break;
     case 32:
         switch (src_bitsize) {
         case 8:
-            return Inst<F32>(Opcode::ConvertF32S8, value);
+            return Inst<F32>(Opcode::ConvertF32S8, Flags{control}, value);
         case 16:
-            return Inst<F32>(Opcode::ConvertF32S16, value);
+            return Inst<F32>(Opcode::ConvertF32S16, Flags{control}, value);
         case 32:
-            return Inst<F32>(Opcode::ConvertF32S32, value);
+            return Inst<F32>(Opcode::ConvertF32S32, Flags{control}, value);
         case 64:
-            return Inst<F32>(Opcode::ConvertF32S64, value);
+            return Inst<F32>(Opcode::ConvertF32S64, Flags{control}, value);
         }
         break;
     case 64:
         switch (src_bitsize) {
         case 8:
-            return Inst<F64>(Opcode::ConvertF64S8, value);
+            return Inst<F64>(Opcode::ConvertF64S8, Flags{control}, value);
         case 16:
-            return Inst<F64>(Opcode::ConvertF64S16, value);
+            return Inst<F64>(Opcode::ConvertF64S16, Flags{control}, value);
         case 32:
-            return Inst<F64>(Opcode::ConvertF64S32, value);
+            return Inst<F64>(Opcode::ConvertF64S32, Flags{control}, value);
         case 64:
-            return Inst<F64>(Opcode::ConvertF64S64, value);
+            return Inst<F64>(Opcode::ConvertF64S64, Flags{control}, value);
         }
         break;
     }
     throw InvalidArgument("Invalid bit size combination dst={} src={}", dest_bitsize, src_bitsize);
 }
 
-F16F32F64 IREmitter::ConvertUToF(size_t dest_bitsize, size_t src_bitsize, const Value& value) {
+F16F32F64 IREmitter::ConvertUToF(size_t dest_bitsize, size_t src_bitsize, const Value& value,
+                                 FpControl control) {
     switch (dest_bitsize) {
     case 16:
         switch (src_bitsize) {
         case 8:
-            return Inst<F16>(Opcode::ConvertF16U8, value);
+            return Inst<F16>(Opcode::ConvertF16U8, Flags{control}, value);
         case 16:
-            return Inst<F16>(Opcode::ConvertF16U16, value);
+            return Inst<F16>(Opcode::ConvertF16U16, Flags{control}, value);
         case 32:
-            return Inst<F16>(Opcode::ConvertF16U32, value);
+            return Inst<F16>(Opcode::ConvertF16U32, Flags{control}, value);
         case 64:
-            return Inst<F16>(Opcode::ConvertF16U64, value);
+            return Inst<F16>(Opcode::ConvertF16U64, Flags{control}, value);
         }
         break;
     case 32:
         switch (src_bitsize) {
         case 8:
-            return Inst<F32>(Opcode::ConvertF32U8, value);
+            return Inst<F32>(Opcode::ConvertF32U8, Flags{control}, value);
         case 16:
-            return Inst<F32>(Opcode::ConvertF32U16, value);
+            return Inst<F32>(Opcode::ConvertF32U16, Flags{control}, value);
         case 32:
-            return Inst<F32>(Opcode::ConvertF32U32, value);
+            return Inst<F32>(Opcode::ConvertF32U32, Flags{control}, value);
         case 64:
-            return Inst<F32>(Opcode::ConvertF32U64, value);
+            return Inst<F32>(Opcode::ConvertF32U64, Flags{control}, value);
         }
         break;
     case 64:
         switch (src_bitsize) {
         case 8:
-            return Inst<F64>(Opcode::ConvertF64U8, value);
+            return Inst<F64>(Opcode::ConvertF64U8, Flags{control}, value);
         case 16:
-            return Inst<F64>(Opcode::ConvertF64U16, value);
+            return Inst<F64>(Opcode::ConvertF64U16, Flags{control}, value);
         case 32:
-            return Inst<F64>(Opcode::ConvertF64U32, value);
+            return Inst<F64>(Opcode::ConvertF64U32, Flags{control}, value);
         case 64:
-            return Inst<F64>(Opcode::ConvertF64U64, value);
+            return Inst<F64>(Opcode::ConvertF64U64, Flags{control}, value);
         }
         break;
     }
@@ -1707,9 +1709,9 @@ F16F32F64 IREmitter::ConvertUToF(size_t dest_bitsize, size_t src_bitsize, const 
 }
 
 F16F32F64 IREmitter::ConvertIToF(size_t dest_bitsize, size_t src_bitsize, bool is_signed,
-                                 const Value& value) {
-    return is_signed ? ConvertSToF(dest_bitsize, src_bitsize, value)
-                     : ConvertUToF(dest_bitsize, src_bitsize, value);
+                                 const Value& value, FpControl control) {
+    return is_signed ? ConvertSToF(dest_bitsize, src_bitsize, value, control)
+                     : ConvertUToF(dest_bitsize, src_bitsize, value, control);
 }
 
 U32U64 IREmitter::UConvert(size_t result_bitsize, const U32U64& value) {
