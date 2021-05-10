@@ -99,7 +99,11 @@ public:
 
     Register LongDefine(IR::Inst& inst);
 
+    [[nodiscard]] Value Peek(const IR::Value& value);
+
     Value Consume(const IR::Value& value);
+
+    void Unref(IR::Inst& inst);
 
     [[nodiscard]] Register AllocReg();
 
@@ -123,9 +127,13 @@ private:
     static constexpr size_t NUM_REGS = 4096;
     static constexpr size_t NUM_ELEMENTS = 4;
 
+    Value MakeImm(const IR::Value& value);
+
     Register Define(IR::Inst& inst, bool is_long);
 
-    Value Consume(IR::Inst& inst);
+    Value PeekInst(IR::Inst& inst);
+
+    Value ConsumeInst(IR::Inst& inst);
 
     Id Alloc(bool is_long);
 
