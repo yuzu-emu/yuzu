@@ -10,6 +10,31 @@
 
 namespace Shader::Backend::GLASM {
 
+template <typename InputType>
+static void Compare(EmitContext& ctx, IR::Inst& inst, InputType lhs, InputType rhs,
+                    std::string_view op, std::string_view type, bool ordered,
+                    bool inequality = false) {
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    ctx.Add("{}.{} RC.x,{},{};", op, type, lhs, rhs);
+    if (ordered && inequality) {
+        ctx.Add("SEQ.{} RC.y,{},{};"
+                "SEQ.{} RC.z,{},{};"
+                "AND.U RC.x,RC.x,RC.y;"
+                "AND.U RC.x,RC.x,RC.z;"
+                "SNE.S {}.x,RC.x,0;",
+                type, lhs, lhs, type, rhs, rhs, ret);
+    } else if (ordered) {
+        ctx.Add("SNE.S {}.x,RC.x,0;", ret);
+    } else {
+        ctx.Add("SNE.{} RC.y,{},{};"
+                "SNE.{} RC.z,{},{};"
+                "OR.U RC.x,RC.x,RC.y;"
+                "OR.U RC.x,RC.x,RC.z;"
+                "SNE.S {}.x,RC.x,0;",
+                type, lhs, lhs, type, rhs, rhs, ret);
+    }
+}
+
 void EmitFPAbs16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                  [[maybe_unused]] Register value) {
     throw NotImplementedException("GLASM instruction");
@@ -46,10 +71,8 @@ void EmitFPFma32(EmitContext& ctx, IR::Inst& inst, ScalarF32 a, ScalarF32 b, Sca
     ctx.Add("MAD.F {}.x,{},{},{};", inst, a, b, c);
 }
 
-void EmitFPFma64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                 [[maybe_unused]] Register a, [[maybe_unused]] Register b,
-                 [[maybe_unused]] Register c) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPFma64(EmitContext& ctx, IR::Inst& inst, ScalarF64 a, ScalarF64 b, ScalarF64 c) {
+    ctx.LongAdd("MAD.F64 {}.x,{},{},{};", inst, a, b, c);
 }
 
 void EmitFPMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 a,
@@ -57,9 +80,8 @@ void EmitFPMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 a
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPMax64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register a,
-                 [[maybe_unused]] Register b) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPMax64(EmitContext& ctx, IR::Inst& inst, ScalarF64 a, ScalarF64 b) {
+    ctx.LongAdd("MAX.F64 {},{},{};", inst, a, b);
 }
 
 void EmitFPMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 a,
@@ -67,9 +89,8 @@ void EmitFPMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 a
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPMin64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register a,
-                 [[maybe_unused]] Register b) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPMin64(EmitContext& ctx, IR::Inst& inst, ScalarF64 a, ScalarF64 b) {
+    ctx.LongAdd("MIN.F64 {},{},{};", inst, a, b);
 }
 
 void EmitFPMul16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -81,9 +102,8 @@ void EmitFPMul32(EmitContext& ctx, IR::Inst& inst, ScalarF32 a, ScalarF32 b) {
     ctx.Add("MUL.F {}.x,{},{};", inst, a, b);
 }
 
-void EmitFPMul64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                 [[maybe_unused]] Register a, [[maybe_unused]] Register b) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPMul64(EmitContext& ctx, IR::Inst& inst, ScalarF64 a, ScalarF64 b) {
+    ctx.LongAdd("MUL.F64 {}.x,{},{};", inst, a, b);
 }
 
 void EmitFPNeg16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
@@ -215,13 +235,11 @@ void EmitFPOrdEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Regist
 }
 
 void EmitFPOrdEqual32(EmitContext& ctx, IR::Inst& inst, ScalarF32 lhs, ScalarF32 rhs) {
-    const Register ret{ctx.reg_alloc.Define(inst)};
-    ctx.Add("SEQ.F {}.x,{},{};SNE.S {}.x,{},0;", ret, lhs, rhs, ret, ret);
+    Compare(ctx, inst, lhs, rhs, "SEQ", "F", true);
 }
 
-void EmitFPOrdEqual64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
-                      [[maybe_unused]] Register rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPOrdEqual64(EmitContext& ctx, IR::Inst& inst, ScalarF64 lhs, ScalarF64 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SEQ", "F64", true);
 }
 
 void EmitFPUnordEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
@@ -229,14 +247,12 @@ void EmitFPUnordEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Regi
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPUnordEqual32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 lhs,
-                        [[maybe_unused]] ScalarF32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPUnordEqual32(EmitContext& ctx, IR::Inst& inst, ScalarF32 lhs, ScalarF32 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SEQ", "F", false);
 }
 
-void EmitFPUnordEqual64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
-                        [[maybe_unused]] Register rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPUnordEqual64(EmitContext& ctx, IR::Inst& inst, ScalarF64 lhs, ScalarF64 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SEQ", "F64", false);
 }
 
 void EmitFPOrdNotEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
@@ -244,14 +260,12 @@ void EmitFPOrdNotEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Reg
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPOrdNotEqual32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 lhs,
-                         [[maybe_unused]] ScalarF32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPOrdNotEqual32(EmitContext& ctx, IR::Inst& inst, ScalarF32 lhs, ScalarF32 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SNE", "F", true, true);
 }
 
-void EmitFPOrdNotEqual64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
-                         [[maybe_unused]] Register rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPOrdNotEqual64(EmitContext& ctx, IR::Inst& inst, ScalarF64 lhs, ScalarF64 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SNE", "F64", true, true);
 }
 
 void EmitFPUnordNotEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
@@ -259,14 +273,12 @@ void EmitFPUnordNotEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] R
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPUnordNotEqual32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 lhs,
-                           [[maybe_unused]] ScalarF32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPUnordNotEqual32(EmitContext& ctx, IR::Inst& inst, ScalarF32 lhs, ScalarF32 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SNE", "F", false, true);
 }
 
-void EmitFPUnordNotEqual64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
-                           [[maybe_unused]] Register rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPUnordNotEqual64(EmitContext& ctx, IR::Inst& inst, ScalarF64 lhs, ScalarF64 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SNE", "F64", false, true);
 }
 
 void EmitFPOrdLessThan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
@@ -275,13 +287,11 @@ void EmitFPOrdLessThan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Reg
 }
 
 void EmitFPOrdLessThan32(EmitContext& ctx, IR::Inst& inst, ScalarF32 lhs, ScalarF32 rhs) {
-    const Register ret{ctx.reg_alloc.Define(inst)};
-    ctx.Add("SLT.F {}.x,{},{};SNE.S {}.x,{}.x,0;", ret, lhs, rhs, ret, ret);
+    Compare(ctx, inst, lhs, rhs, "SLT", "F", true);
 }
 
-void EmitFPOrdLessThan64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
-                         [[maybe_unused]] Register rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPOrdLessThan64(EmitContext& ctx, IR::Inst& inst, ScalarF64 lhs, ScalarF64 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SLT", "F64", true);
 }
 
 void EmitFPUnordLessThan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
@@ -289,14 +299,12 @@ void EmitFPUnordLessThan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] R
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPUnordLessThan32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 lhs,
-                           [[maybe_unused]] ScalarF32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPUnordLessThan32(EmitContext& ctx, IR::Inst& inst, ScalarF32 lhs, ScalarF32 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SLT", "F", false);
 }
 
-void EmitFPUnordLessThan64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
-                           [[maybe_unused]] Register rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPUnordLessThan64(EmitContext& ctx, IR::Inst& inst, ScalarF64 lhs, ScalarF64 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SLT", "F64", false);
 }
 
 void EmitFPOrdGreaterThan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
@@ -304,14 +312,12 @@ void EmitFPOrdGreaterThan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] 
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPOrdGreaterThan32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 lhs,
-                            [[maybe_unused]] ScalarF32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPOrdGreaterThan32(EmitContext& ctx, IR::Inst& inst, ScalarF32 lhs, ScalarF32 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SGT", "F", true);
 }
 
-void EmitFPOrdGreaterThan64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
-                            [[maybe_unused]] Register rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPOrdGreaterThan64(EmitContext& ctx, IR::Inst& inst, ScalarF64 lhs, ScalarF64 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SGT", "F64", true);
 }
 
 void EmitFPUnordGreaterThan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
@@ -319,14 +325,12 @@ void EmitFPUnordGreaterThan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPUnordGreaterThan32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 lhs,
-                              [[maybe_unused]] ScalarF32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPUnordGreaterThan32(EmitContext& ctx, IR::Inst& inst, ScalarF32 lhs, ScalarF32 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SGT", "F", false);
 }
 
-void EmitFPUnordGreaterThan64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
-                              [[maybe_unused]] Register rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPUnordGreaterThan64(EmitContext& ctx, IR::Inst& inst, ScalarF64 lhs, ScalarF64 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SGT", "F64", false);
 }
 
 void EmitFPOrdLessThanEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
@@ -335,13 +339,11 @@ void EmitFPOrdLessThanEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]
 }
 
 void EmitFPOrdLessThanEqual32(EmitContext& ctx, IR::Inst& inst, ScalarF32 lhs, ScalarF32 rhs) {
-    const Register ret{ctx.reg_alloc.Define(inst)};
-    ctx.Add("SLE.F {}.x,{},{};SNE.S {}.x,{}.x,0;", ret, lhs, rhs, ret, ret);
+    Compare(ctx, inst, lhs, rhs, "SLE", "F", true);
 }
 
-void EmitFPOrdLessThanEqual64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
-                              [[maybe_unused]] Register rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPOrdLessThanEqual64(EmitContext& ctx, IR::Inst& inst, ScalarF64 lhs, ScalarF64 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SLE", "F64", true);
 }
 
 void EmitFPUnordLessThanEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
@@ -349,14 +351,12 @@ void EmitFPUnordLessThanEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPUnordLessThanEqual32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 lhs,
-                                [[maybe_unused]] ScalarF32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPUnordLessThanEqual32(EmitContext& ctx, IR::Inst& inst, ScalarF32 lhs, ScalarF32 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SLE", "F", false);
 }
 
-void EmitFPUnordLessThanEqual64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
-                                [[maybe_unused]] Register rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPUnordLessThanEqual64(EmitContext& ctx, IR::Inst& inst, ScalarF64 lhs, ScalarF64 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SLE", "F64", false);
 }
 
 void EmitFPOrdGreaterThanEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
@@ -364,14 +364,12 @@ void EmitFPOrdGreaterThanEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unus
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPOrdGreaterThanEqual32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 lhs,
-                                 [[maybe_unused]] ScalarF32 rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPOrdGreaterThanEqual32(EmitContext& ctx, IR::Inst& inst, ScalarF32 lhs, ScalarF32 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SGE", "F", true);
 }
 
-void EmitFPOrdGreaterThanEqual64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
-                                 [[maybe_unused]] Register rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPOrdGreaterThanEqual64(EmitContext& ctx, IR::Inst& inst, ScalarF64 lhs, ScalarF64 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SGE", "F64", true);
 }
 
 void EmitFPUnordGreaterThanEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
@@ -379,14 +377,24 @@ void EmitFPUnordGreaterThanEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_un
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPUnordGreaterThanEqual32([[maybe_unused]] EmitContext& ctx,
-                                   [[maybe_unused]] ScalarF32 lhs, [[maybe_unused]] ScalarF32 rhs) {
+void EmitFPUnordGreaterThanEqual32(EmitContext& ctx, IR::Inst& inst, ScalarF32 lhs, ScalarF32 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SGE", "F", false);
+}
+
+void EmitFPUnordGreaterThanEqual64(EmitContext& ctx, IR::Inst& inst, ScalarF64 lhs, ScalarF64 rhs) {
+    Compare(ctx, inst, lhs, rhs, "SGE", "F64", false);
+}
+
+void EmitFPIsNan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPUnordGreaterThanEqual64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register lhs,
-                                   [[maybe_unused]] Register rhs) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPIsNan32(EmitContext& ctx, IR::Inst& inst, ScalarF32 value) {
+    Compare(ctx, inst, value, value, "SNE", "F", true, false);
+}
+
+void EmitFPIsNan64(EmitContext& ctx, IR::Inst& inst, ScalarF64 value) {
+    Compare(ctx, inst, value, value, "SNE", "F64", true, false);
 }
 
 } // namespace Shader::Backend::GLASM
