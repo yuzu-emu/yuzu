@@ -249,14 +249,6 @@ void EmitWriteSharedU128(EmitContext& ctx, ScalarU32 offset, Register value) {
     NotImplemented();
 }
 
-void EmitPackDouble2x32(EmitContext& ctx, Register value) {
-    NotImplemented();
-}
-
-void EmitUnpackDouble2x32(EmitContext& ctx, Register value) {
-    NotImplemented();
-}
-
 void EmitGetZeroFromOp(EmitContext& ctx) {
     NotImplemented();
 }
