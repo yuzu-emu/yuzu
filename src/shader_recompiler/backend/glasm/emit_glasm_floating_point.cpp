@@ -125,40 +125,41 @@ void EmitFPNeg64(EmitContext& ctx, IR::Inst& inst, Register value) {
     ctx.LongAdd("MOV.F64 {}.x,-{};", inst, value);
 }
 
-void EmitFPSin([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPSin(EmitContext& ctx, IR::Inst& inst, ScalarF32 value) {
+    ctx.Add("SIN {}.x,{};", inst, value);
 }
 
-void EmitFPCos([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPCos(EmitContext& ctx, IR::Inst& inst, ScalarF32 value) {
+    ctx.Add("COS {}.x,{};", inst, value);
 }
 
-void EmitFPExp2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPExp2(EmitContext& ctx, IR::Inst& inst, ScalarF32 value) {
+    ctx.Add("EX2 {}.x,{};", inst, value);
 }
 
-void EmitFPLog2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPLog2(EmitContext& ctx, IR::Inst& inst, ScalarF32 value) {
+    ctx.Add("LG2 {}.x,{};", inst, value);
 }
 
-void EmitFPRecip32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPRecip32(EmitContext& ctx, IR::Inst& inst, ScalarF32 value) {
+    ctx.Add("RCP {}.x,{};", inst, value);
 }
 
 void EmitFPRecip64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPRecipSqrt32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPRecipSqrt32(EmitContext& ctx, IR::Inst& inst, ScalarF32 value) {
+    ctx.Add("RSQ {}.x,{};", inst, value);
 }
 
 void EmitFPRecipSqrt64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitFPSqrt([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFPSqrt(EmitContext& ctx, IR::Inst& inst, ScalarF32 value) {
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    ctx.Add("RSQ {}.x,{};RCP {}.x,{}.x;", ret, value, ret, ret);
 }
 
 void EmitFPSaturate16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
