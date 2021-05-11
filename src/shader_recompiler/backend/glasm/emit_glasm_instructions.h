@@ -129,7 +129,7 @@ void EmitLoadSharedS8(EmitContext& ctx, ScalarU32 offset);
 void EmitLoadSharedU16(EmitContext& ctx, ScalarU32 offset);
 void EmitLoadSharedS16(EmitContext& ctx, ScalarU32 offset);
 void EmitLoadSharedU32(EmitContext& ctx, ScalarU32 offset);
-void EmitLoadSharedU64(EmitContext& ctx, ScalarU32 offset);
+void EmitLoadSharedU64(EmitContext& ctx, IR::Inst& inst, ScalarU32 offset);
 void EmitLoadSharedU128(EmitContext& ctx, ScalarU32 offset);
 void EmitWriteSharedU8(EmitContext& ctx, ScalarU32 offset, ScalarU32 value);
 void EmitWriteSharedU16(EmitContext& ctx, ScalarU32 offset, ScalarU32 value);
@@ -345,18 +345,30 @@ void EmitUGreaterThan(EmitContext& ctx, IR::Inst& inst, ScalarU32 lhs, ScalarU32
 void EmitINotEqual(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs);
 void EmitSGreaterThanEqual(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs);
 void EmitUGreaterThanEqual(EmitContext& ctx, IR::Inst& inst, ScalarU32 lhs, ScalarU32 rhs);
-void EmitSharedAtomicIAdd32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value);
-void EmitSharedAtomicSMin32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarS32 value);
-void EmitSharedAtomicUMin32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value);
-void EmitSharedAtomicSMax32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarS32 value);
-void EmitSharedAtomicUMax32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value);
-void EmitSharedAtomicInc32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value);
-void EmitSharedAtomicDec32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value);
-void EmitSharedAtomicAnd32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value);
-void EmitSharedAtomicOr32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value);
-void EmitSharedAtomicXor32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value);
-void EmitSharedAtomicExchange32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value);
-void EmitSharedAtomicExchange64(EmitContext& ctx, ScalarU32 pointer_offset, Register value);
+void EmitSharedAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                            ScalarU32 value);
+void EmitSharedAtomicSMin32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                            ScalarS32 value);
+void EmitSharedAtomicUMin32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                            ScalarU32 value);
+void EmitSharedAtomicSMax32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                            ScalarS32 value);
+void EmitSharedAtomicUMax32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                            ScalarU32 value);
+void EmitSharedAtomicInc32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                           ScalarU32 value);
+void EmitSharedAtomicDec32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                           ScalarU32 value);
+void EmitSharedAtomicAnd32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                           ScalarU32 value);
+void EmitSharedAtomicOr32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                          ScalarU32 value);
+void EmitSharedAtomicXor32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                           ScalarU32 value);
+void EmitSharedAtomicExchange32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                                ScalarU32 value);
+void EmitSharedAtomicExchange64(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                                Register value);
 void EmitStorageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              ScalarU32 offset, ScalarU32 value);
 void EmitStorageAtomicSMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
