@@ -199,54 +199,6 @@ void EmitUndefU64(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitLoadSharedU8(EmitContext& ctx, ScalarU32 offset) {
-    NotImplemented();
-}
-
-void EmitLoadSharedS8(EmitContext& ctx, ScalarU32 offset) {
-    NotImplemented();
-}
-
-void EmitLoadSharedU16(EmitContext& ctx, ScalarU32 offset) {
-    NotImplemented();
-}
-
-void EmitLoadSharedS16(EmitContext& ctx, ScalarU32 offset) {
-    NotImplemented();
-}
-
-void EmitLoadSharedU32(EmitContext& ctx, ScalarU32 offset) {
-    NotImplemented();
-}
-
-void EmitLoadSharedU64(EmitContext& ctx, ScalarU32 offset) {
-    NotImplemented();
-}
-
-void EmitLoadSharedU128(EmitContext& ctx, ScalarU32 offset) {
-    NotImplemented();
-}
-
-void EmitWriteSharedU8(EmitContext& ctx, ScalarU32 offset, ScalarU32 value) {
-    NotImplemented();
-}
-
-void EmitWriteSharedU16(EmitContext& ctx, ScalarU32 offset, ScalarU32 value) {
-    NotImplemented();
-}
-
-void EmitWriteSharedU32(EmitContext& ctx, ScalarU32 offset, ScalarU32 value) {
-    NotImplemented();
-}
-
-void EmitWriteSharedU64(EmitContext& ctx, ScalarU32 offset, Register value) {
-    NotImplemented();
-}
-
-void EmitWriteSharedU128(EmitContext& ctx, ScalarU32 offset, Register value) {
-    NotImplemented();
-}
-
 void EmitGetZeroFromOp(EmitContext& ctx) {
     NotImplemented();
 }
@@ -268,54 +220,6 @@ void EmitGetSparseFromOp(EmitContext& ctx) {
 }
 
 void EmitGetInBoundsFromOp(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicIAdd32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicSMin32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarS32 value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicUMin32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicSMax32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarS32 value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicUMax32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicInc32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicDec32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicAnd32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicOr32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicXor32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicExchange32(EmitContext& ctx, ScalarU32 pointer_offset, ScalarU32 value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicExchange64(EmitContext& ctx, ScalarU32 pointer_offset, Register value) {
     NotImplemented();
 }
 

@@ -193,6 +193,9 @@ void SetupOptions(std::string& header, Info info) {
     if (info.uses_subgroup_shuffles) {
         header += "OPTION NV_shader_thread_shuffle;";
     }
+    // TODO: Track the shared atomic ops
+    header +=
+        "OPTION NV_shader_storage_buffer;OPTION NV_gpu_program_fp64;OPTION NV_bindless_texture;";
 }
 } // Anonymous namespace
 
@@ -213,6 +216,10 @@ std::string EmitGLASM(const Profile&, IR::Program& program, Bindings&) {
         break;
     default:
         break;
+    }
+    if (program.shared_memory_size > 0) {
+        header += fmt::format("SHARED_MEMORY {};", program.shared_memory_size);
+        header += fmt::format("SHARED shared_mem[]={{program.sharedmem}};");
     }
     header += "TEMP ";
     for (size_t index = 0; index < ctx.reg_alloc.NumUsedRegisters(); ++index) {

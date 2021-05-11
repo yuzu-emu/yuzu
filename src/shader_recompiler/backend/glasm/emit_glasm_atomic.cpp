@@ -35,6 +35,66 @@ void Atom(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU32 
 }
 } // namespace
 
+void EmitSharedAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                            ScalarU32 value) {
+    ctx.Add("ATOMS.ADD.U32 {},{},shared_mem[{}];", inst, value, pointer_offset);
+}
+
+void EmitSharedAtomicSMin32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                            ScalarS32 value) {
+    ctx.Add("ATOMS.MIN.S32 {},{},shared_mem[{}];", inst, value, pointer_offset);
+}
+
+void EmitSharedAtomicUMin32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                            ScalarU32 value) {
+    ctx.Add("ATOMS.MIN.U32 {},{},shared_mem[{}];", inst, value, pointer_offset);
+}
+
+void EmitSharedAtomicSMax32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                            ScalarS32 value) {
+    ctx.Add("ATOMS.MAX.S32 {},{},shared_mem[{}];", inst, value, pointer_offset);
+}
+
+void EmitSharedAtomicUMax32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                            ScalarU32 value) {
+    ctx.Add("ATOMS.MAX.U32 {},{},shared_mem[{}];", inst, value, pointer_offset);
+}
+
+void EmitSharedAtomicInc32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                           ScalarU32 value) {
+    ctx.Add("ATOMS.IWRAP.U32 {},{},shared_mem[{}];", inst, value, pointer_offset);
+}
+
+void EmitSharedAtomicDec32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                           ScalarU32 value) {
+    ctx.Add("ATOMS.DWRAP.U32 {},{},shared_mem[{}];", inst, value, pointer_offset);
+}
+
+void EmitSharedAtomicAnd32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                           ScalarU32 value) {
+    ctx.Add("ATOMS.AND.U32 {},{},shared_mem[{}];", inst, value, pointer_offset);
+}
+
+void EmitSharedAtomicOr32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                          ScalarU32 value) {
+    ctx.Add("ATOMS.OR.U32 {},{},shared_mem[{}];", inst, value, pointer_offset);
+}
+
+void EmitSharedAtomicXor32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                           ScalarU32 value) {
+    ctx.Add("ATOMS.XOR.U32 {},{},shared_mem[{}];", inst, value, pointer_offset);
+}
+
+void EmitSharedAtomicExchange32(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                                ScalarU32 value) {
+    ctx.Add("ATOMS.EXCH.U32 {},{},shared_mem[{}];", inst, value, pointer_offset);
+}
+
+void EmitSharedAtomicExchange64(EmitContext& ctx, IR::Inst& inst, ScalarU32 pointer_offset,
+                                Register value) {
+    ctx.LongAdd("ATOMS.EXCH.U64 {}.x,{},shared_mem[{}];", inst, value, pointer_offset);
+}
+
 void EmitStorageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              ScalarU32 offset, ScalarU32 value) {
     Atom(ctx, inst, binding, offset, value, "ADD", "U32");
