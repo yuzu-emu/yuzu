@@ -218,15 +218,16 @@ void SetupOptions(std::string& header, Info info) {
     if (info.uses_atomic_f16x2_add || info.uses_atomic_f16x2_min || info.uses_atomic_f16x2_max) {
         header += "OPTION NV_shader_atomic_fp16_vector;";
     }
-    if (info.uses_subgroup_invocation_id || info.uses_subgroup_mask) {
+    if (info.uses_subgroup_invocation_id || info.uses_subgroup_mask || info.uses_subgroup_vote) {
         header += "OPTION NV_shader_thread_group;";
     }
     if (info.uses_subgroup_shuffles) {
         header += "OPTION NV_shader_thread_shuffle;";
     }
     // TODO: Track the shared atomic ops
-    header +=
-        "OPTION NV_shader_storage_buffer;OPTION NV_gpu_program_fp64;OPTION NV_bindless_texture;";
+    header += "OPTION NV_shader_storage_buffer;"
+              "OPTION NV_gpu_program_fp64;"
+              "OPTION NV_bindless_texture;";
 }
 } // Anonymous namespace
 
