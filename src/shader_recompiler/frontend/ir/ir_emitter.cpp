@@ -61,16 +61,20 @@ F64 IREmitter::Imm64(f64 value) const {
     return F64{Value{value}};
 }
 
+void IREmitter::DummyReference(const Value& value) {
+    Inst(Opcode::DummyReference, value);
+}
+
+void IREmitter::PhiMove(IR::Inst& phi, const Value& value) {
+    Inst(Opcode::PhiMove, Value{&phi}, value);
+}
+
 void IREmitter::Prologue() {
     Inst(Opcode::Prologue);
 }
 
 void IREmitter::Epilogue() {
     Inst(Opcode::Epilogue);
-}
-
-void IREmitter::BranchConditionRef(const U1& cond) {
-    Inst(Opcode::BranchConditionRef, cond);
 }
 
 void IREmitter::DemoteToHelperInvocation() {
@@ -106,6 +110,9 @@ void IREmitter::SetReg(IR::Reg reg, const U32& value) {
 }
 
 U1 IREmitter::GetPred(IR::Pred pred, bool is_negated) {
+    if (pred == Pred::PT) {
+        return Imm1(!is_negated);
+    }
     const U1 value{Inst<U1>(Opcode::GetPred, pred)};
     if (is_negated) {
         return Inst<U1>(Opcode::LogicalNot, value);
@@ -264,6 +271,9 @@ static U1 GetFlowTest(IREmitter& ir, FlowTest flow_test) {
 U1 IREmitter::Condition(IR::Condition cond) {
     const FlowTest flow_test{cond.GetFlowTest()};
     const auto [pred, is_negated]{cond.GetPred()};
+    if (flow_test == FlowTest::T) {
+        return GetPred(pred, is_negated);
+    }
     return LogicalAnd(GetPred(pred, is_negated), GetFlowTest(*this, flow_test));
 }
 

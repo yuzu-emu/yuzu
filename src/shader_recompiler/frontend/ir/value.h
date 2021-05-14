@@ -391,4 +391,8 @@ inline f64 Value::F64() const {
     return imm_f64;
 }
 
+[[nodiscard]] inline bool IsPhi(const Inst& inst) {
+    return inst.GetOpcode() == Opcode::Phi;
+}
+
 } // namespace Shader::IR

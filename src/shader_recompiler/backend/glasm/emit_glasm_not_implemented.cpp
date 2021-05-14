@@ -17,13 +17,32 @@ namespace Shader::Backend::GLASM {
 
 #define NotImplemented() throw NotImplementedException("GLASM instruction {}", __LINE__)
 
-void EmitPhi(EmitContext& ctx, IR::Inst& inst) {
-    NotImplemented();
-}
+void EmitPhi(EmitContext&, IR::Inst&) {}
 
 void EmitVoid(EmitContext&) {}
 
-void EmitBranchConditionRef(EmitContext&) {}
+void EmitDummyReference(EmitContext&) {}
+
+void EmitPhiMove(EmitContext& ctx, const IR::Value& phi, const IR::Value& value) {
+    if (phi == value) {
+        return;
+    }
+    const Register phi_reg{ctx.reg_alloc.Consume(phi)};
+    const Value eval_value{ctx.reg_alloc.Consume(value)};
+    switch (phi.InstRecursive()->Arg(0).Type()) {
+    case IR::Type::U1:
+    case IR::Type::U32:
+    case IR::Type::F32:
+        ctx.Add("MOV.S {}.x,{};", phi_reg, ScalarS32{eval_value});
+        break;
+    case IR::Type::U64:
+    case IR::Type::F64:
+        ctx.Add("MOV.U64 {}.x,{};", phi_reg, ScalarRegister{eval_value});
+        break;
+    default:
+        throw NotImplementedException("Phi node type {}", phi.Type());
+    }
+}
 
 void EmitJoin(EmitContext& ctx) {
     NotImplemented();
