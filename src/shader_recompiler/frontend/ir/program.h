@@ -7,8 +7,7 @@
 #include <array>
 #include <string>
 
-#include <boost/container/small_vector.hpp>
-
+#include "shader_recompiler/frontend/ir/abstract_syntax_list.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/program_header.h"
 #include "shader_recompiler/shader_info.h"
@@ -17,6 +16,7 @@
 namespace Shader::IR {
 
 struct Program {
+    AbstractSyntaxList syntax_list;
     BlockList blocks;
     BlockList post_order_blocks;
     Info info;

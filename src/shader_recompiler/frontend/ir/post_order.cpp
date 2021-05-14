@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
+
 #include <boost/container/flat_set.hpp>
 #include <boost/container/small_vector.hpp>
 
@@ -10,35 +12,31 @@
 
 namespace Shader::IR {
 
-BlockList PostOrder(const BlockList& blocks) {
+BlockList PostOrder(const AbstractSyntaxNode& root) {
     boost::container::small_vector<Block*, 16> block_stack;
     boost::container::flat_set<Block*> visited;
-
     BlockList post_order_blocks;
-    post_order_blocks.reserve(blocks.size());
 
-    Block* const first_block{blocks.front()};
+    if (root.type != AbstractSyntaxNode::Type::Block) {
+        throw LogicError("First node in abstract syntax list root is not a block");
+    }
+    Block* const first_block{root.block};
     visited.insert(first_block);
     block_stack.push_back(first_block);
 
-    const auto visit_branch = [&](Block* block, Block* branch) {
-        if (!branch) {
-            return false;
-        }
-        if (!visited.insert(branch).second) {
-            return false;
-        }
-        // Calling push_back twice is faster than insert on MSVC
-        block_stack.push_back(block);
-        block_stack.push_back(branch);
-        return true;
-    };
     while (!block_stack.empty()) {
         Block* const block{block_stack.back()};
+        const auto visit{[&](Block* branch) {
+            if (!visited.insert(branch).second) {
+                return false;
+            }
+            // Calling push_back twice is faster than insert on MSVC
+            block_stack.push_back(block);
+            block_stack.push_back(branch);
+            return true;
+        }};
         block_stack.pop_back();
-
-        if (!visit_branch(block, block->TrueBranch()) &&
-            !visit_branch(block, block->FalseBranch())) {
+        if (std::ranges::none_of(block->ImmSuccessors(), visit)) {
             post_order_blocks.push_back(block);
         }
     }

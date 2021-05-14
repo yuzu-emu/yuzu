@@ -23,13 +23,12 @@ static void Invoke(TranslatorVisitor& visitor, Location pc, u64 insn) {
     }
 }
 
-void Translate(Environment& env, IR::Block* block) {
-    if (block->IsVirtual()) {
+void Translate(Environment& env, IR::Block* block, u32 location_begin, u32 location_end) {
+    if (location_begin == location_end) {
         return;
     }
     TranslatorVisitor visitor{env, *block};
-    const Location pc_end{block->LocationEnd()};
-    for (Location pc = block->LocationBegin(); pc != pc_end; ++pc) {
+    for (Location pc = location_begin; pc != location_end; ++pc) {
         const u64 insn{env.ReadInstruction(pc.Offset())};
         const Opcode opcode{Decode(insn)};
         switch (opcode) {

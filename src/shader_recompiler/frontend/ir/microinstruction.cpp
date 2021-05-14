@@ -56,19 +56,14 @@ Inst::~Inst() {
 
 bool Inst::MayHaveSideEffects() const noexcept {
     switch (op) {
-    case Opcode::Branch:
-    case Opcode::BranchConditional:
-    case Opcode::LoopMerge:
-    case Opcode::SelectionMerge:
-    case Opcode::Return:
+    case Opcode::Prologue:
+    case Opcode::Epilogue:
+    case Opcode::BranchConditionRef:
     case Opcode::Join:
-    case Opcode::Unreachable:
     case Opcode::DemoteToHelperInvocation:
     case Opcode::Barrier:
     case Opcode::WorkgroupMemoryBarrier:
     case Opcode::DeviceMemoryBarrier:
-    case Opcode::Prologue:
-    case Opcode::Epilogue:
     case Opcode::EmitVertex:
     case Opcode::EndPrimitive:
     case Opcode::SetAttribute:

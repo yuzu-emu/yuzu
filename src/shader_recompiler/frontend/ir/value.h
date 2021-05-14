@@ -37,7 +37,6 @@ class Value {
 public:
     Value() noexcept = default;
     explicit Value(IR::Inst* value) noexcept;
-    explicit Value(IR::Block* value) noexcept;
     explicit Value(IR::Reg value) noexcept;
     explicit Value(IR::Pred value) noexcept;
     explicit Value(IR::Attribute value) noexcept;
@@ -54,11 +53,9 @@ public:
     [[nodiscard]] bool IsPhi() const noexcept;
     [[nodiscard]] bool IsEmpty() const noexcept;
     [[nodiscard]] bool IsImmediate() const noexcept;
-    [[nodiscard]] bool IsLabel() const noexcept;
     [[nodiscard]] IR::Type Type() const noexcept;
 
     [[nodiscard]] IR::Inst* Inst() const;
-    [[nodiscard]] IR::Block* Label() const;
     [[nodiscard]] IR::Inst* InstRecursive() const;
     [[nodiscard]] IR::Value Resolve() const;
     [[nodiscard]] IR::Reg Reg() const;
@@ -80,7 +77,6 @@ private:
     IR::Type type{};
     union {
         IR::Inst* inst{};
-        IR::Block* label;
         IR::Reg reg;
         IR::Pred pred;
         IR::Attribute attribute;
@@ -302,11 +298,6 @@ inline bool Value::IsImmediate() const noexcept {
 inline IR::Inst* Value::Inst() const {
     DEBUG_ASSERT(type == Type::Opaque);
     return inst;
-}
-
-inline IR::Block* Value::Label() const {
-    DEBUG_ASSERT(type == Type::Label);
-    return label;
 }
 
 inline IR::Inst* Value::InstRecursive() const {

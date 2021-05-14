@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <ranges>
 #include <vector>
 
 #include "shader_recompiler/frontend/ir/basic_block.h"
@@ -15,6 +16,16 @@
 
 namespace Shader::Maxwell {
 namespace {
+IR::BlockList GenerateBlocks(const IR::AbstractSyntaxList& syntax_list) {
+    auto syntax_blocks{syntax_list | std::views::filter([](const auto& node) {
+                           return node.type == IR::AbstractSyntaxNode::Type::Block;
+                       })};
+    IR::BlockList blocks(std::ranges::distance(syntax_blocks));
+    std::ranges::transform(syntax_blocks, blocks.begin(),
+                           [](const IR::AbstractSyntaxNode& node) { return node.block; });
+    return blocks;
+}
+
 void RemoveUnreachableBlocks(IR::Program& program) {
     // Some blocks might be unreachable if a function call exists unconditionally
     // If this happens the number of blocks and post order blocks will mismatch
@@ -23,7 +34,7 @@ void RemoveUnreachableBlocks(IR::Program& program) {
     }
     const auto begin{program.blocks.begin() + 1};
     const auto end{program.blocks.end()};
-    const auto pred{[](IR::Block* block) { return block->ImmediatePredecessors().empty(); }};
+    const auto pred{[](IR::Block* block) { return block->ImmPredecessors().empty(); }};
     program.blocks.erase(std::remove_if(begin, end, pred), end);
 }
 
@@ -110,8 +121,9 @@ void AddNVNStorageBuffers(IR::Program& program) {
 IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
                              Environment& env, Flow::CFG& cfg) {
     IR::Program program;
-    program.blocks = VisitAST(inst_pool, block_pool, env, cfg);
-    program.post_order_blocks = PostOrder(program.blocks);
+    program.syntax_list = BuildASL(inst_pool, block_pool, env, cfg);
+    program.blocks = GenerateBlocks(program.syntax_list);
+    program.post_order_blocks = PostOrder(program.syntax_list.front());
     program.stage = env.ShaderStage();
     program.local_memory_size = env.LocalMemorySize();
     switch (program.stage) {
@@ -159,9 +171,7 @@ IR::Program MergeDualVertexPrograms(IR::Program& vertex_a, IR::Program& vertex_b
     Optimization::VertexATransformPass(vertex_a);
     Optimization::VertexBTransformPass(vertex_b);
     std::swap(result.blocks, vertex_a.blocks);
-    for (IR::Block* block : vertex_b.blocks) {
-        result.blocks.push_back(block);
-    }
+    result.blocks.insert(result.blocks.end(), vertex_b.blocks.begin(), vertex_b.blocks.end());
     result.stage = Stage::VertexB;
     result.info = vertex_a.info;
     result.local_memory_size = std::max(vertex_a.local_memory_size, vertex_b.local_memory_size);
@@ -173,7 +183,7 @@ IR::Program MergeDualVertexPrograms(IR::Program& vertex_a, IR::Program& vertex_b
     Optimization::JoinTextureInfo(result.info, vertex_b.info);
     Optimization::JoinStorageInfo(result.info, vertex_b.info);
     Optimization::DualVertexJoinPass(result);
-    result.post_order_blocks = PostOrder(result.blocks);
+    result.post_order_blocks = PostOrder(result.syntax_list.front());
     Optimization::DeadCodeEliminationPass(result);
     Optimization::VerificationPass(result);
     Optimization::CollectShaderInfoPass(env_vertex_b, result);

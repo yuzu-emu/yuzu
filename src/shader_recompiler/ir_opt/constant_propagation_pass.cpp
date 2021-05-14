@@ -353,24 +353,6 @@ IR::Value EvalImmediates(const IR::Inst& inst, Func&& func, std::index_sequence<
     return IR::Value{func(Arg<typename Traits::template ArgType<I>>(inst.Arg(I))...)};
 }
 
-void FoldBranchConditional(IR::Inst& inst) {
-    const IR::U1 cond{inst.Arg(0)};
-    if (cond.IsImmediate()) {
-        // TODO: Convert to Branch
-        return;
-    }
-    const IR::Inst* cond_inst{cond.InstRecursive()};
-    if (cond_inst->GetOpcode() == IR::Opcode::LogicalNot) {
-        const IR::Value true_label{inst.Arg(1)};
-        const IR::Value false_label{inst.Arg(2)};
-        // Remove negation on the conditional (take the parameter out of LogicalNot) and swap
-        // the branches
-        inst.SetArg(0, cond_inst->Arg(0));
-        inst.SetArg(1, false_label);
-        inst.SetArg(2, true_label);
-    }
-}
-
 std::optional<IR::Value> FoldCompositeExtractImpl(IR::Value inst_value, IR::Opcode insert,
                                                   IR::Opcode construct, u32 first_index) {
     IR::Inst* const inst{inst_value.InstRecursive()};
@@ -581,8 +563,6 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
             return (base & ~(~(~0u << bits) << offset)) | (insert << offset);
         });
         return;
-    case IR::Opcode::BranchConditional:
-        return FoldBranchConditional(inst);
     case IR::Opcode::CompositeExtractF32x2:
         return FoldCompositeExtract(inst, IR::Opcode::CompositeConstructF32x2,
                                     IR::Opcode::CompositeInsertF32x2);

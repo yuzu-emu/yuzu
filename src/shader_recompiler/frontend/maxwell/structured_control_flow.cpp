@@ -36,7 +36,6 @@ using Tree = boost::intrusive::list<Statement,
                                     // Avoid linear complexity on splice, size is never called
                                     boost::intrusive::constant_time_size<false>>;
 using Node = Tree::iterator;
-using ConstNode = Tree::const_iterator;
 
 enum class StatementType {
     Code,
@@ -91,7 +90,8 @@ struct IndirectBranchCond {};
 #pragma warning(disable : 26495) // Always initialize a member variable, expected in Statement
 #endif
 struct Statement : ListBaseHook {
-    Statement(IR::Block* code_, Statement* up_) : code{code_}, up{up_}, type{StatementType::Code} {}
+    Statement(const Flow::Block* block_, Statement* up_)
+        : block{block_}, up{up_}, type{StatementType::Code} {}
     Statement(Goto, Statement* cond_, Node label_, Statement* up_)
         : label{label_}, cond{cond_}, up{up_}, type{StatementType::Goto} {}
     Statement(Label, u32 id_, Statement* up_) : id{id_}, up{up_}, type{StatementType::Label} {}
@@ -125,7 +125,7 @@ struct Statement : ListBaseHook {
     }
 
     union {
-        IR::Block* code;
+        const Flow::Block* block;
         Node label;
         Tree children;
         IR::Condition guest_cond;
@@ -171,8 +171,8 @@ std::string DumpTree(const Tree& tree, u32 indentation = 0) {
         switch (stmt->type) {
         case StatementType::Code:
             ret += fmt::format("{}    Block {:04x} -> {:04x} (0x{:016x});\n", indent,
-                               stmt->code->LocationBegin(), stmt->code->LocationEnd(),
-                               reinterpret_cast<uintptr_t>(stmt->code));
+                               stmt->block->begin, stmt->block->end,
+                               reinterpret_cast<uintptr_t>(stmt->block));
             break;
         case StatementType::Goto:
             ret += fmt::format("{}    if ({}) goto L{};\n", indent, DumpExpr(stmt->cond),
@@ -407,11 +407,7 @@ private:
             }};
             root.push_front(make_reset_variable());
             root.insert(ip, make_reset_variable());
-
-            const u32 begin_offset{block.begin.Offset()};
-            const u32 end_offset{block.end.Offset()};
-            IR::Block* const ir_block{block_pool.Create(inst_pool, begin_offset, end_offset)};
-            root.insert(ip, *pool.Create(ir_block, &root_stmt));
+            root.insert(ip, *pool.Create(&block, &root_stmt));
 
             switch (block.end_class) {
             case Flow::EndClass::Branch: {
@@ -620,13 +616,13 @@ private:
     Statement root_stmt{FunctionTag{}};
 };
 
-IR::Block* TryFindForwardBlock(const Statement& stmt) {
-    const Tree& tree{stmt.up->children};
-    const ConstNode end{tree.cend()};
-    ConstNode forward_node{std::next(Tree::s_iterator_to(stmt))};
+[[nodiscard]] Statement* TryFindForwardBlock(Statement& stmt) {
+    Tree& tree{stmt.up->children};
+    const Node end{tree.end()};
+    Node forward_node{std::next(Tree::s_iterator_to(stmt))};
     while (forward_node != end && !HasChildren(forward_node->type)) {
         if (forward_node->type == StatementType::Code) {
-            return forward_node->code;
+            return &*forward_node;
         }
         ++forward_node;
     }
@@ -654,21 +650,29 @@ class TranslatePass {
 public:
     TranslatePass(ObjectPool<IR::Inst>& inst_pool_, ObjectPool<IR::Block>& block_pool_,
                   ObjectPool<Statement>& stmt_pool_, Environment& env_, Statement& root_stmt,
-                  IR::BlockList& block_list_)
+                  IR::AbstractSyntaxList& syntax_list_)
         : stmt_pool{stmt_pool_}, inst_pool{inst_pool_}, block_pool{block_pool_}, env{env_},
-          block_list{block_list_} {
+          syntax_list{syntax_list_} {
         Visit(root_stmt, nullptr, nullptr);
 
-        IR::Block& first_block{*block_list.front()};
+        IR::Block& first_block{*syntax_list.front().block};
         IR::IREmitter ir{first_block, first_block.begin()};
         ir.Prologue();
     }
 
 private:
-    void Visit(Statement& parent, IR::Block* continue_block, IR::Block* break_block) {
+    void Visit(Statement& parent, IR::Block* break_block, IR::Block* fallthrough_block) {
+        IR::Block* current_block{};
+        const auto ensure_block{[&] {
+            if (current_block) {
+                return;
+            }
+            current_block = block_pool.Create(inst_pool);
+            auto& node{syntax_list.emplace_back()};
+            node.type = IR::AbstractSyntaxNode::Type::Block;
+            node.block = current_block;
+        }};
         Tree& tree{parent.children};
-        IR::Block* current_block{nullptr};
-
         for (auto it = tree.begin(); it != tree.end(); ++it) {
             Statement& stmt{*it};
             switch (stmt.type) {
@@ -676,124 +680,157 @@ private:
                 // Labels can be ignored
                 break;
             case StatementType::Code: {
-                if (current_block && current_block != stmt.code) {
-                    IR::IREmitter{*current_block}.Branch(stmt.code);
-                }
-                current_block = stmt.code;
-                Translate(env, stmt.code);
-                block_list.push_back(stmt.code);
+                ensure_block();
+                Translate(env, current_block, stmt.block->begin.Offset(), stmt.block->end.Offset());
                 break;
             }
             case StatementType::SetVariable: {
-                if (!current_block) {
-                    current_block = MergeBlock(parent, stmt);
-                }
+                ensure_block();
                 IR::IREmitter ir{*current_block};
                 ir.SetGotoVariable(stmt.id, VisitExpr(ir, *stmt.op));
                 break;
             }
             case StatementType::SetIndirectBranchVariable: {
-                if (!current_block) {
-                    current_block = MergeBlock(parent, stmt);
-                }
+                ensure_block();
                 IR::IREmitter ir{*current_block};
                 IR::U32 address{ir.IAdd(ir.GetReg(stmt.branch_reg), ir.Imm32(stmt.branch_offset))};
                 ir.SetIndirectBranchVariable(address);
                 break;
             }
             case StatementType::If: {
-                if (!current_block) {
-                    current_block = block_pool.Create(inst_pool);
-                    block_list.push_back(current_block);
-                }
+                ensure_block();
                 IR::Block* const merge_block{MergeBlock(parent, stmt)};
 
-                // Visit children
-                const size_t first_block_index{block_list.size()};
-                Visit(stmt, merge_block, break_block);
-
                 // Implement if header block
-                IR::Block* const first_if_block{block_list.at(first_block_index)};
                 IR::IREmitter ir{*current_block};
                 const IR::U1 cond{VisitExpr(ir, *stmt.cond)};
-                ir.SelectionMerge(merge_block);
-                ir.BranchConditional(cond, first_if_block, merge_block);
+                ir.BranchConditionRef(cond);
 
+                const size_t if_node_index{syntax_list.size()};
+                syntax_list.emplace_back();
+
+                // Visit children
+                const size_t then_block_index{syntax_list.size()};
+                Visit(stmt, break_block, merge_block);
+
+                IR::Block* const then_block{syntax_list.at(then_block_index).block};
+                current_block->AddBranch(then_block);
+                current_block->AddBranch(merge_block);
                 current_block = merge_block;
+
+                auto& if_node{syntax_list[if_node_index]};
+                if_node.type = IR::AbstractSyntaxNode::Type::If;
+                if_node.if_node.cond = cond;
+                if_node.if_node.body = then_block;
+                if_node.if_node.merge = merge_block;
+
+                auto& endif_node{syntax_list.emplace_back()};
+                endif_node.type = IR::AbstractSyntaxNode::Type::EndIf;
+                endif_node.end_if.merge = merge_block;
+
+                auto& merge{syntax_list.emplace_back()};
+                merge.type = IR::AbstractSyntaxNode::Type::Block;
+                merge.block = merge_block;
                 break;
             }
             case StatementType::Loop: {
                 IR::Block* const loop_header_block{block_pool.Create(inst_pool)};
                 if (current_block) {
-                    IR::IREmitter{*current_block}.Branch(loop_header_block);
+                    current_block->AddBranch(loop_header_block);
                 }
-                block_list.push_back(loop_header_block);
+                auto& header_node{syntax_list.emplace_back()};
+                header_node.type = IR::AbstractSyntaxNode::Type::Block;
+                header_node.block = loop_header_block;
 
-                IR::Block* const new_continue_block{block_pool.Create(inst_pool)};
+                IR::Block* const continue_block{block_pool.Create(inst_pool)};
                 IR::Block* const merge_block{MergeBlock(parent, stmt)};
 
+                const size_t loop_node_index{syntax_list.size()};
+                syntax_list.emplace_back();
+
                 // Visit children
-                const size_t first_block_index{block_list.size()};
-                Visit(stmt, new_continue_block, merge_block);
+                const size_t body_block_index{syntax_list.size()};
+                Visit(stmt, merge_block, continue_block);
 
                 // The continue block is located at the end of the loop
-                block_list.push_back(new_continue_block);
+                IR::IREmitter ir{*continue_block};
+                const IR::U1 cond{VisitExpr(ir, *stmt.cond)};
+                ir.BranchConditionRef(cond);
 
-                // Implement loop header block
-                IR::Block* const first_loop_block{block_list.at(first_block_index)};
-                IR::IREmitter ir{*loop_header_block};
-                ir.LoopMerge(merge_block, new_continue_block);
-                ir.Branch(first_loop_block);
+                IR::Block* const body_block{syntax_list.at(body_block_index).block};
+                loop_header_block->AddBranch(body_block);
 
-                // Implement continue block
-                IR::IREmitter continue_ir{*new_continue_block};
-                const IR::U1 continue_cond{VisitExpr(continue_ir, *stmt.cond)};
-                continue_ir.BranchConditional(continue_cond, ir.block, merge_block);
+                continue_block->AddBranch(loop_header_block);
+                continue_block->AddBranch(merge_block);
 
                 current_block = merge_block;
+
+                auto& loop{syntax_list[loop_node_index]};
+                loop.type = IR::AbstractSyntaxNode::Type::Loop;
+                loop.loop.body = body_block;
+                loop.loop.continue_block = continue_block;
+                loop.loop.merge = merge_block;
+
+                auto& continue_block_node{syntax_list.emplace_back()};
+                continue_block_node.type = IR::AbstractSyntaxNode::Type::Block;
+                continue_block_node.block = continue_block;
+
+                auto& repeat{syntax_list.emplace_back()};
+                repeat.type = IR::AbstractSyntaxNode::Type::Repeat;
+                repeat.repeat.cond = cond;
+                repeat.repeat.loop_header = loop_header_block;
+                repeat.repeat.merge = merge_block;
+
+                auto& merge{syntax_list.emplace_back()};
+                merge.type = IR::AbstractSyntaxNode::Type::Block;
+                merge.block = merge_block;
                 break;
             }
             case StatementType::Break: {
-                if (!current_block) {
-                    current_block = block_pool.Create(inst_pool);
-                    block_list.push_back(current_block);
-                }
+                ensure_block();
                 IR::Block* const skip_block{MergeBlock(parent, stmt)};
 
                 IR::IREmitter ir{*current_block};
-                ir.BranchConditional(VisitExpr(ir, *stmt.cond), break_block, skip_block);
-
+                const IR::U1 cond{VisitExpr(ir, *stmt.cond)};
+                ir.BranchConditionRef(cond);
+                current_block->AddBranch(break_block);
+                current_block->AddBranch(skip_block);
                 current_block = skip_block;
+
+                auto& break_node{syntax_list.emplace_back()};
+                break_node.type = IR::AbstractSyntaxNode::Type::Break;
+                break_node.break_node.cond = cond;
+                break_node.break_node.merge = break_block;
+                break_node.break_node.skip = skip_block;
+
+                auto& merge{syntax_list.emplace_back()};
+                merge.type = IR::AbstractSyntaxNode::Type::Block;
+                merge.block = skip_block;
                 break;
             }
             case StatementType::Return: {
-                if (!current_block) {
-                    current_block = block_pool.Create(inst_pool);
-                    block_list.push_back(current_block);
-                }
-                IR::IREmitter ir{*current_block};
-                ir.Epilogue();
-                ir.Return();
+                ensure_block();
+                IR::IREmitter{*current_block}.Epilogue();
                 current_block = nullptr;
+                syntax_list.emplace_back().type = IR::AbstractSyntaxNode::Type::Return;
                 break;
             }
             case StatementType::Kill: {
-                if (!current_block) {
-                    current_block = block_pool.Create(inst_pool);
-                    block_list.push_back(current_block);
-                }
+                ensure_block();
                 IR::Block* demote_block{MergeBlock(parent, stmt)};
-                IR::IREmitter{*current_block}.DemoteToHelperInvocation(demote_block);
+                IR::IREmitter{*current_block}.DemoteToHelperInvocation();
+                current_block->AddBranch(demote_block);
                 current_block = demote_block;
+
+                auto& merge{syntax_list.emplace_back()};
+                merge.type = IR::AbstractSyntaxNode::Type::Block;
+                merge.block = demote_block;
                 break;
             }
             case StatementType::Unreachable: {
-                if (!current_block) {
-                    current_block = block_pool.Create(inst_pool);
-                    block_list.push_back(current_block);
-                }
-                IR::IREmitter{*current_block}.Unreachable();
+                ensure_block();
                 current_block = nullptr;
+                syntax_list.emplace_back().type = IR::AbstractSyntaxNode::Type::Unreachable;
                 break;
             }
             default:
@@ -801,42 +838,42 @@ private:
             }
         }
         if (current_block) {
-            IR::IREmitter ir{*current_block};
-            if (continue_block) {
-                ir.Branch(continue_block);
+            if (fallthrough_block) {
+                current_block->AddBranch(fallthrough_block);
             } else {
-                ir.Unreachable();
+                syntax_list.emplace_back().type = IR::AbstractSyntaxNode::Type::Unreachable;
             }
         }
     }
 
     IR::Block* MergeBlock(Statement& parent, Statement& stmt) {
-        if (IR::Block* const block{TryFindForwardBlock(stmt)}) {
-            return block;
+        Statement* merge_stmt{TryFindForwardBlock(stmt)};
+        if (!merge_stmt) {
+            // Create a merge block we can visit later
+            merge_stmt = stmt_pool.Create(&dummy_flow_block, &parent);
+            parent.children.insert(std::next(Tree::s_iterator_to(stmt)), *merge_stmt);
         }
-        // Create a merge block we can visit later
-        IR::Block* const block{block_pool.Create(inst_pool)};
-        Statement* const merge_stmt{stmt_pool.Create(block, &parent)};
-        parent.children.insert(std::next(Tree::s_iterator_to(stmt)), *merge_stmt);
-        return block;
+        return block_pool.Create(inst_pool);
     }
 
     ObjectPool<Statement>& stmt_pool;
     ObjectPool<IR::Inst>& inst_pool;
     ObjectPool<IR::Block>& block_pool;
     Environment& env;
-    IR::BlockList& block_list;
+    IR::AbstractSyntaxList& syntax_list;
+    // TODO: Make this constexpr when std::vector is constexpr
+    const Flow::Block dummy_flow_block;
 };
 } // Anonymous namespace
 
-IR::BlockList VisitAST(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
-                       Environment& env, Flow::CFG& cfg) {
+IR::AbstractSyntaxList BuildASL(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
+                                Environment& env, Flow::CFG& cfg) {
     ObjectPool<Statement> stmt_pool{64};
     GotoPass goto_pass{cfg, inst_pool, block_pool, stmt_pool};
     Statement& root{goto_pass.RootStatement()};
-    IR::BlockList block_list;
-    TranslatePass{inst_pool, block_pool, stmt_pool, env, root, block_list};
-    return block_list;
+    IR::AbstractSyntaxList syntax_list;
+    TranslatePass{inst_pool, block_pool, stmt_pool, env, root, syntax_list};
+    return syntax_list;
 }
 
 } // namespace Shader::Maxwell

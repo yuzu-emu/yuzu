@@ -9,6 +9,6 @@
 
 namespace Shader::Maxwell {
 
-void Translate(Environment& env, IR::Block* block);
+void Translate(Environment& env, IR::Block* block, u32 location_begin, u32 location_end);
 
 } // namespace Shader::Maxwell

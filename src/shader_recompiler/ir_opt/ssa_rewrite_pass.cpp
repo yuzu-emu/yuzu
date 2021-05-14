@@ -202,7 +202,7 @@ public:
 
                     incomplete_phis[block].insert_or_assign(variable, phi);
                     stack.back().result = IR::Value{&*phi};
-                } else if (const std::span imm_preds{block->ImmediatePredecessors()};
+                } else if (const std::span imm_preds = block->ImmPredecessors();
                            imm_preds.size() == 1) {
                     // Optimize the common case of one predecessor: no phi needed
                     stack.back().pc = Status::SetValue;
@@ -257,7 +257,7 @@ public:
 private:
     template <typename Type>
     IR::Value AddPhiOperands(Type variable, IR::Inst& phi, IR::Block* block) {
-        for (IR::Block* const imm_pred : block->ImmediatePredecessors()) {
+        for (IR::Block* const imm_pred : block->ImmPredecessors()) {
             phi.AddPhiOperand(imm_pred, ReadVariable(variable, imm_pred));
         }
         return TryRemoveTrivialPhi(phi, block, UndefOpcode(variable));

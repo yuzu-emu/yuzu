@@ -463,7 +463,6 @@ EmitContext::EmitContext(const Profile& profile_, IR::Program& program, Bindings
     DefineImages(program.info, image_binding);
     DefineAttributeMemAccess(program.info);
     DefineGlobalMemoryFunctions(program.info);
-    DefineLabels(program);
 }
 
 EmitContext::~EmitContext() = default;
@@ -487,8 +486,6 @@ Id EmitContext::Def(const IR::Value& value) {
         return Const(value.F32());
     case IR::Type::F64:
         return Constant(F64[1], value.F64());
-    case IR::Type::Label:
-        return value.Label()->Definition<Id>();
     default:
         throw NotImplementedException("Immediate type {}", value.Type());
     }
@@ -1136,12 +1133,6 @@ void EmitContext::DefineImages(const Info& info, u32& binding) {
             interfaces.push_back(id);
         }
         ++binding;
-    }
-}
-
-void EmitContext::DefineLabels(IR::Program& program) {
-    for (IR::Block* const block : program.blocks) {
-        block->SetDefinition(OpLabel());
     }
 }
 

@@ -12,6 +12,7 @@
 #include <boost/intrusive/list.hpp>
 
 #include "common/bit_cast.h"
+#include "common/common_types.h"
 #include "shader_recompiler/frontend/ir/condition.h"
 #include "shader_recompiler/frontend/ir/value.h"
 #include "shader_recompiler/object_pool.h"
@@ -27,7 +28,6 @@ public:
     using reverse_iterator = InstructionList::reverse_iterator;
     using const_reverse_iterator = InstructionList::const_reverse_iterator;
 
-    explicit Block(ObjectPool<Inst>& inst_pool_, u32 begin, u32 end);
     explicit Block(ObjectPool<Inst>& inst_pool_);
     ~Block();
 
@@ -44,22 +44,8 @@ public:
     iterator PrependNewInst(iterator insertion_point, Opcode op,
                             std::initializer_list<Value> args = {}, u32 flags = 0);
 
-    /// Set the branches to jump to when all instructions have executed.
-    void SetBranches(Condition cond, Block* branch_true, Block* branch_false);
-    /// Set the branch to unconditionally jump to when all instructions have executed.
-    void SetBranch(Block* branch);
-    /// Mark the block as a return block.
-    void SetReturn();
-
-    /// Returns true when the block does not implement any guest instructions directly.
-    [[nodiscard]] bool IsVirtual() const noexcept;
-    /// Gets the starting location of this basic block.
-    [[nodiscard]] u32 LocationBegin() const noexcept;
-    /// Gets the end location for this basic block.
-    [[nodiscard]] u32 LocationEnd() const noexcept;
-
-    /// Adds a new immediate predecessor to this basic block.
-    void AddImmediatePredecessor(Block* block);
+    /// Adds a new branch to this basic block.
+    void AddBranch(Block* block);
 
     /// Gets a mutable reference to the instruction list for this basic block.
     [[nodiscard]] InstructionList& Instructions() noexcept {
@@ -71,8 +57,12 @@ public:
     }
 
     /// Gets an immutable span to the immediate predecessors.
-    [[nodiscard]] std::span<Block* const> ImmediatePredecessors() const noexcept {
+    [[nodiscard]] std::span<Block* const> ImmPredecessors() const noexcept {
         return imm_predecessors;
+    }
+    /// Gets an immutable span to the immediate successors.
+    [[nodiscard]] std::span<Block* const> ImmSuccessors() const noexcept {
+        return imm_successors;
     }
 
     /// Intrusively store the host definition of this instruction.
@@ -85,19 +75,6 @@ public:
     template <typename DefinitionType>
     [[nodiscard]] DefinitionType Definition() const noexcept {
         return Common::BitCast<DefinitionType>(definition);
-    }
-
-    [[nodiscard]] Condition BranchCondition() const noexcept {
-        return branch_cond;
-    }
-    [[nodiscard]] bool IsTerminationBlock() const noexcept {
-        return !branch_true && !branch_false;
-    }
-    [[nodiscard]] Block* TrueBranch() const noexcept {
-        return branch_true;
-    }
-    [[nodiscard]] Block* FalseBranch() const noexcept {
-        return branch_false;
     }
 
     void SetSsaRegValue(IR::Reg reg, const Value& value) noexcept {
@@ -178,22 +155,14 @@ public:
 private:
     /// Memory pool for instruction list
     ObjectPool<Inst>* inst_pool;
-    /// Starting location of this block
-    u32 location_begin;
-    /// End location of this block
-    u32 location_end;
 
     /// List of instructions in this block
     InstructionList instructions;
 
-    /// Condition to choose the branch to take
-    Condition branch_cond{true};
-    /// Block to jump into when the branch condition evaluates as true
-    Block* branch_true{nullptr};
-    /// Block to jump into when the branch condition evaluates as false
-    Block* branch_false{nullptr};
     /// Block immediate predecessors
     std::vector<Block*> imm_predecessors;
+    /// Block immediate successors
+    std::vector<Block*> imm_successors;
 
     /// Intrusively store the value of a register in the block.
     std::array<Value, NUM_REGS> ssa_reg_values;
