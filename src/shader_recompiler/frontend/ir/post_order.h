@@ -5,9 +5,10 @@
 #pragma once
 
 #include "shader_recompiler/frontend/ir/basic_block.h"
+#include "shader_recompiler/frontend/ir/abstract_syntax_list.h"
 
 namespace Shader::IR {
 
-BlockList PostOrder(const BlockList& blocks);
+BlockList PostOrder(const AbstractSyntaxNode& root);
 
 } // namespace Shader::IR

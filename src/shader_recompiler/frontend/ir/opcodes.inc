@@ -7,26 +7,19 @@ OPCODE(Phi,                                                 Opaque,             
 OPCODE(Identity,                                            Opaque,         Opaque,                                                                         )
 OPCODE(Void,                                                Void,                                                                                           )
 
-// Control flow
-OPCODE(Branch,                                              Void,           Label,                                                                          )
-OPCODE(BranchConditional,                                   Void,           U1,             Label,          Label,                                          )
-OPCODE(LoopMerge,                                           Void,           Label,          Label,                                                          )
-OPCODE(SelectionMerge,                                      Void,           Label,                                                                          )
-OPCODE(Return,                                              Void,                                                                                           )
+// Special operations
+OPCODE(Prologue,                                            Void,                                                                                           )
+OPCODE(Epilogue,                                            Void,                                                                                           )
+OPCODE(BranchConditionRef,                                  Void,           U1,                                                                             )
 OPCODE(Join,                                                Void,                                                                                           )
-OPCODE(Unreachable,                                         Void,                                                                                           )
-OPCODE(DemoteToHelperInvocation,                            Void,           Label,                                                                          )
+OPCODE(DemoteToHelperInvocation,                            Void,                                                                                           )
+OPCODE(EmitVertex,                                          Void,           U32,                                                                            )
+OPCODE(EndPrimitive,                                        Void,           U32,                                                                            )
 
 // Barriers
 OPCODE(Barrier,                                             Void,                                                                                           )
 OPCODE(WorkgroupMemoryBarrier,                              Void,                                                                                           )
 OPCODE(DeviceMemoryBarrier,                                 Void,                                                                                           )
-
-// Special operations
-OPCODE(Prologue,                                            Void,                                                                                           )
-OPCODE(Epilogue,                                            Void,                                                                                           )
-OPCODE(EmitVertex,                                          Void,           U32,                                                                            )
-OPCODE(EndPrimitive,                                        Void,           U32,                                                                            )
 
 // Context getters/setters
 OPCODE(GetRegister,                                         U32,            Reg,                                                                            )

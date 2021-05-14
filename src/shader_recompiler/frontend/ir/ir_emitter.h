@@ -32,17 +32,10 @@ public:
     [[nodiscard]] U64 Imm64(s64 value) const;
     [[nodiscard]] F64 Imm64(f64 value) const;
 
-    void Branch(Block* label);
-    void BranchConditional(const U1& condition, Block* true_label, Block* false_label);
-    void LoopMerge(Block* merge_block, Block* continue_target);
-    void SelectionMerge(Block* merge_block);
-    void Return();
-    void Unreachable();
-    void DemoteToHelperInvocation(Block* continue_label);
-
     void Prologue();
     void Epilogue();
-
+    void BranchConditionRef(const U1& cond);
+    void DemoteToHelperInvocation();
     void EmitVertex(const U32& stream);
     void EndPrimitive(const U32& stream);
 

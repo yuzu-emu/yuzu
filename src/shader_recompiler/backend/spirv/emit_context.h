@@ -296,7 +296,6 @@ private:
     void DefineImages(const Info& info, u32& binding);
     void DefineAttributeMemAccess(const Info& info);
     void DefineGlobalMemoryFunctions(const Info& info);
-    void DefineLabels(IR::Program& program);
 
     void DefineInputs(const Info& info);
     void DefineOutputs(const IR::Program& program);

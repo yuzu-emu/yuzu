@@ -61,25 +61,28 @@ F64 IREmitter::Imm64(f64 value) const {
     return F64{Value{value}};
 }
 
-void IREmitter::Branch(Block* label) {
-    label->AddImmediatePredecessor(block);
-    block->SetBranch(label);
-    Inst(Opcode::Branch, label);
+void IREmitter::Prologue() {
+    Inst(Opcode::Prologue);
 }
 
-void IREmitter::BranchConditional(const U1& condition, Block* true_label, Block* false_label) {
-    block->SetBranches(IR::Condition{true}, true_label, false_label);
-    true_label->AddImmediatePredecessor(block);
-    false_label->AddImmediatePredecessor(block);
-    Inst(Opcode::BranchConditional, condition, true_label, false_label);
+void IREmitter::Epilogue() {
+    Inst(Opcode::Epilogue);
 }
 
-void IREmitter::LoopMerge(Block* merge_block, Block* continue_target) {
-    Inst(Opcode::LoopMerge, merge_block, continue_target);
+void IREmitter::BranchConditionRef(const U1& cond) {
+    Inst(Opcode::BranchConditionRef, cond);
 }
 
-void IREmitter::SelectionMerge(Block* merge_block) {
-    Inst(Opcode::SelectionMerge, merge_block);
+void IREmitter::DemoteToHelperInvocation() {
+    Inst(Opcode::DemoteToHelperInvocation);
+}
+
+void IREmitter::EmitVertex(const U32& stream) {
+    Inst(Opcode::EmitVertex, stream);
+}
+
+void IREmitter::EndPrimitive(const U32& stream) {
+    Inst(Opcode::EndPrimitive, stream);
 }
 
 void IREmitter::Barrier() {
@@ -92,37 +95,6 @@ void IREmitter::WorkgroupMemoryBarrier() {
 
 void IREmitter::DeviceMemoryBarrier() {
     Inst(Opcode::DeviceMemoryBarrier);
-}
-
-void IREmitter::Return() {
-    block->SetReturn();
-    Inst(Opcode::Return);
-}
-
-void IREmitter::Unreachable() {
-    Inst(Opcode::Unreachable);
-}
-
-void IREmitter::DemoteToHelperInvocation(Block* continue_label) {
-    block->SetBranch(continue_label);
-    continue_label->AddImmediatePredecessor(block);
-    Inst(Opcode::DemoteToHelperInvocation, continue_label);
-}
-
-void IREmitter::Prologue() {
-    Inst(Opcode::Prologue);
-}
-
-void IREmitter::Epilogue() {
-    Inst(Opcode::Epilogue);
-}
-
-void IREmitter::EmitVertex(const U32& stream) {
-    Inst(Opcode::EmitVertex, stream);
-}
-
-void IREmitter::EndPrimitive(const U32& stream) {
-    Inst(Opcode::EndPrimitive, stream);
 }
 
 U32 IREmitter::GetReg(IR::Reg reg) {

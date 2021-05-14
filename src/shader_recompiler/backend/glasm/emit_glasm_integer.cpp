@@ -91,7 +91,8 @@ void EmitBitFieldInsert(EmitContext& ctx, IR::Inst& inst, ScalarS32 base, Scalar
     if (count.type != Type::Register && offset.type != Type::Register) {
         ctx.Add("BFI.S {},{{{},{},0,0}},{},{};", ret, count, offset, insert, base);
     } else {
-        ctx.Add("MOV.S RC.x,{};MOV.U RC.y,{};"
+        ctx.Add("MOV.S RC.x,{};"
+                "MOV.S RC.y,{};"
                 "BFI.S {},RC,{},{};",
                 count, offset, ret, insert, base);
     }
@@ -103,7 +104,8 @@ void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst& inst, ScalarS32 base, Scal
     if (count.type != Type::Register && offset.type != Type::Register) {
         ctx.Add("BFE.S {},{{{},{},0,0}},{};", ret, count, offset, base);
     } else {
-        ctx.Add("MOV.S RC.x,{};MOV.U RC.y,{};"
+        ctx.Add("MOV.S RC.x,{};"
+                "MOV.S RC.y,{};"
                 "BFE.S {},RC,{};",
                 count, offset, ret, base);
     }
@@ -115,7 +117,8 @@ void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst& inst, ScalarU32 base, Scal
     if (count.type != Type::Register && offset.type != Type::Register) {
         ctx.Add("BFE.U {},{{{},{},0,0}},{};", ret, count, offset, base);
     } else {
-        ctx.Add("MOV.U RC.x,{};MOV.U RC.y,{};"
+        ctx.Add("MOV.U RC.x,{};"
+                "MOV.U RC.y,{};"
                 "BFE.U {},RC,{};",
                 count, offset, ret, base);
     }

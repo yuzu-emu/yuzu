@@ -23,31 +23,9 @@ void EmitPhi(EmitContext& ctx, IR::Inst& inst) {
 
 void EmitVoid(EmitContext&) {}
 
-void EmitBranch(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitBranchConditional(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitLoopMerge(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitSelectionMerge(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitReturn(EmitContext& ctx) {
-    ctx.Add("RET;");
-}
+void EmitBranchConditionRef(EmitContext&) {}
 
 void EmitJoin(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitUnreachable(EmitContext& ctx) {
     NotImplemented();
 }
 

@@ -51,6 +51,7 @@ add_library(shader_recompiler STATIC
     backend/spirv/emit_spirv_warp.cpp
     environment.h
     exception.h
+    frontend/ir/abstract_syntax_list.h
     frontend/ir/attribute.cpp
     frontend/ir/attribute.h
     frontend/ir/basic_block.cpp

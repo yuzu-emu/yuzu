@@ -41,8 +41,6 @@ ArgType Arg(EmitContext& ctx, const IR::Value& arg) {
         return arg;
     } else if constexpr (std::is_same_v<ArgType, u32>) {
         return arg.U32();
-    } else if constexpr (std::is_same_v<ArgType, IR::Block*>) {
-        return arg.Label();
     } else if constexpr (std::is_same_v<ArgType, IR::Attribute>) {
         return arg.Attribute();
     } else if constexpr (std::is_same_v<ArgType, IR::Patch>) {
@@ -109,15 +107,74 @@ Id TypeId(const EmitContext& ctx, IR::Type type) {
     }
 }
 
+void Traverse(EmitContext& ctx, IR::Program& program) {
+    IR::Block* current_block{};
+    for (const IR::AbstractSyntaxNode& node : program.syntax_list) {
+        switch (node.type) {
+        case IR::AbstractSyntaxNode::Type::Block:
+            const Id label{node.block->Definition<Id>()};
+            if (current_block) {
+                ctx.OpBranch(label);
+            }
+            current_block = node.block;
+            ctx.AddLabel(label);
+            for (IR::Inst& inst : node.block->Instructions()) {
+                EmitInst(ctx, &inst);
+            }
+            break;
+        case IR::AbstractSyntaxNode::Type::If: {
+            const Id if_label{node.if_node.body->Definition<Id>()};
+            const Id endif_label{node.if_node.merge->Definition<Id>()};
+            ctx.OpSelectionMerge(endif_label, spv::SelectionControlMask::MaskNone);
+            ctx.OpBranchConditional(ctx.Def(node.if_node.cond), if_label, endif_label);
+            break;
+        }
+        case IR::AbstractSyntaxNode::Type::Loop: {
+            const Id body_label{node.loop.body->Definition<Id>()};
+            const Id continue_label{node.loop.continue_block->Definition<Id>()};
+            const Id endloop_label{node.loop.merge->Definition<Id>()};
+
+            ctx.OpLoopMerge(endloop_label, continue_label, spv::LoopControlMask::MaskNone);
+            ctx.OpBranch(node.loop.body->Definition<Id>());
+            break;
+        }
+        case IR::AbstractSyntaxNode::Type::Break: {
+            const Id break_label{node.break_node.merge->Definition<Id>()};
+            const Id skip_label{node.break_node.skip->Definition<Id>()};
+            ctx.OpBranchConditional(ctx.Def(node.break_node.cond), break_label, skip_label);
+            break;
+        }
+        case IR::AbstractSyntaxNode::Type::EndIf:
+            if (current_block) {
+                ctx.OpBranch(node.end_if.merge->Definition<Id>());
+            }
+            break;
+        case IR::AbstractSyntaxNode::Type::Repeat: {
+            const Id loop_header_label{node.repeat.loop_header->Definition<Id>()};
+            const Id merge_label{node.repeat.merge->Definition<Id>()};
+            ctx.OpBranchConditional(ctx.Def(node.repeat.cond), loop_header_label, merge_label);
+            break;
+        }
+        case IR::AbstractSyntaxNode::Type::Return:
+            ctx.OpReturn();
+            break;
+        case IR::AbstractSyntaxNode::Type::Unreachable:
+            ctx.OpUnreachable();
+            break;
+        }
+        if (node.type != IR::AbstractSyntaxNode::Type::Block) {
+            current_block = nullptr;
+        }
+    }
+}
+
 Id DefineMain(EmitContext& ctx, IR::Program& program) {
     const Id void_function{ctx.TypeFunction(ctx.void_id)};
     const Id main{ctx.OpFunction(ctx.void_id, spv::FunctionControlMask::MaskNone, void_function)};
     for (IR::Block* const block : program.blocks) {
-        ctx.AddLabel(block->Definition<Id>());
-        for (IR::Inst& inst : block->Instructions()) {
-            EmitInst(ctx, &inst);
-        }
+        block->SetDefinition(ctx.OpLabel());
     }
+    Traverse(ctx, program);
     ctx.OpFunctionEnd();
     return main;
 }
@@ -410,6 +467,8 @@ Id EmitIdentity(EmitContext& ctx, const IR::Value& value) {
     }
     return id;
 }
+
+void EmitBranchConditionRef(EmitContext&) {}
 
 void EmitGetZeroFromOp(EmitContext&) {
     throw LogicError("Unreachable instruction");

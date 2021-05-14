@@ -30,7 +30,6 @@ struct OpcodeMeta {
 // using enum Type;
 constexpr Type Void{Type::Void};
 constexpr Type Opaque{Type::Opaque};
-constexpr Type Label{Type::Label};
 constexpr Type Reg{Type::Reg};
 constexpr Type Pred{Type::Pred};
 constexpr Type Attribute{Type::Attribute};

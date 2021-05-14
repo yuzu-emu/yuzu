@@ -4,12 +4,8 @@
 
 #pragma once
 
-#include <functional>
-#include <span>
-
-#include <boost/intrusive/list.hpp>
-
 #include "shader_recompiler/environment.h"
+#include "shader_recompiler/frontend/ir/abstract_syntax_list.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/value.h"
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
@@ -17,8 +13,8 @@
 
 namespace Shader::Maxwell {
 
-[[nodiscard]] IR::BlockList VisitAST(ObjectPool<IR::Inst>& inst_pool,
-                                     ObjectPool<IR::Block>& block_pool, Environment& env,
-                                     Flow::CFG& cfg);
+[[nodiscard]] IR::AbstractSyntaxList BuildASL(ObjectPool<IR::Inst>& inst_pool,
+                                              ObjectPool<IR::Block>& block_pool, Environment& env,
+                                              Flow::CFG& cfg);
 
 } // namespace Shader::Maxwell

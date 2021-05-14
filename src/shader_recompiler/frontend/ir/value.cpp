@@ -9,8 +9,6 @@ namespace Shader::IR {
 
 Value::Value(IR::Inst* value) noexcept : type{Type::Opaque}, inst{value} {}
 
-Value::Value(IR::Block* value) noexcept : type{Type::Label}, label{value} {}
-
 Value::Value(IR::Reg value) noexcept : type{Type::Reg}, reg{value} {}
 
 Value::Value(IR::Pred value) noexcept : type{Type::Pred}, pred{value} {}
@@ -32,10 +30,6 @@ Value::Value(f32 value) noexcept : type{Type::F32}, imm_f32{value} {}
 Value::Value(u64 value) noexcept : type{Type::U64}, imm_u64{value} {}
 
 Value::Value(f64 value) noexcept : type{Type::F64}, imm_f64{value} {}
-
-bool Value::IsLabel() const noexcept {
-    return type == Type::Label;
-}
 
 IR::Type Value::Type() const noexcept {
     if (IsPhi()) {
@@ -60,8 +54,6 @@ bool Value::operator==(const Value& other) const {
         return true;
     case Type::Opaque:
         return inst == other.inst;
-    case Type::Label:
-        return label == other.label;
     case Type::Reg:
         return reg == other.reg;
     case Type::Pred:

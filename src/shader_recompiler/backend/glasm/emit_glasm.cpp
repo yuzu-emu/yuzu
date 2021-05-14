@@ -117,8 +117,6 @@ auto Arg(EmitContext& ctx, const IR::Value& arg) {
         return Identity<const IR::Value&>{arg};
     } else if constexpr (std::is_same_v<ArgType, u32>) {
         return Identity{arg.U32()};
-    } else if constexpr (std::is_same_v<ArgType, IR::Block*>) {
-        return Identity{arg.Label()};
     } else if constexpr (std::is_same_v<ArgType, IR::Attribute>) {
         return Identity{arg.Attribute()};
     } else if constexpr (std::is_same_v<ArgType, IR::Patch>) {
@@ -177,6 +175,39 @@ void EmitInst(EmitContext& ctx, IR::Inst* inst) {
     throw LogicError("Invalid opcode {}", inst->GetOpcode());
 }
 
+void EmitCode(EmitContext& ctx, const IR::Program& program) {
+    const auto eval{
+        [&](const IR::U1& cond) { return ScalarS32{ctx.reg_alloc.Consume(IR::Value{cond})}; }};
+    for (const IR::AbstractSyntaxNode& node : program.syntax_list) {
+        switch (node.type) {
+        case IR::AbstractSyntaxNode::Type::Block:
+            for (IR::Inst& inst : node.block->Instructions()) {
+                EmitInst(ctx, &inst);
+            }
+            break;
+        case IR::AbstractSyntaxNode::Type::If:
+            ctx.Add("MOV.S.CC RC,{};IF NE.x;", eval(node.if_node.cond));
+            break;
+        case IR::AbstractSyntaxNode::Type::EndIf:
+            ctx.Add("ENDIF;");
+            break;
+        case IR::AbstractSyntaxNode::Type::Loop:
+            ctx.Add("REP;");
+            break;
+        case IR::AbstractSyntaxNode::Type::Repeat:
+            ctx.Add("MOV.S.CC RC,{};BRK NE.x;ENDREP;", eval(node.repeat.cond));
+            break;
+        case IR::AbstractSyntaxNode::Type::Break:
+            ctx.Add("MOV.S.CC RC,{};BRK NE.x;", eval(node.repeat.cond));
+            break;
+        case IR::AbstractSyntaxNode::Type::Return:
+        case IR::AbstractSyntaxNode::Type::Unreachable:
+            ctx.Add("RET;");
+            break;
+        }
+    }
+}
+
 void SetupOptions(std::string& header, Info info) {
     if (info.uses_int64_bit_atomics) {
         header += "OPTION NV_shader_atomic_int64;";
@@ -201,11 +232,7 @@ void SetupOptions(std::string& header, Info info) {
 
 std::string EmitGLASM(const Profile&, IR::Program& program, Bindings&) {
     EmitContext ctx{program};
-    for (IR::Block* const block : program.blocks) {
-        for (IR::Inst& inst : block->Instructions()) {
-            EmitInst(ctx, &inst);
-        }
-    }
+    EmitCode(ctx, program);
     std::string header = "!!NVcp5.0\n"
                          "OPTION NV_internal;";
     SetupOptions(header, program.info);

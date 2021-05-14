@@ -14,10 +14,7 @@
 
 namespace Shader::IR {
 
-Block::Block(ObjectPool<Inst>& inst_pool_, u32 begin, u32 end)
-    : inst_pool{&inst_pool_}, location_begin{begin}, location_end{end} {}
-
-Block::Block(ObjectPool<Inst>& inst_pool_) : Block{inst_pool_, 0, 0} {}
+Block::Block(ObjectPool<Inst>& inst_pool_) : inst_pool{&inst_pool_} {}
 
 Block::~Block() = default;
 
@@ -40,39 +37,15 @@ Block::iterator Block::PrependNewInst(iterator insertion_point, Opcode op,
     return result_it;
 }
 
-void Block::SetBranches(Condition cond, Block* branch_true_, Block* branch_false_) {
-    branch_cond = cond;
-    branch_true = branch_true_;
-    branch_false = branch_false_;
-}
-
-void Block::SetBranch(Block* branch) {
-    branch_cond = Condition{true};
-    branch_true = branch;
-}
-
-void Block::SetReturn() {
-    branch_cond = Condition{true};
-    branch_true = nullptr;
-    branch_false = nullptr;
-}
-
-bool Block::IsVirtual() const noexcept {
-    return location_begin == location_end;
-}
-
-u32 Block::LocationBegin() const noexcept {
-    return location_begin;
-}
-
-u32 Block::LocationEnd() const noexcept {
-    return location_end;
-}
-
-void Block::AddImmediatePredecessor(Block* block) {
-    if (std::ranges::find(imm_predecessors, block) == imm_predecessors.end()) {
-        imm_predecessors.push_back(block);
+void Block::AddBranch(Block* block) {
+    if (std::ranges::find(imm_successors, block) != imm_successors.end()) {
+        throw LogicError("Successor already inserted");
     }
+    if (std::ranges::find(block->imm_predecessors, this) != block->imm_predecessors.end()) {
+        throw LogicError("Predecessor already inserted");
+    }
+    imm_successors.push_back(block);
+    block->imm_predecessors.push_back(this);
 }
 
 static std::string BlockToIndex(const std::map<const Block*, size_t>& block_to_index,
@@ -92,14 +65,10 @@ static size_t InstIndex(std::map<const Inst*, size_t>& inst_to_index, size_t& in
     return it->second;
 }
 
-static std::string ArgToIndex(const std::map<const Block*, size_t>& block_to_index,
-                              std::map<const Inst*, size_t>& inst_to_index, size_t& inst_index,
+static std::string ArgToIndex(std::map<const Inst*, size_t>& inst_to_index, size_t& inst_index,
                               const Value& arg) {
     if (arg.IsEmpty()) {
         return "<null>";
-    }
-    if (arg.IsLabel()) {
-        return BlockToIndex(block_to_index, arg.Label());
     }
     if (!arg.IsImmediate() || arg.IsIdentity()) {
         return fmt::format("%{}", InstIndex(inst_to_index, inst_index, arg.Inst()));
@@ -140,8 +109,7 @@ std::string DumpBlock(const Block& block, const std::map<const Block*, size_t>& 
     if (const auto it{block_to_index.find(&block)}; it != block_to_index.end()) {
         ret += fmt::format(" ${}", it->second);
     }
-    ret += fmt::format(": begin={:04x} end={:04x}\n", block.LocationBegin(), block.LocationEnd());
-
+    ret += '\n';
     for (const Inst& inst : block) {
         const Opcode op{inst.GetOpcode()};
         ret += fmt::format("[{:016x}] ", reinterpret_cast<u64>(&inst));
@@ -153,7 +121,7 @@ std::string DumpBlock(const Block& block, const std::map<const Block*, size_t>& 
         const size_t arg_count{inst.NumArgs()};
         for (size_t arg_index = 0; arg_index < arg_count; ++arg_index) {
             const Value arg{inst.Arg(arg_index)};
-            const std::string arg_str{ArgToIndex(block_to_index, inst_to_index, inst_index, arg)};
+            const std::string arg_str{ArgToIndex(inst_to_index, inst_index, arg)};
             ret += arg_index != 0 ? ", " : " ";
             if (op == Opcode::Phi) {
                 ret += fmt::format("[ {}, {} ]", arg_str,

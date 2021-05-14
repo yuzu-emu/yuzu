@@ -12,7 +12,6 @@ namespace Shader::Optimization {
 
 void IdentityRemovalPass(IR::Program& program) {
     std::vector<IR::Inst*> to_invalidate;
-
     for (IR::Block* const block : program.blocks) {
         for (auto inst = block->begin(); inst != block->end();) {
             const size_t num_args{inst->NumArgs()};

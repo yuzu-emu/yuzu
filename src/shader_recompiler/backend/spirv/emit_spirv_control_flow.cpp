@@ -7,40 +7,21 @@
 
 namespace Shader::Backend::SPIRV {
 
-void EmitBranch(EmitContext& ctx, Id label) {
-    ctx.OpBranch(label);
-}
-
-void EmitBranchConditional(EmitContext& ctx, Id condition, Id true_label, Id false_label) {
-    ctx.OpBranchConditional(condition, true_label, false_label);
-}
-
-void EmitLoopMerge(EmitContext& ctx, Id merge_label, Id continue_label) {
-    ctx.OpLoopMerge(merge_label, continue_label, spv::LoopControlMask::MaskNone);
-}
-
-void EmitSelectionMerge(EmitContext& ctx, Id merge_label) {
-    ctx.OpSelectionMerge(merge_label, spv::SelectionControlMask::MaskNone);
-}
-
-void EmitReturn(EmitContext& ctx) {
-    ctx.OpReturn();
-}
-
 void EmitJoin(EmitContext&) {
     throw NotImplementedException("Join shouldn't be emitted");
 }
 
-void EmitUnreachable(EmitContext& ctx) {
-    ctx.OpUnreachable();
-}
-
-void EmitDemoteToHelperInvocation(EmitContext& ctx, Id continue_label) {
+void EmitDemoteToHelperInvocation(EmitContext& ctx) {
     if (ctx.profile.support_demote_to_helper_invocation) {
         ctx.OpDemoteToHelperInvocationEXT();
-        ctx.OpBranch(continue_label);
     } else {
+        const Id kill_label{ctx.OpLabel()};
+        const Id impossible_label{ctx.OpLabel()};
+        ctx.OpSelectionMerge(impossible_label, spv::SelectionControlMask::MaskNone);
+        ctx.OpBranchConditional(ctx.true_value, kill_label, impossible_label);
+        ctx.AddLabel(kill_label);
         ctx.OpKill();
+        ctx.AddLabel(impossible_label);
     }
 }
 
