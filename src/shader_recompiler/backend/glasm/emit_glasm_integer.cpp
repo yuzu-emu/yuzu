@@ -175,43 +175,43 @@ void EmitUClamp32(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU32 m
 }
 
 void EmitSLessThan(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs) {
-    ctx.Add("SLT.S {},{},{};", inst, lhs, rhs);
+    ctx.Add("SLT.S {}.x,{},{};", inst, lhs, rhs);
 }
 
 void EmitULessThan(EmitContext& ctx, IR::Inst& inst, ScalarU32 lhs, ScalarU32 rhs) {
-    ctx.Add("SLT.U {},{},{};", inst, lhs, rhs);
+    ctx.Add("SLT.U {}.x,{},{};", inst, lhs, rhs);
 }
 
 void EmitIEqual(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs) {
-    ctx.Add("SEQ.S {},{},{};", inst, lhs, rhs);
+    ctx.Add("SEQ.S {}.x,{},{};", inst, lhs, rhs);
 }
 
 void EmitSLessThanEqual(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs) {
-    ctx.Add("SLE.S {},{},{};", inst, lhs, rhs);
+    ctx.Add("SLE.S {}.x,{},{};", inst, lhs, rhs);
 }
 
 void EmitULessThanEqual(EmitContext& ctx, IR::Inst& inst, ScalarU32 lhs, ScalarU32 rhs) {
-    ctx.Add("SLE.U {},{},{};", inst, lhs, rhs);
+    ctx.Add("SLE.U {}.x,{},{};", inst, lhs, rhs);
 }
 
 void EmitSGreaterThan(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs) {
-    ctx.Add("SGT.S {},{},{};", inst, lhs, rhs);
+    ctx.Add("SGT.S {}.x,{},{};", inst, lhs, rhs);
 }
 
 void EmitUGreaterThan(EmitContext& ctx, IR::Inst& inst, ScalarU32 lhs, ScalarU32 rhs) {
-    ctx.Add("SGT.U {},{},{};", inst, lhs, rhs);
+    ctx.Add("SGT.U {}.x,{},{};", inst, lhs, rhs);
 }
 
 void EmitINotEqual(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs) {
-    ctx.Add("SNE.U {},{},{};", inst, lhs, rhs);
+    ctx.Add("SNE.U {}.x,{},{};", inst, lhs, rhs);
 }
 
 void EmitSGreaterThanEqual(EmitContext& ctx, IR::Inst& inst, ScalarS32 lhs, ScalarS32 rhs) {
-    ctx.Add("SGE.S {},{},{};", inst, lhs, rhs);
+    ctx.Add("SGE.S {}.x,{},{};", inst, lhs, rhs);
 }
 
 void EmitUGreaterThanEqual(EmitContext& ctx, IR::Inst& inst, ScalarU32 lhs, ScalarU32 rhs) {
-    ctx.Add("SGE.U {},{},{};", inst, lhs, rhs);
+    ctx.Add("SGE.U {}.x,{},{};", inst, lhs, rhs);
 }
 
 } // namespace Shader::Backend::GLASM
