@@ -138,10 +138,6 @@ IR::Opcode UndefOpcode(IndirectBranchVariable) noexcept {
     return IR::Opcode::UndefU32;
 }
 
-[[nodiscard]] bool IsPhi(const IR::Inst& inst) noexcept {
-    return inst.GetOpcode() == IR::Opcode::Phi;
-}
-
 enum class Status {
     Start,
     SetValue,
@@ -283,7 +279,7 @@ private:
         list.erase(IR::Block::InstructionList::s_iterator_to(phi));
 
         // Find the first non-phi instruction and use it as an insertion point
-        IR::Block::iterator reinsert_point{std::ranges::find_if_not(list, IsPhi)};
+        IR::Block::iterator reinsert_point{std::ranges::find_if_not(list, IR::IsPhi)};
         if (same.IsEmpty()) {
             // The phi is unreachable or in the start block
             // Insert an undefined instruction and make it the phi node replacement

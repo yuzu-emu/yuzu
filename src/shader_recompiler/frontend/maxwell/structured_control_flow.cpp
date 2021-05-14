@@ -704,7 +704,7 @@ private:
                 // Implement if header block
                 IR::IREmitter ir{*current_block};
                 const IR::U1 cond{VisitExpr(ir, *stmt.cond)};
-                ir.BranchConditionRef(cond);
+                ir.DummyReference(cond);
 
                 const size_t if_node_index{syntax_list.size()};
                 syntax_list.emplace_back();
@@ -755,7 +755,7 @@ private:
                 // The continue block is located at the end of the loop
                 IR::IREmitter ir{*continue_block};
                 const IR::U1 cond{VisitExpr(ir, *stmt.cond)};
-                ir.BranchConditionRef(cond);
+                ir.DummyReference(cond);
 
                 IR::Block* const body_block{syntax_list.at(body_block_index).block};
                 loop_header_block->AddBranch(body_block);
@@ -792,7 +792,7 @@ private:
 
                 IR::IREmitter ir{*current_block};
                 const IR::U1 cond{VisitExpr(ir, *stmt.cond)};
-                ir.BranchConditionRef(cond);
+                ir.DummyReference(cond);
                 current_block->AddBranch(break_block);
                 current_block->AddBranch(skip_block);
                 current_block = skip_block;

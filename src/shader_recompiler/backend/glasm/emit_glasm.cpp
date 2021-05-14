@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <ranges>
 #include <string>
 #include <tuple>
 
@@ -9,6 +10,7 @@
 #include "shader_recompiler/backend/glasm/emit_context.h"
 #include "shader_recompiler/backend/glasm/emit_glasm.h"
 #include "shader_recompiler/backend/glasm/emit_glasm_instructions.h"
+#include "shader_recompiler/frontend/ir/ir_emitter.h"
 #include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/profile.h"
 
@@ -175,6 +177,34 @@ void EmitInst(EmitContext& ctx, IR::Inst* inst) {
     throw LogicError("Invalid opcode {}", inst->GetOpcode());
 }
 
+void Precolor(EmitContext& ctx, const IR::Program& program) {
+    for (IR::Block* const block : program.blocks) {
+        for (IR::Inst& phi : block->Instructions() | std::views::take_while(IR::IsPhi)) {
+            switch (phi.Arg(0).Type()) {
+            case IR::Type::U1:
+            case IR::Type::U32:
+            case IR::Type::F32:
+                ctx.reg_alloc.Define(phi);
+                break;
+            case IR::Type::U64:
+            case IR::Type::F64:
+                ctx.reg_alloc.LongDefine(phi);
+                break;
+            default:
+                throw NotImplementedException("Phi node type {}", phi.Type());
+            }
+            const size_t num_args{phi.NumArgs()};
+            for (size_t i = 0; i < num_args; ++i) {
+                IR::IREmitter{*phi.PhiBlock(i)}.PhiMove(phi, phi.Arg(i));
+            }
+            // Add reference to the phi node on the phi predecessor to avoid overwritting it
+            for (size_t i = 0; i < num_args; ++i) {
+                IR::IREmitter{*phi.PhiBlock(i)}.DummyReference(IR::Value{&phi});
+            }
+        }
+    }
+}
+
 void EmitCode(EmitContext& ctx, const IR::Program& program) {
     const auto eval{
         [&](const IR::U1& cond) { return ScalarS32{ctx.reg_alloc.Consume(IR::Value{cond})}; }};
@@ -186,7 +216,9 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
             }
             break;
         case IR::AbstractSyntaxNode::Type::If:
-            ctx.Add("MOV.S.CC RC,{};IF NE.x;", eval(node.if_node.cond));
+            ctx.Add("MOV.S.CC RC,{};"
+                    "IF NE.x;",
+                    eval(node.if_node.cond));
             break;
         case IR::AbstractSyntaxNode::Type::EndIf:
             ctx.Add("ENDIF;");
@@ -195,10 +227,30 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
             ctx.Add("REP;");
             break;
         case IR::AbstractSyntaxNode::Type::Repeat:
-            ctx.Add("MOV.S.CC RC,{};BRK NE.x;ENDREP;", eval(node.repeat.cond));
+            if (node.repeat.cond.IsImmediate()) {
+                if (node.repeat.cond.U1()) {
+                    ctx.Add("ENDREP;");
+                } else {
+                    ctx.Add("BRK;"
+                            "ENDREP;");
+                }
+            } else {
+                ctx.Add("MOV.S.CC RC,{};"
+                        "BRK (EQ.x);"
+                        "ENDREP;",
+                        eval(node.repeat.cond));
+            }
             break;
         case IR::AbstractSyntaxNode::Type::Break:
-            ctx.Add("MOV.S.CC RC,{};BRK NE.x;", eval(node.repeat.cond));
+            if (node.break_node.cond.IsImmediate()) {
+                if (node.break_node.cond.U1()) {
+                    ctx.Add("BRK;");
+                }
+            } else {
+                ctx.Add("MOV.S.CC RC,{};"
+                        "BRK (NE.x);",
+                        eval(node.break_node.cond));
+            }
             break;
         case IR::AbstractSyntaxNode::Type::Return:
         case IR::AbstractSyntaxNode::Type::Unreachable:
@@ -233,6 +285,7 @@ void SetupOptions(std::string& header, Info info) {
 
 std::string EmitGLASM(const Profile&, IR::Program& program, Bindings&) {
     EmitContext ctx{program};
+    Precolor(ctx, program);
     EmitCode(ctx, program);
     std::string header = "!!NVcp5.0\n"
                          "OPTION NV_internal;";

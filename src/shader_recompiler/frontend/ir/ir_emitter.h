@@ -32,9 +32,11 @@ public:
     [[nodiscard]] U64 Imm64(s64 value) const;
     [[nodiscard]] F64 Imm64(f64 value) const;
 
+    void DummyReference(const Value& value);
+    void PhiMove(IR::Inst& phi, const Value& value);
+
     void Prologue();
     void Epilogue();
-    void BranchConditionRef(const U1& cond);
     void DemoteToHelperInvocation();
     void EmitVertex(const U32& stream);
     void EndPrimitive(const U32& stream);

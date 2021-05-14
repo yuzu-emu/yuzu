@@ -6,11 +6,12 @@
 OPCODE(Phi,                                                 Opaque,                                                                                         )
 OPCODE(Identity,                                            Opaque,         Opaque,                                                                         )
 OPCODE(Void,                                                Void,                                                                                           )
+OPCODE(DummyReference,                                      Void,           Opaque,                                                                         )
+OPCODE(PhiMove,                                             Void,           Opaque,         Opaque,                                                         )
 
 // Special operations
 OPCODE(Prologue,                                            Void,                                                                                           )
 OPCODE(Epilogue,                                            Void,                                                                                           )
-OPCODE(BranchConditionRef,                                  Void,           U1,                                                                             )
 OPCODE(Join,                                                Void,                                                                                           )
 OPCODE(DemoteToHelperInvocation,                            Void,                                                                                           )
 OPCODE(EmitVertex,                                          Void,           U32,                                                                            )

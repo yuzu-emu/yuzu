@@ -468,7 +468,11 @@ Id EmitIdentity(EmitContext& ctx, const IR::Value& value) {
     return id;
 }
 
-void EmitBranchConditionRef(EmitContext&) {}
+void EmitDummyReference(EmitContext&) {}
+
+void EmitPhiMove(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
 
 void EmitGetZeroFromOp(EmitContext&) {
     throw LogicError("Unreachable instruction");
