@@ -73,7 +73,9 @@ public:
                              Tegra::MemoryManager& gpu_memory_,
                              Tegra::Engines::Maxwell3D& maxwell3d_,
                              ProgramManager& program_manager_, StateTracker& state_tracker_,
-                             OGLProgram program_, const std::array<const Shader::Info*, 5>& infos);
+                             OGLProgram program_,
+                             std::array<OGLAssemblyProgram, 5> assembly_programs_,
+                             const std::array<const Shader::Info*, 5>& infos);
 
     void Configure(bool is_indexed);
 
@@ -86,6 +88,8 @@ private:
     StateTracker& state_tracker;
 
     OGLProgram program;
+    std::array<OGLAssemblyProgram, 5> assembly_programs;
+
     std::array<Shader::Info, 5> stage_infos{};
     std::array<u32, 5> base_uniform_bindings{};
     std::array<u32, 5> base_storage_bindings{};
