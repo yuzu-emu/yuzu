@@ -306,6 +306,9 @@ std::string EmitGLASM(const Profile&, IR::Program& program, Bindings&) {
     for (size_t index = 0; index < ctx.reg_alloc.NumUsedRegisters(); ++index) {
         header += fmt::format("R{},", index);
     }
+    if (program.local_memory_size > 0) {
+        header += fmt::format("lmem[{}],", program.local_memory_size);
+    }
     header += "RC;"
               "LONG TEMP ";
     for (size_t index = 0; index < ctx.reg_alloc.NumUsedLongRegisters(); ++index) {

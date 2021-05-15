@@ -71,7 +71,7 @@ void EmitInvocationId(EmitContext& ctx);
 void EmitSampleId(EmitContext& ctx);
 void EmitIsHelperInvocation(EmitContext& ctx);
 void EmitYDirection(EmitContext& ctx);
-void EmitLoadLocal(EmitContext& ctx, ScalarU32 word_offset);
+void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, ScalarU32 word_offset);
 void EmitWriteLocal(EmitContext& ctx, ScalarU32 word_offset, ScalarU32 value);
 void EmitUndefU1(EmitContext& ctx);
 void EmitUndefU8(EmitContext& ctx);
