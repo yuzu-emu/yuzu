@@ -49,7 +49,7 @@ void EmitJoin(EmitContext& ctx) {
 }
 
 void EmitDemoteToHelperInvocation(EmitContext& ctx) {
-    NotImplemented();
+    ctx.Add("KIL TR.x;");
 }
 
 void EmitBarrier(EmitContext& ctx) {
