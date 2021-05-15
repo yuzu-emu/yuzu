@@ -136,7 +136,7 @@ void Traverse(EmitContext& ctx, IR::Program& program) {
             const Id endloop_label{node.loop.merge->Definition<Id>()};
 
             ctx.OpLoopMerge(endloop_label, continue_label, spv::LoopControlMask::MaskNone);
-            ctx.OpBranch(node.loop.body->Definition<Id>());
+            ctx.OpBranch(body_label);
             break;
         }
         case IR::AbstractSyntaxNode::Type::Break: {
