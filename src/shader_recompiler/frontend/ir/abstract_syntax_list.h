@@ -13,6 +13,10 @@ namespace Shader::IR {
 class Block;
 
 struct AbstractSyntaxNode {
+    struct NonTrivialDummy {
+        NonTrivialDummy() {}
+    };
+
     enum class Type {
         Block,
         If,
@@ -25,7 +29,8 @@ struct AbstractSyntaxNode {
     };
     Type type{};
     union {
-        Block* block{};
+        NonTrivialDummy dummy{};
+        Block* block;
         struct {
             U1 cond;
             Block* body;
