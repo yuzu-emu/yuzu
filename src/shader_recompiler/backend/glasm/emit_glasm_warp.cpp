@@ -99,20 +99,20 @@ void EmitFSwizzleAdd(EmitContext&, ScalarF32, ScalarF32, ScalarU32) {
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitDPdxFine(EmitContext&, ScalarF32) {
-    throw NotImplementedException("GLASM instruction");
+void EmitDPdxFine(EmitContext& ctx, IR::Inst& inst, ScalarF32 p) {
+    ctx.Add("DDX.FINE {}.x,{};", inst, p);
 }
 
-void EmitDPdyFine(EmitContext&, ScalarF32) {
-    throw NotImplementedException("GLASM instruction");
+void EmitDPdyFine(EmitContext& ctx, IR::Inst& inst, ScalarF32 p) {
+    ctx.Add("DDY.FINE {}.x,{};", inst, p);
 }
 
-void EmitDPdxCoarse(EmitContext&, ScalarF32) {
-    throw NotImplementedException("GLASM instruction");
+void EmitDPdxCoarse(EmitContext& ctx, IR::Inst& inst, ScalarF32 p) {
+    ctx.Add("DDX.COARSE {}.x,{};", inst, p);
 }
 
-void EmitDPdyCoarse(EmitContext&, ScalarF32) {
-    throw NotImplementedException("GLASM instruction");
+void EmitDPdyCoarse(EmitContext& ctx, IR::Inst& inst, ScalarF32 p) {
+    ctx.Add("DDY.COARSE {}.x,{};", inst, p);
 }
 
 } // namespace Shader::Backend::GLASM
