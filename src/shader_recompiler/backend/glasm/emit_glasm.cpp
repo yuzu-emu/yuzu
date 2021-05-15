@@ -54,6 +54,7 @@ public:
         }
         switch (value.type) {
         case Type::Register:
+        case Type::Void:
             break;
         case Type::U32:
             ctx.Add("MOV.U {}.x,{};", reg, value.imm_u32);
