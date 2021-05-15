@@ -51,13 +51,23 @@ void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding
 
 void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
                       [[maybe_unused]] ScalarU32 vertex) {
+    const u32 element{static_cast<u32>(attr) % 4};
+    const char swizzle{"xyzw"[element]};
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
-        const u32 element{IR::GenericAttributeElement(attr)};
-        ctx.Add("MOV.F {}.x,in_attr{}[0].{};", inst, index, "xyzw"[element]);
+        ctx.Add("MOV.F {}.x,in_attr{}[0].{};", inst, index, swizzle);
         return;
     }
-    throw NotImplementedException("Get attribute {}", attr);
+    switch (attr) {
+    case IR::Attribute::PositionX:
+    case IR::Attribute::PositionY:
+    case IR::Attribute::PositionZ:
+    case IR::Attribute::PositionW:
+        ctx.Add("MOV.F {}.x,{}.position.{};", inst, ctx.stage_name, swizzle);
+        break;
+    default:
+        throw NotImplementedException("Get attribute {}", attr);
+    }
 }
 
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, ScalarF32 value,
