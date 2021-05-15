@@ -54,7 +54,7 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
         const u32 element{IR::GenericAttributeElement(attr)};
-        ctx.Add("MOV.F {}.x,in_attr{}.{};", inst, index, "xyzw"[element]);
+        ctx.Add("MOV.F {}.x,in_attr{}[0].{};", inst, index, "xyzw"[element]);
         return;
     }
     throw NotImplementedException("Get attribute {}", attr);
@@ -66,7 +66,7 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, ScalarF32 value,
     const char swizzle{"xyzw"[element]};
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
-        ctx.Add("MOV.F out_attr{}.{},{};", index, swizzle, value);
+        ctx.Add("MOV.F out_attr{}[0].{},{};", index, swizzle, value);
         return;
     }
     switch (attr) {
@@ -100,9 +100,8 @@ void EmitSetPatch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Patch 
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitSetFragColor([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] u32 index,
-                      [[maybe_unused]] u32 component, [[maybe_unused]] ScalarF32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, ScalarF32 value) {
+    ctx.Add("MOV.F frag_color{}.{},{};", index, "xyzw"[component], value);
 }
 
 void EmitSetSampleMask([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {
