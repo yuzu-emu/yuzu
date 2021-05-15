@@ -57,6 +57,9 @@ void RegAlloc::FreeReg(Register reg) {
 Value RegAlloc::MakeImm(const IR::Value& value) {
     Value ret;
     switch (value.Type()) {
+    case IR::Type::Void:
+        ret.type = Type::Void;
+        break;
     case IR::Type::U1:
         ret.type = Type::U32;
         ret.imm_u32 = value.U1() ? 0xffffffff : 0;

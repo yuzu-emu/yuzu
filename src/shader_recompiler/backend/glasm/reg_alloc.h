@@ -23,6 +23,7 @@ namespace Shader::Backend::GLASM {
 class EmitContext;
 
 enum class Type : u32 {
+    Void,
     Register,
     U32,
     S32,
@@ -65,6 +66,8 @@ struct Value {
             return false;
         }
         switch (type) {
+        case Type::Void:
+            return true;
         case Type::Register:
             return id == rhs.id;
         case Type::U32:
@@ -218,6 +221,8 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarU32> {
     template <typename FormatContext>
     auto format(const Shader::Backend::GLASM::ScalarU32& value, FormatContext& ctx) {
         switch (value.type) {
+        case Shader::Backend::GLASM::Type::Void:
+            break;
         case Shader::Backend::GLASM::Type::Register:
             return Shader::Backend::GLASM::FormatTo<true>(ctx, value.id);
         case Shader::Backend::GLASM::Type::U32:
@@ -242,6 +247,8 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarS32> {
     template <typename FormatContext>
     auto format(const Shader::Backend::GLASM::ScalarS32& value, FormatContext& ctx) {
         switch (value.type) {
+        case Shader::Backend::GLASM::Type::Void:
+            break;
         case Shader::Backend::GLASM::Type::Register:
             return Shader::Backend::GLASM::FormatTo<true>(ctx, value.id);
         case Shader::Backend::GLASM::Type::U32:
@@ -266,6 +273,8 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarF32> {
     template <typename FormatContext>
     auto format(const Shader::Backend::GLASM::ScalarF32& value, FormatContext& ctx) {
         switch (value.type) {
+        case Shader::Backend::GLASM::Type::Void:
+            break;
         case Shader::Backend::GLASM::Type::Register:
             return Shader::Backend::GLASM::FormatTo<true>(ctx, value.id);
         case Shader::Backend::GLASM::Type::U32:
@@ -290,6 +299,8 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarF64> {
     template <typename FormatContext>
     auto format(const Shader::Backend::GLASM::ScalarF64& value, FormatContext& ctx) {
         switch (value.type) {
+        case Shader::Backend::GLASM::Type::Void:
+            break;
         case Shader::Backend::GLASM::Type::Register:
             return Shader::Backend::GLASM::FormatTo<true>(ctx, value.id);
         case Shader::Backend::GLASM::Type::U32:
