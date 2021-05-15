@@ -8,57 +8,51 @@
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLASM {
-void EmitLoadSharedU8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 offset) {
-    throw NotImplementedException("GLASM instruction");
+void EmitLoadSharedU8(EmitContext& ctx, IR::Inst& inst, ScalarU32 offset) {
+    ctx.Add("LDS.U8 {},shared_mem[{}];", inst, offset);
 }
 
-void EmitLoadSharedS8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 offset) {
-    throw NotImplementedException("GLASM instruction");
+void EmitLoadSharedS8(EmitContext& ctx, IR::Inst& inst, ScalarU32 offset) {
+    ctx.Add("LDS.S8 {},shared_mem[{}];", inst, offset);
 }
 
-void EmitLoadSharedU16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 offset) {
-    throw NotImplementedException("GLASM instruction");
+void EmitLoadSharedU16(EmitContext& ctx, IR::Inst& inst, ScalarU32 offset) {
+    ctx.Add("LDS.U16 {},shared_mem[{}];", inst, offset);
 }
 
-void EmitLoadSharedS16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 offset) {
-    throw NotImplementedException("GLASM instruction");
+void EmitLoadSharedS16(EmitContext& ctx, IR::Inst& inst, ScalarU32 offset) {
+    ctx.Add("LDS.S16 {},shared_mem[{}];", inst, offset);
 }
 
-void EmitLoadSharedU32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 offset) {
-    throw NotImplementedException("GLASM instruction");
+void EmitLoadSharedU32(EmitContext& ctx, IR::Inst& inst, ScalarU32 offset) {
+    ctx.Add("LDS.U32 {},shared_mem[{}];", inst, offset);
 }
 
-void EmitLoadSharedU64([[maybe_unused]] EmitContext& ctx, IR::Inst& inst,
-                       [[maybe_unused]] ScalarU32 offset) {
-    ctx.LongAdd("LDS.U64 {},shared_mem[{}];", inst, offset);
+void EmitLoadSharedU64(EmitContext& ctx, IR::Inst& inst, ScalarU32 offset) {
+    ctx.Add("LDS.U32X2 {},shared_mem[{}];", inst, offset);
 }
 
-void EmitLoadSharedU128([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 offset) {
-    throw NotImplementedException("GLASM instruction");
+void EmitLoadSharedU128(EmitContext& ctx, IR::Inst& inst, ScalarU32 offset) {
+    ctx.Add("LDS.U32X4 {},shared_mem[{}];", inst, offset);
 }
 
-void EmitWriteSharedU8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 offset,
-                       [[maybe_unused]] ScalarU32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitWriteSharedU8(EmitContext& ctx, ScalarU32 offset, ScalarU32 value) {
+    ctx.Add("STS.U8 {},shared_mem[{}];", value, offset);
 }
 
-void EmitWriteSharedU16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 offset,
-                        [[maybe_unused]] ScalarU32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitWriteSharedU16(EmitContext& ctx, ScalarU32 offset, ScalarU32 value) {
+    ctx.Add("STS.U16 {},shared_mem[{}];", value, offset);
 }
 
-void EmitWriteSharedU32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 offset,
-                        [[maybe_unused]] ScalarU32 value) {
+void EmitWriteSharedU32(EmitContext& ctx, ScalarU32 offset, ScalarU32 value) {
     ctx.Add("STS.U32 {},shared_mem[{}];", value, offset);
 }
 
-void EmitWriteSharedU64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 offset,
-                        [[maybe_unused]] Register value) {
-    ctx.Add("STS.U64 {},shared_mem[{}];", value, offset);
+void EmitWriteSharedU64(EmitContext& ctx, ScalarU32 offset, Register value) {
+    ctx.Add("STS.U32X2 {},shared_mem[{}];", value, offset);
 }
 
-void EmitWriteSharedU128([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 offset,
-                         [[maybe_unused]] Register value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitWriteSharedU128(EmitContext& ctx, ScalarU32 offset, Register value) {
+    ctx.Add("STS.U32X4 {},shared_mem[{}];", value, offset);
 }
 } // namespace Shader::Backend::GLASM
