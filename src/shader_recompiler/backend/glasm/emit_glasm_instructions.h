@@ -120,13 +120,13 @@ void EmitWriteStorage64(EmitContext& ctx, const IR::Value& binding, ScalarU32 of
                         Register value);
 void EmitWriteStorage128(EmitContext& ctx, const IR::Value& binding, ScalarU32 offset,
                          Register value);
-void EmitLoadSharedU8(EmitContext& ctx, ScalarU32 offset);
-void EmitLoadSharedS8(EmitContext& ctx, ScalarU32 offset);
-void EmitLoadSharedU16(EmitContext& ctx, ScalarU32 offset);
-void EmitLoadSharedS16(EmitContext& ctx, ScalarU32 offset);
-void EmitLoadSharedU32(EmitContext& ctx, ScalarU32 offset);
+void EmitLoadSharedU8(EmitContext& ctx, IR::Inst& inst, ScalarU32 offset);
+void EmitLoadSharedS8(EmitContext& ctx, IR::Inst& inst, ScalarU32 offset);
+void EmitLoadSharedU16(EmitContext& ctx, IR::Inst& inst, ScalarU32 offset);
+void EmitLoadSharedS16(EmitContext& ctx, IR::Inst& inst, ScalarU32 offset);
+void EmitLoadSharedU32(EmitContext& ctx, IR::Inst& inst, ScalarU32 offset);
 void EmitLoadSharedU64(EmitContext& ctx, IR::Inst& inst, ScalarU32 offset);
-void EmitLoadSharedU128(EmitContext& ctx, ScalarU32 offset);
+void EmitLoadSharedU128(EmitContext& ctx, IR::Inst& inst, ScalarU32 offset);
 void EmitWriteSharedU8(EmitContext& ctx, ScalarU32 offset, ScalarU32 value);
 void EmitWriteSharedU16(EmitContext& ctx, ScalarU32 offset, ScalarU32 value);
 void EmitWriteSharedU32(EmitContext& ctx, ScalarU32 offset, ScalarU32 value);
