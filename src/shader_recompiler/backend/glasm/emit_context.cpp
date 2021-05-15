@@ -2,10 +2,25 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <string_view>
+
 #include "shader_recompiler/backend/glasm/emit_context.h"
 #include "shader_recompiler/frontend/ir/program.h"
 
 namespace Shader::Backend::GLASM {
+namespace {
+std::string_view InterpDecorator(Interpolation interp) {
+    switch (interp) {
+    case Interpolation::Smooth:
+        return "";
+    case Interpolation::Flat:
+        return "FLAT ";
+    case Interpolation::NoPerspective:
+        return "NOPERSPECTIVE ";
+    }
+    throw InvalidArgument("Invalid interpolation {}", interp);
+}
+} // Anonymous namespace
 
 EmitContext::EmitContext(IR::Program& program) {
     // FIXME: Temporary partial implementation
@@ -41,6 +56,28 @@ EmitContext::EmitContext(IR::Program& program) {
     case Stage::Compute:
         stage_name = "compute";
         break;
+    }
+    for (size_t index = 0; index < program.info.input_generics.size(); ++index) {
+        const auto& generic{program.info.input_generics[index]};
+        if (generic.used) {
+            Add("{}ATTRIB in_attr{}[]={{{}.attrib[{}..{}]}};",
+                InterpDecorator(generic.interpolation), index, stage_name, index, index);
+        }
+    }
+    for (size_t index = 0; index < program.info.stores_frag_color.size(); ++index) {
+        if (!program.info.stores_frag_color[index]) {
+            continue;
+        }
+        if (index == 0) {
+            Add("OUTPUT frag_color0=result.color;");
+        } else {
+            Add("OUTPUT frag_color{}[]=result.color[{}];", index, index);
+        }
+    }
+    for (size_t index = 0; index < program.info.stores_generics.size(); ++index) {
+        if (program.info.stores_generics[index]) {
+            Add("OUTPUT out_attr{}[]={{result.attrib[{}..{}]}};", index, index, index);
+        }
     }
 }
 

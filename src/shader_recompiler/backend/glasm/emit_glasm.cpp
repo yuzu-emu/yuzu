@@ -261,6 +261,12 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
 }
 
 void SetupOptions(std::string& header, Info info) {
+    // TODO: Track the shared atomic ops
+    header += "OPTION NV_internal;"
+              "OPTION NV_shader_storage_buffer;"
+              "OPTION NV_gpu_program_fp64;"
+              "OPTION NV_bindless_texture;"
+              "OPTION ARB_derivative_control;";
     if (info.uses_int64_bit_atomics) {
         header += "OPTION NV_shader_atomic_int64;";
     }
@@ -276,10 +282,25 @@ void SetupOptions(std::string& header, Info info) {
     if (info.uses_subgroup_shuffles) {
         header += "OPTION NV_shader_thread_shuffle;";
     }
-    // TODO: Track the shared atomic ops
-    header += "OPTION NV_shader_storage_buffer;"
-              "OPTION NV_gpu_program_fp64;"
-              "OPTION NV_bindless_texture;";
+}
+
+std::string_view StageHeader(Stage stage) {
+    switch (stage) {
+    case Stage::VertexA:
+    case Stage::VertexB:
+        return "!!NVvp5.0\n";
+    case Stage::TessellationControl:
+        return "!!NVtcs5.0\n";
+    case Stage::TessellationEval:
+        return "!!NVtes5.0\n";
+    case Stage::Geometry:
+        return "!!NVgp5.0\n";
+    case Stage::Fragment:
+        return "!!NVfp5.0\n";
+    case Stage::Compute:
+        return "!!NVcp5.0\n";
+    }
+    throw InvalidArgument("Invalid stage {}", stage);
 }
 } // Anonymous namespace
 
@@ -287,8 +308,7 @@ std::string EmitGLASM(const Profile&, IR::Program& program, Bindings&) {
     EmitContext ctx{program};
     Precolor(ctx, program);
     EmitCode(ctx, program);
-    std::string header = "!!NVcp5.0\n"
-                         "OPTION NV_internal;";
+    std::string header{StageHeader(program.stage)};
     SetupOptions(header, program.info);
     switch (program.stage) {
     case Stage::Compute:
