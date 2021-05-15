@@ -33,10 +33,12 @@ GraphicsProgram::GraphicsProgram(TextureCache& texture_cache_, BufferCache& buff
                                  Tegra::Engines::Maxwell3D& maxwell3d_,
                                  ProgramManager& program_manager_, StateTracker& state_tracker_,
                                  OGLProgram program_,
+                                 std::array<OGLAssemblyProgram, 5> assembly_programs_,
                                  const std::array<const Shader::Info*, 5>& infos)
     : texture_cache{texture_cache_}, buffer_cache{buffer_cache_},
       gpu_memory{gpu_memory_}, maxwell3d{maxwell3d_}, program_manager{program_manager_},
-      state_tracker{state_tracker_}, program{std::move(program_)} {
+      state_tracker{state_tracker_}, program{std::move(program_)}, assembly_programs{std::move(
+                                                                       assembly_programs_)} {
     std::ranges::transform(infos, stage_infos.begin(),
                            [](const Shader::Info* info) { return info ? *info : Shader::Info{}; });
 
@@ -290,7 +292,16 @@ void GraphicsProgram::Configure(bool is_indexed) {
     texture_cache.UpdateRenderTargets(false);
 
     state_tracker.BindFramebuffer(texture_cache.GetFramebuffer()->Handle());
-    program_manager.BindProgram(program.handle);
+    if (assembly_programs[0].handle != 0) {
+        // TODO: State track this
+        glEnable(GL_VERTEX_PROGRAM_NV);
+        glEnable(GL_FRAGMENT_PROGRAM_NV);
+        glBindProgramARB(GL_VERTEX_PROGRAM_NV, assembly_programs[0].handle);
+        glBindProgramARB(GL_FRAGMENT_PROGRAM_NV, assembly_programs[4].handle);
+        program_manager.BindProgram(0);
+    } else {
+        program_manager.BindProgram(program.handle);
+    }
 }
 
 } // namespace OpenGL

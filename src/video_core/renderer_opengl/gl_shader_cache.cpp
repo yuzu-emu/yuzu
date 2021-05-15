@@ -185,6 +185,23 @@ GLenum Stage(size_t stage_index) {
     UNREACHABLE_MSG("{}", stage_index);
     return GL_NONE;
 }
+
+GLenum AssemblyStage(size_t stage_index) {
+    switch (stage_index) {
+    case 0:
+        return GL_VERTEX_PROGRAM_NV;
+    case 1:
+        return GL_TESS_CONTROL_PROGRAM_NV;
+    case 2:
+        return GL_TESS_EVALUATION_PROGRAM_NV;
+    case 3:
+        return GL_GEOMETRY_PROGRAM_NV;
+    case 4:
+        return GL_FRAGMENT_PROGRAM_NV;
+    }
+    UNREACHABLE_MSG("{}", stage_index);
+    return GL_NONE;
+}
 } // Anonymous namespace
 
 ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindow& emu_window_,
@@ -269,10 +286,12 @@ std::unique_ptr<GraphicsProgram> ShaderCache::CreateGraphicsProgram(
     }
     std::array<const Shader::Info*, Maxwell::MaxShaderStage> infos{};
 
-    OGLProgram gl_program;
-    gl_program.handle = glCreateProgram();
-
+    OGLProgram source_program;
+    std::array<OGLAssemblyProgram, 5> assembly_programs;
     Shader::Backend::Bindings binding;
+    if (!device.UseAssemblyShaders()) {
+        source_program.handle = glCreateProgram();
+    }
     for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
         if (key.unique_hashes[index] == 0) {
             continue;
@@ -282,15 +301,20 @@ std::unique_ptr<GraphicsProgram> ShaderCache::CreateGraphicsProgram(
         Shader::IR::Program& program{programs[index]};
         const size_t stage_index{index - 1};
         infos[stage_index] = &program.info;
-
-        const std::vector<u32> code{EmitSPIRV(profile, program, binding)};
-        AddShader(Stage(stage_index), gl_program.handle, code);
+        if (device.UseAssemblyShaders()) {
+            const std::string code{EmitGLASM(profile, program)};
+            assembly_programs[stage_index] = CompileProgram(code, AssemblyStage(stage_index));
+        } else {
+            const std::vector<u32> code{EmitSPIRV(profile, program, binding)};
+            AddShader(Stage(stage_index), source_program.handle, code);
+        }
     }
-    LinkProgram(gl_program.handle);
-
-    return std::make_unique<GraphicsProgram>(texture_cache, buffer_cache, gpu_memory, maxwell3d,
-                                             program_manager, state_tracker, std::move(gl_program),
-                                             infos);
+    if (!device.UseAssemblyShaders()) {
+        LinkProgram(source_program.handle);
+    }
+    return std::make_unique<GraphicsProgram>(
+        texture_cache, buffer_cache, gpu_memory, maxwell3d, program_manager, state_tracker,
+        std::move(source_program), std::move(assembly_programs), infos);
 }
 
 std::unique_ptr<ComputeProgram> ShaderCache::CreateComputeProgram(
