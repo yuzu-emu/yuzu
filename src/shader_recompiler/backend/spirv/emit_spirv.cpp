@@ -111,7 +111,7 @@ void Traverse(EmitContext& ctx, IR::Program& program) {
     IR::Block* current_block{};
     for (const IR::AbstractSyntaxNode& node : program.syntax_list) {
         switch (node.type) {
-        case IR::AbstractSyntaxNode::Type::Block:
+        case IR::AbstractSyntaxNode::Type::Block: {
             const Id label{node.block->Definition<Id>()};
             if (current_block) {
                 ctx.OpBranch(label);
@@ -122,6 +122,7 @@ void Traverse(EmitContext& ctx, IR::Program& program) {
                 EmitInst(ctx, &inst);
             }
             break;
+        }
         case IR::AbstractSyntaxNode::Type::If: {
             const Id if_label{node.if_node.body->Definition<Id>()};
             const Id endif_label{node.if_node.merge->Definition<Id>()};
