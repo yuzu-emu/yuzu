@@ -168,14 +168,6 @@ void EmitYDirection(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitLoadLocal(EmitContext& ctx, ScalarU32 word_offset) {
-    NotImplemented();
-}
-
-void EmitWriteLocal(EmitContext& ctx, ScalarU32 word_offset, ScalarU32 value) {
-    NotImplemented();
-}
-
 void EmitUndefU1(EmitContext& ctx) {
     NotImplemented();
 }

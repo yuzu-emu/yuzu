@@ -113,4 +113,12 @@ void EmitSetFragDepth([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Scalar
     throw NotImplementedException("GLASM instruction");
 }
 
+void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, ScalarU32 word_offset) {
+    ctx.Add("MOV.U {},lmem[{}].x;", inst, word_offset);
+}
+
+void EmitWriteLocal(EmitContext& ctx, ScalarU32 word_offset, ScalarU32 value) {
+    ctx.Add("MOV.U lmem[{}].x,{};", word_offset, value);
+}
+
 } // namespace Shader::Backend::GLASM
