@@ -112,24 +112,46 @@ static std::string Texture([[maybe_unused]] EmitContext& ctx, IR::TextureInstInf
 }
 
 void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                                Register coords, Register bias_lc,
+                                const IR::Value& coord, Register bias_lc,
                                 [[maybe_unused]] const IR::Value& offset) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
-    const std::string_view op{info.has_bias ? "TXB" : "TEX"};
-    const std::string_view lod_clamp{info.has_lod_clamp ? ".LODCLAMP" : ""};
     const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
+    const std::string_view lod_clamp_mod{info.has_lod_clamp ? ".LODCLAMP" : ""};
+    const std::string_view type{"2D"}; // FIXME
     const std::string texture{Texture(ctx, info, index)};
+
+    std::string coord_vec{fmt::to_string(Register{ctx.reg_alloc.Consume(coord)})};
+    if (coord.InstRecursive()->HasUses()) {
+        // Move non-dead coords to a separate register, although this should never happen because
+        // vectors are only assembled for immediate texture instructions
+        ctx.Add("MOV.F RC,{};", coord_vec);
+        coord_vec = "RC";
+    }
     const Register ret{ctx.reg_alloc.Define(inst)};
-    // FIXME
-    const bool separate{info.type == TextureType::ColorArrayCube};
-    if (separate) {
-        ctx.Add("{}.F{}{} {},{},{},{},2D;", op, lod_clamp, sparse_mod, ret, coords, bias_lc,
-                texture);
+    if (info.has_bias) {
+        if (info.type == TextureType::ColorArrayCube) {
+            ctx.Add("TXB.F{}{} {},{},{},{},ARRAYCUBE;", lod_clamp_mod, sparse_mod, ret, coord_vec,
+                    bias_lc, texture);
+        } else {
+            if (info.has_lod_clamp) {
+                ctx.Add("MOV.F {}.w,{}.x;"
+                        "TXB.F.LODCLAMP{} {},{},{}.y,{},{};",
+                        coord_vec, bias_lc, sparse_mod, ret, coord_vec, bias_lc, texture, type);
+            } else {
+                ctx.Add("MOV.F {}.w,{}.x;"
+                        "TXB.F{} {},{},{},{};",
+                        coord_vec, bias_lc, sparse_mod, ret, coord_vec, texture, type);
+            }
+        }
     } else {
-        ctx.Add("MOV.F {}.w,{}.x;"
-                "{}.F{}{} {},{},{},2D;",
-                coords, bias_lc, op, lod_clamp, sparse_mod, ret, coords, texture);
+        if (info.has_lod_clamp && info.type == TextureType::ColorArrayCube) {
+            ctx.Add("TEX.F.LODCLAMP{} {},{},{},{},ARRAYCUBE;", sparse_mod, ret, coord_vec, bias_lc,
+                    texture);
+        } else {
+            ctx.Add("TEX.F{}{} {},{},{},{};", lod_clamp_mod, sparse_mod, ret, coord_vec, texture,
+                    type);
+        }
     }
     if (sparse_inst) {
         const Register sparse_ret{ctx.reg_alloc.Define(*sparse_inst)};
@@ -142,7 +164,7 @@ void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Valu
 
 void EmitImageSampleExplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                                 [[maybe_unused]] const IR::Value& index,
-                                [[maybe_unused]] Register coords, [[maybe_unused]] Register lod_lc,
+                                [[maybe_unused]] Register coord, [[maybe_unused]] Register lod_lc,
                                 [[maybe_unused]] const IR::Value& offset) {
     throw NotImplementedException("GLASM instruction");
 }
@@ -150,8 +172,7 @@ void EmitImageSampleExplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
 void EmitImageSampleDrefImplicitLod([[maybe_unused]] EmitContext& ctx,
                                     [[maybe_unused]] IR::Inst& inst,
                                     [[maybe_unused]] const IR::Value& index,
-                                    [[maybe_unused]] Register coords,
-                                    [[maybe_unused]] Register dref,
+                                    [[maybe_unused]] Register coord, [[maybe_unused]] Register dref,
                                     [[maybe_unused]] Register bias_lc,
                                     [[maybe_unused]] const IR::Value& offset) {
     throw NotImplementedException("GLASM instruction");
@@ -160,22 +181,21 @@ void EmitImageSampleDrefImplicitLod([[maybe_unused]] EmitContext& ctx,
 void EmitImageSampleDrefExplicitLod([[maybe_unused]] EmitContext& ctx,
                                     [[maybe_unused]] IR::Inst& inst,
                                     [[maybe_unused]] const IR::Value& index,
-                                    [[maybe_unused]] Register coords,
-                                    [[maybe_unused]] Register dref,
+                                    [[maybe_unused]] Register coord, [[maybe_unused]] Register dref,
                                     [[maybe_unused]] Register lod_lc,
                                     [[maybe_unused]] const IR::Value& offset) {
     throw NotImplementedException("GLASM instruction");
 }
 
 void EmitImageGather([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                     [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords,
+                     [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coord,
                      [[maybe_unused]] const IR::Value& offset,
                      [[maybe_unused]] const IR::Value& offset2) {
     throw NotImplementedException("GLASM instruction");
 }
 
 void EmitImageGatherDref([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                         [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords,
+                         [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coord,
                          [[maybe_unused]] const IR::Value& offset,
                          [[maybe_unused]] const IR::Value& offset2,
                          [[maybe_unused]] Register dref) {
@@ -183,7 +203,7 @@ void EmitImageGatherDref([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR:
 }
 
 void EmitImageFetch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                    [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords,
+                    [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coord,
                     [[maybe_unused]] Register offset, [[maybe_unused]] Register lod,
                     [[maybe_unused]] Register ms) {
     throw NotImplementedException("GLASM instruction");
@@ -196,24 +216,24 @@ void EmitImageQueryDimensions([[maybe_unused]] EmitContext& ctx, [[maybe_unused]
 }
 
 void EmitImageQueryLod([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                       [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords) {
+                       [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coord) {
     throw NotImplementedException("GLASM instruction");
 }
 
 void EmitImageGradient([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                       [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords,
+                       [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coord,
                        [[maybe_unused]] Register derivates, [[maybe_unused]] Register offset,
                        [[maybe_unused]] Register lod_clamp) {
     throw NotImplementedException("GLASM instruction");
 }
 
 void EmitImageRead([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                   [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords) {
+                   [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coord) {
     throw NotImplementedException("GLASM instruction");
 }
 
 void EmitImageWrite([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                    [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords,
+                    [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coord,
                     [[maybe_unused]] Register color) {
     throw NotImplementedException("GLASM instruction");
 }
