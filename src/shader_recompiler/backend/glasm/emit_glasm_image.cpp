@@ -105,7 +105,7 @@ void EmitBoundImageWrite(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
 
-std::string Texture([[maybe_unused]] EmitContext& ctx, IR::TextureInstInfo info,
+static std::string Texture([[maybe_unused]] EmitContext& ctx, IR::TextureInstInfo info,
                     [[maybe_unused]] const IR::Value& index) {
     // FIXME
     return fmt::format("texture[{}]", info.descriptor_index);

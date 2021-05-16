@@ -212,14 +212,14 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
     for (const IR::AbstractSyntaxNode& node : program.syntax_list) {
         switch (node.type) {
         case IR::AbstractSyntaxNode::Type::Block:
-            for (IR::Inst& inst : node.block->Instructions()) {
+            for (IR::Inst& inst : node.data.block->Instructions()) {
                 EmitInst(ctx, &inst);
             }
             break;
         case IR::AbstractSyntaxNode::Type::If:
             ctx.Add("MOV.S.CC RC,{};"
                     "IF NE.x;",
-                    eval(node.if_node.cond));
+                    eval(node.data.if_node.cond));
             break;
         case IR::AbstractSyntaxNode::Type::EndIf:
             ctx.Add("ENDIF;");
@@ -228,8 +228,8 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
             ctx.Add("REP;");
             break;
         case IR::AbstractSyntaxNode::Type::Repeat:
-            if (node.repeat.cond.IsImmediate()) {
-                if (node.repeat.cond.U1()) {
+            if (node.data.repeat.cond.IsImmediate()) {
+                if (node.data.repeat.cond.U1()) {
                     ctx.Add("ENDREP;");
                 } else {
                     ctx.Add("BRK;"
@@ -239,18 +239,18 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
                 ctx.Add("MOV.S.CC RC,{};"
                         "BRK (EQ.x);"
                         "ENDREP;",
-                        eval(node.repeat.cond));
+                        eval(node.data.repeat.cond));
             }
             break;
         case IR::AbstractSyntaxNode::Type::Break:
-            if (node.break_node.cond.IsImmediate()) {
-                if (node.break_node.cond.U1()) {
+            if (node.data.break_node.cond.IsImmediate()) {
+                if (node.data.break_node.cond.U1()) {
                     ctx.Add("BRK;");
                 }
             } else {
                 ctx.Add("MOV.S.CC RC,{};"
                         "BRK (NE.x);",
-                        eval(node.break_node.cond));
+                        eval(node.data.break_node.cond));
             }
             break;
         case IR::AbstractSyntaxNode::Type::Return:
