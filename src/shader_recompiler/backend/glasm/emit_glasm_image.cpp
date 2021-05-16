@@ -9,103 +9,7 @@
 
 namespace Shader::Backend::GLASM {
 
-void EmitBindlessImageSampleImplicitLod(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBindlessImageSampleExplicitLod(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBindlessImageSampleDrefImplicitLod(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBindlessImageSampleDrefExplicitLod(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBindlessImageGather(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBindlessImageGatherDref(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBindlessImageFetch(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBindlessImageQueryDimensions(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBindlessImageQueryLod(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBindlessImageGradient(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBindlessImageRead(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBindlessImageWrite(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBoundImageSampleImplicitLod(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBoundImageSampleExplicitLod(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBoundImageSampleDrefImplicitLod(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBoundImageSampleDrefExplicitLod(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBoundImageGather(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBoundImageGatherDref(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBoundImageFetch(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBoundImageQueryDimensions(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBoundImageQueryLod(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBoundImageGradient(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBoundImageRead(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitBoundImageWrite(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-static std::string Texture([[maybe_unused]] EmitContext& ctx, IR::TextureInstInfo info,
+std::string Texture([[maybe_unused]] EmitContext& ctx, IR::TextureInstInfo info,
                     [[maybe_unused]] const IR::Value& index) {
     // FIXME
     return fmt::format("texture[{}]", info.descriptor_index);
@@ -240,6 +144,102 @@ void EmitImageWrite([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
                     [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coord,
                     [[maybe_unused]] Register color) {
     throw NotImplementedException("GLASM instruction");
+}
+
+void EmitBindlessImageSampleImplicitLod(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageSampleExplicitLod(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageSampleDrefImplicitLod(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageSampleDrefExplicitLod(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageGather(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageGatherDref(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageFetch(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageQueryDimensions(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageQueryLod(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageGradient(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageRead(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageWrite(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageSampleImplicitLod(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageSampleExplicitLod(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageSampleDrefImplicitLod(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageSampleDrefExplicitLod(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageGather(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageGatherDref(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageFetch(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageQueryDimensions(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageQueryLod(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageGradient(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageRead(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageWrite(EmitContext&) {
+    throw LogicError("Unreachable instruction");
 }
 
 } // namespace Shader::Backend::GLASM
