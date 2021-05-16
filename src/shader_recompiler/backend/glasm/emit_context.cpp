@@ -71,7 +71,7 @@ EmitContext::EmitContext(IR::Program& program) {
         if (index == 0) {
             Add("OUTPUT frag_color0=result.color;");
         } else {
-            Add("OUTPUT frag_color{}[]=result.color[{}];", index, index);
+            Add("OUTPUT frag_color{}=result.color[{}];", index, index);
         }
     }
     for (size_t index = 0; index < program.info.stores_generics.size(); ++index) {
