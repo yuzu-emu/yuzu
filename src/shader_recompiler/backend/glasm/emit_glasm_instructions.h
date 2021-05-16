@@ -525,28 +525,28 @@ void EmitBoundImageGradient(EmitContext&);
 void EmitBoundImageRead(EmitContext&);
 void EmitBoundImageWrite(EmitContext&);
 void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                                Register coords, Register bias_lc, const IR::Value& offset);
+                                const IR::Value& coord, Register bias_lc, const IR::Value& offset);
 void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                                Register coords, Register lod_lc, const IR::Value& offset);
+                                Register coord, Register lod_lc, const IR::Value& offset);
 void EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                                    Register coords, Register dref, Register bias_lc,
+                                    Register coord, Register dref, Register bias_lc,
                                     const IR::Value& offset);
 void EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                                    Register coords, Register dref, Register lod_lc,
+                                    Register coord, Register dref, Register lod_lc,
                                     const IR::Value& offset);
-void EmitImageGather(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coords,
+void EmitImageGather(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
                      const IR::Value& offset, const IR::Value& offset2);
-void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coords,
+void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
                          const IR::Value& offset, const IR::Value& offset2, Register dref);
-void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coords,
+void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
                     Register offset, Register lod, Register ms);
 void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                               Register lod);
-void EmitImageQueryLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coords);
-void EmitImageGradient(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coords,
+void EmitImageQueryLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord);
+void EmitImageGradient(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
                        Register derivates, Register offset, Register lod_clamp);
-void EmitImageRead(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coords);
-void EmitImageWrite(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coords,
+void EmitImageRead(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord);
+void EmitImageWrite(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
                     Register color);
 void EmitBindlessImageAtomicIAdd32(EmitContext&);
 void EmitBindlessImageAtomicSMin32(EmitContext&);
@@ -570,28 +570,28 @@ void EmitBoundImageAtomicAnd32(EmitContext&);
 void EmitBoundImageAtomicOr32(EmitContext&);
 void EmitBoundImageAtomicXor32(EmitContext&);
 void EmitBoundImageAtomicExchange32(EmitContext&);
-void EmitImageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                           Register coords, ScalarU32 value);
-void EmitImageAtomicSMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                           Register coords, ScalarS32 value);
-void EmitImageAtomicUMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                           Register coords, ScalarU32 value);
-void EmitImageAtomicSMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                           Register coords, ScalarS32 value);
-void EmitImageAtomicUMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                           Register coords, ScalarU32 value);
-void EmitImageAtomicInc32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coords,
+void EmitImageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
+                           ScalarU32 value);
+void EmitImageAtomicSMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
+                           ScalarS32 value);
+void EmitImageAtomicUMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
+                           ScalarU32 value);
+void EmitImageAtomicSMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
+                           ScalarS32 value);
+void EmitImageAtomicUMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
+                           ScalarU32 value);
+void EmitImageAtomicInc32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
                           ScalarU32 value);
-void EmitImageAtomicDec32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coords,
+void EmitImageAtomicDec32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
                           ScalarU32 value);
-void EmitImageAtomicAnd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coords,
+void EmitImageAtomicAnd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
                           ScalarU32 value);
-void EmitImageAtomicOr32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coords,
+void EmitImageAtomicOr32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
                          ScalarU32 value);
-void EmitImageAtomicXor32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coords,
+void EmitImageAtomicXor32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
                           ScalarU32 value);
 void EmitImageAtomicExchange32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                               Register coords, ScalarU32 value);
+                               Register coord, ScalarU32 value);
 void EmitLaneId(EmitContext& ctx, IR::Inst& inst);
 void EmitVoteAll(EmitContext& ctx, IR::Inst& inst, ScalarS32 pred);
 void EmitVoteAny(EmitContext& ctx, IR::Inst& inst, ScalarS32 pred);
