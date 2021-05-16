@@ -8,21 +8,43 @@
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLASM {
-
+namespace {
 std::string Texture([[maybe_unused]] EmitContext& ctx, IR::TextureInstInfo info,
                     [[maybe_unused]] const IR::Value& index) {
     // FIXME
     return fmt::format("texture[{}]", info.descriptor_index);
 }
 
+std::string_view TextureType(IR::TextureInstInfo info) {
+    switch (info.type) {
+    case TextureType::Color1D:
+        return "1D";
+    case TextureType::ColorArray1D:
+        return "ARRAY1D";
+    case TextureType::Color2D:
+        return "2D";
+    case TextureType::ColorArray2D:
+        return "ARRAY2D";
+    case TextureType::Color3D:
+        return "3D";
+    case TextureType::ColorCube:
+        return "CUBE";
+    case TextureType::ColorArrayCube:
+        return "ARRAYCUBE";
+    case TextureType::Buffer:
+        return "BUFFER";
+    }
+    throw InvalidArgument("Invalid texture type {}", info.type.Value());
+}
+} // Anonymous namespace
+
 void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                                const IR::Value& coord, Register bias_lc,
-                                [[maybe_unused]] const IR::Value& offset) {
+                                const IR::Value& coord, Register bias_lc, const IR::Value& offset) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
     const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
     const std::string_view lod_clamp_mod{info.has_lod_clamp ? ".LODCLAMP" : ""};
-    const std::string_view type{"2D"}; // FIXME
+    const std::string_view type{TextureType(info)};
     const std::string texture{Texture(ctx, info, index)};
     std::string offset_vec;
     if (!offset.IsEmpty()) {
