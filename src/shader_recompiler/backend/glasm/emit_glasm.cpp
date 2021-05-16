@@ -283,6 +283,10 @@ void SetupOptions(std::string& header, Info info) {
     if (info.uses_subgroup_shuffles) {
         header += "OPTION NV_shader_thread_shuffle;";
     }
+    const auto non_zero_frag_colors{info.stores_frag_color | std::views::drop(1)};
+    if (std::ranges::find(non_zero_frag_colors, true) != non_zero_frag_colors.end()) {
+        header += "OPTION ARB_draw_buffers;";
+    }
 }
 
 std::string_view StageHeader(Stage stage) {
