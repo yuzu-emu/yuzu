@@ -120,7 +120,10 @@ void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Valu
     const std::string_view lod_clamp_mod{info.has_lod_clamp ? ".LODCLAMP" : ""};
     const std::string_view type{"2D"}; // FIXME
     const std::string texture{Texture(ctx, info, index)};
-
+    std::string offset_vec;
+    if (!offset.IsEmpty()) {
+        offset_vec = fmt::format(",offset({})", Register{ctx.reg_alloc.Consume(offset)});
+    }
     std::string coord_vec{fmt::to_string(Register{ctx.reg_alloc.Consume(coord)})};
     if (coord.InstRecursive()->HasUses()) {
         // Move non-dead coords to a separate register, although this should never happen because
@@ -131,26 +134,27 @@ void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Valu
     const Register ret{ctx.reg_alloc.Define(inst)};
     if (info.has_bias) {
         if (info.type == TextureType::ColorArrayCube) {
-            ctx.Add("TXB.F{}{} {},{},{},{},ARRAYCUBE;", lod_clamp_mod, sparse_mod, ret, coord_vec,
-                    bias_lc, texture);
+            ctx.Add("TXB.F{}{} {},{},{},{},ARRAYCUBE{};", lod_clamp_mod, sparse_mod, ret, coord_vec,
+                    bias_lc, texture, offset_vec);
         } else {
             if (info.has_lod_clamp) {
                 ctx.Add("MOV.F {}.w,{}.x;"
-                        "TXB.F.LODCLAMP{} {},{},{}.y,{},{};",
-                        coord_vec, bias_lc, sparse_mod, ret, coord_vec, bias_lc, texture, type);
+                        "TXB.F.LODCLAMP{} {},{},{}.y,{},{}{};",
+                        coord_vec, bias_lc, sparse_mod, ret, coord_vec, bias_lc, texture, type,
+                        offset_vec);
             } else {
                 ctx.Add("MOV.F {}.w,{}.x;"
-                        "TXB.F{} {},{},{},{};",
-                        coord_vec, bias_lc, sparse_mod, ret, coord_vec, texture, type);
+                        "TXB.F{} {},{},{},{}{};",
+                        coord_vec, bias_lc, sparse_mod, ret, coord_vec, texture, type, offset_vec);
             }
         }
     } else {
         if (info.has_lod_clamp && info.type == TextureType::ColorArrayCube) {
-            ctx.Add("TEX.F.LODCLAMP{} {},{},{},{},ARRAYCUBE;", sparse_mod, ret, coord_vec, bias_lc,
-                    texture);
+            ctx.Add("TEX.F.LODCLAMP{} {},{},{},{},ARRAYCUBE{};", sparse_mod, ret, coord_vec,
+                    bias_lc, texture, offset_vec);
         } else {
-            ctx.Add("TEX.F{}{} {},{},{},{};", lod_clamp_mod, sparse_mod, ret, coord_vec, texture,
-                    type);
+            ctx.Add("TEX.F{}{} {},{},{},{}{};", lod_clamp_mod, sparse_mod, ret, coord_vec, texture,
+                    type, offset_vec);
         }
     }
     if (sparse_inst) {
