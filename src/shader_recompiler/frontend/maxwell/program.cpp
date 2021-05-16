@@ -22,7 +22,7 @@ IR::BlockList GenerateBlocks(const IR::AbstractSyntaxList& syntax_list) {
                        })};
     IR::BlockList blocks(std::ranges::distance(syntax_blocks));
     std::ranges::transform(syntax_blocks, blocks.begin(),
-                           [](const IR::AbstractSyntaxNode& node) { return node.block; });
+                           [](const IR::AbstractSyntaxNode& node) { return node.data.block; });
     return blocks;
 }
 

@@ -655,8 +655,8 @@ public:
           syntax_list{syntax_list_} {
         Visit(root_stmt, nullptr, nullptr);
 
-        IR::Block& first_block{*syntax_list.front().block};
-        IR::IREmitter ir{first_block, first_block.begin()};
+        IR::Block& first_block{*syntax_list.front().data.block};
+        IR::IREmitter ir = IR::IREmitter(first_block, first_block.begin());
         ir.Prologue();
     }
 
@@ -670,7 +670,7 @@ private:
             current_block = block_pool.Create(inst_pool);
             auto& node{syntax_list.emplace_back()};
             node.type = IR::AbstractSyntaxNode::Type::Block;
-            node.block = current_block;
+            node.data.block = current_block;
         }};
         Tree& tree{parent.children};
         for (auto it = tree.begin(); it != tree.end(); ++it) {
@@ -713,24 +713,24 @@ private:
                 const size_t then_block_index{syntax_list.size()};
                 Visit(stmt, break_block, merge_block);
 
-                IR::Block* const then_block{syntax_list.at(then_block_index).block};
+                IR::Block* const then_block{syntax_list.at(then_block_index).data.block};
                 current_block->AddBranch(then_block);
                 current_block->AddBranch(merge_block);
                 current_block = merge_block;
 
                 auto& if_node{syntax_list[if_node_index]};
                 if_node.type = IR::AbstractSyntaxNode::Type::If;
-                if_node.if_node.cond = cond;
-                if_node.if_node.body = then_block;
-                if_node.if_node.merge = merge_block;
+                if_node.data.if_node.cond = cond;
+                if_node.data.if_node.body = then_block;
+                if_node.data.if_node.merge = merge_block;
 
                 auto& endif_node{syntax_list.emplace_back()};
                 endif_node.type = IR::AbstractSyntaxNode::Type::EndIf;
-                endif_node.end_if.merge = merge_block;
+                endif_node.data.end_if.merge = merge_block;
 
                 auto& merge{syntax_list.emplace_back()};
                 merge.type = IR::AbstractSyntaxNode::Type::Block;
-                merge.block = merge_block;
+                merge.data.block = merge_block;
                 break;
             }
             case StatementType::Loop: {
@@ -740,7 +740,7 @@ private:
                 }
                 auto& header_node{syntax_list.emplace_back()};
                 header_node.type = IR::AbstractSyntaxNode::Type::Block;
-                header_node.block = loop_header_block;
+                header_node.data.block = loop_header_block;
 
                 IR::Block* const continue_block{block_pool.Create(inst_pool)};
                 IR::Block* const merge_block{MergeBlock(parent, stmt)};
@@ -757,7 +757,7 @@ private:
                 const IR::U1 cond{VisitExpr(ir, *stmt.cond)};
                 ir.DummyReference(cond);
 
-                IR::Block* const body_block{syntax_list.at(body_block_index).block};
+                IR::Block* const body_block{syntax_list.at(body_block_index).data.block};
                 loop_header_block->AddBranch(body_block);
 
                 continue_block->AddBranch(loop_header_block);
@@ -767,23 +767,23 @@ private:
 
                 auto& loop{syntax_list[loop_node_index]};
                 loop.type = IR::AbstractSyntaxNode::Type::Loop;
-                loop.loop.body = body_block;
-                loop.loop.continue_block = continue_block;
-                loop.loop.merge = merge_block;
+                loop.data.loop.body = body_block;
+                loop.data.loop.continue_block = continue_block;
+                loop.data.loop.merge = merge_block;
 
                 auto& continue_block_node{syntax_list.emplace_back()};
                 continue_block_node.type = IR::AbstractSyntaxNode::Type::Block;
-                continue_block_node.block = continue_block;
+                continue_block_node.data.block = continue_block;
 
                 auto& repeat{syntax_list.emplace_back()};
                 repeat.type = IR::AbstractSyntaxNode::Type::Repeat;
-                repeat.repeat.cond = cond;
-                repeat.repeat.loop_header = loop_header_block;
-                repeat.repeat.merge = merge_block;
+                repeat.data.repeat.cond = cond;
+                repeat.data.repeat.loop_header = loop_header_block;
+                repeat.data.repeat.merge = merge_block;
 
                 auto& merge{syntax_list.emplace_back()};
                 merge.type = IR::AbstractSyntaxNode::Type::Block;
-                merge.block = merge_block;
+                merge.data.block = merge_block;
                 break;
             }
             case StatementType::Break: {
@@ -799,13 +799,13 @@ private:
 
                 auto& break_node{syntax_list.emplace_back()};
                 break_node.type = IR::AbstractSyntaxNode::Type::Break;
-                break_node.break_node.cond = cond;
-                break_node.break_node.merge = break_block;
-                break_node.break_node.skip = skip_block;
+                break_node.data.break_node.cond = cond;
+                break_node.data.break_node.merge = break_block;
+                break_node.data.break_node.skip = skip_block;
 
                 auto& merge{syntax_list.emplace_back()};
                 merge.type = IR::AbstractSyntaxNode::Type::Block;
-                merge.block = skip_block;
+                merge.data.block = skip_block;
                 break;
             }
             case StatementType::Return: {
@@ -824,7 +824,7 @@ private:
 
                 auto& merge{syntax_list.emplace_back()};
                 merge.type = IR::AbstractSyntaxNode::Type::Block;
-                merge.block = demote_block;
+                merge.data.block = demote_block;
                 break;
             }
             case StatementType::Unreachable: {

@@ -13,10 +13,6 @@ namespace Shader::IR {
 class Block;
 
 struct AbstractSyntaxNode {
-    struct NonTrivialDummy {
-        NonTrivialDummy() {}
-    };
-
     enum class Type {
         Block,
         If,
@@ -27,9 +23,7 @@ struct AbstractSyntaxNode {
         Return,
         Unreachable,
     };
-    Type type{};
-    union {
-        NonTrivialDummy dummy{};
+    union Data {
         Block* block;
         struct {
             U1 cond;
@@ -55,6 +49,9 @@ struct AbstractSyntaxNode {
             Block* skip;
         } break_node;
     };
+
+    Data data{};
+    Type type{};
 };
 using AbstractSyntaxList = std::vector<AbstractSyntaxNode>;
 
