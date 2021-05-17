@@ -25,6 +25,7 @@ struct ScopedRegister {
         }
         reg_alloc = std::exchange(rhs.reg_alloc, nullptr);
         reg = rhs.reg;
+        return *this;
     }
 
     ScopedRegister(ScopedRegister&& rhs) noexcept
