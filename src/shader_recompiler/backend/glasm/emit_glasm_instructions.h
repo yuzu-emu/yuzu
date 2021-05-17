@@ -527,12 +527,12 @@ void EmitBoundImageWrite(EmitContext&);
 void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                 const IR::Value& coord, Register bias_lc, const IR::Value& offset);
 void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                                Register coord, Register lod_lc, const IR::Value& offset);
+                                const IR::Value& coord, ScalarF32 lod, const IR::Value& offset);
 void EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                                    Register coord, Register dref, Register bias_lc,
+                                    const IR::Value& coord, ScalarF32 dref, Register bias_lc,
                                     const IR::Value& offset);
 void EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                                    Register coord, Register dref, Register lod_lc,
+                                    const IR::Value& coord, ScalarF32 dref, ScalarF32 lod,
                                     const IR::Value& offset);
 void EmitImageGather(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
                      const IR::Value& offset, const IR::Value& offset2);

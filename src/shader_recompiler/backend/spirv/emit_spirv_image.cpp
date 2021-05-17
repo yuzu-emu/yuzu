@@ -337,9 +337,9 @@ Id EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value&
 }
 
 Id EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
-                              Id lod_lc, const IR::Value& offset) {
+                              Id lod, const IR::Value& offset) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
-    const ImageOperands operands(ctx, false, true, info.has_lod_clamp != 0, lod_lc, offset);
+    const ImageOperands operands(ctx, false, true, false, lod, offset);
     return Emit(&EmitContext::OpImageSparseSampleExplicitLod,
                 &EmitContext::OpImageSampleExplicitLod, ctx, inst, ctx.F32[4],
                 Texture(ctx, info, index), coords, operands.Mask(), operands.Span());
@@ -356,9 +356,9 @@ Id EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Va
 }
 
 Id EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                                  Id coords, Id dref, Id lod_lc, const IR::Value& offset) {
+                                  Id coords, Id dref, Id lod, const IR::Value& offset) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
-    const ImageOperands operands(ctx, false, true, info.has_lod_clamp != 0, lod_lc, offset);
+    const ImageOperands operands(ctx, false, true, false, lod, offset);
     return Emit(&EmitContext::OpImageSparseSampleDrefExplicitLod,
                 &EmitContext::OpImageSampleDrefExplicitLod, ctx, inst, ctx.F32[1],
                 Texture(ctx, info, index), coords, dref, operands.Mask(), operands.Span());

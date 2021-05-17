@@ -9,6 +9,34 @@
 
 namespace Shader::Backend::GLASM {
 namespace {
+struct ScopedRegister {
+    ScopedRegister() = default;
+    ScopedRegister(RegAlloc& reg_alloc_) : reg_alloc{&reg_alloc_}, reg{reg_alloc->AllocReg()} {}
+
+    ~ScopedRegister() {
+        if (reg_alloc) {
+            reg_alloc->FreeReg(reg);
+        }
+    }
+
+    ScopedRegister& operator=(ScopedRegister&& rhs) noexcept {
+        if (reg_alloc) {
+            reg_alloc->FreeReg(reg);
+        }
+        reg_alloc = std::exchange(rhs.reg_alloc, nullptr);
+        reg = rhs.reg;
+    }
+
+    ScopedRegister(ScopedRegister&& rhs) noexcept
+        : reg_alloc{std::exchange(rhs.reg_alloc, nullptr)}, reg{rhs.reg} {}
+
+    ScopedRegister& operator=(const ScopedRegister&) = delete;
+    ScopedRegister(const ScopedRegister&) = delete;
+
+    RegAlloc* reg_alloc{};
+    Register reg;
+};
+
 std::string Texture([[maybe_unused]] EmitContext& ctx, IR::TextureInstInfo info,
                     [[maybe_unused]] const IR::Value& index) {
     // FIXME
@@ -36,6 +64,61 @@ std::string_view TextureType(IR::TextureInstInfo info) {
     }
     throw InvalidArgument("Invalid texture type {}", info.type.Value());
 }
+
+std::string_view ShadowTextureType(IR::TextureInstInfo info) {
+    switch (info.type) {
+    case TextureType::Color1D:
+        return "SHADOW1D";
+    case TextureType::ColorArray1D:
+        return "SHADOWARRAY1D";
+    case TextureType::Color2D:
+        return "SHADOW2D";
+    case TextureType::ColorArray2D:
+        return "SHADOWARRAY2D";
+    case TextureType::Color3D:
+        return "SHADOW3D";
+    case TextureType::ColorCube:
+        return "SHADOWCUBE";
+    case TextureType::ColorArrayCube:
+        return "SHADOWARRAYCUBE";
+    case TextureType::Buffer:
+        return "SHADOWBUFFER";
+    }
+    throw InvalidArgument("Invalid texture type {}", info.type.Value());
+}
+
+std::string Offset(EmitContext& ctx, const IR::Value& offset) {
+    if (offset.IsEmpty()) {
+        return "";
+    }
+    return fmt::format(",offset({})", Register{ctx.reg_alloc.Consume(offset)});
+}
+
+std::pair<std::string, ScopedRegister> Coord(EmitContext& ctx, const IR::Value& coord) {
+    if (coord.IsImmediate()) {
+        ScopedRegister scoped_reg(ctx.reg_alloc);
+        return {fmt::to_string(scoped_reg.reg), std::move(scoped_reg)};
+    }
+    std::string coord_vec{fmt::to_string(Register{ctx.reg_alloc.Consume(coord)})};
+    if (coord.InstRecursive()->HasUses()) {
+        // Move non-dead coords to a separate register, although this should never happen because
+        // vectors are only assembled for immediate texture instructions
+        ctx.Add("MOV.F RC,{};", coord_vec);
+        coord_vec = "RC";
+    }
+    return {std::move(coord_vec), ScopedRegister{}};
+}
+
+void StoreSparse(EmitContext& ctx, IR::Inst* sparse_inst) {
+    if (!sparse_inst) {
+        return;
+    }
+    const Register sparse_ret{ctx.reg_alloc.Define(*sparse_inst)};
+    ctx.Add("MOV.S {},-1;"
+            "MOV.S {}(NONRESIDENT),0;",
+            sparse_ret, sparse_ret);
+    sparse_inst->Invalidate();
+}
 } // Anonymous namespace
 
 void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
@@ -46,17 +129,8 @@ void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Valu
     const std::string_view lod_clamp_mod{info.has_lod_clamp ? ".LODCLAMP" : ""};
     const std::string_view type{TextureType(info)};
     const std::string texture{Texture(ctx, info, index)};
-    std::string offset_vec;
-    if (!offset.IsEmpty()) {
-        offset_vec = fmt::format(",offset({})", Register{ctx.reg_alloc.Consume(offset)});
-    }
-    std::string coord_vec{fmt::to_string(Register{ctx.reg_alloc.Consume(coord)})};
-    if (coord.InstRecursive()->HasUses()) {
-        // Move non-dead coords to a separate register, although this should never happen because
-        // vectors are only assembled for immediate texture instructions
-        ctx.Add("MOV.F RC,{};", coord_vec);
-        coord_vec = "RC";
-    }
+    const std::string offset_vec{Offset(ctx, offset)};
+    const auto [coord_vec, coord_alloc]{Coord(ctx, coord)};
     const Register ret{ctx.reg_alloc.Define(inst)};
     if (info.has_bias) {
         if (info.type == TextureType::ColorArrayCube) {
@@ -83,38 +157,172 @@ void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Valu
                     type, offset_vec);
         }
     }
-    if (sparse_inst) {
-        const Register sparse_ret{ctx.reg_alloc.Define(*sparse_inst)};
-        ctx.Add("MOV.S {},-1;"
-                "MOV.S {}(NONRESIDENT),0;",
-                sparse_ret, sparse_ret);
-        sparse_inst->Invalidate();
+    StoreSparse(ctx, sparse_inst);
+}
+
+void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                                const IR::Value& coord, ScalarF32 lod, const IR::Value& offset) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
+    const std::string_view type{TextureType(info)};
+    const std::string texture{Texture(ctx, info, index)};
+    const std::string offset_vec{Offset(ctx, offset)};
+    const auto [coord_vec, coord_alloc]{Coord(ctx, coord)};
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    if (info.type == TextureType::ColorArrayCube) {
+        ctx.Add("TXL.F{} {},{},{},{},ARRAYCUBE{};", sparse_mod, ret, coord_vec, lod, texture,
+                offset_vec);
+    } else {
+        ctx.Add("MOV.F {}.w,{};"
+                "TXL.F{} {},{},{},{}{};",
+                coord_vec, lod, sparse_mod, ret, coord_vec, texture, type, offset_vec);
     }
+    StoreSparse(ctx, sparse_inst);
 }
 
-void EmitImageSampleExplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                                [[maybe_unused]] const IR::Value& index,
-                                [[maybe_unused]] Register coord, [[maybe_unused]] Register lod_lc,
-                                [[maybe_unused]] const IR::Value& offset) {
-    throw NotImplementedException("GLASM instruction");
+void EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                                    const IR::Value& coord, ScalarF32 dref, Register bias_lc,
+                                    const IR::Value& offset) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
+    const std::string_view type{ShadowTextureType(info)};
+    const std::string texture{Texture(ctx, info, index)};
+    const std::string offset_vec{Offset(ctx, offset)};
+    const auto [coord_vec, coord_alloc]{Coord(ctx, coord)};
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    if (info.has_bias) {
+        if (info.has_lod_clamp) {
+            switch (info.type) {
+            case TextureType::Color1D:
+            case TextureType::ColorArray1D:
+            case TextureType::Color2D:
+                ctx.Add("MOV.F {}.z,{};"
+                        "MOV.F {}.w,{}.x;"
+                        "TXB.F.LODCLAMP{} {},{},{}.y,{},{}{};",
+                        coord_vec, dref, coord_vec, bias_lc, sparse_mod, ret, coord_vec, bias_lc,
+                        texture, type, offset_vec);
+                break;
+            case TextureType::ColorArray2D:
+            case TextureType::ColorCube:
+                ctx.Add("MOV.F {}.w,{};"
+                        "TXB.F.LODCLAMP{} {},{},{},{},{}{};",
+                        coord_vec, dref, sparse_mod, ret, coord_vec, bias_lc, texture, type,
+                        offset_vec);
+                break;
+            default:
+                throw NotImplementedException("Invalid type {} with bias and lod clamp",
+                                              info.type.Value());
+            }
+        } else {
+            switch (info.type) {
+            case TextureType::Color1D:
+            case TextureType::ColorArray1D:
+            case TextureType::Color2D:
+                ctx.Add("MOV.F {}.z,{};"
+                        "MOV.F {}.w,{}.x;"
+                        "TXB.F{} {},{},{},{}{};",
+                        coord_vec, dref, coord_vec, bias_lc, sparse_mod, ret, coord_vec, texture,
+                        type, offset_vec);
+                break;
+            case TextureType::ColorArray2D:
+            case TextureType::ColorCube:
+                ctx.Add("MOV.F {}.w,{};"
+                        "TXB.F{} {},{},{},{},{}{};",
+                        coord_vec, dref, sparse_mod, ret, coord_vec, bias_lc, texture, type,
+                        offset_vec);
+                break;
+            case TextureType::ColorArrayCube: {
+                const ScopedRegister pair{ctx.reg_alloc};
+                ctx.Add("MOV.F {}.x,{};"
+                        "MOV.F {}.y,{}.x;"
+                        "TXB.F{} {},{},{},{},{}{};",
+                        pair.reg, dref, pair.reg, bias_lc, sparse_mod, ret, coord_vec, pair.reg,
+                        texture, type, offset_vec);
+                break;
+            }
+            default:
+                throw NotImplementedException("Invalid type {}", info.type.Value());
+            }
+        }
+    } else {
+        if (info.has_lod_clamp) {
+            if (info.type != TextureType::ColorArrayCube) {
+                const bool w_swizzle{info.type == TextureType::ColorArray2D ||
+                                     info.type == TextureType::ColorCube};
+                const char dref_swizzle{w_swizzle ? 'w' : 'z'};
+                ctx.Add("MOV.F {}.{},{};"
+                        "TEX.F.LODCLAMP{} {},{},{},{},{}{};",
+                        coord_vec, dref_swizzle, dref, sparse_mod, ret, coord_vec, bias_lc, texture,
+                        type, offset_vec);
+            } else {
+                const ScopedRegister pair{ctx.reg_alloc};
+                ctx.Add("MOV.F {}.x,{};"
+                        "MOV.F {}.y,{};"
+                        "TEX.F.LODCLAMP{} {},{},{},{},{}{};",
+                        pair.reg, dref, pair.reg, bias_lc, sparse_mod, ret, coord_vec, pair.reg,
+                        texture, type, offset_vec);
+            }
+        } else {
+            if (info.type != TextureType::ColorArrayCube) {
+                const bool w_swizzle{info.type == TextureType::ColorArray2D ||
+                                     info.type == TextureType::ColorCube};
+                const char dref_swizzle{w_swizzle ? 'w' : 'z'};
+                ctx.Add("MOV.F {}.{},{};"
+                        "TEX.F{} {},{},{},{}{};",
+                        coord_vec, dref_swizzle, dref, sparse_mod, ret, coord_vec, texture, type,
+                        offset_vec);
+            } else {
+                const ScopedRegister pair{ctx.reg_alloc};
+                ctx.Add("TEX.F{} {},{},{},{},{}{};", sparse_mod, ret, coord_vec, dref, texture,
+                        type, offset_vec);
+            }
+        }
+    }
+    StoreSparse(ctx, sparse_inst);
 }
 
-void EmitImageSampleDrefImplicitLod([[maybe_unused]] EmitContext& ctx,
-                                    [[maybe_unused]] IR::Inst& inst,
-                                    [[maybe_unused]] const IR::Value& index,
-                                    [[maybe_unused]] Register coord, [[maybe_unused]] Register dref,
-                                    [[maybe_unused]] Register bias_lc,
-                                    [[maybe_unused]] const IR::Value& offset) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitImageSampleDrefExplicitLod([[maybe_unused]] EmitContext& ctx,
-                                    [[maybe_unused]] IR::Inst& inst,
-                                    [[maybe_unused]] const IR::Value& index,
-                                    [[maybe_unused]] Register coord, [[maybe_unused]] Register dref,
-                                    [[maybe_unused]] Register lod_lc,
-                                    [[maybe_unused]] const IR::Value& offset) {
-    throw NotImplementedException("GLASM instruction");
+void EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                                    const IR::Value& coord, ScalarF32 dref, ScalarF32 lod,
+                                    const IR::Value& offset) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
+    const std::string_view type{ShadowTextureType(info)};
+    const std::string texture{Texture(ctx, info, index)};
+    const std::string offset_vec{Offset(ctx, offset)};
+    const auto [coord_vec, coord_alloc]{Coord(ctx, coord)};
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    switch (info.type) {
+    case TextureType::Color1D:
+    case TextureType::ColorArray1D:
+    case TextureType::Color2D:
+        ctx.Add("MOV.F {}.z,{};"
+                "MOV.F {}.w,{};"
+                "TXL.F{} {},{},{},{}{};",
+                coord_vec, dref, coord_vec, lod, sparse_mod, ret, coord_vec, texture, type,
+                offset_vec);
+        break;
+    case TextureType::ColorArray2D:
+    case TextureType::ColorCube:
+        ctx.Add("MOV.F {}.w,{};"
+                "TXL.F{} {},{},{},{},{}{};",
+                coord_vec, dref, sparse_mod, ret, coord_vec, lod, texture, type, offset_vec);
+        break;
+    case TextureType::ColorArrayCube: {
+        const ScopedRegister pair{ctx.reg_alloc};
+        ctx.Add("MOV.F {}.x,{};"
+                "MOV.F {}.y,{};"
+                "TXL.F{} {},{},{},{},{}{};",
+                pair.reg, dref, pair.reg, lod, sparse_mod, ret, coord_vec, pair.reg, texture, type,
+                offset_vec);
+        break;
+    }
+    default:
+        throw NotImplementedException("Invalid type {}", info.type.Value());
+    }
+    StoreSparse(ctx, sparse_inst);
 }
 
 void EmitImageGather([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,

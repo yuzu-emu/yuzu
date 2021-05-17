@@ -302,15 +302,14 @@ public:
                                                const F32& lod_clamp, TextureInstInfo info);
     [[nodiscard]] Value ImageSampleExplicitLod(const Value& handle, const Value& coords,
                                                const F32& lod, const Value& offset,
-                                               const F32& lod_clamp, TextureInstInfo info);
+                                               TextureInstInfo info);
     [[nodiscard]] F32 ImageSampleDrefImplicitLod(const Value& handle, const Value& coords,
                                                  const F32& dref, const F32& bias,
                                                  const Value& offset, const F32& lod_clamp,
                                                  TextureInstInfo info);
     [[nodiscard]] F32 ImageSampleDrefExplicitLod(const Value& handle, const Value& coords,
                                                  const F32& dref, const F32& lod,
-                                                 const Value& offset, const F32& lod_clamp,
-                                                 TextureInstInfo info);
+                                                 const Value& offset, TextureInstInfo info);
     [[nodiscard]] Value ImageQueryDimension(const Value& handle, const IR::U32& lod);
 
     [[nodiscard]] Value ImageQueryLod(const Value& handle, const Value& coords,
