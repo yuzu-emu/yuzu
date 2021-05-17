@@ -12,12 +12,10 @@ static void Alias(IR::Inst& inst, const IR::Value& value) {
     if (value.IsImmediate()) {
         return;
     }
-    IR::Inst* const value_inst{value.InstRecursive()};
-    if (inst.GetOpcode() == IR::Opcode::Identity) {
-        value_inst->DestructiveAddUsage(inst.UseCount());
-        value_inst->DestructiveRemoveUsage();
-    }
-    inst.SetDefinition(value_inst->Definition<Id>());
+    IR::Inst& value_inst{RegAlloc::AliasInst(*value.Inst())};
+    value_inst.DestructiveAddUsage(inst.UseCount());
+    value_inst.DestructiveRemoveUsage();
+    inst.SetDefinition(value_inst.Definition<Id>());
 }
 
 void EmitIdentity(EmitContext&, IR::Inst& inst, const IR::Value& value) {

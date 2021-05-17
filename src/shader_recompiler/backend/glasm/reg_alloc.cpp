@@ -30,9 +30,10 @@ Value RegAlloc::Consume(const IR::Value& value) {
 }
 
 void RegAlloc::Unref(IR::Inst& inst) {
-    inst.DestructiveRemoveUsage();
-    if (!inst.HasUses()) {
-        Free(inst.Definition<Id>());
+    IR::Inst& value_inst{AliasInst(inst)};
+    value_inst.DestructiveRemoveUsage();
+    if (!value_inst.HasUses()) {
+        Free(value_inst.Definition<Id>());
     }
 }
 
@@ -99,10 +100,7 @@ Value RegAlloc::PeekInst(IR::Inst& inst) {
 }
 
 Value RegAlloc::ConsumeInst(IR::Inst& inst) {
-    inst.DestructiveRemoveUsage();
-    if (!inst.HasUses()) {
-        Free(inst.Definition<Id>());
-    }
+    Unref(inst);
     return PeekInst(inst);
 }
 
@@ -136,6 +134,33 @@ void RegAlloc::Free(Id id) {
     } else {
         register_use[id.index] = false;
     }
+}
+
+/*static*/ bool RegAlloc::IsAliased(const IR::Inst& inst) {
+    switch (inst.GetOpcode()) {
+    case IR::Opcode::Identity:
+    case IR::Opcode::BitCastU16F16:
+    case IR::Opcode::BitCastU32F32:
+    case IR::Opcode::BitCastU64F64:
+    case IR::Opcode::BitCastF16U16:
+    case IR::Opcode::BitCastF32U32:
+    case IR::Opcode::BitCastF64U64:
+        return true;
+    default:
+        return false;
+    }
+}
+
+/*static*/ IR::Inst& RegAlloc::AliasInst(IR::Inst& inst) {
+    IR::Inst* it{&inst};
+    while (IsAliased(*it)) {
+        const IR::Value arg{it->Arg(0)};
+        if (arg.IsImmediate()) {
+            break;
+        }
+        it = arg.InstRecursive();
+    }
+    return *it;
 }
 
 } // namespace Shader::Backend::GLASM
