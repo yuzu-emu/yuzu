@@ -81,18 +81,18 @@ IR::Value Sample(TranslatorVisitor& v, u64 insn) {
     switch (texs.encoding) {
     case 0: // 1D.LZ
         info.type.Assign(TextureType::Color1D);
-        return v.ir.ImageSampleExplicitLod(handle, v.F(reg_a), zero, {}, {}, info);
+        return v.ir.ImageSampleExplicitLod(handle, v.F(reg_a), zero, {}, info);
     case 1: // 2D
         info.type.Assign(TextureType::Color2D);
         return v.ir.ImageSampleImplicitLod(handle, Composite(v, reg_a, reg_b), {}, {}, {}, info);
     case 2: // 2D.LZ
         info.type.Assign(TextureType::Color2D);
-        return v.ir.ImageSampleExplicitLod(handle, Composite(v, reg_a, reg_b), zero, {}, {}, info);
+        return v.ir.ImageSampleExplicitLod(handle, Composite(v, reg_a, reg_b), zero, {}, info);
     case 3: // 2D.LL
         CheckAlignment(reg_a, 2);
         info.type.Assign(TextureType::Color2D);
         return v.ir.ImageSampleExplicitLod(handle, Composite(v, reg_a, reg_a + 1), v.F(reg_b), {},
-                                           {}, info);
+                                           info);
     case 4: // 2D.DC
         CheckAlignment(reg_a, 2);
         info.type.Assign(TextureType::Color2D);
@@ -105,13 +105,13 @@ IR::Value Sample(TranslatorVisitor& v, u64 insn) {
         info.type.Assign(TextureType::Color2D);
         info.is_depth.Assign(1);
         return v.ir.ImageSampleDrefExplicitLod(handle, Composite(v, reg_a, reg_a + 1),
-                                               v.F(reg_b + 1), v.F(reg_b), {}, {}, info);
+                                               v.F(reg_b + 1), v.F(reg_b), {}, info);
     case 6: // 2D.LZ.DC
         CheckAlignment(reg_a, 2);
         info.type.Assign(TextureType::Color2D);
         info.is_depth.Assign(1);
         return v.ir.ImageSampleDrefExplicitLod(handle, Composite(v, reg_a, reg_a + 1), v.F(reg_b),
-                                               zero, {}, {}, info);
+                                               zero, {}, info);
     case 7: // ARRAY_2D
         CheckAlignment(reg_a, 2);
         info.type.Assign(TextureType::ColorArray2D);
@@ -123,7 +123,7 @@ IR::Value Sample(TranslatorVisitor& v, u64 insn) {
         info.type.Assign(TextureType::ColorArray2D);
         return v.ir.ImageSampleExplicitLod(
             handle, v.ir.CompositeConstruct(v.F(reg_a + 1), v.F(reg_b), ReadArray(v, v.X(reg_a))),
-            zero, {}, {}, info);
+            zero, {}, info);
     case 9: // ARRAY_2D.LZ.DC
         CheckAlignment(reg_a, 2);
         CheckAlignment(reg_b, 2);
@@ -131,7 +131,7 @@ IR::Value Sample(TranslatorVisitor& v, u64 insn) {
         info.is_depth.Assign(1);
         return v.ir.ImageSampleDrefExplicitLod(
             handle, v.ir.CompositeConstruct(v.F(reg_a + 1), v.F(reg_b), ReadArray(v, v.X(reg_a))),
-            v.F(reg_b + 1), zero, {}, {}, info);
+            v.F(reg_b + 1), zero, {}, info);
     case 10: // 3D
         CheckAlignment(reg_a, 2);
         info.type.Assign(TextureType::Color3D);
@@ -141,7 +141,7 @@ IR::Value Sample(TranslatorVisitor& v, u64 insn) {
         CheckAlignment(reg_a, 2);
         info.type.Assign(TextureType::Color3D);
         return v.ir.ImageSampleExplicitLod(handle, Composite(v, reg_a, reg_a + 1, reg_b), zero, {},
-                                           {}, info);
+                                           info);
     case 12: // CUBE
         CheckAlignment(reg_a, 2);
         info.type.Assign(TextureType::ColorCube);
@@ -152,7 +152,7 @@ IR::Value Sample(TranslatorVisitor& v, u64 insn) {
         CheckAlignment(reg_b, 2);
         info.type.Assign(TextureType::ColorCube);
         return v.ir.ImageSampleExplicitLod(handle, Composite(v, reg_a, reg_a + 1, reg_b),
-                                           v.F(reg_b + 1), {}, {}, info);
+                                           v.F(reg_b + 1), {}, info);
     default:
         throw NotImplementedException("Illegal encoding {}", texs.encoding.Value());
     }

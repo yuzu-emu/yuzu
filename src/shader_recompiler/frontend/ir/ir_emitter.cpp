@@ -1778,12 +1778,10 @@ Value IREmitter::ImageSampleImplicitLod(const Value& handle, const Value& coords
 }
 
 Value IREmitter::ImageSampleExplicitLod(const Value& handle, const Value& coords, const F32& lod,
-                                        const Value& offset, const F32& lod_clamp,
-                                        TextureInstInfo info) {
-    const Value lod_lc{MakeLodClampPair(*this, lod, lod_clamp)};
+                                        const Value& offset, TextureInstInfo info) {
     const Opcode op{handle.IsImmediate() ? Opcode::BoundImageSampleExplicitLod
                                          : Opcode::BindlessImageSampleExplicitLod};
-    return Inst(op, Flags{info}, handle, coords, lod_lc, offset);
+    return Inst(op, Flags{info}, handle, coords, lod, offset);
 }
 
 F32 IREmitter::ImageSampleDrefImplicitLod(const Value& handle, const Value& coords, const F32& dref,
@@ -1796,12 +1794,11 @@ F32 IREmitter::ImageSampleDrefImplicitLod(const Value& handle, const Value& coor
 }
 
 F32 IREmitter::ImageSampleDrefExplicitLod(const Value& handle, const Value& coords, const F32& dref,
-                                          const F32& lod, const Value& offset, const F32& lod_clamp,
+                                          const F32& lod, const Value& offset,
                                           TextureInstInfo info) {
-    const Value lod_lc{MakeLodClampPair(*this, lod, lod_clamp)};
     const Opcode op{handle.IsImmediate() ? Opcode::BoundImageSampleDrefExplicitLod
                                          : Opcode::BindlessImageSampleDrefExplicitLod};
-    return Inst<F32>(op, Flags{info}, handle, coords, dref, lod_lc, offset);
+    return Inst<F32>(op, Flags{info}, handle, coords, dref, lod, offset);
 }
 
 Value IREmitter::ImageGather(const Value& handle, const Value& coords, const Value& offset,

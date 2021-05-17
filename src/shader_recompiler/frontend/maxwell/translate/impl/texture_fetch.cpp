@@ -177,14 +177,13 @@ void Impl(TranslatorVisitor& v, u64 insn, bool aoffi, Blod blod, bool lc,
     const IR::Value sample{[&]() -> IR::Value {
         if (tex.dc == 0) {
             if (HasExplicitLod(blod)) {
-                return v.ir.ImageSampleExplicitLod(handle, coords, lod, offset, lod_clamp, info);
+                return v.ir.ImageSampleExplicitLod(handle, coords, lod, offset, info);
             } else {
                 return v.ir.ImageSampleImplicitLod(handle, coords, lod, offset, lod_clamp, info);
             }
         }
         if (HasExplicitLod(blod)) {
-            return v.ir.ImageSampleDrefExplicitLod(handle, coords, dref, lod, offset, lod_clamp,
-                                                   info);
+            return v.ir.ImageSampleDrefExplicitLod(handle, coords, dref, lod, offset, info);
         } else {
             return v.ir.ImageSampleDrefImplicitLod(handle, coords, dref, lod, offset, lod_clamp,
                                                    info);

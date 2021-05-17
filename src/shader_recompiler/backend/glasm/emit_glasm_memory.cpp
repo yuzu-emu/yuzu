@@ -38,7 +38,7 @@ void Store(EmitContext& ctx, const IR::Value& binding, ScalarU32 offset, ValueTy
 void Load(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU32 offset,
           std::string_view size) {
     const Register ret{ctx.reg_alloc.Define(inst)};
-    StorageOp(ctx, binding, offset, fmt::format("STORE.{} {},DC.x;", size, ret),
+    StorageOp(ctx, binding, offset, fmt::format("LOAD.{} {},DC.x;", size, ret),
               fmt::format("MOV.U {},{{0,0,0,0}};", ret));
 }
 } // Anonymous namespace

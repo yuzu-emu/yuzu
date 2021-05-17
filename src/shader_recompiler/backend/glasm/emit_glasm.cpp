@@ -283,6 +283,9 @@ void SetupOptions(std::string& header, Info info) {
     if (info.uses_subgroup_shuffles) {
         header += "OPTION NV_shader_thread_shuffle;";
     }
+    if (info.uses_sparse_residency) {
+        header += "OPTION EXT_sparse_texture2;";
+    }
     const auto non_zero_frag_colors{info.stores_frag_color | std::views::drop(1)};
     if (std::ranges::find(non_zero_frag_colors, true) != non_zero_frag_colors.end()) {
         header += "OPTION ARB_draw_buffers;";
