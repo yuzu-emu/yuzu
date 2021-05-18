@@ -56,7 +56,7 @@ void EmitSetAttributeIndexed(EmitContext& ctx, ScalarU32 offset, ScalarF32 value
 void EmitGetPatch(EmitContext& ctx, IR::Patch patch);
 void EmitSetPatch(EmitContext& ctx, IR::Patch patch, ScalarF32 value);
 void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, ScalarF32 value);
-void EmitSetSampleMask(EmitContext& ctx, ScalarF32 value);
+void EmitSetSampleMask(EmitContext& ctx, ScalarS32 value);
 void EmitSetFragDepth(EmitContext& ctx, ScalarF32 value);
 void EmitGetZFlag(EmitContext& ctx);
 void EmitGetSFlag(EmitContext& ctx);
