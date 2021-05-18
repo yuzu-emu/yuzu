@@ -32,7 +32,9 @@ public:
     [[nodiscard]] U64 Imm64(s64 value) const;
     [[nodiscard]] F64 Imm64(f64 value) const;
 
-    void DummyReference(const Value& value);
+    U1 ConditionRef(const U1& value);
+    void Reference(const Value& value);
+
     void PhiMove(IR::Inst& phi, const Value& value);
 
     void Prologue();

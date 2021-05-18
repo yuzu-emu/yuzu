@@ -139,6 +139,7 @@ void RegAlloc::Free(Id id) {
 /*static*/ bool RegAlloc::IsAliased(const IR::Inst& inst) {
     switch (inst.GetOpcode()) {
     case IR::Opcode::Identity:
+    case IR::Opcode::ConditionRef:
     case IR::Opcode::BitCastU16F16:
     case IR::Opcode::BitCastU32F32:
     case IR::Opcode::BitCastU64F64:

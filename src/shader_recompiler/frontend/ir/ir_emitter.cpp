@@ -61,8 +61,12 @@ F64 IREmitter::Imm64(f64 value) const {
     return F64{Value{value}};
 }
 
-void IREmitter::DummyReference(const Value& value) {
-    Inst(Opcode::DummyReference, value);
+U1 IREmitter::ConditionRef(const U1& value) {
+    return Inst<U1>(Opcode::ConditionRef, value);
+}
+
+void IREmitter::Reference(const Value& value) {
+    Inst(Opcode::Reference, value);
 }
 
 void IREmitter::PhiMove(IR::Inst& phi, const Value& value) {

@@ -469,7 +469,15 @@ Id EmitIdentity(EmitContext& ctx, const IR::Value& value) {
     return id;
 }
 
-void EmitDummyReference(EmitContext&) {}
+Id EmitConditionRef(EmitContext& ctx, const IR::Value& value) {
+    const Id id{ctx.Def(value)};
+    if (!Sirit::ValidId(id)) {
+        throw NotImplementedException("Forward identity declaration");
+    }
+    return id;
+}
+
+void EmitReference(EmitContext&) {}
 
 void EmitPhiMove(EmitContext&) {
     throw LogicError("Unreachable instruction");

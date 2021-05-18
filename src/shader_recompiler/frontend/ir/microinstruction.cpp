@@ -56,7 +56,8 @@ Inst::~Inst() {
 
 bool Inst::MayHaveSideEffects() const noexcept {
     switch (op) {
-    case Opcode::DummyReference:
+    case Opcode::ConditionRef:
+    case Opcode::Reference:
     case Opcode::PhiMove:
     case Opcode::Prologue:
     case Opcode::Epilogue:

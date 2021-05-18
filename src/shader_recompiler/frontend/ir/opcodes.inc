@@ -6,7 +6,8 @@
 OPCODE(Phi,                                                 Opaque,                                                                                         )
 OPCODE(Identity,                                            Opaque,         Opaque,                                                                         )
 OPCODE(Void,                                                Void,                                                                                           )
-OPCODE(DummyReference,                                      Void,           Opaque,                                                                         )
+OPCODE(ConditionRef,                                        U1,             U1,                                                                             )
+OPCODE(Reference,                                           Void,           Opaque,                                                                         )
 OPCODE(PhiMove,                                             Void,           Opaque,         Opaque,                                                         )
 
 // Special operations
