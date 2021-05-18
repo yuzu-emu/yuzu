@@ -22,8 +22,8 @@ void EmitIdentity(EmitContext&, IR::Inst& inst, const IR::Value& value) {
     Alias(inst, value);
 }
 
-void EmitConditionRef(EmitContext&, IR::Inst& inst, const IR::Value& value) {
-    Alias(inst, value);
+void EmitConditionRef(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
+    ctx.Add("MOV.S {},{};", inst, ScalarS32{ctx.reg_alloc.Consume(value)});
 }
 
 void EmitBitCastU16F16(EmitContext&, IR::Inst& inst, const IR::Value& value) {
