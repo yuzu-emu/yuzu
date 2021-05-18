@@ -200,7 +200,7 @@ void Precolor(EmitContext& ctx, const IR::Program& program) {
             }
             // Add reference to the phi node on the phi predecessor to avoid overwritting it
             for (size_t i = 0; i < num_args; ++i) {
-                IR::IREmitter{*phi.PhiBlock(i)}.DummyReference(IR::Value{&phi});
+                IR::IREmitter{*phi.PhiBlock(i)}.Reference(IR::Value{&phi});
             }
         }
     }

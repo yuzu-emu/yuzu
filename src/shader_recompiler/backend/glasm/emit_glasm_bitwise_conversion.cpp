@@ -22,6 +22,10 @@ void EmitIdentity(EmitContext&, IR::Inst& inst, const IR::Value& value) {
     Alias(inst, value);
 }
 
+void EmitConditionRef(EmitContext&, IR::Inst& inst, const IR::Value& value) {
+    Alias(inst, value);
+}
+
 void EmitBitCastU16F16(EmitContext&, IR::Inst& inst, const IR::Value& value) {
     Alias(inst, value);
 }

@@ -21,7 +21,7 @@ void EmitPhi(EmitContext&, IR::Inst&) {}
 
 void EmitVoid(EmitContext&) {}
 
-void EmitDummyReference(EmitContext&) {}
+void EmitReference(EmitContext&) {}
 
 void EmitPhiMove(EmitContext& ctx, const IR::Value& phi, const IR::Value& value) {
     if (phi == value) {
