@@ -535,10 +535,11 @@ void EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::
 void EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                     const IR::Value& coord, ScalarF32 dref, ScalarF32 lod,
                                     const IR::Value& offset);
-void EmitImageGather(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
-                     const IR::Value& offset, const IR::Value& offset2);
-void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
-                         const IR::Value& offset, const IR::Value& offset2, Register dref);
+void EmitImageGather(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                     const IR::Value& coord, const IR::Value& offset, const IR::Value& offset2);
+void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                         const IR::Value& coord, const IR::Value& offset, const IR::Value& offset2,
+                         const IR::Value& dref);
 void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
                     Register offset, Register lod, Register ms);
 void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,

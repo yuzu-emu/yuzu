@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <utility>
+
 #include "shader_recompiler/backend/glasm/emit_context.h"
 #include "shader_recompiler/backend/glasm/emit_glasm_instructions.h"
 #include "shader_recompiler/frontend/ir/modifiers.h"
@@ -93,6 +95,33 @@ std::string Offset(EmitContext& ctx, const IR::Value& offset) {
         return "";
     }
     return fmt::format(",offset({})", Register{ctx.reg_alloc.Consume(offset)});
+}
+
+std::pair<ScopedRegister, ScopedRegister> AllocOffsetsRegs(EmitContext& ctx,
+                                                           const IR::Value& offset2) {
+    if (offset2.IsEmpty()) {
+        return {};
+    } else {
+        return {ctx.reg_alloc, ctx.reg_alloc};
+    }
+}
+
+void SwizzleOffsets(EmitContext& ctx, Register off_x, Register off_y, const IR::Value& offset1,
+                    const IR::Value& offset2) {
+    const Register offsets_a{ctx.reg_alloc.Consume(offset1)};
+    const Register offsets_b{ctx.reg_alloc.Consume(offset2)};
+    // Input swizzle:  [XYXY] [XYXY]
+    // Output swizzle: [XXXX] [YYYY]
+    ctx.Add("MOV {}.x,{}.x;"
+            "MOV {}.y,{}.z;"
+            "MOV {}.z,{}.x;"
+            "MOV {}.w,{}.z;"
+            "MOV {}.x,{}.y;"
+            "MOV {}.y,{}.w;"
+            "MOV {}.z,{}.y;"
+            "MOV {}.w,{}.w;",
+            off_x, offsets_a, off_x, offsets_a, off_x, offsets_b, off_x, offsets_b, off_y,
+            offsets_a, off_y, offsets_a, off_y, offsets_b, off_y, offsets_b);
 }
 
 std::pair<std::string, ScopedRegister> Coord(EmitContext& ctx, const IR::Value& coord) {
@@ -326,19 +355,71 @@ void EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::
     StoreSparse(ctx, sparse_inst);
 }
 
-void EmitImageGather([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                     [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coord,
-                     [[maybe_unused]] const IR::Value& offset,
-                     [[maybe_unused]] const IR::Value& offset2) {
-    throw NotImplementedException("GLASM instruction");
+void EmitImageGather(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                     const IR::Value& coord, const IR::Value& offset, const IR::Value& offset2) {
+    // Allocate offsets early so they don't overwrite any consumed register
+    const auto [off_x, off_y]{AllocOffsetsRegs(ctx, offset2)};
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const char comp{"xyzw"[info.gather_component]};
+    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
+    const std::string_view type{TextureType(info)};
+    const std::string texture{Texture(ctx, info, index)};
+    const Register coord_vec{ctx.reg_alloc.Consume(coord)};
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    if (offset2.IsEmpty()) {
+        const std::string offset_vec{Offset(ctx, offset)};
+        ctx.Add("TXG.F{} {},{},{}.{},{}{};", sparse_mod, ret, coord_vec, texture, comp, type,
+                offset_vec);
+    } else {
+        SwizzleOffsets(ctx, off_x.reg, off_y.reg, offset, offset2);
+        ctx.Add("TXGO.F{} {},{},{},{},{}.{},{};", sparse_mod, ret, coord_vec, off_x.reg, off_y.reg,
+                texture, comp, type);
+    }
+    StoreSparse(ctx, sparse_inst);
 }
 
-void EmitImageGatherDref([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                         [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coord,
-                         [[maybe_unused]] const IR::Value& offset,
-                         [[maybe_unused]] const IR::Value& offset2,
-                         [[maybe_unused]] Register dref) {
-    throw NotImplementedException("GLASM instruction");
+void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                         const IR::Value& coord, const IR::Value& offset, const IR::Value& offset2,
+                         const IR::Value& dref) {
+    // FIXME: This instruction is not working as expected
+
+    // Allocate offsets early so they don't overwrite any consumed register
+    const auto [off_x, off_y]{AllocOffsetsRegs(ctx, offset2)};
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
+    const std::string_view type{ShadowTextureType(info)};
+    const std::string texture{Texture(ctx, info, index)};
+    const Register coord_vec{ctx.reg_alloc.Consume(coord)};
+    const ScalarF32 dref_value{ctx.reg_alloc.Consume(dref)};
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    std::string args;
+    switch (info.type) {
+    case TextureType::Color2D:
+        ctx.Add("MOV.F {}.z,{};", coord_vec, dref_value);
+        args = fmt::to_string(coord_vec);
+        break;
+    case TextureType::ColorArray2D:
+    case TextureType::ColorCube:
+        ctx.Add("MOV.F {}.w,{};", coord_vec, dref_value);
+        args = fmt::to_string(coord_vec);
+        break;
+    case TextureType::ColorArrayCube:
+        args = fmt::format("{},{}", coord_vec, dref_value);
+        break;
+    default:
+        throw NotImplementedException("Invalid type {}", info.type.Value());
+    }
+    if (offset2.IsEmpty()) {
+        const std::string offset_vec{Offset(ctx, offset)};
+        ctx.Add("TXG.F{} {},{},{},{}{};", sparse_mod, ret, args, texture, type, offset_vec);
+    } else {
+        SwizzleOffsets(ctx, off_x.reg, off_y.reg, offset, offset2);
+        ctx.Add("TXGO.F{} {},{},{},{},{},{};", sparse_mod, ret, args, off_x.reg, off_y.reg, texture,
+                type);
+    }
+    StoreSparse(ctx, sparse_inst);
 }
 
 void EmitImageFetch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
