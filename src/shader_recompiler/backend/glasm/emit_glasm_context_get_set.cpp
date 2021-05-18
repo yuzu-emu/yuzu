@@ -120,12 +120,12 @@ void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, ScalarF32 valu
     ctx.Add("MOV.F frag_color{}.{},{};", index, "xyzw"[component], value);
 }
 
-void EmitSetSampleMask([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitSetSampleMask(EmitContext& ctx, ScalarS32 value) {
+    ctx.Add("MOV.S result.samplemask.x,{};", value);
 }
 
-void EmitSetFragDepth([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarF32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitSetFragDepth(EmitContext& ctx, ScalarF32 value) {
+    ctx.Add("MOV.F result.depth.z,{};", value);
 }
 
 void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, ScalarU32 word_offset) {
