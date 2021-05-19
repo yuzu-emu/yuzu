@@ -29,7 +29,7 @@ void EmitPhiMove(EmitContext& ctx, const IR::Value& phi, const IR::Value& value)
     }
     const Register phi_reg{ctx.reg_alloc.Consume(phi)};
     const Value eval_value{ctx.reg_alloc.Consume(value)};
-    switch (phi.InstRecursive()->Arg(0).Type()) {
+    switch (phi.Inst()->Flags<IR::Type>()) {
     case IR::Type::U1:
     case IR::Type::U32:
     case IR::Type::F32:
