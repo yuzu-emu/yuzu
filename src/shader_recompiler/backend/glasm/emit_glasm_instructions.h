@@ -616,7 +616,8 @@ void EmitShuffleDown(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU3
                      const IR::Value& clamp, const IR::Value& segmentation_mask);
 void EmitShuffleButterfly(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU32 index,
                           const IR::Value& clamp, const IR::Value& segmentation_mask);
-void EmitFSwizzleAdd(EmitContext& ctx, ScalarF32 op_a, ScalarF32 op_b, ScalarU32 swizzle);
+void EmitFSwizzleAdd(EmitContext& ctx, IR::Inst& inst, ScalarF32 op_a, ScalarF32 op_b,
+                     ScalarU32 swizzle);
 void EmitDPdxFine(EmitContext& ctx, IR::Inst& inst, ScalarF32 op_a);
 void EmitDPdyFine(EmitContext& ctx, IR::Inst& inst, ScalarF32 op_a);
 void EmitDPdxCoarse(EmitContext& ctx, IR::Inst& inst, ScalarF32 op_a);

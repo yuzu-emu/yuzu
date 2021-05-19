@@ -281,7 +281,8 @@ void SetupOptions(const IR::Program& program, const Profile& profile, std::strin
     if (info.uses_atomic_f16x2_add || info.uses_atomic_f16x2_min || info.uses_atomic_f16x2_max) {
         header += "OPTION NV_shader_atomic_fp16_vector;";
     }
-    if (info.uses_subgroup_invocation_id || info.uses_subgroup_mask || info.uses_subgroup_vote) {
+    if (info.uses_subgroup_invocation_id || info.uses_subgroup_mask || info.uses_subgroup_vote ||
+        info.uses_fswzadd) {
         header += "OPTION NV_shader_thread_group;";
     }
     if (info.uses_subgroup_shuffles) {
@@ -416,12 +417,25 @@ std::string EmitGLASM(const Profile& profile, IR::Program& program, Bindings& bi
     if (program.local_memory_size > 0) {
         header += fmt::format("lmem[{}],", program.local_memory_size);
     }
+    if (program.info.uses_fswzadd) {
+        header += "FSWZA[4],FSWZB[4],";
+    }
     header += "RC;"
               "LONG TEMP ";
     for (size_t index = 0; index < ctx.reg_alloc.NumUsedLongRegisters(); ++index) {
         header += fmt::format("D{},", index);
     }
     header += "DC;";
+    if (program.info.uses_fswzadd) {
+        header += "MOV.F FSWZA[0],-1;"
+                  "MOV.F FSWZA[1],1;"
+                  "MOV.F FSWZA[2],-1;"
+                  "MOV.F FSWZA[3],0;"
+                  "MOV.F FSWZB[0],-1;"
+                  "MOV.F FSWZB[1],-1;"
+                  "MOV.F FSWZB[2],1;"
+                  "MOV.F FSWZB[3],-1;";
+    }
     ctx.code.insert(0, header);
     ctx.code += "END";
     return ctx.code;
