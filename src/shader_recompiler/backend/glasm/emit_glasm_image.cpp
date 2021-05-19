@@ -43,7 +43,11 @@ struct ScopedRegister {
 std::string Texture(EmitContext& ctx, IR::TextureInstInfo info,
                     [[maybe_unused]] const IR::Value& index) {
     // FIXME: indexed reads
-    return fmt::format("texture[{}]", ctx.texture_bindings.at(info.descriptor_index));
+    if (info.type == TextureType::Buffer) {
+        return fmt::format("texture[{}]", ctx.texture_buffer_bindings.at(info.descriptor_index));
+    } else {
+        return fmt::format("texture[{}]", ctx.texture_bindings.at(info.descriptor_index));
+    }
 }
 
 std::string_view TextureType(IR::TextureInstInfo info) {
@@ -421,11 +425,28 @@ void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& inde
     StoreSparse(ctx, sparse_inst);
 }
 
-void EmitImageFetch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                    [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coord,
-                    [[maybe_unused]] Register offset, [[maybe_unused]] Register lod,
-                    [[maybe_unused]] Register ms) {
-    throw NotImplementedException("GLASM instruction");
+void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                    const IR::Value& coord, const IR::Value& offset, ScalarS32 lod, ScalarS32 ms) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
+    const std::string_view type{TextureType(info)};
+    const std::string texture{Texture(ctx, info, index)};
+    const std::string offset_vec{Offset(ctx, offset)};
+    const auto [coord_vec, coord_alloc]{Coord(ctx, coord)};
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    if (info.type == TextureType::Buffer) {
+        ctx.Add("TXF.F{} {},{},{},{}{};", sparse_mod, ret, coord_vec, texture, type, offset_vec);
+    } else if (ms.type != Type::Void) {
+        ctx.Add("MOV.S {}.w,{};"
+                "TXFMS.F{} {},{},{},{}{};",
+                coord_vec, ms, sparse_mod, ret, coord_vec, texture, type, offset_vec);
+    } else {
+        ctx.Add("MOV.S {}.w,{};"
+                "TXF.F{} {},{},{},{}{};",
+                coord_vec, lod, sparse_mod, ret, coord_vec, texture, type, offset_vec);
+    }
+    StoreSparse(ctx, sparse_inst);
 }
 
 void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,

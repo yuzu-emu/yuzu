@@ -80,11 +80,14 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings) : info{progra
             Add("OUTPUT out_attr{}[]={{result.attrib[{}..{}]}};", index, index, index);
         }
     }
-    const size_t num_textures{program.info.texture_descriptors.size()};
-    texture_bindings.resize(num_textures);
-    for (size_t index = 0; index < num_textures; ++index) {
-        const auto& desc{program.info.texture_descriptors[index]};
-        texture_bindings[index] = bindings.texture;
+    texture_buffer_bindings.reserve(program.info.texture_buffer_descriptors.size());
+    for (const auto& desc : program.info.texture_buffer_descriptors) {
+        texture_buffer_bindings.push_back(bindings.texture);
+        bindings.texture += desc.count;
+    }
+    texture_bindings.reserve(program.info.texture_descriptors.size());
+    for (const auto& desc : program.info.texture_descriptors) {
+        texture_bindings.push_back(bindings.texture);
         bindings.texture += desc.count;
     }
 }
