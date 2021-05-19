@@ -543,7 +543,7 @@ void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& inde
 void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
                     Register offset, Register lod, Register ms);
 void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                              Register lod);
+                              ScalarF32 lod);
 void EmitImageQueryLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord);
 void EmitImageGradient(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
                        Register derivates, Register offset, Register lod_clamp);
