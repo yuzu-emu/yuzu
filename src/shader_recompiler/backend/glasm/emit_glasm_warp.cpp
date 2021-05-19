@@ -95,8 +95,17 @@ void EmitShuffleButterfly(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, Sca
     Shuffle(ctx, inst, value, index, clamp, segmentation_mask, "XOR");
 }
 
-void EmitFSwizzleAdd(EmitContext&, ScalarF32, ScalarF32, ScalarU32) {
-    throw NotImplementedException("GLASM instruction");
+void EmitFSwizzleAdd(EmitContext& ctx, IR::Inst& inst, ScalarF32 op_a, ScalarF32 op_b,
+                     ScalarU32 swizzle) {
+    const auto ret{ctx.reg_alloc.Define(inst)};
+    ctx.Add("AND.U RC.z,{}.threadid,3;"
+            "SHL.U RC.z,RC.z,1;"
+            "SHR.U RC.z,{},RC.z;"
+            "AND.U RC.z,RC.z,3;"
+            "MUL.F RC.x,{},FSWZA[RC.z];"
+            "MUL.F RC.y,{},FSWZB[RC.z];"
+            "ADD.F {}.x,RC.x,RC.y;",
+            ctx.stage_name, swizzle, op_a, op_b, ret);
 }
 
 void EmitDPdxFine(EmitContext& ctx, IR::Inst& inst, ScalarF32 p) {
