@@ -312,8 +312,8 @@ std::string_view StageHeader(Stage stage) {
 }
 } // Anonymous namespace
 
-std::string EmitGLASM(const Profile&, IR::Program& program, Bindings&) {
-    EmitContext ctx{program};
+std::string EmitGLASM(const Profile&, IR::Program& program, Bindings& bindings) {
+    EmitContext ctx{program, bindings};
     Precolor(ctx, program);
     EmitCode(ctx, program);
     std::string header{StageHeader(program.stage)};

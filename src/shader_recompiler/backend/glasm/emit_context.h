@@ -6,10 +6,19 @@
 
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <fmt/format.h>
 
 #include "shader_recompiler/backend/glasm/reg_alloc.h"
+
+namespace Shader {
+struct Info;
+}
+
+namespace Shader::Backend {
+struct Bindings;
+}
 
 namespace Shader::IR {
 class Inst;
@@ -20,7 +29,7 @@ namespace Shader::Backend::GLASM {
 
 class EmitContext {
 public:
-    explicit EmitContext(IR::Program& program);
+    explicit EmitContext(IR::Program& program, Bindings& bindings);
 
     template <typename... Args>
     void Add(const char* format_str, IR::Inst& inst, Args&&... args) {
@@ -45,6 +54,9 @@ public:
 
     std::string code;
     RegAlloc reg_alloc{*this};
+    const Info& info;
+
+    std::vector<u32> texture_bindings;
 
     std::string_view stage_name = "invalid";
 };
