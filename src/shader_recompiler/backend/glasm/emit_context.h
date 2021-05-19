@@ -56,6 +56,7 @@ public:
     RegAlloc reg_alloc{*this};
     const Info& info;
 
+    std::vector<u32> texture_buffer_bindings;
     std::vector<u32> texture_bindings;
 
     std::string_view stage_name = "invalid";
