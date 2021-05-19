@@ -9,9 +9,9 @@
 
 namespace Shader::Backend::GLASM {
 
-void EmitSelectU1([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 cond,
-                  [[maybe_unused]] ScalarS32 true_value, [[maybe_unused]] ScalarS32 false_value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitSelectU1(EmitContext& ctx, IR::Inst& inst, ScalarS32 cond, ScalarS32 true_value,
+                  ScalarS32 false_value) {
+    ctx.Add("CMP.S {},{},{},{};", inst, cond, true_value, false_value);
 }
 
 void EmitSelectU8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarS32 cond,
