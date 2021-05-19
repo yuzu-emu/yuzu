@@ -11,10 +11,12 @@
 #include <fmt/format.h>
 
 #include "shader_recompiler/backend/glasm/reg_alloc.h"
+#include "shader_recompiler/stage.h"
 
 namespace Shader {
 struct Info;
-}
+struct Profile;
+} // namespace Shader
 
 namespace Shader::Backend {
 struct Bindings;
@@ -29,7 +31,7 @@ namespace Shader::Backend::GLASM {
 
 class EmitContext {
 public:
-    explicit EmitContext(IR::Program& program, Bindings& bindings);
+    explicit EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_);
 
     template <typename... Args>
     void Add(const char* format_str, IR::Inst& inst, Args&&... args) {
@@ -55,10 +57,12 @@ public:
     std::string code;
     RegAlloc reg_alloc{*this};
     const Info& info;
+    const Profile& profile;
 
     std::vector<u32> texture_buffer_bindings;
     std::vector<u32> texture_bindings;
 
+    Stage stage{};
     std::string_view stage_name = "invalid";
 };
 

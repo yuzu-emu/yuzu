@@ -7,6 +7,7 @@
 #include "shader_recompiler/backend/glasm/emit_context.h"
 #include "shader_recompiler/backend/glasm/emit_glasm_instructions.h"
 #include "shader_recompiler/frontend/ir/value.h"
+#include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::GLASM {
 namespace {
@@ -101,6 +102,13 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, ScalarF32 value,
     case IR::Attribute::PositionZ:
     case IR::Attribute::PositionW:
         ctx.Add("MOV.F result.position.{},{};", swizzle, value);
+        break;
+    case IR::Attribute::ViewportIndex:
+        if (ctx.stage == Stage::Geometry || ctx.profile.support_viewport_index_layer_non_geometry) {
+            ctx.Add("MOV.F result.viewport.x,{};", value);
+        } else {
+            // LOG_WARNING
+        }
         break;
     default:
         throw NotImplementedException("Set attribute {}", attr);

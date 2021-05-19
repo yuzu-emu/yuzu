@@ -261,7 +261,10 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
     }
 }
 
-void SetupOptions(std::string& header, Info info) {
+void SetupOptions(const IR::Program& program, const Profile& profile, std::string& header) {
+    const Info& info{program.info};
+    const Stage stage{program.stage};
+
     // TODO: Track the shared atomic ops
     header += "OPTION NV_internal;"
               "OPTION NV_shader_storage_buffer;"
@@ -285,6 +288,11 @@ void SetupOptions(std::string& header, Info info) {
     }
     if (info.uses_sparse_residency) {
         header += "OPTION EXT_sparse_texture2;";
+    }
+    if ((info.stores_viewport_index || info.stores_layer) && stage != Stage::Geometry) {
+        if (profile.support_viewport_index_layer_non_geometry) {
+            header += "OPTION NV_viewport_array2;";
+        }
     }
     const auto non_zero_frag_colors{info.stores_frag_color | std::views::drop(1)};
     if (std::ranges::find(non_zero_frag_colors, true) != non_zero_frag_colors.end()) {
@@ -312,12 +320,12 @@ std::string_view StageHeader(Stage stage) {
 }
 } // Anonymous namespace
 
-std::string EmitGLASM(const Profile&, IR::Program& program, Bindings& bindings) {
-    EmitContext ctx{program, bindings};
+std::string EmitGLASM(const Profile& profile, IR::Program& program, Bindings& bindings) {
+    EmitContext ctx{program, bindings, profile};
     Precolor(ctx, program);
     EmitCode(ctx, program);
     std::string header{StageHeader(program.stage)};
-    SetupOptions(header, program.info);
+    SetupOptions(program, profile, header);
     switch (program.stage) {
     case Stage::Compute:
         header += fmt::format("GROUP_SIZE {} {} {};", program.workgroup_size[0],
