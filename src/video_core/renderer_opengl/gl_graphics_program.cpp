@@ -240,6 +240,17 @@ void GraphicsProgram::Configure(bool is_indexed) {
     buffer_cache.UpdateGraphicsBuffers(is_indexed);
     buffer_cache.BindHostGeometryBuffers(is_indexed);
 
+    // FIXME: Unhack this
+    if (assembly_programs[0].handle != 0) {
+        // TODO: State track this
+        glEnable(GL_VERTEX_PROGRAM_NV);
+        glEnable(GL_FRAGMENT_PROGRAM_NV);
+        glBindProgramARB(GL_VERTEX_PROGRAM_NV, assembly_programs[0].handle);
+        glBindProgramARB(GL_FRAGMENT_PROGRAM_NV, assembly_programs[4].handle);
+        program_manager.BindProgram(0);
+    } else {
+        program_manager.BindProgram(program.handle);
+    }
     const ImageId* views_it{image_view_ids.data()};
     GLsizei texture_binding = 0;
     GLsizei image_binding = 0;
