@@ -65,6 +65,10 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
     case IR::Attribute::PositionW:
         ctx.Add("MOV.F {}.x,{}.position.{};", inst, ctx.stage_name, swizzle);
         break;
+    case IR::Attribute::PointSpriteS:
+    case IR::Attribute::PointSpriteT:
+        ctx.Add("MOV.F {}.x,{}.pointcoord.{};", inst, ctx.stage_name, swizzle);
+        break;
     case IR::Attribute::InstanceId:
         ctx.Add("MOV.S {}.x,{}.instance;", inst, ctx.stage_name);
         break;
