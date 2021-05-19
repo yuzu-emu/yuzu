@@ -457,9 +457,11 @@ void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst, const IR::Value&
     ctx.Add("TXQ {},{},{},{};", inst, lod, texture, type);
 }
 
-void EmitImageQueryLod([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                       [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coord) {
-    throw NotImplementedException("GLASM instruction");
+void EmitImageQueryLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const std::string texture{Texture(ctx, info, index)};
+    const std::string_view type{TextureType(info)};
+    ctx.Add("LOD.F {},{},{},{};", inst, coord, texture, type);
 }
 
 void EmitImageGradient([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
