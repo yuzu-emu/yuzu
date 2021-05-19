@@ -93,6 +93,9 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, ScalarF32 value,
         return;
     }
     switch (attr) {
+    case IR::Attribute::PointSize:
+        ctx.Add("MOV.F result.pointsize.x,{};", value);
+        break;
     case IR::Attribute::PositionX:
     case IR::Attribute::PositionY:
     case IR::Attribute::PositionZ:
