@@ -9,7 +9,32 @@
 namespace Shader::Backend::GLASM {
 
 void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
-    ctx.Add("ADD.S {}.x,{},{};", inst, a, b);
+    const bool cc{inst.HasAssociatedPseudoOperation()};
+    const std::string_view cc_mod{cc ? ".CC" : ""};
+    if (cc) {
+        ctx.reg_alloc.InvalidateConditionCodes();
+    }
+    const auto ret{ctx.reg_alloc.Define(inst)};
+    ctx.Add("ADD.S{} {}.x,{},{};", cc_mod, ret, a, b);
+    if (!cc) {
+        return;
+    }
+    static constexpr std::array<std::string_view, 4> masks{"EQ", "SF", "CF", "OF"};
+    const std::array flags{
+        inst.GetAssociatedPseudoOperation(IR::Opcode::GetZeroFromOp),
+        inst.GetAssociatedPseudoOperation(IR::Opcode::GetSignFromOp),
+        inst.GetAssociatedPseudoOperation(IR::Opcode::GetCarryFromOp),
+        inst.GetAssociatedPseudoOperation(IR::Opcode::GetOverflowFromOp),
+    };
+    for (size_t i = 0; i < flags.size(); ++i) {
+        if (flags[i]) {
+            const auto flag_ret{ctx.reg_alloc.Define(*flags[i])};
+            ctx.Add("MOV.S {},0;"
+                    "MOV.S {}({}.x),-1;",
+                    flag_ret, flag_ret, masks[i]);
+            flags[i]->Invalidate();
+        }
+    }
 }
 
 void EmitIAdd64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register a,
