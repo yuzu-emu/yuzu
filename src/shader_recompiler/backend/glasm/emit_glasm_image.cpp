@@ -40,52 +40,51 @@ struct ScopedRegister {
     Register reg;
 };
 
-std::string Texture([[maybe_unused]] EmitContext& ctx, IR::TextureInstInfo info,
+std::string Texture(EmitContext& ctx, IR::TextureInstInfo info,
                     [[maybe_unused]] const IR::Value& index) {
-    // FIXME
-    return fmt::format("texture[{}]", info.descriptor_index);
+    // FIXME: indexed reads
+    return fmt::format("texture[{}]", ctx.texture_bindings.at(info.descriptor_index));
 }
 
 std::string_view TextureType(IR::TextureInstInfo info) {
-    switch (info.type) {
-    case TextureType::Color1D:
-        return "1D";
-    case TextureType::ColorArray1D:
-        return "ARRAY1D";
-    case TextureType::Color2D:
-        return "2D";
-    case TextureType::ColorArray2D:
-        return "ARRAY2D";
-    case TextureType::Color3D:
-        return "3D";
-    case TextureType::ColorCube:
-        return "CUBE";
-    case TextureType::ColorArrayCube:
-        return "ARRAYCUBE";
-    case TextureType::Buffer:
-        return "BUFFER";
-    }
-    throw InvalidArgument("Invalid texture type {}", info.type.Value());
-}
-
-std::string_view ShadowTextureType(IR::TextureInstInfo info) {
-    switch (info.type) {
-    case TextureType::Color1D:
-        return "SHADOW1D";
-    case TextureType::ColorArray1D:
-        return "SHADOWARRAY1D";
-    case TextureType::Color2D:
-        return "SHADOW2D";
-    case TextureType::ColorArray2D:
-        return "SHADOWARRAY2D";
-    case TextureType::Color3D:
-        return "SHADOW3D";
-    case TextureType::ColorCube:
-        return "SHADOWCUBE";
-    case TextureType::ColorArrayCube:
-        return "SHADOWARRAYCUBE";
-    case TextureType::Buffer:
-        return "SHADOWBUFFER";
+    if (info.is_depth) {
+        switch (info.type) {
+        case TextureType::Color1D:
+            return "SHADOW1D";
+        case TextureType::ColorArray1D:
+            return "SHADOWARRAY1D";
+        case TextureType::Color2D:
+            return "SHADOW2D";
+        case TextureType::ColorArray2D:
+            return "SHADOWARRAY2D";
+        case TextureType::Color3D:
+            return "SHADOW3D";
+        case TextureType::ColorCube:
+            return "SHADOWCUBE";
+        case TextureType::ColorArrayCube:
+            return "SHADOWARRAYCUBE";
+        case TextureType::Buffer:
+            return "SHADOWBUFFER";
+        }
+    } else {
+        switch (info.type) {
+        case TextureType::Color1D:
+            return "1D";
+        case TextureType::ColorArray1D:
+            return "ARRAY1D";
+        case TextureType::Color2D:
+            return "2D";
+        case TextureType::ColorArray2D:
+            return "ARRAY2D";
+        case TextureType::Color3D:
+            return "3D";
+        case TextureType::ColorCube:
+            return "CUBE";
+        case TextureType::ColorArrayCube:
+            return "ARRAYCUBE";
+        case TextureType::Buffer:
+            return "BUFFER";
+        }
     }
     throw InvalidArgument("Invalid texture type {}", info.type.Value());
 }
@@ -217,7 +216,7 @@ void EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
     const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
-    const std::string_view type{ShadowTextureType(info)};
+    const std::string_view type{TextureType(info)};
     const std::string texture{Texture(ctx, info, index)};
     const std::string offset_vec{Offset(ctx, offset)};
     const auto [coord_vec, coord_alloc]{Coord(ctx, coord)};
@@ -319,7 +318,7 @@ void EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
     const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
-    const std::string_view type{ShadowTextureType(info)};
+    const std::string_view type{TextureType(info)};
     const std::string texture{Texture(ctx, info, index)};
     const std::string offset_vec{Offset(ctx, offset)};
     const auto [coord_vec, coord_alloc]{Coord(ctx, coord)};
@@ -389,7 +388,7 @@ void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& inde
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
     const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
-    const std::string_view type{ShadowTextureType(info)};
+    const std::string_view type{TextureType(info)};
     const std::string texture{Texture(ctx, info, index)};
     const Register coord_vec{ctx.reg_alloc.Consume(coord)};
     const ScalarF32 dref_value{ctx.reg_alloc.Consume(dref)};
@@ -429,10 +428,12 @@ void EmitImageFetch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitImageQueryDimensions([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                              [[maybe_unused]] const IR::Value& index,
-                              [[maybe_unused]] Register lod) {
-    throw NotImplementedException("GLASM instruction");
+void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                              ScalarF32 lod) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const std::string texture{Texture(ctx, info, index)};
+    const std::string_view type{TextureType(info)};
+    ctx.Add("TXQ {},{},{},{};", inst, lod, texture, type);
 }
 
 void EmitImageQueryLod([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
