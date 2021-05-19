@@ -23,7 +23,8 @@ std::string_view InterpDecorator(Interpolation interp) {
 }
 } // Anonymous namespace
 
-EmitContext::EmitContext(IR::Program& program, Bindings& bindings) : info{program.info} {
+EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_)
+    : info{program.info}, profile{profile_} {
     // FIXME: Temporary partial implementation
     u32 cbuf_index{};
     for (const auto& desc : program.info.constant_buffer_descriptors) {
@@ -41,6 +42,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings) : info{progra
     if (const size_t num = program.info.storage_buffers_descriptors.size(); num > 0) {
         Add("PARAM c[{}]={{program.local[0..{}]}};", num, num - 1);
     }
+    stage = program.stage;
     switch (program.stage) {
     case Stage::VertexA:
     case Stage::VertexB:
