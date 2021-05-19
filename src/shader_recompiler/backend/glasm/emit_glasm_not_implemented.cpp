@@ -53,15 +53,15 @@ void EmitDemoteToHelperInvocation(EmitContext& ctx) {
 }
 
 void EmitBarrier(EmitContext& ctx) {
-    NotImplemented();
+    ctx.Add("BAR;");
 }
 
 void EmitWorkgroupMemoryBarrier(EmitContext& ctx) {
-    NotImplemented();
+    ctx.Add("MEMBAR.CTA;");
 }
 
 void EmitDeviceMemoryBarrier(EmitContext& ctx) {
-    NotImplemented();
+    ctx.Add("MEMBAR;");
 }
 
 void EmitPrologue(EmitContext& ctx) {
