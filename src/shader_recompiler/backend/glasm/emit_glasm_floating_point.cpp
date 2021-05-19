@@ -6,6 +6,7 @@
 
 #include "shader_recompiler/backend/glasm/emit_context.h"
 #include "shader_recompiler/backend/glasm/emit_glasm_instructions.h"
+#include "shader_recompiler/frontend/ir/modifiers.h"
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLASM {
@@ -42,6 +43,11 @@ void Clamp(EmitContext& ctx, Register ret, InputType value, InputType min_value,
             "MIN.{} {}.x,RC.x,{};",
             type, min_value, value, type, ret, max_value);
 }
+
+std::string_view Precise(IR::Inst& inst) {
+    const bool precise{inst.Flags<IR::FpControl>().no_contraction};
+    return precise ? ".PREC" : "";
+}
 } // Anonymous namespace
 
 void EmitFPAbs16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -63,11 +69,11 @@ void EmitFPAdd16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& i
 }
 
 void EmitFPAdd32(EmitContext& ctx, IR::Inst& inst, ScalarF32 a, ScalarF32 b) {
-    ctx.Add("ADD.F {}.x,{},{};", inst, a, b);
+    ctx.Add("ADD.F{} {}.x,{},{};", Precise(inst), ctx.reg_alloc.Define(inst), a, b);
 }
 
 void EmitFPAdd64(EmitContext& ctx, IR::Inst& inst, ScalarF64 a, ScalarF64 b) {
-    ctx.LongAdd("ADD.F64 {}.x,{},{};", inst, a, b);
+    ctx.Add("ADD.F64{} {}.x,{},{};", Precise(inst), ctx.reg_alloc.LongDefine(inst), a, b);
 }
 
 void EmitFPFma16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -77,11 +83,11 @@ void EmitFPFma16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& i
 }
 
 void EmitFPFma32(EmitContext& ctx, IR::Inst& inst, ScalarF32 a, ScalarF32 b, ScalarF32 c) {
-    ctx.Add("MAD.F {}.x,{},{},{};", inst, a, b, c);
+    ctx.Add("MAD.F{} {}.x,{},{},{};", Precise(inst), ctx.reg_alloc.Define(inst), a, b, c);
 }
 
 void EmitFPFma64(EmitContext& ctx, IR::Inst& inst, ScalarF64 a, ScalarF64 b, ScalarF64 c) {
-    ctx.LongAdd("MAD.F64 {}.x,{},{},{};", inst, a, b, c);
+    ctx.Add("MAD.F64{} {}.x,{},{},{};", Precise(inst), ctx.reg_alloc.LongDefine(inst), a, b, c);
 }
 
 void EmitFPMax32(EmitContext& ctx, IR::Inst& inst, ScalarF32 a, ScalarF32 b) {
@@ -106,11 +112,11 @@ void EmitFPMul16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& i
 }
 
 void EmitFPMul32(EmitContext& ctx, IR::Inst& inst, ScalarF32 a, ScalarF32 b) {
-    ctx.Add("MUL.F {}.x,{},{};", inst, a, b);
+    ctx.Add("MUL.F{} {}.x,{},{};", Precise(inst), ctx.reg_alloc.Define(inst), a, b);
 }
 
 void EmitFPMul64(EmitContext& ctx, IR::Inst& inst, ScalarF64 a, ScalarF64 b) {
-    ctx.LongAdd("MUL.F64 {}.x,{},{};", inst, a, b);
+    ctx.Add("MUL.F64{} {}.x,{},{};", Precise(inst), ctx.reg_alloc.LongDefine(inst), a, b);
 }
 
 void EmitFPNeg16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register value) {
