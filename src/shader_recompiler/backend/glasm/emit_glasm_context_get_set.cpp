@@ -71,6 +71,9 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
     case IR::Attribute::VertexId:
         ctx.Add("MOV.S {}.x,{}.id;", inst, ctx.stage_name);
         break;
+    case IR::Attribute::FrontFace:
+        ctx.Add("CMP.S {}.x,{}.facing.x,0,-1;", inst, ctx.stage_name);
+        break;
     default:
         throw NotImplementedException("Get attribute {}", attr);
     }
