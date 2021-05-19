@@ -57,7 +57,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         stage_name = "fragment";
         break;
     case Stage::Compute:
-        stage_name = "compute";
+        stage_name = "invocation";
         break;
     }
     for (size_t index = 0; index < program.info.input_generics.size(); ++index) {
