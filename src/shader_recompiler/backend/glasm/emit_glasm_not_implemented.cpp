@@ -144,8 +144,8 @@ void EmitSetOFlag(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitWorkgroupId(EmitContext& ctx) {
-    NotImplemented();
+void EmitWorkgroupId(EmitContext& ctx, IR::Inst& inst) {
+    ctx.Add("MOV.S {},invocation.groupid;", inst);
 }
 
 void EmitLocalInvocationId(EmitContext& ctx, IR::Inst& inst) {
