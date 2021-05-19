@@ -122,6 +122,14 @@ void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst& inst, ScalarU32 base, Scal
                 "BFE.U {},RC,{};",
                 count, offset, ret, base);
     }
+    if (const auto zero = inst.GetAssociatedPseudoOperation(IR::Opcode::GetZeroFromOp)) {
+        ctx.Add("SEQ.S {},{},0;", *zero, ret);
+        zero->Invalidate();
+    }
+    if (const auto sign = inst.GetAssociatedPseudoOperation(IR::Opcode::GetSignFromOp)) {
+        ctx.Add("SLT.S {},{},0;", *sign, ret);
+        sign->Invalidate();
+    }
 }
 
 void EmitBitReverse32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value) {
