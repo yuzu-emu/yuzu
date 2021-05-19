@@ -179,7 +179,8 @@ void EmitCompositeExtractF64x4(EmitContext& ctx);
 void EmitCompositeInsertF64x2(EmitContext& ctx, Register composite, Register object, u32 index);
 void EmitCompositeInsertF64x3(EmitContext& ctx, Register composite, Register object, u32 index);
 void EmitCompositeInsertF64x4(EmitContext& ctx, Register composite, Register object, u32 index);
-void EmitSelectU1(EmitContext& ctx, ScalarS32 cond, ScalarS32 true_value, ScalarS32 false_value);
+void EmitSelectU1(EmitContext& ctx, IR::Inst& inst, ScalarS32 cond, ScalarS32 true_value,
+                  ScalarS32 false_value);
 void EmitSelectU8(EmitContext& ctx, ScalarS32 cond, ScalarS32 true_value, ScalarS32 false_value);
 void EmitSelectU16(EmitContext& ctx, ScalarS32 cond, ScalarS32 true_value, ScalarS32 false_value);
 void EmitSelectU32(EmitContext& ctx, IR::Inst& inst, ScalarS32 cond, ScalarS32 true_value,
