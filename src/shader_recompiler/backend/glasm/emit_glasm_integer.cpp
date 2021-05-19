@@ -75,27 +75,27 @@ void EmitShiftLeftLogical32(EmitContext& ctx, IR::Inst& inst, ScalarU32 base, Sc
     ctx.Add("SHL.U {}.x,{},{};", inst, base, shift);
 }
 
-void EmitShiftLeftLogical64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register base,
-                            [[maybe_unused]] Register shift) {
-    throw NotImplementedException("GLASM instruction");
+void EmitShiftLeftLogical64(EmitContext& ctx, IR::Inst& inst, ScalarRegister base,
+                            ScalarU32 shift) {
+    ctx.LongAdd("SHL.U64 {}.x,{},{};", inst, base, shift);
 }
 
 void EmitShiftRightLogical32(EmitContext& ctx, IR::Inst& inst, ScalarU32 base, ScalarU32 shift) {
     ctx.Add("SHR.U {}.x,{},{};", inst, base, shift);
 }
 
-void EmitShiftRightLogical64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register base,
-                             [[maybe_unused]] Register shift) {
-    throw NotImplementedException("GLASM instruction");
+void EmitShiftRightLogical64(EmitContext& ctx, IR::Inst& inst, ScalarRegister base,
+                             ScalarU32 shift) {
+    ctx.LongAdd("SHR.U64 {}.x,{},{};", inst, base, shift);
 }
 
 void EmitShiftRightArithmetic32(EmitContext& ctx, IR::Inst& inst, ScalarS32 base, ScalarS32 shift) {
     ctx.Add("SHR.S {}.x,{},{};", inst, base, shift);
 }
 
-void EmitShiftRightArithmetic64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register base,
-                                [[maybe_unused]] Register shift) {
-    throw NotImplementedException("GLASM instruction");
+void EmitShiftRightArithmetic64(EmitContext& ctx, IR::Inst& inst, ScalarRegister base,
+                                ScalarS32 shift) {
+    ctx.LongAdd("SHR.S64 {}.x,{},{};", inst, base, shift);
 }
 
 void EmitBitwiseAnd32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {

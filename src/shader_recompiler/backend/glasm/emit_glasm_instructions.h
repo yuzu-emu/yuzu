@@ -308,11 +308,13 @@ void EmitINeg64(EmitContext& ctx, IR::Inst& inst, Register value);
 void EmitIAbs32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value);
 void EmitIAbs64(EmitContext& ctx, IR::Inst& inst, Register value);
 void EmitShiftLeftLogical32(EmitContext& ctx, IR::Inst& inst, ScalarU32 base, ScalarU32 shift);
-void EmitShiftLeftLogical64(EmitContext& ctx, Register base, Register shift);
+void EmitShiftLeftLogical64(EmitContext& ctx, IR::Inst& inst, ScalarRegister base, ScalarU32 shift);
 void EmitShiftRightLogical32(EmitContext& ctx, IR::Inst& inst, ScalarU32 base, ScalarU32 shift);
-void EmitShiftRightLogical64(EmitContext& ctx, Register base, Register shift);
+void EmitShiftRightLogical64(EmitContext& ctx, IR::Inst& inst, ScalarRegister base,
+                             ScalarU32 shift);
 void EmitShiftRightArithmetic32(EmitContext& ctx, IR::Inst& inst, ScalarS32 base, ScalarS32 shift);
-void EmitShiftRightArithmetic64(EmitContext& ctx, Register base, Register shift);
+void EmitShiftRightArithmetic64(EmitContext& ctx, IR::Inst& inst, ScalarRegister base,
+                                ScalarS32 shift);
 void EmitBitwiseAnd32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b);
 void EmitBitwiseOr32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b);
 void EmitBitwiseXor32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b);
