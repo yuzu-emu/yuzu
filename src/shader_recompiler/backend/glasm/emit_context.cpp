@@ -4,6 +4,7 @@
 
 #include <string_view>
 
+#include "shader_recompiler/backend/bindings.h"
 #include "shader_recompiler/backend/glasm/emit_context.h"
 #include "shader_recompiler/frontend/ir/program.h"
 
@@ -22,7 +23,7 @@ std::string_view InterpDecorator(Interpolation interp) {
 }
 } // Anonymous namespace
 
-EmitContext::EmitContext(IR::Program& program) {
+EmitContext::EmitContext(IR::Program& program, Bindings& bindings) : info{program.info} {
     // FIXME: Temporary partial implementation
     u32 cbuf_index{};
     for (const auto& desc : program.info.constant_buffer_descriptors) {
@@ -78,6 +79,13 @@ EmitContext::EmitContext(IR::Program& program) {
         if (program.info.stores_generics[index]) {
             Add("OUTPUT out_attr{}[]={{result.attrib[{}..{}]}};", index, index, index);
         }
+    }
+    const size_t num_textures{program.info.texture_descriptors.size()};
+    texture_bindings.resize(num_textures);
+    for (size_t index = 0; index < num_textures; ++index) {
+        const auto& desc{program.info.texture_descriptors[index]};
+        texture_bindings[index] = bindings.texture;
+        bindings.texture += desc.count;
     }
 }
 

@@ -302,7 +302,7 @@ std::unique_ptr<GraphicsProgram> ShaderCache::CreateGraphicsProgram(
         const size_t stage_index{index - 1};
         infos[stage_index] = &program.info;
         if (device.UseAssemblyShaders()) {
-            const std::string code{EmitGLASM(profile, program)};
+            const std::string code{EmitGLASM(profile, program, binding)};
             assembly_programs[stage_index] = CompileProgram(code, AssemblyStage(stage_index));
         } else {
             const std::vector<u32> code{EmitSPIRV(profile, program, binding)};
