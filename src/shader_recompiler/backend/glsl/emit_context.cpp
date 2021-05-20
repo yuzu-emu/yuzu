@@ -14,13 +14,17 @@ EmitContext::EmitContext(IR::Program& program, [[maybe_unused]] Bindings& bindin
     std::string header = "#version 450 core\n";
     header += "layout(local_size_x=1, local_size_y=1, local_size_z=1) in;";
     code += header;
+    DefineConstantBuffers();
     code += "void main(){";
-    // u32 cbuf_index{};
-    // for (const auto& desc : program.info.storage_buffers_descriptors) {
-    //     Add("layout(set=0, binding={}) uniform cbuf_{} {{uint data[{}];}}c{};", desc.cbuf_index,
-    //         cbuf_index, desc.count, cbuf_index);
-    //     ++cbuf_index;
-    // }
+}
+
+void EmitContext::DefineConstantBuffers() {
+    if (info.constant_buffer_descriptors.empty()) {
+        return;
+    }
+    for (const auto& desc : info.constant_buffer_descriptors) {
+        Add("uniform uint c{}[{}];", desc.index, desc.count);
+    }
 }
 
 } // namespace Shader::Backend::GLSL

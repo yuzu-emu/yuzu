@@ -28,7 +28,15 @@ void EmitVoid(EmitContext& ctx) {
 }
 
 void EmitIdentity(EmitContext& ctx, const IR::Value& value) {
-    NotImplemented();
+    const auto var{ctx.AllocVar()};
+    switch (value.Type()) {
+    case IR::Type::U32:
+        ctx.Add("uint {}={};", var, value.U32());
+        break;
+    default:
+        ctx.Add("EmitIdentity {}", value.Type());
+        break;
+    }
 }
 
 void EmitConditionRef(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
@@ -90,11 +98,11 @@ void EmitDeviceMemoryBarrier(EmitContext& ctx) {
 }
 
 void EmitPrologue(EmitContext& ctx) {
-    NotImplemented();
+    // NotImplemented();
 }
 
 void EmitEpilogue(EmitContext& ctx) {
-    NotImplemented();
+    // NotImplemented();
 }
 
 void EmitEmitVertex(EmitContext& ctx, const IR::Value& stream) {
@@ -134,34 +142,6 @@ void EmitSetIndirectBranchVariable(EmitContext& ctx) {
 }
 
 void EmitGetIndirectBranchVariable(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitGetCbufU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    NotImplemented();
-}
-
-void EmitGetCbufS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    NotImplemented();
-}
-
-void EmitGetCbufU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    NotImplemented();
-}
-
-void EmitGetCbufS16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    NotImplemented();
-}
-
-void EmitGetCbufU32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    NotImplemented();
-}
-
-void EmitGetCbufF32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    NotImplemented();
-}
-
-void EmitGetCbufU32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
     NotImplemented();
 }
 
@@ -393,7 +373,9 @@ void EmitWriteStorageS16(EmitContext& ctx, const IR::Value& binding, const IR::V
 
 void EmitWriteStorage32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
                         std::string_view value) {
-    NotImplemented();
+    // ctx.Add("c{}[{}]={}", binding.U32() + 2, offset.U32(), 16);
+    ctx.Add("EmitWriteStorage32");
+    // ctx.Add("c{}[{}]={}", binding.U32(), offset.U32(), value);
 }
 
 void EmitWriteStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,

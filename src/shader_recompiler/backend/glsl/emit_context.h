@@ -45,12 +45,18 @@ public:
         code += '\n';
     }
 
+    std::string AllocVar() {
+        return fmt::format("var_{}", var_num++);
+    }
+
     std::string code;
     RegAlloc reg_alloc;
     const Info& info;
     const Profile& profile;
+    u64 var_num{};
 
 private:
+    void DefineConstantBuffers();
 };
 
 } // namespace Shader::Backend::GLSL

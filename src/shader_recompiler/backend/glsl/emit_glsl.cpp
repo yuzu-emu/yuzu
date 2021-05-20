@@ -28,10 +28,17 @@ struct FuncTraits<ReturnType_ (*)(Args...)> {
     using ArgType = std::tuple_element_t<I, std::tuple<Args...>>;
 };
 
+template <auto func, typename... Args>
+void SetDefinition(EmitContext& ctx, IR::Inst* inst, Args... args) {
+    inst->SetDefinition<Id>(func(ctx, std::forward<Args>(args)...));
+}
+
 template <typename ArgType>
-auto Arg(EmitContext& ctx, const IR::Value& arg) {
+ArgType Arg(EmitContext& ctx, const IR::Value& arg) {
     if constexpr (std::is_same_v<ArgType, std::string_view>) {
         return ctx.reg_alloc.Consume(arg);
+    } else if constexpr (std::is_same_v<ArgType, IR::Inst&>) {
+        return *arg.Inst();
     } else if constexpr (std::is_same_v<ArgType, const IR::Value&>) {
         return arg;
     } else if constexpr (std::is_same_v<ArgType, u32>) {
@@ -48,10 +55,21 @@ auto Arg(EmitContext& ctx, const IR::Value& arg) {
 template <auto func, bool is_first_arg_inst, size_t... I>
 void Invoke(EmitContext& ctx, IR::Inst* inst, std::index_sequence<I...>) {
     using Traits = FuncTraits<decltype(func)>;
-    if constexpr (is_first_arg_inst) {
-        func(ctx, inst, Arg<typename Traits::template ArgType<I + 2>>(ctx, inst->Arg(I))...);
+    if constexpr (std::is_same_v<typename Traits::ReturnType, Id>) {
+        if constexpr (is_first_arg_inst) {
+            SetDefinition<func>(
+                ctx, inst, inst,
+                Arg<typename Traits::template ArgType<I + 2>>(ctx, inst->Arg(I))...);
+        } else {
+            SetDefinition<func>(
+                ctx, inst, Arg<typename Traits::template ArgType<I + 1>>(ctx, inst->Arg(I))...);
+        }
     } else {
-        // func(ctx, Arg<typename Traits::template ArgType<I + 1>>(ctx, inst->Arg(I))...);
+        if constexpr (is_first_arg_inst) {
+            func(ctx, inst, Arg<typename Traits::template ArgType<I + 2>>(ctx, inst->Arg(I))...);
+        } else {
+            func(ctx, Arg<typename Traits::template ArgType<I + 1>>(ctx, inst->Arg(I))...);
+        }
     }
 }
 
