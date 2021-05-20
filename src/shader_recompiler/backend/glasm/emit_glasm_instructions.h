@@ -533,11 +533,11 @@ void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Valu
 void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                 const IR::Value& coord, ScalarF32 lod, const IR::Value& offset);
 void EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                                    const IR::Value& coord, ScalarF32 dref, Register bias_lc,
-                                    const IR::Value& offset);
+                                    const IR::Value& coord, const IR::Value& dref,
+                                    const IR::Value& bias_lc, const IR::Value& offset);
 void EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                                    const IR::Value& coord, ScalarF32 dref, ScalarF32 lod,
-                                    const IR::Value& offset);
+                                    const IR::Value& coord, const IR::Value& dref,
+                                    const IR::Value& lod, const IR::Value& offset);
 void EmitImageGather(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                      const IR::Value& coord, const IR::Value& offset, const IR::Value& offset2);
 void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
