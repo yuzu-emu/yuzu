@@ -19,6 +19,7 @@
 #include "core/core.h"
 #include "core/frontend/emu_window.h"
 #include "shader_recompiler/backend/glasm/emit_glasm.h"
+#include "shader_recompiler/backend/glsl/emit_glsl.h"
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 #include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
@@ -40,6 +41,7 @@
 namespace OpenGL {
 namespace {
 using Shader::Backend::GLASM::EmitGLASM;
+using Shader::Backend::GLSL::EmitGLSL;
 using Shader::Backend::SPIRV::EmitSPIRV;
 using Shader::Maxwell::MergeDualVertexPrograms;
 using Shader::Maxwell::TranslateProgram;
@@ -435,7 +437,8 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
             const std::string code{EmitGLASM(profile, runtime_info, program, binding)};
             assembly_programs[stage_index] = CompileProgram(code, AssemblyStage(stage_index));
         } else {
-            const std::vector<u32> code{EmitSPIRV(profile, runtime_info, program, binding)};
+            const auto code{EmitGLSL(profile, program, binding)};
+            OGLShader shader;
             AttachShader(Stage(stage_index), source_program.handle, code);
         }
     }
@@ -489,7 +492,7 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(ShaderPools&
         const std::string code{EmitGLASM(profile, info, program)};
         asm_program = CompileProgram(code, GL_COMPUTE_PROGRAM_NV);
     } else {
-        const std::vector<u32> code{EmitSPIRV(profile, program)};
+        const auto code{EmitGLSL(profile, program)};
         source_program.handle = glCreateProgram();
         AttachShader(GL_COMPUTE_SHADER, source_program.handle, code);
         LinkProgram(source_program.handle);
