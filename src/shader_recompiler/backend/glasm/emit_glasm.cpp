@@ -319,6 +319,34 @@ std::string_view StageHeader(Stage stage) {
     }
     throw InvalidArgument("Invalid stage {}", stage);
 }
+
+std::string_view InputPrimitive(InputTopology topology) {
+    switch (topology) {
+    case InputTopology::Points:
+        return "POINTS";
+    case InputTopology::Lines:
+        return "LINES";
+    case InputTopology::LinesAdjacency:
+        return "LINESS_ADJACENCY";
+    case InputTopology::Triangles:
+        return "TRIANGLES";
+    case InputTopology::TrianglesAdjacency:
+        return "TRIANGLES_ADJACENCY";
+    }
+    throw InvalidArgument("Invalid input topology {}", topology);
+}
+
+std::string_view OutputPrimitive(OutputTopology topology) {
+    switch (topology) {
+    case OutputTopology::PointList:
+        return "POINTS";
+    case OutputTopology::LineStrip:
+        return "LINE_STRIP";
+    case OutputTopology::TriangleStrip:
+        return "TRIANGLE_STRIP";
+    }
+    throw InvalidArgument("Invalid output topology {}", topology);
+}
 } // Anonymous namespace
 
 std::string EmitGLASM(const Profile& profile, IR::Program& program, Bindings& bindings) {
@@ -328,6 +356,13 @@ std::string EmitGLASM(const Profile& profile, IR::Program& program, Bindings& bi
     std::string header{StageHeader(program.stage)};
     SetupOptions(program, profile, header);
     switch (program.stage) {
+    case Stage::Geometry:
+        header += fmt::format("PRIMITIVE_IN {};"
+                              "PRIMITIVE_OUT {};"
+                              "VERTICES_OUT {};",
+                              InputPrimitive(profile.input_topology),
+                              OutputPrimitive(program.output_topology), program.output_vertices);
+        break;
     case Stage::Compute:
         header += fmt::format("GROUP_SIZE {} {} {};", program.workgroup_size[0],
                               program.workgroup_size[1], program.workgroup_size[2]);
