@@ -68,7 +68,7 @@ void EmitSetCFlag(EmitContext& ctx);
 void EmitSetOFlag(EmitContext& ctx);
 void EmitWorkgroupId(EmitContext& ctx, IR::Inst& inst);
 void EmitLocalInvocationId(EmitContext& ctx, IR::Inst& inst);
-void EmitInvocationId(EmitContext& ctx);
+void EmitInvocationId(EmitContext& ctx, IR::Inst& inst);
 void EmitSampleId(EmitContext& ctx);
 void EmitIsHelperInvocation(EmitContext& ctx);
 void EmitYDirection(EmitContext& ctx);
