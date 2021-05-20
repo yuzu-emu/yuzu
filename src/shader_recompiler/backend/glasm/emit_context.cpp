@@ -74,6 +74,9 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
                 InterpDecorator(generic.interpolation), index, attr_stage, index, index);
         }
     }
+    if (stage == Stage::Geometry && info.loads_position) {
+        Add("ATTRIB vertex_position=vertex.position;");
+    }
     for (size_t index = 0; index < program.info.stores_frag_color.size(); ++index) {
         if (!program.info.stores_frag_color[index]) {
             continue;
