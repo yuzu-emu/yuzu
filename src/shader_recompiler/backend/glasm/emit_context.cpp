@@ -77,6 +77,9 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     if (stage == Stage::Geometry && info.loads_position) {
         Add("ATTRIB vertex_position=vertex.position;");
     }
+    if (info.uses_invocation_id) {
+        Add("ATTRIB primitive_invocation=primitive.invocation;");
+    }
     for (size_t index = 0; index < program.info.stores_frag_color.size(); ++index) {
         if (!program.info.stores_frag_color[index]) {
             continue;
