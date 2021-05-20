@@ -19,6 +19,14 @@ void GetCbuf(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU
     const Register ret{ctx.reg_alloc.Define(inst)};
     ctx.Add("LDC.{} {},c{}[{}];", size, ret, binding.U32(), offset);
 }
+
+std::string VertexIndex(EmitContext& ctx, ScalarU32 vertex) {
+    if (ctx.stage == Stage::Geometry) {
+        return fmt::format("[{}]", vertex);
+    } else {
+        return "";
+    }
+}
 } // Anonymous namespace
 
 void EmitGetCbufU8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU32 offset) {
@@ -50,13 +58,12 @@ void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding
     GetCbuf(ctx, inst, binding, offset, "U32X2");
 }
 
-void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
-                      [[maybe_unused]] ScalarU32 vertex) {
+void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr, ScalarU32 vertex) {
     const u32 element{static_cast<u32>(attr) % 4};
     const char swizzle{"xyzw"[element]};
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
-        ctx.Add("MOV.F {}.x,in_attr{}[0].{};", inst, index, swizzle);
+        ctx.Add("MOV.F {}.x,in_attr{}{}[0].{};", inst, index, VertexIndex(ctx, vertex), swizzle);
         return;
     }
     switch (attr) {
@@ -64,7 +71,11 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
     case IR::Attribute::PositionY:
     case IR::Attribute::PositionZ:
     case IR::Attribute::PositionW:
-        ctx.Add("MOV.F {}.x,{}.position.{};", inst, ctx.attrib_name, swizzle);
+        if (ctx.stage == Stage::Geometry) {
+            ctx.Add("MOV.F {}.x,vertex_position{}.{};", inst, VertexIndex(ctx, vertex), swizzle);
+        } else {
+            ctx.Add("MOV.F {}.x,{}.position.{};", inst, ctx.attrib_name, swizzle);
+        }
         break;
     case IR::Attribute::PointSpriteS:
     case IR::Attribute::PointSpriteT:
