@@ -89,6 +89,7 @@ private:
 
     OGLProgram program;
     std::array<OGLAssemblyProgram, 5> assembly_programs;
+    u32 enabled_stages_mask{};
 
     std::array<Shader::Info, 5> stage_infos{};
     std::array<u32, 5> base_uniform_bindings{};

@@ -42,6 +42,9 @@ GraphicsProgram::GraphicsProgram(TextureCache& texture_cache_, BufferCache& buff
     std::ranges::transform(infos, stage_infos.begin(),
                            [](const Shader::Info* info) { return info ? *info : Shader::Info{}; });
 
+    for (size_t stage = 0; stage < 5; ++stage) {
+        enabled_stages_mask |= (assembly_programs[stage].handle != 0 ? 1 : 0) << stage;
+    }
     u32 num_textures{};
     u32 num_images{};
     for (size_t stage = 0; stage < base_uniform_bindings.size() - 1; ++stage) {
@@ -182,6 +185,9 @@ void GraphicsProgram::Configure(bool is_indexed) {
     const std::span indices_span(image_view_indices.data(), image_view_index);
     texture_cache.FillGraphicsImageViews(indices_span, image_view_ids);
 
+    texture_cache.UpdateRenderTargets(false);
+    state_tracker.BindFramebuffer(texture_cache.GetFramebuffer()->Handle());
+
     ImageId* texture_buffer_index{image_view_ids.data()};
     const auto bind_stage_info{[&](size_t stage) {
         size_t index{};
@@ -240,14 +246,8 @@ void GraphicsProgram::Configure(bool is_indexed) {
     buffer_cache.UpdateGraphicsBuffers(is_indexed);
     buffer_cache.BindHostGeometryBuffers(is_indexed);
 
-    // FIXME: Unhack this
     if (assembly_programs[0].handle != 0) {
-        // TODO: State track this
-        glEnable(GL_VERTEX_PROGRAM_NV);
-        glEnable(GL_FRAGMENT_PROGRAM_NV);
-        glBindProgramARB(GL_VERTEX_PROGRAM_NV, assembly_programs[0].handle);
-        glBindProgramARB(GL_FRAGMENT_PROGRAM_NV, assembly_programs[4].handle);
-        program_manager.BindProgram(0);
+        program_manager.BindAssemblyPrograms(assembly_programs, enabled_stages_mask);
     } else {
         program_manager.BindProgram(program.handle);
     }
@@ -299,19 +299,6 @@ void GraphicsProgram::Configure(bool is_indexed) {
     }
     if (image_binding != 0) {
         glBindImageTextures(0, image_binding, images.data());
-    }
-    texture_cache.UpdateRenderTargets(false);
-
-    state_tracker.BindFramebuffer(texture_cache.GetFramebuffer()->Handle());
-    if (assembly_programs[0].handle != 0) {
-        // TODO: State track this
-        glEnable(GL_VERTEX_PROGRAM_NV);
-        glEnable(GL_FRAGMENT_PROGRAM_NV);
-        glBindProgramARB(GL_VERTEX_PROGRAM_NV, assembly_programs[0].handle);
-        glBindProgramARB(GL_FRAGMENT_PROGRAM_NV, assembly_programs[4].handle);
-        program_manager.BindProgram(0);
-    } else {
-        program_manager.BindProgram(program.handle);
     }
 }
 
