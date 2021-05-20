@@ -64,20 +64,20 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
     case IR::Attribute::PositionY:
     case IR::Attribute::PositionZ:
     case IR::Attribute::PositionW:
-        ctx.Add("MOV.F {}.x,{}.position.{};", inst, ctx.stage_name, swizzle);
+        ctx.Add("MOV.F {}.x,{}.position.{};", inst, ctx.attrib_name, swizzle);
         break;
     case IR::Attribute::PointSpriteS:
     case IR::Attribute::PointSpriteT:
-        ctx.Add("MOV.F {}.x,{}.pointcoord.{};", inst, ctx.stage_name, swizzle);
+        ctx.Add("MOV.F {}.x,{}.pointcoord.{};", inst, ctx.attrib_name, swizzle);
         break;
     case IR::Attribute::InstanceId:
-        ctx.Add("MOV.S {}.x,{}.instance;", inst, ctx.stage_name);
+        ctx.Add("MOV.S {}.x,{}.instance;", inst, ctx.attrib_name);
         break;
     case IR::Attribute::VertexId:
-        ctx.Add("MOV.S {}.x,{}.id;", inst, ctx.stage_name);
+        ctx.Add("MOV.S {}.x,{}.id;", inst, ctx.attrib_name);
         break;
     case IR::Attribute::FrontFace:
-        ctx.Add("CMP.S {}.x,{}.facing.x,0,-1;", inst, ctx.stage_name);
+        ctx.Add("CMP.S {}.x,{}.facing.x,0,-1;", inst, ctx.attrib_name);
         break;
     default:
         throw NotImplementedException("Get attribute {}", attr);

@@ -47,24 +47,31 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     case Stage::VertexA:
     case Stage::VertexB:
         stage_name = "vertex";
+        attrib_name = "vertex";
         break;
     case Stage::TessellationControl:
     case Stage::TessellationEval:
+        stage_name = "primitive";
+        attrib_name = "primitive";
+        break;
     case Stage::Geometry:
         stage_name = "primitive";
+        attrib_name = "vertex";
         break;
     case Stage::Fragment:
         stage_name = "fragment";
+        attrib_name = "fragment";
         break;
     case Stage::Compute:
         stage_name = "invocation";
         break;
     }
+    const std::string_view attr_stage{stage == Stage::Fragment ? "fragment" : "vertex"};
     for (size_t index = 0; index < program.info.input_generics.size(); ++index) {
         const auto& generic{program.info.input_generics[index]};
         if (generic.used) {
             Add("{}ATTRIB in_attr{}[]={{{}.attrib[{}..{}]}};",
-                InterpDecorator(generic.interpolation), index, stage_name, index, index);
+                InterpDecorator(generic.interpolation), index, attr_stage, index, index);
         }
     }
     for (size_t index = 0; index < program.info.stores_frag_color.size(); ++index) {
