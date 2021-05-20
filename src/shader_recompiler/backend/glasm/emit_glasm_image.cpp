@@ -572,10 +572,13 @@ void EmitImageRead(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Reg
     StoreSparse(ctx, sparse_inst);
 }
 
-void EmitImageWrite([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                    [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coord,
-                    [[maybe_unused]] Register color) {
-    throw NotImplementedException("GLASM instruction");
+void EmitImageWrite(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
+                    Register color) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const std::string_view format{FormatStorage(info.image_format)};
+    const std::string_view type{TextureType(info)};
+    const std::string image{Image(ctx, info, index)};
+    ctx.Add("STOREIM.{} {},{},{},{};", format, image, color, coord, type);
 }
 
 void EmitBindlessImageSampleImplicitLod(EmitContext&) {
