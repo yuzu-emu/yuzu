@@ -130,6 +130,7 @@ RendererOpenGL::RendererOpenGL(Core::TelemetrySession& telemetry_session_,
                                std::unique_ptr<Core::Frontend::GraphicsContext> context_)
     : RendererBase{emu_window_, std::move(context_)}, telemetry_session{telemetry_session_},
       emu_window{emu_window_}, cpu_memory{cpu_memory_}, gpu{gpu_}, state_tracker{gpu},
+      program_manager{device},
       rasterizer(emu_window, gpu, cpu_memory, device, screen_info, program_manager, state_tracker) {
     if (Settings::values.renderer_debug && GLAD_GL_KHR_debug) {
         glEnable(GL_DEBUG_OUTPUT);

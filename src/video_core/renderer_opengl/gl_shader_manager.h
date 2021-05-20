@@ -10,6 +10,7 @@
 #include <glad/glad.h>
 
 #include "video_core/renderer_opengl/gl_resource_manager.h"
+#include "video_core/renderer_opengl/gl_device.h"
 
 #pragma optimize("", off)
 
@@ -24,12 +25,29 @@ class ProgramManager {
     };
 
 public:
+    explicit ProgramManager(const Device& device) {
+        if (device.UseAssemblyShaders()) {
+            glEnable(GL_COMPUTE_PROGRAM_NV);
+        }
+    }
+
     void BindProgram(GLuint program) {
         if (current_source_program == program) {
             return;
         }
         current_source_program = program;
         glUseProgram(program);
+    }
+
+    void BindComputeAssemblyProgram(GLuint program) {
+        if (current_compute_assembly_program != program) {
+            current_compute_assembly_program = program;
+            glBindProgramARB(GL_COMPUTE_PROGRAM_NV, program);
+        }
+        if (current_source_program != 0) {
+            current_source_program = 0;
+            glUseProgram(0);
+        }
     }
 
     void BindAssemblyPrograms(std::span<const OGLAssemblyProgram, NUM_STAGES> programs,
@@ -67,6 +85,7 @@ private:
 
     u32 current_assembly_mask = 0;
     std::array<GLuint, NUM_STAGES> current_assembly_programs;
+    GLuint current_compute_assembly_program = 0;
 };
 
 } // namespace OpenGL

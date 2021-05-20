@@ -125,10 +125,7 @@ void ComputeProgram::Configure() {
     texture_cache.FillComputeImageViews(indices_span, image_view_ids);
 
     if (assembly_program.handle != 0) {
-        // FIXME: State track this
-        glEnable(GL_COMPUTE_PROGRAM_NV);
-        glBindProgramARB(GL_COMPUTE_PROGRAM_NV, assembly_program.handle);
-        program_manager.BindProgram(0);
+        program_manager.BindComputeAssemblyProgram(assembly_program.handle);
     } else {
         program_manager.BindProgram(source_program.handle);
     }
