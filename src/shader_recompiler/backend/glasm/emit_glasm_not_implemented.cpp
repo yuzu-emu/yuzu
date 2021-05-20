@@ -160,8 +160,8 @@ void EmitLocalInvocationId(EmitContext& ctx, IR::Inst& inst) {
     ctx.Add("MOV.S {},invocation.localid;", inst);
 }
 
-void EmitInvocationId(EmitContext& ctx) {
-    NotImplemented();
+void EmitInvocationId(EmitContext& ctx, IR::Inst& inst) {
+    ctx.Add("MOV.S {}.x,primitive_invocation.x;", inst);
 }
 
 void EmitSampleId(EmitContext& ctx) {
