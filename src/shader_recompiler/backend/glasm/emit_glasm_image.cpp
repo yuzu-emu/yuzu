@@ -127,6 +127,27 @@ void SwizzleOffsets(EmitContext& ctx, Register off_x, Register off_y, const IR::
             offsets_a, off_y, offsets_a, off_y, offsets_b, off_y, offsets_b);
 }
 
+std::string GradOffset(const IR::Value& offset) {
+    if (offset.IsImmediate()) {
+        // LOG_WARNING immediate
+        return "";
+    }
+    IR::Inst* const vector{offset.InstRecursive()};
+    if (!vector->AreAllArgsImmediates()) {
+        // LOG_WARNING elements not immediate
+        return "";
+    }
+    switch (vector->NumArgs()) {
+    case 1:
+        return fmt::format(",({})", static_cast<s32>(vector->Arg(0).U32()));
+    case 2:
+        return fmt::format(",({},{})", static_cast<s32>(vector->Arg(0).U32()),
+                           static_cast<s32>(vector->Arg(1).U32()));
+    default:
+        throw LogicError("Invalid number of gradient offsets {}", vector->NumArgs());
+    }
+}
+
 std::pair<std::string, ScopedRegister> Coord(EmitContext& ctx, const IR::Value& coord) {
     if (coord.IsImmediate()) {
         ScopedRegister scoped_reg(ctx.reg_alloc);
@@ -464,11 +485,47 @@ void EmitImageQueryLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
     ctx.Add("LOD.F {},{},{},{};", inst, coord, texture, type);
 }
 
-void EmitImageGradient([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                       [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coord,
-                       [[maybe_unused]] Register derivates, [[maybe_unused]] Register offset,
-                       [[maybe_unused]] Register lod_clamp) {
-    throw NotImplementedException("GLASM instruction");
+void EmitImageGradient(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                       const IR::Value& coord, const IR::Value& derivatives,
+                       const IR::Value& offset, const IR::Value& lod_clamp) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    ScopedRegister dpdx, dpdy;
+    const bool multi_component{info.num_derivates > 1 || info.has_lod_clamp};
+    if (multi_component) {
+        // Allocate this early to avoid aliasing other registers
+        dpdx = ScopedRegister{ctx.reg_alloc};
+        dpdy = ScopedRegister{ctx.reg_alloc};
+    }
+    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
+    const std::string_view type{TextureType(info)};
+    const std::string texture{Texture(ctx, info, index)};
+    const std::string offset_vec{GradOffset(offset)};
+    const Register coord_vec{ctx.reg_alloc.Consume(coord)};
+    const Register derivatives_vec{ctx.reg_alloc.Consume(derivatives)};
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    if (multi_component) {
+        ctx.Add("MOV.F {}.x,{}.x;"
+                "MOV.F {}.y,{}.z;"
+                "MOV.F {}.x,{}.y;"
+                "MOV.F {}.y,{}.w;",
+                dpdx.reg, derivatives_vec, dpdx.reg, derivatives_vec, dpdy.reg, derivatives_vec,
+                dpdy.reg, derivatives_vec);
+        if (info.has_lod_clamp) {
+            const ScalarF32 lod_clamp_value{ctx.reg_alloc.Consume(lod_clamp)};
+            ctx.Add("MOV.F {}.w,{};"
+                    "TXD.F.LODCLAMP{} {},{},{},{},{},{}{};",
+                    dpdy.reg, lod_clamp_value, sparse_mod, ret, coord_vec, dpdx.reg, dpdy.reg,
+                    texture, type, offset_vec);
+        } else {
+            ctx.Add("TXD.F{} {},{},{},{},{},{}{};", sparse_mod, ret, coord_vec, dpdx.reg, dpdy.reg,
+                    texture, type, offset_vec);
+        }
+    } else {
+        ctx.Add("TXD.F{} {},{},{}.x,{}.y,{},{}{};", sparse_mod, ret, coord_vec, derivatives_vec,
+                derivatives_vec, texture, type, offset_vec);
+    }
+    StoreSparse(ctx, sparse_inst);
 }
 
 void EmitImageRead([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
