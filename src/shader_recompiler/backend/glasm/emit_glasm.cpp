@@ -270,7 +270,8 @@ void SetupOptions(const IR::Program& program, const Profile& profile, std::strin
               "OPTION NV_shader_storage_buffer;"
               "OPTION NV_gpu_program_fp64;"
               "OPTION NV_bindless_texture;"
-              "OPTION ARB_derivative_control;";
+              "OPTION ARB_derivative_control;"
+              "OPTION EXT_shader_image_load_formatted;";
     if (info.uses_int64_bit_atomics) {
         header += "OPTION NV_shader_atomic_int64;";
     }
