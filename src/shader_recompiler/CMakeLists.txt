@@ -24,6 +24,32 @@ add_library(shader_recompiler STATIC
     backend/glasm/emit_glasm_warp.cpp
     backend/glasm/reg_alloc.cpp
     backend/glasm/reg_alloc.h
+    backend/glsl/emit_context.cpp
+    backend/glsl/emit_context.h
+    backend/glsl/emit_glsl.cpp
+    backend/glsl/emit_glsl.h
+    backend/glsl/emit_glsl_atomic.cpp
+    backend/glsl/emit_glsl_barriers.cpp
+    backend/glsl/emit_glsl_bitwise_conversion.cpp
+    backend/glsl/emit_glsl_composite.cpp
+    backend/glsl/emit_glsl_context_get_set.cpp
+    backend/glsl/emit_glsl_control_flow.cpp
+    backend/glsl/emit_glsl_convert.cpp
+    backend/glsl/emit_glsl_floating_point.cpp
+    backend/glsl/emit_glsl_image.cpp
+    backend/glsl/emit_glsl_image_atomic.cpp
+    backend/glsl/emit_glsl_instructions.h
+    backend/glsl/emit_glsl_integer.cpp
+    backend/glsl/emit_glsl_logical.cpp
+    backend/glsl/emit_glsl_memory.cpp
+    backend/glsl/emit_glsl_not_implemented.cpp
+    backend/glsl/emit_glsl_select.cpp
+    backend/glsl/emit_glsl_shared_memory.cpp
+    backend/glsl/emit_glsl_special.cpp
+    backend/glsl/emit_glsl_undefined.cpp
+    backend/glsl/emit_glsl_warp.cpp
+    backend/glsl/reg_alloc.cpp
+    backend/glsl/reg_alloc.h
     backend/spirv/emit_context.cpp
     backend/spirv/emit_context.h
     backend/spirv/emit_spirv.cpp
