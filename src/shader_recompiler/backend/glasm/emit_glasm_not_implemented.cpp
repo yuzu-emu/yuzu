@@ -72,12 +72,16 @@ void EmitEpilogue(EmitContext& ctx) {
     // TODO
 }
 
-void EmitEmitVertex(EmitContext& ctx, const IR::Value& stream) {
-    NotImplemented();
+void EmitEmitVertex(EmitContext& ctx, ScalarS32 stream) {
+    ctx.Add("EMITS {};", stream);
 }
 
 void EmitEndPrimitive(EmitContext& ctx, const IR::Value& stream) {
-    NotImplemented();
+    if (!stream.IsImmediate()) {
+        // LOG_WARNING not immediate
+    }
+    ctx.reg_alloc.Consume(stream);
+    ctx.Add("ENDPRIM;");
 }
 
 void EmitGetRegister(EmitContext& ctx) {

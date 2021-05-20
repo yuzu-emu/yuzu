@@ -32,7 +32,7 @@ void EmitWorkgroupMemoryBarrier(EmitContext& ctx);
 void EmitDeviceMemoryBarrier(EmitContext& ctx);
 void EmitPrologue(EmitContext& ctx);
 void EmitEpilogue(EmitContext& ctx);
-void EmitEmitVertex(EmitContext& ctx, const IR::Value& stream);
+void EmitEmitVertex(EmitContext& ctx, ScalarS32 stream);
 void EmitEndPrimitive(EmitContext& ctx, const IR::Value& stream);
 void EmitGetRegister(EmitContext& ctx);
 void EmitSetRegister(EmitContext& ctx);
