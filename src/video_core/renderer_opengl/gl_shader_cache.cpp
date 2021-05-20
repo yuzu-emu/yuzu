@@ -437,7 +437,8 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
             const std::string code{EmitGLASM(profile, runtime_info, program, binding)};
             assembly_programs[stage_index] = CompileProgram(code, AssemblyStage(stage_index));
         } else {
-            const std::vector<u32> code{EmitSPIRV(profile, runtime_info, program, binding)};
+            const auto code{EmitGLSL(profile, runtime_info, program, binding)};
+            OGLShader shader;
             AttachShader(Stage(stage_index), source_program.handle, code);
         }
     }
@@ -493,6 +494,7 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(ShaderPools&
     } else {
         const auto code{EmitGLSL(profile, program)};
         OGLShader shader;
+        fmt::print("\n{}\n", code);
         shader.Create(code.c_str(), GL_COMPUTE_SHADER);
         source_program.handle = glCreateProgram();
         AttachShader(GL_COMPUTE_SHADER, source_program.handle, code);

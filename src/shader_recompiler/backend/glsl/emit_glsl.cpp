@@ -12,6 +12,7 @@
 #include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/profile.h"
 
+#pragma optimize("", off)
 namespace Shader::Backend::GLSL {
 namespace {
 template <class Func>
@@ -78,15 +79,59 @@ void EmitInst(EmitContext& ctx, IR::Inst* inst) {
     }
     throw LogicError("Invalid opcode {}", inst->GetOpcode());
 }
-} // Anonymous namespace
 
-std::string EmitGLSL(const Profile&, IR::Program& program, Bindings&) {
-    EmitContext ctx;
-    for (IR::Block* const block : program.blocks) {
-        for (IR::Inst& inst : block->Instructions()) {
-            EmitInst(ctx, &inst);
+void EmitCode(EmitContext& ctx, const IR::Program& program) {
+    for (const IR::AbstractSyntaxNode& node : program.syntax_list) {
+        switch (node.type) {
+        case IR::AbstractSyntaxNode::Type::Block:
+            for (IR::Inst& inst : node.data.block->Instructions()) {
+                EmitInst(ctx, &inst);
+            }
+            break;
+        case IR::AbstractSyntaxNode::Type::If:
+            ctx.Add("if (");
+            break;
+        case IR::AbstractSyntaxNode::Type::EndIf:
+            ctx.Add("){{");
+            break;
+        case IR::AbstractSyntaxNode::Type::Loop:
+            ctx.Add("while (");
+            break;
+        case IR::AbstractSyntaxNode::Type::Repeat:
+            if (node.data.repeat.cond.IsImmediate()) {
+                if (node.data.repeat.cond.U1()) {
+                    ctx.Add("ENDREP;");
+                } else {
+                    ctx.Add("BRK;"
+                            "ENDREP;");
+                }
+            }
+            break;
+        case IR::AbstractSyntaxNode::Type::Break:
+            if (node.data.break_node.cond.IsImmediate()) {
+                if (node.data.break_node.cond.U1()) {
+                    ctx.Add("break;");
+                }
+            }
+            break;
+        case IR::AbstractSyntaxNode::Type::Return:
+        case IR::AbstractSyntaxNode::Type::Unreachable:
+            ctx.Add("return;");
+            break;
+        default:
+            ctx.Add("UNAHNDLED {}", node.type);
+            break;
         }
     }
+}
+
+} // Anonymous namespace
+
+std::string EmitGLSL(const Profile& profile, IR::Program& program, Bindings& bindings) {
+    EmitContext ctx{program, bindings, profile};
+    // ctx.SetupBuffers();
+    EmitCode(ctx, program);
+    ctx.code += "}";
     return ctx.code;
 }
 

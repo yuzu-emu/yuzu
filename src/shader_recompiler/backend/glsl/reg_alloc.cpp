@@ -30,6 +30,23 @@ std::string Representation(Id id) {
         return fmt::format("R{}.{}", index, SWIZZLE.substr(id.base_element, num_elements));
     }
 }
+
+std::string MakeImm(const IR::Value& value) {
+    switch (value.Type()) {
+    case IR::Type::U1:
+        return fmt::format("{}", value.U1() ? "true" : "false");
+    case IR::Type::U32:
+        return fmt::format("{}", value.U32());
+    case IR::Type::F32:
+        return fmt::format("{}", value.F32());
+    case IR::Type::U64:
+        return fmt::format("{}", value.U64());
+    case IR::Type::F64:
+        return fmt::format("{}", value.F64());
+    default:
+        throw NotImplementedException("Immediate type {}", value.Type());
+    }
+}
 } // Anonymous namespace
 
 std::string RegAlloc::Define(IR::Inst& inst, u32 num_elements, u32 alignment) {
@@ -39,10 +56,7 @@ std::string RegAlloc::Define(IR::Inst& inst, u32 num_elements, u32 alignment) {
 }
 
 std::string RegAlloc::Consume(const IR::Value& value) {
-    if (!value.IsImmediate()) {
-        return Consume(*value.Inst());
-    }
-    throw NotImplementedException("Immediate loading");
+    return value.IsImmediate() ? MakeImm(value) : Consume(*value.Inst());
 }
 
 std::string RegAlloc::Consume(IR::Inst& inst) {
