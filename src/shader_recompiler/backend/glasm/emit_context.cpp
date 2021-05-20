@@ -82,6 +82,16 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
             Add("OUTPUT out_attr{}[]={{result.attrib[{}..{}]}};", index, index, index);
         }
     }
+    image_buffer_bindings.reserve(program.info.image_buffer_descriptors.size());
+    for (const auto& desc : program.info.image_buffer_descriptors) {
+        image_buffer_bindings.push_back(bindings.image);
+        bindings.image += desc.count;
+    }
+    image_bindings.reserve(program.info.image_descriptors.size());
+    for (const auto& desc : program.info.image_descriptors) {
+        image_bindings.push_back(bindings.image);
+        bindings.image += desc.count;
+    }
     texture_buffer_bindings.reserve(program.info.texture_buffer_descriptors.size());
     for (const auto& desc : program.info.texture_buffer_descriptors) {
         texture_buffer_bindings.push_back(bindings.texture);

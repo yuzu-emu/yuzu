@@ -50,6 +50,16 @@ std::string Texture(EmitContext& ctx, IR::TextureInstInfo info,
     }
 }
 
+std::string Image(EmitContext& ctx, IR::TextureInstInfo info,
+                  [[maybe_unused]] const IR::Value& index) {
+    // FIXME: indexed reads
+    if (info.type == TextureType::Buffer) {
+        return fmt::format("image[{}]", ctx.image_buffer_bindings.at(info.descriptor_index));
+    } else {
+        return fmt::format("image[{}]", ctx.image_bindings.at(info.descriptor_index));
+    }
+}
+
 std::string_view TextureType(IR::TextureInstInfo info) {
     if (info.is_depth) {
         switch (info.type) {
@@ -172,6 +182,28 @@ void StoreSparse(EmitContext& ctx, IR::Inst* sparse_inst) {
             "MOV.S {}(NONRESIDENT),0;",
             sparse_ret, sparse_ret);
     sparse_inst->Invalidate();
+}
+
+std::string_view FormatStorage(ImageFormat format) {
+    switch (format) {
+    case ImageFormat::Typeless:
+        return "U";
+    case ImageFormat::R8_UINT:
+        return "U8";
+    case ImageFormat::R8_SINT:
+        return "S8";
+    case ImageFormat::R16_UINT:
+        return "U16";
+    case ImageFormat::R16_SINT:
+        return "S16";
+    case ImageFormat::R32_UINT:
+        return "U32";
+    case ImageFormat::R32G32_UINT:
+        return "U32X2";
+    case ImageFormat::R32G32B32A32_UINT:
+        return "U32X4";
+    }
+    throw InvalidArgument("Invalid image format {}", format);
 }
 } // Anonymous namespace
 
@@ -528,9 +560,16 @@ void EmitImageGradient(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
     StoreSparse(ctx, sparse_inst);
 }
 
-void EmitImageRead([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                   [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coord) {
-    throw NotImplementedException("GLASM instruction");
+void EmitImageRead(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const std::string_view format{FormatStorage(info.image_format)};
+    const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
+    const std::string_view type{TextureType(info)};
+    const std::string image{Image(ctx, info, index)};
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    ctx.Add("LOADIM.{}{} {},{},{},{};", format, sparse_mod, ret, coord, image, type);
+    StoreSparse(ctx, sparse_inst);
 }
 
 void EmitImageWrite([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
