@@ -51,36 +51,7 @@ MICROPROFILE_DEFINE(OpenGL_Blits, "OpenGL", "Blits", MP_RGB(128, 128, 192));
 MICROPROFILE_DEFINE(OpenGL_CacheManagement, "OpenGL", "Cache Management", MP_RGB(100, 255, 100));
 
 namespace {
-
 constexpr size_t NUM_SUPPORTED_VERTEX_ATTRIBUTES = 16;
-
-/// Translates hardware transform feedback indices
-/// @param location Hardware location
-/// @return Pair of ARB_transform_feedback3 token stream first and third arguments
-/// @note Read https://www.khronos.org/registry/OpenGL/extensions/ARB/ARB_transform_feedback3.txt
-std::pair<GLint, GLint> TransformFeedbackEnum(u8 location) {
-    const u8 index = location / 4;
-    if (index >= 8 && index <= 39) {
-        return {GL_GENERIC_ATTRIB_NV, index - 8};
-    }
-    if (index >= 48 && index <= 55) {
-        return {GL_TEXTURE_COORD_NV, index - 48};
-    }
-    switch (index) {
-    case 7:
-        return {GL_POSITION, 0};
-    case 40:
-        return {GL_PRIMARY_COLOR_NV, 0};
-    case 41:
-        return {GL_SECONDARY_COLOR_NV, 0};
-    case 42:
-        return {GL_BACK_PRIMARY_COLOR_NV, 0};
-    case 43:
-        return {GL_BACK_SECONDARY_COLOR_NV, 0};
-    }
-    UNIMPLEMENTED_MSG("index={}", index);
-    return {GL_POSITION, 0};
-}
 
 void oglEnable(GLenum cap, bool state) {
     (state ? glEnable : glDisable)(cap);
@@ -253,7 +224,7 @@ void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
     program->Configure(is_indexed);
 
     const GLenum primitive_mode = MaxwellToGL::PrimitiveTopology(maxwell3d.regs.draw.topology);
-    BeginTransformFeedback(primitive_mode);
+    BeginTransformFeedback(program, primitive_mode);
 
     const GLuint base_instance = static_cast<GLuint>(maxwell3d.regs.vb_base_instance);
     const GLsizei num_instances =
@@ -1013,68 +984,13 @@ void RasterizerOpenGL::SyncFramebufferSRGB() {
     oglEnable(GL_FRAMEBUFFER_SRGB, maxwell3d.regs.framebuffer_srgb);
 }
 
-void RasterizerOpenGL::SyncTransformFeedback() {
-    // TODO(Rodrigo): Inject SKIP_COMPONENTS*_NV when required. An unimplemented message will signal
-    // when this is required.
-    const auto& regs = maxwell3d.regs;
-
-    static constexpr std::size_t STRIDE = 3;
-    std::array<GLint, 128 * STRIDE * Maxwell::NumTransformFeedbackBuffers> attribs;
-    std::array<GLint, Maxwell::NumTransformFeedbackBuffers> streams;
-
-    GLint* cursor = attribs.data();
-    GLint* current_stream = streams.data();
-
-    for (std::size_t feedback = 0; feedback < Maxwell::NumTransformFeedbackBuffers; ++feedback) {
-        const auto& layout = regs.tfb_layouts[feedback];
-        UNIMPLEMENTED_IF_MSG(layout.stride != layout.varying_count * 4, "Stride padding");
-        if (layout.varying_count == 0) {
-            continue;
-        }
-
-        *current_stream = static_cast<GLint>(feedback);
-        if (current_stream != streams.data()) {
-            // When stepping one stream, push the expected token
-            cursor[0] = GL_NEXT_BUFFER_NV;
-            cursor[1] = 0;
-            cursor[2] = 0;
-            cursor += STRIDE;
-        }
-        ++current_stream;
-
-        const auto& locations = regs.tfb_varying_locs[feedback];
-        std::optional<u8> current_index;
-        for (u32 offset = 0; offset < layout.varying_count; ++offset) {
-            const u8 location = locations[offset];
-            const u8 index = location / 4;
-
-            if (current_index == index) {
-                // Increase number of components of the previous attachment
-                ++cursor[-2];
-                continue;
-            }
-            current_index = index;
-
-            std::tie(cursor[0], cursor[2]) = TransformFeedbackEnum(location);
-            cursor[1] = 1;
-            cursor += STRIDE;
-        }
-    }
-
-    const GLsizei num_attribs = static_cast<GLsizei>((cursor - attribs.data()) / STRIDE);
-    const GLsizei num_strides = static_cast<GLsizei>(current_stream - streams.data());
-    glTransformFeedbackStreamAttribsNV(num_attribs, attribs.data(), num_strides, streams.data(),
-                                       GL_INTERLEAVED_ATTRIBS);
-}
-
-void RasterizerOpenGL::BeginTransformFeedback(GLenum primitive_mode) {
+void RasterizerOpenGL::BeginTransformFeedback(GraphicsProgram* program, GLenum primitive_mode) {
     const auto& regs = maxwell3d.regs;
     if (regs.tfb_enabled == 0) {
         return;
     }
-    if (device.UseAssemblyShaders()) {
-        SyncTransformFeedback();
-    }
+    program->ConfigureTransformFeedback();
+
     UNIMPLEMENTED_IF(regs.IsShaderConfigEnabled(Maxwell::ShaderProgram::TesselationControl) ||
                      regs.IsShaderConfigEnabled(Maxwell::ShaderProgram::TesselationEval) ||
                      regs.IsShaderConfigEnabled(Maxwell::ShaderProgram::Geometry));
@@ -1088,11 +1004,9 @@ void RasterizerOpenGL::BeginTransformFeedback(GLenum primitive_mode) {
 }
 
 void RasterizerOpenGL::EndTransformFeedback() {
-    const auto& regs = maxwell3d.regs;
-    if (regs.tfb_enabled == 0) {
-        return;
+    if (maxwell3d.regs.tfb_enabled != 0) {
+        glEndTransformFeedback();
     }
-    glEndTransformFeedback();
 }
 
 } // namespace OpenGL
