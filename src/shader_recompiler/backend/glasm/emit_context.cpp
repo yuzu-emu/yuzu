@@ -21,6 +21,11 @@ std::string_view InterpDecorator(Interpolation interp) {
     }
     throw InvalidArgument("Invalid interpolation {}", interp);
 }
+
+bool IsInputArray(Stage stage) {
+    return stage == Stage::Geometry || stage == Stage::TessellationControl ||
+           stage == Stage::TessellationEval;
+}
 } // Anonymous namespace
 
 EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
@@ -76,7 +81,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
                 InterpDecorator(generic.interpolation), index, attr_stage, index, index);
         }
     }
-    if (stage == Stage::Geometry && info.loads_position) {
+    if (IsInputArray(stage) && info.loads_position) {
         Add("ATTRIB vertex_position=vertex.position;");
     }
     if (info.uses_invocation_id) {
@@ -96,8 +101,9 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
             continue;
         }
         if (stage == Stage::TessellationControl) {
-            Add("OUTPUT result_patch_attrib{}[]={{result.patch.attrib[{}..{}]}};", index, index,
-                index);
+            Add("OUTPUT result_patch_attrib{}[]={{result.patch.attrib[{}..{}]}};"
+                "ATTRIB primitive_out_patch_attrib{}[]={{primitive.out.patch.attrib[{}..{}]}};",
+                index, index, index, index, index, index);
         } else {
             Add("ATTRIB primitive_patch_attrib{}[]={{primitive.patch.attrib[{}..{}]}};", index,
                 index, index);
