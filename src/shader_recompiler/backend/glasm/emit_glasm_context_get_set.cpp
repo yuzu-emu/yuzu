@@ -136,13 +136,40 @@ void EmitSetAttributeIndexed([[maybe_unused]] EmitContext& ctx, [[maybe_unused]]
     throw NotImplementedException("GLASM instruction");
 }
 
-void EmitGetPatch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Patch patch) {
-    throw NotImplementedException("GLASM instruction");
+void EmitGetPatch(EmitContext& ctx, IR::Inst& inst, IR::Patch patch) {
+    if (!IR::IsGeneric(patch)) {
+        throw NotImplementedException("Non-generic patch load");
+    }
+    const u32 index{IR::GenericPatchIndex(patch)};
+    const u32 element{IR::GenericPatchElement(patch)};
+    ctx.Add("MOV.F {},result.patch.attrib[{}].{}", inst, index, "xyzw"[element]);
 }
 
-void EmitSetPatch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Patch patch,
-                  [[maybe_unused]] ScalarF32 value) {
-    throw NotImplementedException("GLASM instruction");
+void EmitSetPatch(EmitContext& ctx, IR::Patch patch, ScalarF32 value) {
+    if (IR::IsGeneric(patch)) {
+        const u32 index{IR::GenericPatchIndex(patch)};
+        const u32 element{IR::GenericPatchElement(patch)};
+        ctx.Add("MOV.F result.patch.attrib[{}].{},{}", index, "xyzw"[element], value);
+        return;
+    }
+    switch (patch) {
+    case IR::Patch::TessellationLodLeft:
+    case IR::Patch::TessellationLodRight:
+    case IR::Patch::TessellationLodTop:
+    case IR::Patch::TessellationLodBottom: {
+        const u32 index{static_cast<u32>(patch) - u32(IR::Patch::TessellationLodLeft)};
+        ctx.Add("MOV.F result.patch.tessouter[{}].x,{};", index, value);
+        break;
+    }
+    case IR::Patch::TessellationLodInteriorU:
+        ctx.Add("MOV.F result.patch.tessinner[0].x,{};", value);
+        break;
+    case IR::Patch::TessellationLodInteriorV:
+        ctx.Add("MOV.F result.patch.tessinner[1].x,{};", value);
+        break;
+    default:
+        throw NotImplementedException("Patch {}", patch);
+    }
 }
 
 void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, ScalarF32 value) {

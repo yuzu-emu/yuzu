@@ -80,6 +80,24 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     if (info.uses_invocation_id) {
         Add("ATTRIB primitive_invocation=primitive.invocation;");
     }
+    if (info.stores_tess_level_outer) {
+        Add("OUTPUT result_patch_tessouter[]={{result.patch.tessouter[0..3]}};");
+    }
+    if (info.stores_tess_level_inner) {
+        Add("OUTPUT result_patch_tessinner[]={{result.patch.tessinner[0..1]}};");
+    }
+    for (size_t index = 0; index < info.uses_patches.size(); ++index) {
+        if (!info.uses_patches[index]) {
+            continue;
+        }
+        if (stage == Stage::TessellationEval) {
+            Add("OUTPUT result_patch_attrib{}[]={{result.patch.attrib[{}..{}]}};", index, index,
+                index);
+        } else {
+            Add("ATTRIB primitive_patch_attrib{}[]={{primitive.patch.attrib[{}..{}]}};", index,
+                index, index);
+        }
+    }
     for (size_t index = 0; index < program.info.stores_frag_color.size(); ++index) {
         if (!program.info.stores_frag_color[index]) {
             continue;
