@@ -29,8 +29,8 @@ void EmitContext::DefineConstantBuffers() {
     }
     u32 binding{};
     for (const auto& desc : info.constant_buffer_descriptors) {
-        Add("layout(std140,binding={}) uniform cbuf_{}{{uint cbuf{}[];}};", binding, binding,
-            desc.index, desc.count);
+        Add("layout(std140,binding={}) uniform cbuf_{}{{vec4 cbuf{}[{}];}};", binding, binding,
+            desc.index, 4 * 1024);
         ++binding;
     }
 }
