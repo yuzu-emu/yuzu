@@ -51,8 +51,7 @@ std::string RegAlloc::Define(IR::Inst& inst, Type type) {
 }
 
 std::string RegAlloc::Consume(const IR::Value& value) {
-    const auto result = value.IsImmediate() ? MakeImm(value) : Consume(*value.InstRecursive());
-    return result;
+    return value.IsImmediate() ? MakeImm(value) : Consume(*value.InstRecursive());
 }
 
 std::string RegAlloc::Consume(IR::Inst& inst) {
