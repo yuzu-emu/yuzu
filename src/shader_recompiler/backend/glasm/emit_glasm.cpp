@@ -271,8 +271,7 @@ void SetupOptions(const IR::Program& program, const Profile& profile,
               "OPTION NV_shader_storage_buffer;"
               "OPTION NV_gpu_program_fp64;"
               "OPTION NV_bindless_texture;"
-              "OPTION ARB_derivative_control;"
-              "OPTION EXT_shader_image_load_formatted;";
+              "OPTION ARB_derivative_control;";
     if (info.uses_int64_bit_atomics) {
         header += "OPTION NV_shader_atomic_int64;";
     }
@@ -296,6 +295,9 @@ void SetupOptions(const IR::Program& program, const Profile& profile,
         if (profile.support_viewport_index_layer_non_geometry) {
             header += "OPTION NV_viewport_array2;";
         }
+    }
+    if (info.uses_typeless_image_reads && profile.support_typeless_image_loads) {
+        header += "OPTION EXT_shader_image_load_formatted;";
     }
     if (stage == Stage::Fragment && runtime_info.force_early_z != 0) {
         header += "OPTION NV_early_fragment_tests;";
