@@ -168,8 +168,8 @@ void EmitSampleId(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitIsHelperInvocation(EmitContext& ctx) {
-    NotImplemented();
+void EmitIsHelperInvocation(EmitContext& ctx, IR::Inst& inst) {
+    ctx.Add("MOV.S {}.x,fragment.helperthread.x;", inst);
 }
 
 void EmitYDirection(EmitContext& ctx) {

@@ -70,7 +70,7 @@ void EmitWorkgroupId(EmitContext& ctx, IR::Inst& inst);
 void EmitLocalInvocationId(EmitContext& ctx, IR::Inst& inst);
 void EmitInvocationId(EmitContext& ctx, IR::Inst& inst);
 void EmitSampleId(EmitContext& ctx);
-void EmitIsHelperInvocation(EmitContext& ctx);
+void EmitIsHelperInvocation(EmitContext& ctx, IR::Inst& inst);
 void EmitYDirection(EmitContext& ctx);
 void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, ScalarU32 word_offset);
 void EmitWriteLocal(EmitContext& ctx, ScalarU32 word_offset, ScalarU32 value);
