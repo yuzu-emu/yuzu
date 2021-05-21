@@ -261,7 +261,8 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
     }
 }
 
-void SetupOptions(const IR::Program& program, const Profile& profile, std::string& header) {
+void SetupOptions(const IR::Program& program, const Profile& profile,
+                  const RuntimeInfo& runtime_info, std::string& header) {
     const Info& info{program.info};
     const Stage stage{program.stage};
 
@@ -295,6 +296,9 @@ void SetupOptions(const IR::Program& program, const Profile& profile, std::strin
         if (profile.support_viewport_index_layer_non_geometry) {
             header += "OPTION NV_viewport_array2;";
         }
+    }
+    if (stage == Stage::Fragment && runtime_info.force_early_z != 0) {
+        header += "OPTION NV_early_fragment_tests;";
     }
     const auto non_zero_frag_colors{info.stores_frag_color | std::views::drop(1)};
     if (std::ranges::find(non_zero_frag_colors, true) != non_zero_frag_colors.end()) {
@@ -380,7 +384,7 @@ std::string EmitGLASM(const Profile& profile, const RuntimeInfo& runtime_info, I
     Precolor(ctx, program);
     EmitCode(ctx, program);
     std::string header{StageHeader(program.stage)};
-    SetupOptions(program, profile, header);
+    SetupOptions(program, profile, runtime_info, header);
     switch (program.stage) {
     case Stage::TessellationControl:
         header += fmt::format("VERTICES_OUT {};", program.invocations);

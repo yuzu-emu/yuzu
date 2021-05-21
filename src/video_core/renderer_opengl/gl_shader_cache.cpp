@@ -219,8 +219,8 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsProgramKey& key,
             return Shader::TessSpacing::Equal;
         }();
         break;
-    case Shader::Stage::Geometry:
-
+    case Shader::Stage::Fragment:
+        info.force_early_z = key.early_z != 0;
         break;
     default:
         break;
