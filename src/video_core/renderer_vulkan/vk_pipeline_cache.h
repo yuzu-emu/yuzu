@@ -129,9 +129,6 @@ private:
                                                            Shader::Environment& env,
                                                            bool build_in_parallel);
 
-    Shader::Profile MakeProfile(const GraphicsPipelineCacheKey& key,
-                                const Shader::IR::Program& program);
-
     const Device& device;
     VKScheduler& scheduler;
     DescriptorPool& descriptor_pool;
@@ -148,7 +145,7 @@ private:
 
     ShaderPools main_pools;
 
-    Shader::Profile base_profile;
+    Shader::Profile profile;
     std::filesystem::path pipeline_cache_filename;
 
     Common::ThreadWorker workers;

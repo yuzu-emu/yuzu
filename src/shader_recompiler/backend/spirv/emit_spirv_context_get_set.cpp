@@ -17,7 +17,7 @@ struct AttrInfo {
 };
 
 std::optional<AttrInfo> AttrTypes(EmitContext& ctx, u32 index) {
-    const AttributeType type{ctx.profile.generic_input_types.at(index)};
+    const AttributeType type{ctx.runtime_info.generic_input_types.at(index)};
     switch (type) {
     case AttributeType::Float:
         return AttrInfo{ctx.input_f32, ctx.F32[1], false};
@@ -468,7 +468,7 @@ Id EmitIsHelperInvocation(EmitContext& ctx) {
 }
 
 Id EmitYDirection(EmitContext& ctx) {
-    return ctx.Const(ctx.profile.y_negate ? -1.0f : 1.0f);
+    return ctx.Const(ctx.runtime_info.y_negate ? -1.0f : 1.0f);
 }
 
 Id EmitLoadLocal(EmitContext& ctx, Id word_offset) {

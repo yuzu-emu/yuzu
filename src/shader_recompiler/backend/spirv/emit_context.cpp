@@ -136,7 +136,7 @@ Id DefineInput(EmitContext& ctx, Id type, bool per_invocation,
         break;
     case Stage::Geometry:
         if (per_invocation) {
-            const u32 num_vertices{NumVertices(ctx.profile.input_topology)};
+            const u32 num_vertices{NumVertices(ctx.runtime_info.input_topology)};
             type = ctx.TypeArray(type, ctx.Const(num_vertices));
         }
         break;
@@ -161,8 +161,8 @@ void DefineGenericOutput(EmitContext& ctx, size_t index, std::optional<u32> invo
     while (element < 4) {
         const u32 remainder{4 - element};
         const TransformFeedbackVarying* xfb_varying{};
-        if (!ctx.profile.xfb_varyings.empty()) {
-            xfb_varying = &ctx.profile.xfb_varyings[base_attr_index + element];
+        if (!ctx.runtime_info.xfb_varyings.empty()) {
+            xfb_varying = &ctx.runtime_info.xfb_varyings[base_attr_index + element];
             xfb_varying = xfb_varying && xfb_varying->components > 0 ? xfb_varying : nullptr;
         }
         const u32 num_components{xfb_varying ? xfb_varying->components : remainder};
@@ -208,7 +208,7 @@ Id GetAttributeType(EmitContext& ctx, AttributeType type) {
 }
 
 std::optional<AttrInfo> AttrTypes(EmitContext& ctx, u32 index) {
-    const AttributeType type{ctx.profile.generic_input_types.at(index)};
+    const AttributeType type{ctx.runtime_info.generic_input_types.at(index)};
     switch (type) {
     case AttributeType::Float:
         return AttrInfo{ctx.input_f32, ctx.F32[1], false};
@@ -441,13 +441,15 @@ void VectorTypes::Define(Sirit::Module& sirit_ctx, Id base_type, std::string_vie
     }
 }
 
-EmitContext::EmitContext(const Profile& profile_, IR::Program& program, Bindings& binding)
-    : Sirit::Module(profile_.supported_spirv), profile{profile_}, stage{program.stage} {
+EmitContext::EmitContext(const Profile& profile_, const RuntimeInfo& runtime_info_,
+                         IR::Program& program, Bindings& bindings)
+    : Sirit::Module(profile_.supported_spirv), profile{profile_},
+      runtime_info{runtime_info_}, stage{program.stage} {
     const bool is_unified{profile.unified_descriptor_binding};
-    u32& uniform_binding{is_unified ? binding.unified : binding.uniform_buffer};
-    u32& storage_binding{is_unified ? binding.unified : binding.storage_buffer};
-    u32& texture_binding{is_unified ? binding.unified : binding.texture};
-    u32& image_binding{is_unified ? binding.unified : binding.image};
+    u32& uniform_binding{is_unified ? bindings.unified : bindings.uniform_buffer};
+    u32& storage_binding{is_unified ? bindings.unified : bindings.storage_buffer};
+    u32& texture_binding{is_unified ? bindings.unified : bindings.texture};
+    u32& image_binding{is_unified ? bindings.unified : bindings.image};
     AddCapability(spv::Capability::Shader);
     DefineCommonTypes(program.info);
     DefineCommonConstants();
@@ -1211,7 +1213,7 @@ void EmitContext::DefineInputs(const Info& info) {
         if (!generic.used) {
             continue;
         }
-        const AttributeType input_type{profile.generic_input_types[index]};
+        const AttributeType input_type{runtime_info.generic_input_types[index]};
         if (input_type == AttributeType::Disabled) {
             continue;
         }
@@ -1256,7 +1258,7 @@ void EmitContext::DefineOutputs(const IR::Program& program) {
     if (info.stores_position || stage == Stage::VertexB) {
         output_position = DefineOutput(*this, F32[4], invocations, spv::BuiltIn::Position);
     }
-    if (info.stores_point_size || profile.fixed_state_point_size) {
+    if (info.stores_point_size || runtime_info.fixed_state_point_size) {
         if (stage == Stage::Fragment) {
             throw NotImplementedException("Storing PointSize in fragment stage");
         }

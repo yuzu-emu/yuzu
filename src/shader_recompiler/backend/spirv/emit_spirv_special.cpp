@@ -18,8 +18,8 @@ void ConvertDepthMode(EmitContext& ctx) {
 }
 
 void SetFixedPipelinePointSize(EmitContext& ctx) {
-    if (ctx.profile.fixed_state_point_size) {
-        const float point_size{*ctx.profile.fixed_state_point_size};
+    if (ctx.runtime_info.fixed_state_point_size) {
+        const float point_size{*ctx.runtime_info.fixed_state_point_size};
         ctx.OpStore(ctx.output_point_size, ctx.Const(point_size));
     }
 }
@@ -62,7 +62,10 @@ Id ComparisonFunction(EmitContext& ctx, CompareFunction comparison, Id operand_1
 }
 
 void AlphaTest(EmitContext& ctx) {
-    const auto comparison{*ctx.profile.alpha_test_func};
+    if (!ctx.runtime_info.alpha_test_func) {
+        return;
+    }
+    const auto comparison{*ctx.runtime_info.alpha_test_func};
     if (comparison == CompareFunction::Always) {
         return;
     }
@@ -76,7 +79,7 @@ void AlphaTest(EmitContext& ctx) {
 
     const Id true_label{ctx.OpLabel()};
     const Id discard_label{ctx.OpLabel()};
-    const Id alpha_reference{ctx.Const(ctx.profile.alpha_test_reference)};
+    const Id alpha_reference{ctx.Const(ctx.runtime_info.alpha_test_reference)};
     const Id condition{ComparisonFunction(ctx, comparison, alpha, alpha_reference)};
 
     ctx.OpSelectionMerge(true_label, spv::SelectionControlMask::MaskNone);
@@ -113,7 +116,7 @@ void EmitPrologue(EmitContext& ctx) {
 }
 
 void EmitEpilogue(EmitContext& ctx) {
-    if (ctx.stage == Stage::VertexB && ctx.profile.convert_depth_mode) {
+    if (ctx.stage == Stage::VertexB && ctx.runtime_info.convert_depth_mode) {
         ConvertDepthMode(ctx);
     }
     if (ctx.stage == Stage::Fragment) {
@@ -122,7 +125,7 @@ void EmitEpilogue(EmitContext& ctx) {
 }
 
 void EmitEmitVertex(EmitContext& ctx, const IR::Value& stream) {
-    if (ctx.profile.convert_depth_mode) {
+    if (ctx.runtime_info.convert_depth_mode) {
         ConvertDepthMode(ctx);
     }
     if (stream.IsImmediate()) {

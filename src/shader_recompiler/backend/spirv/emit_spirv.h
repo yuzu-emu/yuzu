@@ -16,12 +16,12 @@
 
 namespace Shader::Backend::SPIRV {
 
-[[nodiscard]] std::vector<u32> EmitSPIRV(const Profile& profile, IR::Program& program,
-                                         Bindings& binding);
+[[nodiscard]] std::vector<u32> EmitSPIRV(const Profile& profile, const RuntimeInfo& runtime_info,
+                                         IR::Program& program, Bindings& bindings);
 
 [[nodiscard]] inline std::vector<u32> EmitSPIRV(const Profile& profile, IR::Program& program) {
     Bindings binding;
-    return EmitSPIRV(profile, program, binding);
+    return EmitSPIRV(profile, {}, program, binding);
 }
 
 } // namespace Shader::Backend::SPIRV
