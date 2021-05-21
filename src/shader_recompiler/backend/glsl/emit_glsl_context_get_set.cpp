@@ -32,7 +32,9 @@ void EmitGetCbufS16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] const IR
 
 void EmitGetCbufU32(EmitContext& ctx, IR::Inst* inst, const IR::Value& binding,
                     const IR::Value& offset) {
-    ctx.Add("uint {}=cbuf{}[{}];", *inst, binding.U32(), offset.U32());
+    const auto u32_offset{offset.U32()};
+    ctx.Add("uint {}=floatBitsToUint(cbuf{}[{}][{}]);", *inst, binding.U32(), u32_offset / 16,
+            (u32_offset / 4) % 4);
 }
 
 void EmitGetCbufF32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] const IR::Value& binding,
