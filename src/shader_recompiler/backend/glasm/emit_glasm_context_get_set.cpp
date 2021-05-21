@@ -20,15 +20,13 @@ void GetCbuf(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU
     ctx.Add("LDC.{} {},c{}[{}];", size, ret, binding.U32(), offset);
 }
 
+bool IsInputArray(Stage stage) {
+    return stage == Stage::Geometry || stage == Stage::TessellationControl ||
+           stage == Stage::TessellationEval;
+}
+
 std::string VertexIndex(EmitContext& ctx, ScalarU32 vertex) {
-    switch (ctx.stage) {
-    case Stage::TessellationControl:
-    case Stage::TessellationEval:
-    case Stage::Geometry:
-        return fmt::format("[{}]", vertex);
-    default:
-        return "";
-    }
+    return IsInputArray(ctx.stage) ? fmt::format("[{}]", vertex) : "";
 }
 } // Anonymous namespace
 
@@ -77,7 +75,7 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr, Scal
     case IR::Attribute::PositionY:
     case IR::Attribute::PositionZ:
     case IR::Attribute::PositionW:
-        if (ctx.stage == Stage::Geometry) {
+        if (IsInputArray(ctx.stage)) {
             ctx.Add("MOV.F {}.x,vertex_position{}.{};", inst, VertexIndex(ctx, vertex), swizzle);
         } else {
             ctx.Add("MOV.F {}.x,{}.position.{};", inst, ctx.attrib_name, swizzle);
@@ -164,7 +162,12 @@ void EmitGetPatch(EmitContext& ctx, IR::Inst& inst, IR::Patch patch) {
     }
     const u32 index{IR::GenericPatchIndex(patch)};
     const u32 element{IR::GenericPatchElement(patch)};
-    ctx.Add("MOV.F {},result.patch.attrib[{}].{};", inst, index, "xyzw"[element]);
+    const char swizzle{"xyzw"[element]};
+    if (ctx.stage == Stage::TessellationControl) {
+        ctx.Add("MOV.F {},primitive.out.patch.attrib[{}].{};", inst, index, swizzle);
+    } else {
+        ctx.Add("MOV.F {},primitive.patch.attrib[{}].{};", inst, index, swizzle);
+    }
 }
 
 void EmitSetPatch(EmitContext& ctx, IR::Patch patch, ScalarF32 value) {
