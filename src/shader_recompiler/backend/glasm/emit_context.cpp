@@ -93,7 +93,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         if (!info.uses_patches[index]) {
             continue;
         }
-        if (stage == Stage::TessellationEval) {
+        if (stage == Stage::TessellationControl) {
             Add("OUTPUT result_patch_attrib{}[]={{result.patch.attrib[{}..{}]}};", index, index,
                 index);
         } else {
