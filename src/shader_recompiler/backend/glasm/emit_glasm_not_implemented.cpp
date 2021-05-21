@@ -73,7 +73,7 @@ void EmitEpilogue(EmitContext& ctx) {
 }
 
 void EmitEmitVertex(EmitContext& ctx, ScalarS32 stream) {
-    if (stream.type == Type::U32 && stream.imm_u32) {
+    if (stream.type == Type::U32 && stream.imm_u32 == 0) {
         ctx.Add("EMIT;");
     } else {
         ctx.Add("EMITS {};", stream);
