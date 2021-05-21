@@ -23,23 +23,25 @@ std::string_view InterpDecorator(Interpolation interp) {
 }
 } // Anonymous namespace
 
-EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_)
-    : info{program.info}, profile{profile_} {
+EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
+                         const RuntimeInfo& runtime_info_)
+    : profile{profile_}, runtime_info{runtime_info_} {
     // FIXME: Temporary partial implementation
+    const auto& info{program.info};
     u32 cbuf_index{};
-    for (const auto& desc : program.info.constant_buffer_descriptors) {
+    for (const auto& desc : info.constant_buffer_descriptors) {
         if (desc.count != 1) {
             throw NotImplementedException("Constant buffer descriptor array");
         }
         Add("CBUFFER c{}[]={{program.buffer[{}]}};", desc.index, cbuf_index);
         ++cbuf_index;
     }
-    for (const auto& desc : program.info.storage_buffers_descriptors) {
+    for (const auto& desc : info.storage_buffers_descriptors) {
         if (desc.count != 1) {
             throw NotImplementedException("Storage buffer descriptor array");
         }
     }
-    if (const size_t num = program.info.storage_buffers_descriptors.size(); num > 0) {
+    if (const size_t num = info.storage_buffers_descriptors.size(); num > 0) {
         Add("PARAM c[{}]={{program.local[0..{}]}};", num, num - 1);
     }
     stage = program.stage;
@@ -67,8 +69,8 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         break;
     }
     const std::string_view attr_stage{stage == Stage::Fragment ? "fragment" : "vertex"};
-    for (size_t index = 0; index < program.info.input_generics.size(); ++index) {
-        const auto& generic{program.info.input_generics[index]};
+    for (size_t index = 0; index < info.input_generics.size(); ++index) {
+        const auto& generic{info.input_generics[index]};
         if (generic.used) {
             Add("{}ATTRIB in_attr{}[]={{{}.attrib[{}..{}]}};",
                 InterpDecorator(generic.interpolation), index, attr_stage, index, index);
@@ -101,8 +103,8 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
                 index, index);
         }
     }
-    for (size_t index = 0; index < program.info.stores_frag_color.size(); ++index) {
-        if (!program.info.stores_frag_color[index]) {
+    for (size_t index = 0; index < info.stores_frag_color.size(); ++index) {
+        if (!info.stores_frag_color[index]) {
             continue;
         }
         if (index == 0) {
@@ -111,28 +113,28 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
             Add("OUTPUT frag_color{}=result.color[{}];", index, index);
         }
     }
-    for (size_t index = 0; index < program.info.stores_generics.size(); ++index) {
-        if (program.info.stores_generics[index]) {
+    for (size_t index = 0; index < info.stores_generics.size(); ++index) {
+        if (info.stores_generics[index]) {
             Add("OUTPUT out_attr{}[]={{result.attrib[{}..{}]}};", index, index, index);
         }
     }
-    image_buffer_bindings.reserve(program.info.image_buffer_descriptors.size());
-    for (const auto& desc : program.info.image_buffer_descriptors) {
+    image_buffer_bindings.reserve(info.image_buffer_descriptors.size());
+    for (const auto& desc : info.image_buffer_descriptors) {
         image_buffer_bindings.push_back(bindings.image);
         bindings.image += desc.count;
     }
-    image_bindings.reserve(program.info.image_descriptors.size());
-    for (const auto& desc : program.info.image_descriptors) {
+    image_bindings.reserve(info.image_descriptors.size());
+    for (const auto& desc : info.image_descriptors) {
         image_bindings.push_back(bindings.image);
         bindings.image += desc.count;
     }
-    texture_buffer_bindings.reserve(program.info.texture_buffer_descriptors.size());
-    for (const auto& desc : program.info.texture_buffer_descriptors) {
+    texture_buffer_bindings.reserve(info.texture_buffer_descriptors.size());
+    for (const auto& desc : info.texture_buffer_descriptors) {
         texture_buffer_bindings.push_back(bindings.texture);
         bindings.texture += desc.count;
     }
-    texture_bindings.reserve(program.info.texture_descriptors.size());
-    for (const auto& desc : program.info.texture_descriptors) {
+    texture_bindings.reserve(info.texture_descriptors.size());
+    for (const auto& desc : info.texture_descriptors) {
         texture_bindings.push_back(bindings.texture);
         bindings.texture += desc.count;
     }

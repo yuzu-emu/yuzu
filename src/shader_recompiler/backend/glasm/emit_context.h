@@ -16,6 +16,7 @@
 namespace Shader {
 struct Info;
 struct Profile;
+struct RuntimeInfo;
 } // namespace Shader
 
 namespace Shader::Backend {
@@ -31,7 +32,8 @@ namespace Shader::Backend::GLASM {
 
 class EmitContext {
 public:
-    explicit EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_);
+    explicit EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
+                         const RuntimeInfo& runtime_info_);
 
     template <typename... Args>
     void Add(const char* format_str, IR::Inst& inst, Args&&... args) {
@@ -56,8 +58,8 @@ public:
 
     std::string code;
     RegAlloc reg_alloc{*this};
-    const Info& info;
     const Profile& profile;
+    const RuntimeInfo& runtime_info;
 
     std::vector<u32> texture_buffer_bindings;
     std::vector<u32> image_buffer_bindings;

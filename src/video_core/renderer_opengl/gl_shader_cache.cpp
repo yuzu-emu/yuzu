@@ -61,33 +61,15 @@ const Shader::Profile profile{
     .support_viewport_mask = true,
     .support_typeless_image_loads = true,
     .support_demote_to_helper_invocation = false,
-    .warp_size_potentially_larger_than_guest = true,
     .support_int64_atomics = false,
+
+    .warp_size_potentially_larger_than_guest = true,
     .lower_left_origin_mode = true,
 
     .has_broken_spirv_clamp = true,
     .has_broken_unsigned_image_offsets = true,
     .has_broken_signed_operations = true,
     .ignore_nan_fp_comparisons = true,
-
-    .generic_input_types = {},
-    .convert_depth_mode = false,
-    .force_early_z = false,
-
-    .tess_primitive = {},
-    .tess_spacing = {},
-    .tess_clockwise = false,
-
-    .input_topology = Shader::InputTopology::Triangles,
-
-    .fixed_state_point_size = std::nullopt,
-
-    .alpha_test_func = Shader::CompareFunction::Always,
-    .alpha_test_reference = 0.0f,
-
-    .y_negate = false,
-
-    .xfb_varyings = {},
 };
 
 using Shader::Backend::GLASM::EmitGLASM;
@@ -302,10 +284,10 @@ std::unique_ptr<GraphicsProgram> ShaderCache::CreateGraphicsProgram(
         const size_t stage_index{index - 1};
         infos[stage_index] = &program.info;
         if (device.UseAssemblyShaders()) {
-            const std::string code{EmitGLASM(profile, program, binding)};
+            const std::string code{EmitGLASM(profile, {}, program, binding)};
             assembly_programs[stage_index] = CompileProgram(code, AssemblyStage(stage_index));
         } else {
-            const std::vector<u32> code{EmitSPIRV(profile, program, binding)};
+            const std::vector<u32> code{EmitSPIRV(profile, {}, program, binding)};
             AddShader(Stage(stage_index), source_program.handle, code);
         }
     }

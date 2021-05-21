@@ -374,8 +374,9 @@ std::string_view GetTessSpacing(TessSpacing spacing) {
 }
 } // Anonymous namespace
 
-std::string EmitGLASM(const Profile& profile, IR::Program& program, Bindings& bindings) {
-    EmitContext ctx{program, bindings, profile};
+std::string EmitGLASM(const Profile& profile, const RuntimeInfo& runtime_info, IR::Program& program,
+                      Bindings& bindings) {
+    EmitContext ctx{program, bindings, profile, runtime_info};
     Precolor(ctx, program);
     EmitCode(ctx, program);
     std::string header{StageHeader(program.stage)};
@@ -385,18 +386,18 @@ std::string EmitGLASM(const Profile& profile, IR::Program& program, Bindings& bi
         header += fmt::format("VERTICES_OUT {};", program.invocations);
         break;
     case Stage::TessellationEval:
-        header +=
-            fmt::format("TESS_MODE {};"
-                        "TESS_SPACING {};"
-                        "TESS_VERTEX_ORDER {};",
-                        GetTessMode(profile.tess_primitive), GetTessSpacing(profile.tess_spacing),
-                        profile.tess_clockwise ? "CW" : "CCW");
+        header += fmt::format("TESS_MODE {};"
+                              "TESS_SPACING {};"
+                              "TESS_VERTEX_ORDER {};",
+                              GetTessMode(runtime_info.tess_primitive),
+                              GetTessSpacing(runtime_info.tess_spacing),
+                              runtime_info.tess_clockwise ? "CW" : "CCW");
         break;
     case Stage::Geometry:
         header += fmt::format("PRIMITIVE_IN {};"
                               "PRIMITIVE_OUT {};"
                               "VERTICES_OUT {};",
-                              InputPrimitive(profile.input_topology),
+                              InputPrimitive(runtime_info.input_topology),
                               OutputPrimitive(program.output_topology), program.output_vertices);
         break;
     case Stage::Compute:

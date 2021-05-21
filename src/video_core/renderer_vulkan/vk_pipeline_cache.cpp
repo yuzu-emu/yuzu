@@ -89,6 +89,208 @@ Shader::CompareFunction MaxwellToCompareFunction(Maxwell::ComparisonOp compariso
     UNIMPLEMENTED_MSG("Unimplemented comparison op={}", comparison);
     return {};
 }
+
+static Shader::AttributeType CastAttributeType(const FixedPipelineState::VertexAttribute& attr) {
+    if (attr.enabled == 0) {
+        return Shader::AttributeType::Disabled;
+    }
+    switch (attr.Type()) {
+    case Maxwell::VertexAttribute::Type::SignedNorm:
+    case Maxwell::VertexAttribute::Type::UnsignedNorm:
+    case Maxwell::VertexAttribute::Type::UnsignedScaled:
+    case Maxwell::VertexAttribute::Type::SignedScaled:
+    case Maxwell::VertexAttribute::Type::Float:
+        return Shader::AttributeType::Float;
+    case Maxwell::VertexAttribute::Type::SignedInt:
+        return Shader::AttributeType::SignedInt;
+    case Maxwell::VertexAttribute::Type::UnsignedInt:
+        return Shader::AttributeType::UnsignedInt;
+    }
+    return Shader::AttributeType::Float;
+}
+
+std::vector<Shader::TransformFeedbackVarying> MakeTransformFeedbackVaryings(
+    const GraphicsPipelineCacheKey& key) {
+    static constexpr std::array VECTORS{
+        28,  // gl_Position
+        32,  // Generic 0
+        36,  // Generic 1
+        40,  // Generic 2
+        44,  // Generic 3
+        48,  // Generic 4
+        52,  // Generic 5
+        56,  // Generic 6
+        60,  // Generic 7
+        64,  // Generic 8
+        68,  // Generic 9
+        72,  // Generic 10
+        76,  // Generic 11
+        80,  // Generic 12
+        84,  // Generic 13
+        88,  // Generic 14
+        92,  // Generic 15
+        96,  // Generic 16
+        100, // Generic 17
+        104, // Generic 18
+        108, // Generic 19
+        112, // Generic 20
+        116, // Generic 21
+        120, // Generic 22
+        124, // Generic 23
+        128, // Generic 24
+        132, // Generic 25
+        136, // Generic 26
+        140, // Generic 27
+        144, // Generic 28
+        148, // Generic 29
+        152, // Generic 30
+        156, // Generic 31
+        160, // gl_FrontColor
+        164, // gl_FrontSecondaryColor
+        160, // gl_BackColor
+        164, // gl_BackSecondaryColor
+        192, // gl_TexCoord[0]
+        196, // gl_TexCoord[1]
+        200, // gl_TexCoord[2]
+        204, // gl_TexCoord[3]
+        208, // gl_TexCoord[4]
+        212, // gl_TexCoord[5]
+        216, // gl_TexCoord[6]
+        220, // gl_TexCoord[7]
+    };
+    std::vector<Shader::TransformFeedbackVarying> xfb(256);
+    for (size_t buffer = 0; buffer < Maxwell::NumTransformFeedbackBuffers; ++buffer) {
+        const auto& locations = key.state.xfb_state.varyings[buffer];
+        const auto& layout = key.state.xfb_state.layouts[buffer];
+        const u32 varying_count = layout.varying_count;
+        u32 highest = 0;
+        for (u32 offset = 0; offset < varying_count; ++offset) {
+            const u32 base_offset = offset;
+            const u8 location = locations[offset];
+
+            Shader::TransformFeedbackVarying varying;
+            varying.buffer = layout.stream;
+            varying.stride = layout.stride;
+            varying.offset = offset * 4;
+            varying.components = 1;
+
+            if (std::ranges::find(VECTORS, Common::AlignDown(location, 4)) != VECTORS.end()) {
+                UNIMPLEMENTED_IF_MSG(location % 4 != 0, "Unaligned TFB");
+
+                const u8 base_index = location / 4;
+                while (offset + 1 < varying_count && base_index == locations[offset + 1] / 4) {
+                    ++offset;
+                    ++varying.components;
+                }
+            }
+            xfb[location] = varying;
+            highest = std::max(highest, (base_offset + varying.components) * 4);
+        }
+        UNIMPLEMENTED_IF(highest != layout.stride);
+    }
+    return xfb;
+}
+
+Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineCacheKey& key,
+                                    const Shader::IR::Program& program) {
+    Shader::RuntimeInfo info;
+
+    const Shader::Stage stage{program.stage};
+    const bool has_geometry{key.unique_hashes[4] != 0};
+    const bool gl_ndc{key.state.ndc_minus_one_to_one != 0};
+    const float point_size{Common::BitCast<float>(key.state.point_size)};
+    switch (stage) {
+    case Shader::Stage::VertexB:
+        if (!has_geometry) {
+            if (key.state.topology == Maxwell::PrimitiveTopology::Points) {
+                info.fixed_state_point_size = point_size;
+            }
+            if (key.state.xfb_enabled != 0) {
+                info.xfb_varyings = MakeTransformFeedbackVaryings(key);
+            }
+            info.convert_depth_mode = gl_ndc;
+        }
+        std::ranges::transform(key.state.attributes, info.generic_input_types.begin(),
+                               &CastAttributeType);
+        break;
+    case Shader::Stage::TessellationEval:
+        // We have to flip tessellation clockwise for some reason...
+        info.tess_clockwise = key.state.tessellation_clockwise == 0;
+        info.tess_primitive = [&key] {
+            const u32 raw{key.state.tessellation_primitive.Value()};
+            switch (static_cast<Maxwell::TessellationPrimitive>(raw)) {
+            case Maxwell::TessellationPrimitive::Isolines:
+                return Shader::TessPrimitive::Isolines;
+            case Maxwell::TessellationPrimitive::Triangles:
+                return Shader::TessPrimitive::Triangles;
+            case Maxwell::TessellationPrimitive::Quads:
+                return Shader::TessPrimitive::Quads;
+            }
+            UNREACHABLE();
+            return Shader::TessPrimitive::Triangles;
+        }();
+        info.tess_spacing = [&] {
+            const u32 raw{key.state.tessellation_spacing};
+            switch (static_cast<Maxwell::TessellationSpacing>(raw)) {
+            case Maxwell::TessellationSpacing::Equal:
+                return Shader::TessSpacing::Equal;
+            case Maxwell::TessellationSpacing::FractionalOdd:
+                return Shader::TessSpacing::FractionalOdd;
+            case Maxwell::TessellationSpacing::FractionalEven:
+                return Shader::TessSpacing::FractionalEven;
+            }
+            UNREACHABLE();
+            return Shader::TessSpacing::Equal;
+        }();
+        break;
+    case Shader::Stage::Geometry:
+        if (program.output_topology == Shader::OutputTopology::PointList) {
+            info.fixed_state_point_size = point_size;
+        }
+        if (key.state.xfb_enabled != 0) {
+            info.xfb_varyings = MakeTransformFeedbackVaryings(key);
+        }
+        info.convert_depth_mode = gl_ndc;
+        break;
+    case Shader::Stage::Fragment:
+        info.alpha_test_func = MaxwellToCompareFunction(
+            key.state.UnpackComparisonOp(key.state.alpha_test_func.Value()));
+        info.alpha_test_reference = Common::BitCast<float>(key.state.alpha_test_ref);
+        break;
+    default:
+        break;
+    }
+    switch (key.state.topology) {
+    case Maxwell::PrimitiveTopology::Points:
+        info.input_topology = Shader::InputTopology::Points;
+        break;
+    case Maxwell::PrimitiveTopology::Lines:
+    case Maxwell::PrimitiveTopology::LineLoop:
+    case Maxwell::PrimitiveTopology::LineStrip:
+        info.input_topology = Shader::InputTopology::Lines;
+        break;
+    case Maxwell::PrimitiveTopology::Triangles:
+    case Maxwell::PrimitiveTopology::TriangleStrip:
+    case Maxwell::PrimitiveTopology::TriangleFan:
+    case Maxwell::PrimitiveTopology::Quads:
+    case Maxwell::PrimitiveTopology::QuadStrip:
+    case Maxwell::PrimitiveTopology::Polygon:
+    case Maxwell::PrimitiveTopology::Patches:
+        info.input_topology = Shader::InputTopology::Triangles;
+        break;
+    case Maxwell::PrimitiveTopology::LinesAdjacency:
+    case Maxwell::PrimitiveTopology::LineStripAdjacency:
+        info.input_topology = Shader::InputTopology::LinesAdjacency;
+        break;
+    case Maxwell::PrimitiveTopology::TrianglesAdjacency:
+    case Maxwell::PrimitiveTopology::TriangleStripAdjacency:
+        info.input_topology = Shader::InputTopology::TrianglesAdjacency;
+        break;
+    }
+    info.force_early_z = key.state.early_z != 0;
+    info.y_negate = key.state.y_negate != 0;
+    return info;
+}
 } // Anonymous namespace
 
 size_t ComputePipelineCacheKey::Hash() const noexcept {
@@ -124,7 +326,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxw
       serialization_thread(1, "yuzu:PipelineSerialization") {
     const auto& float_control{device.FloatControlProperties()};
     const VkDriverIdKHR driver_id{device.GetDriverID()};
-    base_profile = Shader::Profile{
+    profile = Shader::Profile{
         .supported_spirv = device.IsKhrSpirv1_4Supported() ? 0x00010400U : 0x00010000U,
         .unified_descriptor_binding = true,
         .support_descriptor_aliasing = true,
@@ -153,14 +355,10 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxw
         .support_viewport_mask = device.IsNvViewportArray2Supported(),
         .support_typeless_image_loads = device.IsFormatlessImageLoadSupported(),
         .support_demote_to_helper_invocation = true,
-        .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyBiggerThanGuest(),
         .support_int64_atomics = device.IsExtShaderAtomicInt64Supported(),
+        .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyBiggerThanGuest(),
         .has_broken_spirv_clamp = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS_KHR,
         .has_broken_unsigned_image_offsets = false,
-        .generic_input_types{},
-        .fixed_state_point_size{},
-        .alpha_test_func{},
-        .xfb_varyings{},
     };
 }
 
@@ -329,8 +527,8 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
         const size_t stage_index{index - 1};
         infos[stage_index] = &program.info;
 
-        const Shader::Profile profile{MakeProfile(key, program)};
-        const std::vector<u32> code{EmitSPIRV(profile, program, binding)};
+        const Shader::RuntimeInfo runtime_info{MakeRuntimeInfo(key, program)};
+        const std::vector<u32> code{EmitSPIRV(profile, runtime_info, program, binding)};
         device.SaveShader(code);
         modules[stage_index] = BuildShader(device, code);
         if (device.HasDebuggingToolAttached()) {
@@ -391,7 +589,7 @@ std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
 
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
     Shader::IR::Program program{TranslateProgram(pools.inst, pools.block, env, cfg)};
-    const std::vector<u32> code{EmitSPIRV(base_profile, program)};
+    const std::vector<u32> code{EmitSPIRV(profile, program)};
     device.SaveShader(code);
     vk::ShaderModule spv_module{BuildShader(device, code)};
     if (device.HasDebuggingToolAttached()) {
@@ -401,208 +599,6 @@ std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
     Common::ThreadWorker* const thread_worker{build_in_parallel ? &workers : nullptr};
     return std::make_unique<ComputePipeline>(device, descriptor_pool, update_descriptor_queue,
                                              thread_worker, program.info, std::move(spv_module));
-}
-
-static Shader::AttributeType CastAttributeType(const FixedPipelineState::VertexAttribute& attr) {
-    if (attr.enabled == 0) {
-        return Shader::AttributeType::Disabled;
-    }
-    switch (attr.Type()) {
-    case Maxwell::VertexAttribute::Type::SignedNorm:
-    case Maxwell::VertexAttribute::Type::UnsignedNorm:
-    case Maxwell::VertexAttribute::Type::UnsignedScaled:
-    case Maxwell::VertexAttribute::Type::SignedScaled:
-    case Maxwell::VertexAttribute::Type::Float:
-        return Shader::AttributeType::Float;
-    case Maxwell::VertexAttribute::Type::SignedInt:
-        return Shader::AttributeType::SignedInt;
-    case Maxwell::VertexAttribute::Type::UnsignedInt:
-        return Shader::AttributeType::UnsignedInt;
-    }
-    return Shader::AttributeType::Float;
-}
-
-static std::vector<Shader::TransformFeedbackVarying> MakeTransformFeedbackVaryings(
-    const GraphicsPipelineCacheKey& key) {
-    static constexpr std::array VECTORS{
-        28,  // gl_Position
-        32,  // Generic 0
-        36,  // Generic 1
-        40,  // Generic 2
-        44,  // Generic 3
-        48,  // Generic 4
-        52,  // Generic 5
-        56,  // Generic 6
-        60,  // Generic 7
-        64,  // Generic 8
-        68,  // Generic 9
-        72,  // Generic 10
-        76,  // Generic 11
-        80,  // Generic 12
-        84,  // Generic 13
-        88,  // Generic 14
-        92,  // Generic 15
-        96,  // Generic 16
-        100, // Generic 17
-        104, // Generic 18
-        108, // Generic 19
-        112, // Generic 20
-        116, // Generic 21
-        120, // Generic 22
-        124, // Generic 23
-        128, // Generic 24
-        132, // Generic 25
-        136, // Generic 26
-        140, // Generic 27
-        144, // Generic 28
-        148, // Generic 29
-        152, // Generic 30
-        156, // Generic 31
-        160, // gl_FrontColor
-        164, // gl_FrontSecondaryColor
-        160, // gl_BackColor
-        164, // gl_BackSecondaryColor
-        192, // gl_TexCoord[0]
-        196, // gl_TexCoord[1]
-        200, // gl_TexCoord[2]
-        204, // gl_TexCoord[3]
-        208, // gl_TexCoord[4]
-        212, // gl_TexCoord[5]
-        216, // gl_TexCoord[6]
-        220, // gl_TexCoord[7]
-    };
-    std::vector<Shader::TransformFeedbackVarying> xfb(256);
-    for (size_t buffer = 0; buffer < Maxwell::NumTransformFeedbackBuffers; ++buffer) {
-        const auto& locations = key.state.xfb_state.varyings[buffer];
-        const auto& layout = key.state.xfb_state.layouts[buffer];
-        const u32 varying_count = layout.varying_count;
-        u32 highest = 0;
-        for (u32 offset = 0; offset < varying_count; ++offset) {
-            const u32 base_offset = offset;
-            const u8 location = locations[offset];
-
-            Shader::TransformFeedbackVarying varying;
-            varying.buffer = layout.stream;
-            varying.stride = layout.stride;
-            varying.offset = offset * 4;
-            varying.components = 1;
-
-            if (std::ranges::find(VECTORS, Common::AlignDown(location, 4)) != VECTORS.end()) {
-                UNIMPLEMENTED_IF_MSG(location % 4 != 0, "Unaligned TFB");
-
-                const u8 base_index = location / 4;
-                while (offset + 1 < varying_count && base_index == locations[offset + 1] / 4) {
-                    ++offset;
-                    ++varying.components;
-                }
-            }
-            xfb[location] = varying;
-            highest = std::max(highest, (base_offset + varying.components) * 4);
-        }
-        UNIMPLEMENTED_IF(highest != layout.stride);
-    }
-    return xfb;
-}
-
-Shader::Profile PipelineCache::MakeProfile(const GraphicsPipelineCacheKey& key,
-                                           const Shader::IR::Program& program) {
-    Shader::Profile profile{base_profile};
-
-    const Shader::Stage stage{program.stage};
-    const bool has_geometry{key.unique_hashes[4] != 0};
-    const bool gl_ndc{key.state.ndc_minus_one_to_one != 0};
-    const float point_size{Common::BitCast<float>(key.state.point_size)};
-    switch (stage) {
-    case Shader::Stage::VertexB:
-        if (!has_geometry) {
-            if (key.state.topology == Maxwell::PrimitiveTopology::Points) {
-                profile.fixed_state_point_size = point_size;
-            }
-            if (key.state.xfb_enabled != 0) {
-                profile.xfb_varyings = MakeTransformFeedbackVaryings(key);
-            }
-            profile.convert_depth_mode = gl_ndc;
-        }
-        std::ranges::transform(key.state.attributes, profile.generic_input_types.begin(),
-                               &CastAttributeType);
-        break;
-    case Shader::Stage::TessellationEval:
-        // We have to flip tessellation clockwise for some reason...
-        profile.tess_clockwise = key.state.tessellation_clockwise == 0;
-        profile.tess_primitive = [&key] {
-            const u32 raw{key.state.tessellation_primitive.Value()};
-            switch (static_cast<Maxwell::TessellationPrimitive>(raw)) {
-            case Maxwell::TessellationPrimitive::Isolines:
-                return Shader::TessPrimitive::Isolines;
-            case Maxwell::TessellationPrimitive::Triangles:
-                return Shader::TessPrimitive::Triangles;
-            case Maxwell::TessellationPrimitive::Quads:
-                return Shader::TessPrimitive::Quads;
-            }
-            UNREACHABLE();
-            return Shader::TessPrimitive::Triangles;
-        }();
-        profile.tess_spacing = [&] {
-            const u32 raw{key.state.tessellation_spacing};
-            switch (static_cast<Maxwell::TessellationSpacing>(raw)) {
-            case Maxwell::TessellationSpacing::Equal:
-                return Shader::TessSpacing::Equal;
-            case Maxwell::TessellationSpacing::FractionalOdd:
-                return Shader::TessSpacing::FractionalOdd;
-            case Maxwell::TessellationSpacing::FractionalEven:
-                return Shader::TessSpacing::FractionalEven;
-            }
-            UNREACHABLE();
-            return Shader::TessSpacing::Equal;
-        }();
-        break;
-    case Shader::Stage::Geometry:
-        if (program.output_topology == Shader::OutputTopology::PointList) {
-            profile.fixed_state_point_size = point_size;
-        }
-        if (key.state.xfb_enabled != 0) {
-            profile.xfb_varyings = MakeTransformFeedbackVaryings(key);
-        }
-        profile.convert_depth_mode = gl_ndc;
-        break;
-    case Shader::Stage::Fragment:
-        profile.alpha_test_func = MaxwellToCompareFunction(
-            key.state.UnpackComparisonOp(key.state.alpha_test_func.Value()));
-        profile.alpha_test_reference = Common::BitCast<float>(key.state.alpha_test_ref);
-        break;
-    default:
-        break;
-    }
-    switch (key.state.topology) {
-    case Maxwell::PrimitiveTopology::Points:
-        profile.input_topology = Shader::InputTopology::Points;
-        break;
-    case Maxwell::PrimitiveTopology::Lines:
-    case Maxwell::PrimitiveTopology::LineLoop:
-    case Maxwell::PrimitiveTopology::LineStrip:
-        profile.input_topology = Shader::InputTopology::Lines;
-        break;
-    case Maxwell::PrimitiveTopology::Triangles:
-    case Maxwell::PrimitiveTopology::TriangleStrip:
-    case Maxwell::PrimitiveTopology::TriangleFan:
-    case Maxwell::PrimitiveTopology::Quads:
-    case Maxwell::PrimitiveTopology::QuadStrip:
-    case Maxwell::PrimitiveTopology::Polygon:
-    case Maxwell::PrimitiveTopology::Patches:
-        profile.input_topology = Shader::InputTopology::Triangles;
-        break;
-    case Maxwell::PrimitiveTopology::LinesAdjacency:
-    case Maxwell::PrimitiveTopology::LineStripAdjacency:
-        profile.input_topology = Shader::InputTopology::LinesAdjacency;
-        break;
-    case Maxwell::PrimitiveTopology::TrianglesAdjacency:
-    case Maxwell::PrimitiveTopology::TriangleStripAdjacency:
-        profile.input_topology = Shader::InputTopology::TrianglesAdjacency;
-        break;
-    }
-    profile.force_early_z = key.state.early_z != 0;
-    profile.y_negate = key.state.y_negate != 0;
-    return profile;
 }
 
 } // namespace Vulkan

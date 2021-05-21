@@ -226,16 +226,17 @@ void DefineEntryPoint(const IR::Program& program, EmitContext& ctx, Id main) {
     case Stage::TessellationEval:
         execution_model = spv::ExecutionModel::TessellationEvaluation;
         ctx.AddCapability(spv::Capability::Tessellation);
-        ctx.AddExecutionMode(main, ExecutionMode(ctx.profile.tess_primitive));
-        ctx.AddExecutionMode(main, ExecutionMode(ctx.profile.tess_spacing));
-        ctx.AddExecutionMode(main, ctx.profile.tess_clockwise ? spv::ExecutionMode::VertexOrderCw
-                                                              : spv::ExecutionMode::VertexOrderCcw);
+        ctx.AddExecutionMode(main, ExecutionMode(ctx.runtime_info.tess_primitive));
+        ctx.AddExecutionMode(main, ExecutionMode(ctx.runtime_info.tess_spacing));
+        ctx.AddExecutionMode(main, ctx.runtime_info.tess_clockwise
+                                       ? spv::ExecutionMode::VertexOrderCw
+                                       : spv::ExecutionMode::VertexOrderCcw);
         break;
     case Stage::Geometry:
         execution_model = spv::ExecutionModel::Geometry;
         ctx.AddCapability(spv::Capability::Geometry);
         ctx.AddCapability(spv::Capability::GeometryStreams);
-        switch (ctx.profile.input_topology) {
+        switch (ctx.runtime_info.input_topology) {
         case InputTopology::Points:
             ctx.AddExecutionMode(main, spv::ExecutionMode::InputPoints);
             break;
@@ -279,7 +280,7 @@ void DefineEntryPoint(const IR::Program& program, EmitContext& ctx, Id main) {
         if (program.info.stores_frag_depth) {
             ctx.AddExecutionMode(main, spv::ExecutionMode::DepthReplacing);
         }
-        if (ctx.profile.force_early_z) {
+        if (ctx.runtime_info.force_early_z) {
             ctx.AddExecutionMode(main, spv::ExecutionMode::EarlyFragmentTests);
         }
         break;
@@ -402,7 +403,7 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
     if (info.uses_sample_id) {
         ctx.AddCapability(spv::Capability::SampleRateShading);
     }
-    if (!ctx.profile.xfb_varyings.empty()) {
+    if (!ctx.runtime_info.xfb_varyings.empty()) {
         ctx.AddCapability(spv::Capability::TransformFeedback);
     }
     if (info.uses_derivatives) {
@@ -433,8 +434,9 @@ void PatchPhiNodes(IR::Program& program, EmitContext& ctx) {
 }
 } // Anonymous namespace
 
-std::vector<u32> EmitSPIRV(const Profile& profile, IR::Program& program, Bindings& binding) {
-    EmitContext ctx{profile, program, binding};
+std::vector<u32> EmitSPIRV(const Profile& profile, const RuntimeInfo& runtime_info,
+                           IR::Program& program, Bindings& bindings) {
+    EmitContext ctx{profile, runtime_info, program, bindings};
     const Id main{DefineMain(ctx, program)};
     DefineEntryPoint(program, ctx, main);
     if (profile.support_float_controls) {

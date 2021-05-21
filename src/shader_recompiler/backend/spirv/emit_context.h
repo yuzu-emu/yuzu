@@ -103,7 +103,8 @@ struct GenericElementInfo {
 
 class EmitContext final : public Sirit::Module {
 public:
-    explicit EmitContext(const Profile& profile, IR::Program& program, Bindings& binding);
+    explicit EmitContext(const Profile& profile, const RuntimeInfo& runtime_info,
+                         IR::Program& program, Bindings& binding);
     ~EmitContext();
 
     [[nodiscard]] Id Def(const IR::Value& value);
@@ -150,6 +151,7 @@ public:
     }
 
     const Profile& profile;
+    const RuntimeInfo& runtime_info;
     Stage stage{};
 
     Id void_id{};
