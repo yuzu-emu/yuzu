@@ -164,14 +164,14 @@ void EmitGetPatch(EmitContext& ctx, IR::Inst& inst, IR::Patch patch) {
     }
     const u32 index{IR::GenericPatchIndex(patch)};
     const u32 element{IR::GenericPatchElement(patch)};
-    ctx.Add("MOV.F {},result.patch.attrib[{}].{}", inst, index, "xyzw"[element]);
+    ctx.Add("MOV.F {},result.patch.attrib[{}].{};", inst, index, "xyzw"[element]);
 }
 
 void EmitSetPatch(EmitContext& ctx, IR::Patch patch, ScalarF32 value) {
     if (IR::IsGeneric(patch)) {
         const u32 index{IR::GenericPatchIndex(patch)};
         const u32 element{IR::GenericPatchElement(patch)};
-        ctx.Add("MOV.F result.patch.attrib[{}].{},{}", index, "xyzw"[element], value);
+        ctx.Add("MOV.F result.patch.attrib[{}].{},{};", index, "xyzw"[element], value);
         return;
     }
     switch (patch) {
