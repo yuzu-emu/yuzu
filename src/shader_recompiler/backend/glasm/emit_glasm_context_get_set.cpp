@@ -77,6 +77,10 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr, Scal
             ctx.Add("MOV.F {}.x,{}.position.{};", inst, ctx.attrib_name, swizzle);
         }
         break;
+    case IR::Attribute::TessellationEvaluationPointU:
+    case IR::Attribute::TessellationEvaluationPointV:
+        ctx.Add("MOV.F {}.x,vertex.tesscoord.{}", inst, swizzle);
+        break;
     case IR::Attribute::PointSpriteS:
     case IR::Attribute::PointSpriteT:
         ctx.Add("MOV.F {}.x,{}.pointcoord.{};", inst, ctx.attrib_name, swizzle);
