@@ -82,7 +82,7 @@ private:
     GLuint current_source_program = 0;
 
     u32 current_assembly_mask = 0;
-    std::array<GLuint, NUM_STAGES> current_assembly_programs;
+    std::array<GLuint, NUM_STAGES> current_assembly_programs{};
     GLuint current_compute_assembly_program = 0;
 };
 
