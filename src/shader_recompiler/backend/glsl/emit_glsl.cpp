@@ -34,8 +34,8 @@ void SetDefinition(EmitContext& ctx, IR::Inst* inst, Args... args) {
 }
 
 template <typename ArgType>
-ArgType Arg(EmitContext& ctx, const IR::Value& arg) {
-    if constexpr (std::is_same_v<ArgType, std::string>) {
+auto Arg(EmitContext& ctx, const IR::Value& arg) {
+    if constexpr (std::is_same_v<ArgType, std::string_view>) {
         return ctx.reg_alloc.Consume(arg);
     } else if constexpr (std::is_same_v<ArgType, const IR::Value&>) {
         return arg;
@@ -143,7 +143,8 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
 
 } // Anonymous namespace
 
-std::string EmitGLSL(const Profile& profile, IR::Program& program, Bindings& bindings) {
+std::string EmitGLSL(const Profile& profile, const RuntimeInfo&, IR::Program& program,
+                     Bindings& bindings) {
     EmitContext ctx{program, bindings, profile};
     // ctx.SetupBuffers();
     EmitCode(ctx, program);
