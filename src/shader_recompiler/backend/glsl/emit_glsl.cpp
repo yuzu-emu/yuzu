@@ -35,7 +35,7 @@ void SetDefinition(EmitContext& ctx, IR::Inst* inst, Args... args) {
 
 template <typename ArgType>
 ArgType Arg(EmitContext& ctx, const IR::Value& arg) {
-    if constexpr (std::is_same_v<ArgType, std::string_view>) {
+    if constexpr (std::is_same_v<ArgType, std::string>) {
         return ctx.reg_alloc.Consume(arg);
     } else if constexpr (std::is_same_v<ArgType, IR::Inst&>) {
         return *arg.Inst();
