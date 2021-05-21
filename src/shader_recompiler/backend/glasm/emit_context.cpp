@@ -86,6 +86,9 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     if (info.stores_tess_level_inner) {
         Add("OUTPUT result_patch_tessinner[]={{result.patch.tessinner[0..1]}};");
     }
+    if (info.stores_clip_distance) {
+        Add("OUTPUT result_clip[]={{result.clip[0..7]}};");
+    }
     for (size_t index = 0; index < info.uses_patches.size(); ++index) {
         if (!info.uses_patches[index]) {
             continue;
