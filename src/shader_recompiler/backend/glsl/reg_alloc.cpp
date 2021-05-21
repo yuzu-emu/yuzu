@@ -10,7 +10,7 @@
 #include "shader_recompiler/backend/glsl/reg_alloc.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/value.h"
-
+#pragma optimize("", off)
 namespace Shader::Backend::GLSL {
 namespace {
 constexpr std::string_view SWIZZLE = "xyzw";
@@ -24,11 +24,7 @@ std::string Representation(Id id) {
     }
     const u32 num_elements{id.num_elements_minus_one + 1};
     const u32 index{static_cast<u32>(id.index)};
-    if (num_elements == 4) {
-        return fmt::format("R{}", index);
-    } else {
-        return fmt::format("R{}.{}", index, SWIZZLE.substr(id.base_element, num_elements));
-    }
+    return fmt::format("R{}", index);
 }
 
 std::string MakeImm(const IR::Value& value) {
@@ -56,7 +52,8 @@ std::string RegAlloc::Define(IR::Inst& inst, u32 num_elements, u32 alignment) {
 }
 
 std::string RegAlloc::Consume(const IR::Value& value) {
-    return value.IsImmediate() ? MakeImm(value) : Consume(*value.Inst());
+    const auto result = value.IsImmediate() ? MakeImm(value) : Consume(*value.InstRecursive());
+    return result;
 }
 
 std::string RegAlloc::Consume(IR::Inst& inst) {
@@ -93,4 +90,30 @@ void RegAlloc::Free(Id id) {
     register_use[id.index] = false;
 }
 
+/*static*/ bool RegAlloc::IsAliased(const IR::Inst& inst) {
+    switch (inst.GetOpcode()) {
+    case IR::Opcode::Identity:
+    case IR::Opcode::BitCastU16F16:
+    case IR::Opcode::BitCastU32F32:
+    case IR::Opcode::BitCastU64F64:
+    case IR::Opcode::BitCastF16U16:
+    case IR::Opcode::BitCastF32U32:
+    case IR::Opcode::BitCastF64U64:
+        return true;
+    default:
+        return false;
+    }
+}
+
+/*static*/ IR::Inst& RegAlloc::AliasInst(IR::Inst& inst) {
+    IR::Inst* it{&inst};
+    while (IsAliased(*it)) {
+        const IR::Value arg{it->Arg(0)};
+        if (arg.IsImmediate()) {
+            break;
+        }
+        it = arg.InstRecursive();
+    }
+    return *it;
+}
 } // namespace Shader::Backend::GLSL

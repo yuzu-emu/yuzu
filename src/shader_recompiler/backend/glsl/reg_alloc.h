@@ -29,6 +29,12 @@ public:
 
     std::string Consume(const IR::Value& value);
 
+    /// Returns true if the instruction is expected to be aliased to another
+    static bool IsAliased(const IR::Inst& inst);
+
+    /// Returns the underlying value out of an alias sequence
+    static IR::Inst& AliasInst(IR::Inst& inst);
+
 private:
     static constexpr size_t NUM_REGS = 4096;
     static constexpr size_t NUM_ELEMENTS = 4;

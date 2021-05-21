@@ -27,18 +27,6 @@ void EmitVoid(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitIdentity(EmitContext& ctx, const IR::Value& value) {
-    const auto var{ctx.AllocVar()};
-    switch (value.Type()) {
-    case IR::Type::U32:
-        ctx.Add("uint {}={};", var, value.U32());
-        break;
-    default:
-        ctx.Add("EmitIdentity {}", value.Type());
-        break;
-    }
-}
-
 void EmitConditionRef(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
     NotImplemented();
 }
@@ -51,21 +39,20 @@ void EmitPhiMove(EmitContext& ctx, const IR::Value& phi, const IR::Value& value)
     NotImplemented();
 }
 
-void EmitBranch(EmitContext& ctx, std::string_view label) {
+void EmitBranch(EmitContext& ctx, std::string label) {
     NotImplemented();
 }
 
-void EmitBranchConditional(EmitContext& ctx, std::string_view condition,
-                           std::string_view true_label, std::string_view false_label) {
+void EmitBranchConditional(EmitContext& ctx, std::string condition, std::string true_label,
+                           std::string false_label) {
     NotImplemented();
 }
 
-void EmitLoopMerge(EmitContext& ctx, std::string_view merge_label,
-                   std::string_view continue_label) {
+void EmitLoopMerge(EmitContext& ctx, std::string merge_label, std::string continue_label) {
     NotImplemented();
 }
 
-void EmitSelectionMerge(EmitContext& ctx, std::string_view merge_label) {
+void EmitSelectionMerge(EmitContext& ctx, std::string merge_label) {
     NotImplemented();
 }
 
@@ -81,7 +68,7 @@ void EmitUnreachable(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitDemoteToHelperInvocation(EmitContext& ctx, std::string_view continue_label) {
+void EmitDemoteToHelperInvocation(EmitContext& ctx, std::string continue_label) {
     NotImplemented();
 }
 
@@ -145,21 +132,20 @@ void EmitGetIndirectBranchVariable(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view vertex) {
+void EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, std::string vertex) {
     NotImplemented();
 }
 
-void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view value,
-                      std::string_view vertex) {
+void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string value, std::string vertex) {
     NotImplemented();
 }
 
-void EmitGetAttributeIndexed(EmitContext& ctx, std::string_view offset, std::string_view vertex) {
+void EmitGetAttributeIndexed(EmitContext& ctx, std::string offset, std::string vertex) {
     NotImplemented();
 }
 
-void EmitSetAttributeIndexed(EmitContext& ctx, std::string_view offset, std::string_view value,
-                             std::string_view vertex) {
+void EmitSetAttributeIndexed(EmitContext& ctx, std::string offset, std::string value,
+                             std::string vertex) {
     NotImplemented();
 }
 
@@ -167,19 +153,19 @@ void EmitGetPatch(EmitContext& ctx, IR::Patch patch) {
     NotImplemented();
 }
 
-void EmitSetPatch(EmitContext& ctx, IR::Patch patch, std::string_view value) {
+void EmitSetPatch(EmitContext& ctx, IR::Patch patch, std::string value) {
     NotImplemented();
 }
 
-void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, std::string_view value) {
+void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, std::string value) {
     NotImplemented();
 }
 
-void EmitSetSampleMask(EmitContext& ctx, std::string_view value) {
+void EmitSetSampleMask(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitSetFragDepth(EmitContext& ctx, std::string_view value) {
+void EmitSetFragDepth(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
@@ -239,11 +225,11 @@ void EmitYDirection(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitLoadLocal(EmitContext& ctx, std::string_view word_offset) {
+void EmitLoadLocal(EmitContext& ctx, std::string word_offset) {
     NotImplemented();
 }
 
-void EmitWriteLocal(EmitContext& ctx, std::string_view word_offset, std::string_view value) {
+void EmitWriteLocal(EmitContext& ctx, std::string word_offset, std::string value) {
     NotImplemented();
 }
 
@@ -283,15 +269,15 @@ void EmitLoadGlobalS16(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitLoadGlobal32(EmitContext& ctx, std::string_view address) {
+void EmitLoadGlobal32(EmitContext& ctx, std::string address) {
     NotImplemented();
 }
 
-void EmitLoadGlobal64(EmitContext& ctx, std::string_view address) {
+void EmitLoadGlobal64(EmitContext& ctx, std::string address) {
     NotImplemented();
 }
 
-void EmitLoadGlobal128(EmitContext& ctx, std::string_view address) {
+void EmitLoadGlobal128(EmitContext& ctx, std::string address) {
     NotImplemented();
 }
 
@@ -311,250 +297,182 @@ void EmitWriteGlobalS16(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitWriteGlobal32(EmitContext& ctx, std::string_view address, std::string_view value) {
+void EmitWriteGlobal32(EmitContext& ctx, std::string address, std::string value) {
     NotImplemented();
 }
 
-void EmitWriteGlobal64(EmitContext& ctx, std::string_view address, std::string_view value) {
+void EmitWriteGlobal64(EmitContext& ctx, std::string address, std::string value) {
     NotImplemented();
 }
 
-void EmitWriteGlobal128(EmitContext& ctx, std::string_view address, std::string_view value) {
+void EmitWriteGlobal128(EmitContext& ctx, std::string address, std::string value) {
     NotImplemented();
 }
 
-void EmitLoadStorageU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
+void EmitLoadSharedU8(EmitContext& ctx, std::string offset) {
     NotImplemented();
 }
 
-void EmitLoadStorageS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
+void EmitLoadSharedS8(EmitContext& ctx, std::string offset) {
     NotImplemented();
 }
 
-void EmitLoadStorageU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
+void EmitLoadSharedU16(EmitContext& ctx, std::string offset) {
     NotImplemented();
 }
 
-void EmitLoadStorageS16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
+void EmitLoadSharedS16(EmitContext& ctx, std::string offset) {
     NotImplemented();
 }
 
-void EmitLoadStorage32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
+void EmitLoadSharedU32(EmitContext& ctx, std::string offset) {
     NotImplemented();
 }
 
-void EmitLoadStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
+void EmitLoadSharedU64(EmitContext& ctx, std::string offset) {
     NotImplemented();
 }
 
-void EmitLoadStorage128(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
+void EmitLoadSharedU128(EmitContext& ctx, std::string offset) {
     NotImplemented();
 }
 
-void EmitWriteStorageU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                        std::string_view value) {
+void EmitWriteSharedU8(EmitContext& ctx, std::string offset, std::string value) {
     NotImplemented();
 }
 
-void EmitWriteStorageS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                        std::string_view value) {
+void EmitWriteSharedU16(EmitContext& ctx, std::string offset, std::string value) {
     NotImplemented();
 }
 
-void EmitWriteStorageU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                         std::string_view value) {
+void EmitWriteSharedU32(EmitContext& ctx, std::string offset, std::string value) {
     NotImplemented();
 }
 
-void EmitWriteStorageS16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                         std::string_view value) {
+void EmitWriteSharedU64(EmitContext& ctx, std::string offset, std::string value) {
     NotImplemented();
 }
 
-void EmitWriteStorage32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                        std::string_view value) {
-    // ctx.Add("c{}[{}]={}", binding.U32() + 2, offset.U32(), 16);
-    ctx.Add("EmitWriteStorage32");
-    // ctx.Add("c{}[{}]={}", binding.U32(), offset.U32(), value);
-}
-
-void EmitWriteStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                        std::string_view value) {
+void EmitWriteSharedU128(EmitContext& ctx, std::string offset, std::string value) {
     NotImplemented();
 }
 
-void EmitWriteStorage128(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                         std::string_view value) {
+void EmitCompositeConstructU32x2(EmitContext& ctx, std::string e1, std::string e2) {
     NotImplemented();
 }
 
-void EmitLoadSharedU8(EmitContext& ctx, std::string_view offset) {
+void EmitCompositeConstructU32x3(EmitContext& ctx, std::string e1, std::string e2, std::string e3) {
     NotImplemented();
 }
 
-void EmitLoadSharedS8(EmitContext& ctx, std::string_view offset) {
+void EmitCompositeConstructU32x4(EmitContext& ctx, std::string e1, std::string e2, std::string e3,
+                                 std::string e4) {
     NotImplemented();
 }
 
-void EmitLoadSharedU16(EmitContext& ctx, std::string_view offset) {
+void EmitCompositeExtractU32x2(EmitContext& ctx, std::string composite, u32 index) {
     NotImplemented();
 }
 
-void EmitLoadSharedS16(EmitContext& ctx, std::string_view offset) {
+void EmitCompositeExtractU32x3(EmitContext& ctx, std::string composite, u32 index) {
     NotImplemented();
 }
 
-void EmitLoadSharedU32(EmitContext& ctx, std::string_view offset) {
+void EmitCompositeExtractU32x4(EmitContext& ctx, std::string composite, u32 index) {
     NotImplemented();
 }
 
-void EmitLoadSharedU64(EmitContext& ctx, std::string_view offset) {
-    NotImplemented();
-}
-
-void EmitLoadSharedU128(EmitContext& ctx, std::string_view offset) {
-    NotImplemented();
-}
-
-void EmitWriteSharedU8(EmitContext& ctx, std::string_view offset, std::string_view value) {
-    NotImplemented();
-}
-
-void EmitWriteSharedU16(EmitContext& ctx, std::string_view offset, std::string_view value) {
-    NotImplemented();
-}
-
-void EmitWriteSharedU32(EmitContext& ctx, std::string_view offset, std::string_view value) {
-    NotImplemented();
-}
-
-void EmitWriteSharedU64(EmitContext& ctx, std::string_view offset, std::string_view value) {
-    NotImplemented();
-}
-
-void EmitWriteSharedU128(EmitContext& ctx, std::string_view offset, std::string_view value) {
-    NotImplemented();
-}
-
-void EmitCompositeConstructU32x2(EmitContext& ctx, std::string_view e1, std::string_view e2) {
-    NotImplemented();
-}
-
-void EmitCompositeConstructU32x3(EmitContext& ctx, std::string_view e1, std::string_view e2,
-                                 std::string_view e3) {
-    NotImplemented();
-}
-
-void EmitCompositeConstructU32x4(EmitContext& ctx, std::string_view e1, std::string_view e2,
-                                 std::string_view e3, std::string_view e4) {
-    NotImplemented();
-}
-
-void EmitCompositeExtractU32x2(EmitContext& ctx, std::string_view composite, u32 index) {
-    NotImplemented();
-}
-
-void EmitCompositeExtractU32x3(EmitContext& ctx, std::string_view composite, u32 index) {
-    NotImplemented();
-}
-
-void EmitCompositeExtractU32x4(EmitContext& ctx, std::string_view composite, u32 index) {
-    NotImplemented();
-}
-
-void EmitCompositeInsertU32x2(EmitContext& ctx, std::string_view composite, std::string_view object,
+void EmitCompositeInsertU32x2(EmitContext& ctx, std::string composite, std::string object,
                               u32 index) {
     NotImplemented();
 }
 
-void EmitCompositeInsertU32x3(EmitContext& ctx, std::string_view composite, std::string_view object,
+void EmitCompositeInsertU32x3(EmitContext& ctx, std::string composite, std::string object,
                               u32 index) {
     NotImplemented();
 }
 
-void EmitCompositeInsertU32x4(EmitContext& ctx, std::string_view composite, std::string_view object,
+void EmitCompositeInsertU32x4(EmitContext& ctx, std::string composite, std::string object,
                               u32 index) {
     NotImplemented();
 }
 
-void EmitCompositeConstructF16x2(EmitContext& ctx, std::string_view e1, std::string_view e2) {
+void EmitCompositeConstructF16x2(EmitContext& ctx, std::string e1, std::string e2) {
     NotImplemented();
 }
 
-void EmitCompositeConstructF16x3(EmitContext& ctx, std::string_view e1, std::string_view e2,
-                                 std::string_view e3) {
+void EmitCompositeConstructF16x3(EmitContext& ctx, std::string e1, std::string e2, std::string e3) {
     NotImplemented();
 }
 
-void EmitCompositeConstructF16x4(EmitContext& ctx, std::string_view e1, std::string_view e2,
-                                 std::string_view e3, std::string_view e4) {
+void EmitCompositeConstructF16x4(EmitContext& ctx, std::string e1, std::string e2, std::string e3,
+                                 std::string e4) {
     NotImplemented();
 }
 
-void EmitCompositeExtractF16x2(EmitContext& ctx, std::string_view composite, u32 index) {
+void EmitCompositeExtractF16x2(EmitContext& ctx, std::string composite, u32 index) {
     NotImplemented();
 }
 
-void EmitCompositeExtractF16x3(EmitContext& ctx, std::string_view composite, u32 index) {
+void EmitCompositeExtractF16x3(EmitContext& ctx, std::string composite, u32 index) {
     NotImplemented();
 }
 
-void EmitCompositeExtractF16x4(EmitContext& ctx, std::string_view composite, u32 index) {
+void EmitCompositeExtractF16x4(EmitContext& ctx, std::string composite, u32 index) {
     NotImplemented();
 }
 
-void EmitCompositeInsertF16x2(EmitContext& ctx, std::string_view composite, std::string_view object,
+void EmitCompositeInsertF16x2(EmitContext& ctx, std::string composite, std::string object,
                               u32 index) {
     NotImplemented();
 }
 
-void EmitCompositeInsertF16x3(EmitContext& ctx, std::string_view composite, std::string_view object,
+void EmitCompositeInsertF16x3(EmitContext& ctx, std::string composite, std::string object,
                               u32 index) {
     NotImplemented();
 }
 
-void EmitCompositeInsertF16x4(EmitContext& ctx, std::string_view composite, std::string_view object,
+void EmitCompositeInsertF16x4(EmitContext& ctx, std::string composite, std::string object,
                               u32 index) {
     NotImplemented();
 }
 
-void EmitCompositeConstructF32x2(EmitContext& ctx, std::string_view e1, std::string_view e2) {
+void EmitCompositeConstructF32x2(EmitContext& ctx, std::string e1, std::string e2) {
     NotImplemented();
 }
 
-void EmitCompositeConstructF32x3(EmitContext& ctx, std::string_view e1, std::string_view e2,
-                                 std::string_view e3) {
+void EmitCompositeConstructF32x3(EmitContext& ctx, std::string e1, std::string e2, std::string e3) {
     NotImplemented();
 }
 
-void EmitCompositeConstructF32x4(EmitContext& ctx, std::string_view e1, std::string_view e2,
-                                 std::string_view e3, std::string_view e4) {
+void EmitCompositeConstructF32x4(EmitContext& ctx, std::string e1, std::string e2, std::string e3,
+                                 std::string e4) {
     NotImplemented();
 }
 
-void EmitCompositeExtractF32x2(EmitContext& ctx, std::string_view composite, u32 index) {
+void EmitCompositeExtractF32x2(EmitContext& ctx, std::string composite, u32 index) {
     NotImplemented();
 }
 
-void EmitCompositeExtractF32x3(EmitContext& ctx, std::string_view composite, u32 index) {
+void EmitCompositeExtractF32x3(EmitContext& ctx, std::string composite, u32 index) {
     NotImplemented();
 }
 
-void EmitCompositeExtractF32x4(EmitContext& ctx, std::string_view composite, u32 index) {
+void EmitCompositeExtractF32x4(EmitContext& ctx, std::string composite, u32 index) {
     NotImplemented();
 }
 
-void EmitCompositeInsertF32x2(EmitContext& ctx, std::string_view composite, std::string_view object,
+void EmitCompositeInsertF32x2(EmitContext& ctx, std::string composite, std::string object,
                               u32 index) {
     NotImplemented();
 }
 
-void EmitCompositeInsertF32x3(EmitContext& ctx, std::string_view composite, std::string_view object,
+void EmitCompositeInsertF32x3(EmitContext& ctx, std::string composite, std::string object,
                               u32 index) {
     NotImplemented();
 }
 
-void EmitCompositeInsertF32x4(EmitContext& ctx, std::string_view composite, std::string_view object,
+void EmitCompositeInsertF32x4(EmitContext& ctx, std::string composite, std::string object,
                               u32 index) {
     NotImplemented();
 }
@@ -583,58 +501,58 @@ void EmitCompositeExtractF64x4(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitCompositeInsertF64x2(EmitContext& ctx, std::string_view composite, std::string_view object,
+void EmitCompositeInsertF64x2(EmitContext& ctx, std::string composite, std::string object,
                               u32 index) {
     NotImplemented();
 }
 
-void EmitCompositeInsertF64x3(EmitContext& ctx, std::string_view composite, std::string_view object,
+void EmitCompositeInsertF64x3(EmitContext& ctx, std::string composite, std::string object,
                               u32 index) {
     NotImplemented();
 }
 
-void EmitCompositeInsertF64x4(EmitContext& ctx, std::string_view composite, std::string_view object,
+void EmitCompositeInsertF64x4(EmitContext& ctx, std::string composite, std::string object,
                               u32 index) {
     NotImplemented();
 }
 
-void EmitSelectU1(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                  std::string_view false_value) {
+void EmitSelectU1(EmitContext& ctx, std::string cond, std::string true_value,
+                  std::string false_value) {
     NotImplemented();
 }
 
-void EmitSelectU8(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                  std::string_view false_value) {
+void EmitSelectU8(EmitContext& ctx, std::string cond, std::string true_value,
+                  std::string false_value) {
     NotImplemented();
 }
 
-void EmitSelectU16(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                   std::string_view false_value) {
+void EmitSelectU16(EmitContext& ctx, std::string cond, std::string true_value,
+                   std::string false_value) {
     NotImplemented();
 }
 
-void EmitSelectU32(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                   std::string_view false_value) {
+void EmitSelectU32(EmitContext& ctx, std::string cond, std::string true_value,
+                   std::string false_value) {
     NotImplemented();
 }
 
-void EmitSelectU64(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                   std::string_view false_value) {
+void EmitSelectU64(EmitContext& ctx, std::string cond, std::string true_value,
+                   std::string false_value) {
     NotImplemented();
 }
 
-void EmitSelectF16(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                   std::string_view false_value) {
+void EmitSelectF16(EmitContext& ctx, std::string cond, std::string true_value,
+                   std::string false_value) {
     NotImplemented();
 }
 
-void EmitSelectF32(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                   std::string_view false_value) {
+void EmitSelectF32(EmitContext& ctx, std::string cond, std::string true_value,
+                   std::string false_value) {
     NotImplemented();
 }
 
-void EmitSelectF64(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                   std::string_view false_value) {
+void EmitSelectF64(EmitContext& ctx, std::string cond, std::string true_value,
+                   std::string false_value) {
     NotImplemented();
 }
 
@@ -642,7 +560,7 @@ void EmitBitCastU16F16(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitBitCastU32F32(EmitContext& ctx, std::string_view value) {
+void EmitBitCastU32F32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
@@ -654,7 +572,7 @@ void EmitBitCastF16U16(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitBitCastF32U32(EmitContext& ctx, std::string_view value) {
+void EmitBitCastF32U32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
@@ -662,35 +580,35 @@ void EmitBitCastF64U64(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitPackUint2x32(EmitContext& ctx, std::string_view value) {
+void EmitPackUint2x32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitUnpackUint2x32(EmitContext& ctx, std::string_view value) {
+void EmitUnpackUint2x32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitPackFloat2x16(EmitContext& ctx, std::string_view value) {
+void EmitPackFloat2x16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitUnpackFloat2x16(EmitContext& ctx, std::string_view value) {
+void EmitUnpackFloat2x16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitPackHalf2x16(EmitContext& ctx, std::string_view value) {
+void EmitPackHalf2x16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitUnpackHalf2x16(EmitContext& ctx, std::string_view value) {
+void EmitUnpackHalf2x16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitPackDouble2x32(EmitContext& ctx, std::string_view value) {
+void EmitPackDouble2x32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitUnpackDouble2x32(EmitContext& ctx, std::string_view value) {
+void EmitUnpackDouble2x32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
@@ -718,717 +636,702 @@ void EmitGetInBoundsFromOp(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitFPAbs16(EmitContext& ctx, std::string_view value) {
+void EmitFPAbs16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPAbs32(EmitContext& ctx, std::string_view value) {
+void EmitFPAbs32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPAbs64(EmitContext& ctx, std::string_view value) {
+void EmitFPAbs64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPAdd16(EmitContext& ctx, IR::Inst* inst, std::string_view a, std::string_view b) {
+void EmitFPAdd16(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitFPAdd32(EmitContext& ctx, IR::Inst* inst, std::string_view a, std::string_view b) {
+void EmitFPAdd32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitFPAdd64(EmitContext& ctx, IR::Inst* inst, std::string_view a, std::string_view b) {
+void EmitFPAdd64(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitFPFma16(EmitContext& ctx, IR::Inst* inst, std::string_view a, std::string_view b,
-                 std::string_view c) {
+void EmitFPFma16(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b, std::string c) {
     NotImplemented();
 }
 
-void EmitFPFma32(EmitContext& ctx, IR::Inst* inst, std::string_view a, std::string_view b,
-                 std::string_view c) {
+void EmitFPFma32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b, std::string c) {
     NotImplemented();
 }
 
-void EmitFPFma64(EmitContext& ctx, IR::Inst* inst, std::string_view a, std::string_view b,
-                 std::string_view c) {
+void EmitFPFma64(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b, std::string c) {
     NotImplemented();
 }
 
-void EmitFPMax32(EmitContext& ctx, std::string_view a, std::string_view b) {
+void EmitFPMax32(EmitContext& ctx, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitFPMax64(EmitContext& ctx, std::string_view a, std::string_view b) {
+void EmitFPMax64(EmitContext& ctx, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitFPMin32(EmitContext& ctx, std::string_view a, std::string_view b) {
+void EmitFPMin32(EmitContext& ctx, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitFPMin64(EmitContext& ctx, std::string_view a, std::string_view b) {
+void EmitFPMin64(EmitContext& ctx, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitFPMul16(EmitContext& ctx, IR::Inst* inst, std::string_view a, std::string_view b) {
+void EmitFPMul16(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitFPMul32(EmitContext& ctx, IR::Inst* inst, std::string_view a, std::string_view b) {
+void EmitFPMul32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitFPMul64(EmitContext& ctx, IR::Inst* inst, std::string_view a, std::string_view b) {
+void EmitFPMul64(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitFPNeg16(EmitContext& ctx, std::string_view value) {
+void EmitFPNeg16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPNeg32(EmitContext& ctx, std::string_view value) {
+void EmitFPNeg32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPNeg64(EmitContext& ctx, std::string_view value) {
+void EmitFPNeg64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPSin(EmitContext& ctx, std::string_view value) {
+void EmitFPSin(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPCos(EmitContext& ctx, std::string_view value) {
+void EmitFPCos(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPExp2(EmitContext& ctx, std::string_view value) {
+void EmitFPExp2(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPLog2(EmitContext& ctx, std::string_view value) {
+void EmitFPLog2(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPRecip32(EmitContext& ctx, std::string_view value) {
+void EmitFPRecip32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPRecip64(EmitContext& ctx, std::string_view value) {
+void EmitFPRecip64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPRecipSqrt32(EmitContext& ctx, std::string_view value) {
+void EmitFPRecipSqrt32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPRecipSqrt64(EmitContext& ctx, std::string_view value) {
+void EmitFPRecipSqrt64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPSqrt(EmitContext& ctx, std::string_view value) {
+void EmitFPSqrt(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPSaturate16(EmitContext& ctx, std::string_view value) {
+void EmitFPSaturate16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPSaturate32(EmitContext& ctx, std::string_view value) {
+void EmitFPSaturate32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPSaturate64(EmitContext& ctx, std::string_view value) {
+void EmitFPSaturate64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPClamp16(EmitContext& ctx, std::string_view value, std::string_view min_value,
-                   std::string_view max_value) {
+void EmitFPClamp16(EmitContext& ctx, std::string value, std::string min_value,
+                   std::string max_value) {
     NotImplemented();
 }
 
-void EmitFPClamp32(EmitContext& ctx, std::string_view value, std::string_view min_value,
-                   std::string_view max_value) {
+void EmitFPClamp32(EmitContext& ctx, std::string value, std::string min_value,
+                   std::string max_value) {
     NotImplemented();
 }
 
-void EmitFPClamp64(EmitContext& ctx, std::string_view value, std::string_view min_value,
-                   std::string_view max_value) {
+void EmitFPClamp64(EmitContext& ctx, std::string value, std::string min_value,
+                   std::string max_value) {
     NotImplemented();
 }
 
-void EmitFPRoundEven16(EmitContext& ctx, std::string_view value) {
+void EmitFPRoundEven16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPRoundEven32(EmitContext& ctx, std::string_view value) {
+void EmitFPRoundEven32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPRoundEven64(EmitContext& ctx, std::string_view value) {
+void EmitFPRoundEven64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPFloor16(EmitContext& ctx, std::string_view value) {
+void EmitFPFloor16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPFloor32(EmitContext& ctx, std::string_view value) {
+void EmitFPFloor32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPFloor64(EmitContext& ctx, std::string_view value) {
+void EmitFPFloor64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPCeil16(EmitContext& ctx, std::string_view value) {
+void EmitFPCeil16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPCeil32(EmitContext& ctx, std::string_view value) {
+void EmitFPCeil32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPCeil64(EmitContext& ctx, std::string_view value) {
+void EmitFPCeil64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPTrunc16(EmitContext& ctx, std::string_view value) {
+void EmitFPTrunc16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPTrunc32(EmitContext& ctx, std::string_view value) {
+void EmitFPTrunc32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPTrunc64(EmitContext& ctx, std::string_view value) {
+void EmitFPTrunc64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPOrdEqual16(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdEqual16(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdEqual32(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdEqual32(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdEqual64(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdEqual64(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordEqual16(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordEqual16(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordEqual32(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordEqual32(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordEqual64(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordEqual64(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdNotEqual16(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdNotEqual16(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdNotEqual32(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdNotEqual32(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdNotEqual64(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdNotEqual64(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordNotEqual16(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordNotEqual16(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordNotEqual32(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordNotEqual32(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordNotEqual64(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordNotEqual64(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdLessThan16(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdLessThan16(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdLessThan32(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdLessThan32(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdLessThan64(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdLessThan64(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordLessThan16(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordLessThan16(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordLessThan32(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordLessThan32(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordLessThan64(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordLessThan64(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdGreaterThan16(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdGreaterThan16(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdGreaterThan32(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdGreaterThan32(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdGreaterThan64(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdGreaterThan64(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordGreaterThan16(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordGreaterThan16(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordGreaterThan32(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordGreaterThan32(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordGreaterThan64(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordGreaterThan64(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdLessThanEqual16(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdLessThanEqual16(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdLessThanEqual32(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdLessThanEqual32(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdLessThanEqual64(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdLessThanEqual64(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordLessThanEqual16(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordLessThanEqual16(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordLessThanEqual32(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordLessThanEqual32(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordLessThanEqual64(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordLessThanEqual64(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdGreaterThanEqual16(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdGreaterThanEqual16(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdGreaterThanEqual32(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdGreaterThanEqual32(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPOrdGreaterThanEqual64(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPOrdGreaterThanEqual64(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordGreaterThanEqual16(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordGreaterThanEqual16(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordGreaterThanEqual32(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordGreaterThanEqual32(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPUnordGreaterThanEqual64(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitFPUnordGreaterThanEqual64(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitFPIsNan16(EmitContext& ctx, std::string_view value) {
+void EmitFPIsNan16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPIsNan32(EmitContext& ctx, std::string_view value) {
+void EmitFPIsNan32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPIsNan64(EmitContext& ctx, std::string_view value) {
+void EmitFPIsNan64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitIAdd32(EmitContext& ctx, IR::Inst* inst, std::string_view a, std::string_view b) {
+void EmitIAdd32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitIAdd64(EmitContext& ctx, std::string_view a, std::string_view b) {
+void EmitIAdd64(EmitContext& ctx, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitISub32(EmitContext& ctx, std::string_view a, std::string_view b) {
+void EmitISub32(EmitContext& ctx, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitISub64(EmitContext& ctx, std::string_view a, std::string_view b) {
+void EmitISub64(EmitContext& ctx, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitIMul32(EmitContext& ctx, std::string_view a, std::string_view b) {
+void EmitIMul32(EmitContext& ctx, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitINeg32(EmitContext& ctx, std::string_view value) {
+void EmitINeg32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitINeg64(EmitContext& ctx, std::string_view value) {
+void EmitINeg64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitIAbs32(EmitContext& ctx, std::string_view value) {
+void EmitIAbs32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitIAbs64(EmitContext& ctx, std::string_view value) {
+void EmitIAbs64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitShiftLeftLogical32(EmitContext& ctx, std::string_view base, std::string_view shift) {
+void EmitShiftLeftLogical32(EmitContext& ctx, std::string base, std::string shift) {
     NotImplemented();
 }
 
-void EmitShiftLeftLogical64(EmitContext& ctx, std::string_view base, std::string_view shift) {
+void EmitShiftLeftLogical64(EmitContext& ctx, std::string base, std::string shift) {
     NotImplemented();
 }
 
-void EmitShiftRightLogical32(EmitContext& ctx, std::string_view base, std::string_view shift) {
+void EmitShiftRightLogical32(EmitContext& ctx, std::string base, std::string shift) {
     NotImplemented();
 }
 
-void EmitShiftRightLogical64(EmitContext& ctx, std::string_view base, std::string_view shift) {
+void EmitShiftRightLogical64(EmitContext& ctx, std::string base, std::string shift) {
     NotImplemented();
 }
 
-void EmitShiftRightArithmetic32(EmitContext& ctx, std::string_view base, std::string_view shift) {
+void EmitShiftRightArithmetic32(EmitContext& ctx, std::string base, std::string shift) {
     NotImplemented();
 }
 
-void EmitShiftRightArithmetic64(EmitContext& ctx, std::string_view base, std::string_view shift) {
+void EmitShiftRightArithmetic64(EmitContext& ctx, std::string base, std::string shift) {
     NotImplemented();
 }
 
-void EmitBitwiseAnd32(EmitContext& ctx, IR::Inst* inst, std::string_view a, std::string_view b) {
+void EmitBitwiseAnd32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitBitwiseOr32(EmitContext& ctx, IR::Inst* inst, std::string_view a, std::string_view b) {
+void EmitBitwiseOr32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitBitwiseXor32(EmitContext& ctx, IR::Inst* inst, std::string_view a, std::string_view b) {
+void EmitBitwiseXor32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitBitFieldInsert(EmitContext& ctx, std::string_view base, std::string_view insert,
-                        std::string_view offset, std::string_view count) {
+void EmitBitFieldInsert(EmitContext& ctx, std::string base, std::string insert, std::string offset,
+                        std::string count) {
     NotImplemented();
 }
 
-void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst* inst, std::string_view base,
-                          std::string_view offset, std::string_view count) {
+void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst* inst, std::string base, std::string offset,
+                          std::string count) {
     NotImplemented();
 }
 
-void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst* inst, std::string_view base,
-                          std::string_view offset, std::string_view count) {
+void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst* inst, std::string base, std::string offset,
+                          std::string count) {
     NotImplemented();
 }
 
-void EmitBitReverse32(EmitContext& ctx, std::string_view value) {
+void EmitBitReverse32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitBitCount32(EmitContext& ctx, std::string_view value) {
+void EmitBitCount32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitBitwiseNot32(EmitContext& ctx, std::string_view value) {
+void EmitBitwiseNot32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFindSMsb32(EmitContext& ctx, std::string_view value) {
+void EmitFindSMsb32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFindUMsb32(EmitContext& ctx, std::string_view value) {
+void EmitFindUMsb32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitSMin32(EmitContext& ctx, std::string_view a, std::string_view b) {
+void EmitSMin32(EmitContext& ctx, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitUMin32(EmitContext& ctx, std::string_view a, std::string_view b) {
+void EmitUMin32(EmitContext& ctx, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitSMax32(EmitContext& ctx, std::string_view a, std::string_view b) {
+void EmitSMax32(EmitContext& ctx, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitUMax32(EmitContext& ctx, std::string_view a, std::string_view b) {
+void EmitUMax32(EmitContext& ctx, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitSClamp32(EmitContext& ctx, IR::Inst* inst, std::string_view value, std::string_view min,
-                  std::string_view max) {
+void EmitSClamp32(EmitContext& ctx, IR::Inst* inst, std::string value, std::string min,
+                  std::string max) {
     NotImplemented();
 }
 
-void EmitUClamp32(EmitContext& ctx, IR::Inst* inst, std::string_view value, std::string_view min,
-                  std::string_view max) {
+void EmitUClamp32(EmitContext& ctx, IR::Inst* inst, std::string value, std::string min,
+                  std::string max) {
     NotImplemented();
 }
 
-void EmitSLessThan(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitSLessThan(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitULessThan(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitULessThan(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitIEqual(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitIEqual(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitSLessThanEqual(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitSLessThanEqual(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitULessThanEqual(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitULessThanEqual(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitSGreaterThan(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitSGreaterThan(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitUGreaterThan(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitUGreaterThan(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitINotEqual(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitINotEqual(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitSGreaterThanEqual(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitSGreaterThanEqual(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitUGreaterThanEqual(EmitContext& ctx, std::string_view lhs, std::string_view rhs) {
+void EmitUGreaterThanEqual(EmitContext& ctx, std::string lhs, std::string rhs) {
     NotImplemented();
 }
 
-void EmitSharedAtomicIAdd32(EmitContext& ctx, std::string_view pointer_offset,
-                            std::string_view value) {
+void EmitSharedAtomicIAdd32(EmitContext& ctx, std::string pointer_offset, std::string value) {
     NotImplemented();
 }
 
-void EmitSharedAtomicSMin32(EmitContext& ctx, std::string_view pointer_offset,
-                            std::string_view value) {
+void EmitSharedAtomicSMin32(EmitContext& ctx, std::string pointer_offset, std::string value) {
     NotImplemented();
 }
 
-void EmitSharedAtomicUMin32(EmitContext& ctx, std::string_view pointer_offset,
-                            std::string_view value) {
+void EmitSharedAtomicUMin32(EmitContext& ctx, std::string pointer_offset, std::string value) {
     NotImplemented();
 }
 
-void EmitSharedAtomicSMax32(EmitContext& ctx, std::string_view pointer_offset,
-                            std::string_view value) {
+void EmitSharedAtomicSMax32(EmitContext& ctx, std::string pointer_offset, std::string value) {
     NotImplemented();
 }
 
-void EmitSharedAtomicUMax32(EmitContext& ctx, std::string_view pointer_offset,
-                            std::string_view value) {
+void EmitSharedAtomicUMax32(EmitContext& ctx, std::string pointer_offset, std::string value) {
     NotImplemented();
 }
 
-void EmitSharedAtomicInc32(EmitContext& ctx, std::string_view pointer_offset,
-                           std::string_view value) {
+void EmitSharedAtomicInc32(EmitContext& ctx, std::string pointer_offset, std::string value) {
     NotImplemented();
 }
 
-void EmitSharedAtomicDec32(EmitContext& ctx, std::string_view pointer_offset,
-                           std::string_view value) {
+void EmitSharedAtomicDec32(EmitContext& ctx, std::string pointer_offset, std::string value) {
     NotImplemented();
 }
 
-void EmitSharedAtomicAnd32(EmitContext& ctx, std::string_view pointer_offset,
-                           std::string_view value) {
+void EmitSharedAtomicAnd32(EmitContext& ctx, std::string pointer_offset, std::string value) {
     NotImplemented();
 }
 
-void EmitSharedAtomicOr32(EmitContext& ctx, std::string_view pointer_offset,
-                          std::string_view value) {
+void EmitSharedAtomicOr32(EmitContext& ctx, std::string pointer_offset, std::string value) {
     NotImplemented();
 }
 
-void EmitSharedAtomicXor32(EmitContext& ctx, std::string_view pointer_offset,
-                           std::string_view value) {
+void EmitSharedAtomicXor32(EmitContext& ctx, std::string pointer_offset, std::string value) {
     NotImplemented();
 }
 
-void EmitSharedAtomicExchange32(EmitContext& ctx, std::string_view pointer_offset,
-                                std::string_view value) {
+void EmitSharedAtomicExchange32(EmitContext& ctx, std::string pointer_offset, std::string value) {
     NotImplemented();
 }
 
-void EmitSharedAtomicExchange64(EmitContext& ctx, std::string_view pointer_offset,
-                                std::string_view value) {
+void EmitSharedAtomicExchange64(EmitContext& ctx, std::string pointer_offset, std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicIAdd32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             std::string_view value) {
+                             std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicSMin32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             std::string_view value) {
+                             std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicUMin32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             std::string_view value) {
+                             std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicSMax32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             std::string_view value) {
+                             std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicUMax32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             std::string_view value) {
+                             std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicInc32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                            std::string_view value) {
+                            std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicDec32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                            std::string_view value) {
+                            std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicAnd32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                            std::string_view value) {
+                            std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicOr32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                           std::string_view value) {
+                           std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicXor32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                            std::string_view value) {
+                            std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicExchange32(EmitContext& ctx, const IR::Value& binding,
-                                 const IR::Value& offset, std::string_view value) {
+                                 const IR::Value& offset, std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicIAdd64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             std::string_view value) {
+                             std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicSMin64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             std::string_view value) {
+                             std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicUMin64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             std::string_view value) {
+                             std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicSMax64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             std::string_view value) {
+                             std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicUMax64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             std::string_view value) {
+                             std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicAnd64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                            std::string_view value) {
+                            std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicOr64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                           std::string_view value) {
+                           std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicXor64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                            std::string_view value) {
+                            std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicExchange64(EmitContext& ctx, const IR::Value& binding,
-                                 const IR::Value& offset, std::string_view value) {
+                                 const IR::Value& offset, std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicAddF32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                             std::string_view value) {
+                             std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicAddF16x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                               std::string_view value) {
+                               std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicAddF32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                               std::string_view value) {
+                               std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicMinF16x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                               std::string_view value) {
+                               std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicMinF32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                               std::string_view value) {
+                               std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicMaxF16x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                               std::string_view value) {
+                               std::string value) {
     NotImplemented();
 }
 
 void EmitStorageAtomicMaxF32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
-                               std::string_view value) {
+                               std::string value) {
     NotImplemented();
 }
 
@@ -1548,211 +1451,211 @@ void EmitGlobalAtomicMaxF32x2(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitLogicalOr(EmitContext& ctx, std::string_view a, std::string_view b) {
+void EmitLogicalOr(EmitContext& ctx, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitLogicalAnd(EmitContext& ctx, std::string_view a, std::string_view b) {
+void EmitLogicalAnd(EmitContext& ctx, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitLogicalXor(EmitContext& ctx, std::string_view a, std::string_view b) {
+void EmitLogicalXor(EmitContext& ctx, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitLogicalNot(EmitContext& ctx, std::string_view value) {
+void EmitLogicalNot(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertS16F16(EmitContext& ctx, std::string_view value) {
+void EmitConvertS16F16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertS16F32(EmitContext& ctx, std::string_view value) {
+void EmitConvertS16F32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertS16F64(EmitContext& ctx, std::string_view value) {
+void EmitConvertS16F64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertS32F16(EmitContext& ctx, std::string_view value) {
+void EmitConvertS32F16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertS32F32(EmitContext& ctx, std::string_view value) {
+void EmitConvertS32F32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertS32F64(EmitContext& ctx, std::string_view value) {
+void EmitConvertS32F64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertS64F16(EmitContext& ctx, std::string_view value) {
+void EmitConvertS64F16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertS64F32(EmitContext& ctx, std::string_view value) {
+void EmitConvertS64F32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertS64F64(EmitContext& ctx, std::string_view value) {
+void EmitConvertS64F64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertU16F16(EmitContext& ctx, std::string_view value) {
+void EmitConvertU16F16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertU16F32(EmitContext& ctx, std::string_view value) {
+void EmitConvertU16F32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertU16F64(EmitContext& ctx, std::string_view value) {
+void EmitConvertU16F64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertU32F16(EmitContext& ctx, std::string_view value) {
+void EmitConvertU32F16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertU32F32(EmitContext& ctx, std::string_view value) {
+void EmitConvertU32F32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertU32F64(EmitContext& ctx, std::string_view value) {
+void EmitConvertU32F64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertU64F16(EmitContext& ctx, std::string_view value) {
+void EmitConvertU64F16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertU64F32(EmitContext& ctx, std::string_view value) {
+void EmitConvertU64F32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertU64F64(EmitContext& ctx, std::string_view value) {
+void EmitConvertU64F64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertU64U32(EmitContext& ctx, std::string_view value) {
+void EmitConvertU64U32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertU32U64(EmitContext& ctx, std::string_view value) {
+void EmitConvertU32U64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF16F32(EmitContext& ctx, std::string_view value) {
+void EmitConvertF16F32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF32F16(EmitContext& ctx, std::string_view value) {
+void EmitConvertF32F16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF32F64(EmitContext& ctx, std::string_view value) {
+void EmitConvertF32F64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF64F32(EmitContext& ctx, std::string_view value) {
+void EmitConvertF64F32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF16S8(EmitContext& ctx, std::string_view value) {
+void EmitConvertF16S8(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF16S16(EmitContext& ctx, std::string_view value) {
+void EmitConvertF16S16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF16S32(EmitContext& ctx, std::string_view value) {
+void EmitConvertF16S32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF16S64(EmitContext& ctx, std::string_view value) {
+void EmitConvertF16S64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF16U8(EmitContext& ctx, std::string_view value) {
+void EmitConvertF16U8(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF16U16(EmitContext& ctx, std::string_view value) {
+void EmitConvertF16U16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF16U32(EmitContext& ctx, std::string_view value) {
+void EmitConvertF16U32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF16U64(EmitContext& ctx, std::string_view value) {
+void EmitConvertF16U64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF32S8(EmitContext& ctx, std::string_view value) {
+void EmitConvertF32S8(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF32S16(EmitContext& ctx, std::string_view value) {
+void EmitConvertF32S16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF32S32(EmitContext& ctx, std::string_view value) {
+void EmitConvertF32S32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF32S64(EmitContext& ctx, std::string_view value) {
+void EmitConvertF32S64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF32U8(EmitContext& ctx, std::string_view value) {
+void EmitConvertF32U8(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF32U16(EmitContext& ctx, std::string_view value) {
+void EmitConvertF32U16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF32U32(EmitContext& ctx, std::string_view value) {
+void EmitConvertF32U32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF32U64(EmitContext& ctx, std::string_view value) {
+void EmitConvertF32U64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF64S8(EmitContext& ctx, std::string_view value) {
+void EmitConvertF64S8(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF64S16(EmitContext& ctx, std::string_view value) {
+void EmitConvertF64S16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF64S32(EmitContext& ctx, std::string_view value) {
+void EmitConvertF64S32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF64S64(EmitContext& ctx, std::string_view value) {
+void EmitConvertF64S64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF64U8(EmitContext& ctx, std::string_view value) {
+void EmitConvertF64U8(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF64U16(EmitContext& ctx, std::string_view value) {
+void EmitConvertF64U16(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF64U32(EmitContext& ctx, std::string_view value) {
+void EmitConvertF64U32(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitConvertF64U64(EmitContext& ctx, std::string_view value) {
+void EmitConvertF64U64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
@@ -1853,69 +1756,64 @@ void EmitBoundImageWrite(EmitContext&) {
 }
 
 void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                                std::string_view coords, std::string_view bias_lc,
-                                const IR::Value& offset) {
+                                std::string coords, std::string bias_lc, const IR::Value& offset) {
     NotImplemented();
 }
 
 void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                                std::string_view coords, std::string_view lod_lc,
-                                const IR::Value& offset) {
+                                std::string coords, std::string lod_lc, const IR::Value& offset) {
     NotImplemented();
 }
 
 void EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                                    std::string_view coords, std::string_view dref,
-                                    std::string_view bias_lc, const IR::Value& offset) {
+                                    std::string coords, std::string dref, std::string bias_lc,
+                                    const IR::Value& offset) {
     NotImplemented();
 }
 
 void EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                                    std::string_view coords, std::string_view dref,
-                                    std::string_view lod_lc, const IR::Value& offset) {
+                                    std::string coords, std::string dref, std::string lod_lc,
+                                    const IR::Value& offset) {
     NotImplemented();
 }
 
-void EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                     std::string_view coords, const IR::Value& offset, const IR::Value& offset2) {
+void EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, std::string coords,
+                     const IR::Value& offset, const IR::Value& offset2) {
     NotImplemented();
 }
 
 void EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                         std::string_view coords, const IR::Value& offset, const IR::Value& offset2,
-                         std::string_view dref) {
+                         std::string coords, const IR::Value& offset, const IR::Value& offset2,
+                         std::string dref) {
     NotImplemented();
 }
 
-void EmitImageFetch(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                    std::string_view coords, std::string_view offset, std::string_view lod,
-                    std::string_view ms) {
+void EmitImageFetch(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, std::string coords,
+                    std::string offset, std::string lod, std::string ms) {
     NotImplemented();
 }
 
 void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                              std::string_view lod) {
+                              std::string lod) {
     NotImplemented();
 }
 
 void EmitImageQueryLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                       std::string_view coords) {
+                       std::string coords) {
     NotImplemented();
 }
 
-void EmitImageGradient(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                       std::string_view coords, std::string_view derivates, std::string_view offset,
-                       std::string_view lod_clamp) {
+void EmitImageGradient(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, std::string coords,
+                       std::string derivates, std::string offset, std::string lod_clamp) {
     NotImplemented();
 }
 
-void EmitImageRead(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                   std::string_view coords) {
+void EmitImageRead(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, std::string coords) {
     NotImplemented();
 }
 
-void EmitImageWrite(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                    std::string_view coords, std::string_view color) {
+void EmitImageWrite(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, std::string coords,
+                    std::string color) {
     NotImplemented();
 }
 
@@ -2008,57 +1906,57 @@ void EmitBoundImageAtomicExchange32(EmitContext&) {
 }
 
 void EmitImageAtomicIAdd32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                           std::string_view coords, std::string_view value) {
+                           std::string coords, std::string value) {
     NotImplemented();
 }
 
 void EmitImageAtomicSMin32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                           std::string_view coords, std::string_view value) {
+                           std::string coords, std::string value) {
     NotImplemented();
 }
 
 void EmitImageAtomicUMin32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                           std::string_view coords, std::string_view value) {
+                           std::string coords, std::string value) {
     NotImplemented();
 }
 
 void EmitImageAtomicSMax32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                           std::string_view coords, std::string_view value) {
+                           std::string coords, std::string value) {
     NotImplemented();
 }
 
 void EmitImageAtomicUMax32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                           std::string_view coords, std::string_view value) {
+                           std::string coords, std::string value) {
     NotImplemented();
 }
 
 void EmitImageAtomicInc32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                          std::string_view coords, std::string_view value) {
+                          std::string coords, std::string value) {
     NotImplemented();
 }
 
 void EmitImageAtomicDec32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                          std::string_view coords, std::string_view value) {
+                          std::string coords, std::string value) {
     NotImplemented();
 }
 
 void EmitImageAtomicAnd32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                          std::string_view coords, std::string_view value) {
+                          std::string coords, std::string value) {
     NotImplemented();
 }
 
 void EmitImageAtomicOr32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                         std::string_view coords, std::string_view value) {
+                         std::string coords, std::string value) {
     NotImplemented();
 }
 
 void EmitImageAtomicXor32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                          std::string_view coords, std::string_view value) {
+                          std::string coords, std::string value) {
     NotImplemented();
 }
 
 void EmitImageAtomicExchange32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
-                               std::string_view coords, std::string_view value) {
+                               std::string coords, std::string value) {
     NotImplemented();
 }
 
@@ -2066,19 +1964,19 @@ void EmitLaneId(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitVoteAll(EmitContext& ctx, std::string_view pred) {
+void EmitVoteAll(EmitContext& ctx, std::string pred) {
     NotImplemented();
 }
 
-void EmitVoteAny(EmitContext& ctx, std::string_view pred) {
+void EmitVoteAny(EmitContext& ctx, std::string pred) {
     NotImplemented();
 }
 
-void EmitVoteEqual(EmitContext& ctx, std::string_view pred) {
+void EmitVoteEqual(EmitContext& ctx, std::string pred) {
     NotImplemented();
 }
 
-void EmitSubgroupBallot(EmitContext& ctx, std::string_view pred) {
+void EmitSubgroupBallot(EmitContext& ctx, std::string pred) {
     NotImplemented();
 }
 
@@ -2102,47 +2000,43 @@ void EmitSubgroupGeMask(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitShuffleIndex(EmitContext& ctx, IR::Inst* inst, std::string_view value,
-                      std::string_view index, std::string_view clamp,
-                      std::string_view segmentation_mask) {
+void EmitShuffleIndex(EmitContext& ctx, IR::Inst* inst, std::string value, std::string index,
+                      std::string clamp, std::string segmentation_mask) {
     NotImplemented();
 }
 
-void EmitShuffleUp(EmitContext& ctx, IR::Inst* inst, std::string_view value, std::string_view index,
-                   std::string_view clamp, std::string_view segmentation_mask) {
+void EmitShuffleUp(EmitContext& ctx, IR::Inst* inst, std::string value, std::string index,
+                   std::string clamp, std::string segmentation_mask) {
     NotImplemented();
 }
 
-void EmitShuffleDown(EmitContext& ctx, IR::Inst* inst, std::string_view value,
-                     std::string_view index, std::string_view clamp,
-                     std::string_view segmentation_mask) {
+void EmitShuffleDown(EmitContext& ctx, IR::Inst* inst, std::string value, std::string index,
+                     std::string clamp, std::string segmentation_mask) {
     NotImplemented();
 }
 
-void EmitShuffleButterfly(EmitContext& ctx, IR::Inst* inst, std::string_view value,
-                          std::string_view index, std::string_view clamp,
-                          std::string_view segmentation_mask) {
+void EmitShuffleButterfly(EmitContext& ctx, IR::Inst* inst, std::string value, std::string index,
+                          std::string clamp, std::string segmentation_mask) {
     NotImplemented();
 }
 
-void EmitFSwizzleAdd(EmitContext& ctx, std::string_view op_a, std::string_view op_b,
-                     std::string_view swizzle) {
+void EmitFSwizzleAdd(EmitContext& ctx, std::string op_a, std::string op_b, std::string swizzle) {
     NotImplemented();
 }
 
-void EmitDPdxFine(EmitContext& ctx, std::string_view op_a) {
+void EmitDPdxFine(EmitContext& ctx, std::string op_a) {
     NotImplemented();
 }
 
-void EmitDPdyFine(EmitContext& ctx, std::string_view op_a) {
+void EmitDPdyFine(EmitContext& ctx, std::string op_a) {
     NotImplemented();
 }
 
-void EmitDPdxCoarse(EmitContext& ctx, std::string_view op_a) {
+void EmitDPdxCoarse(EmitContext& ctx, std::string op_a) {
     NotImplemented();
 }
 
-void EmitDPdyCoarse(EmitContext& ctx, std::string_view op_a) {
+void EmitDPdyCoarse(EmitContext& ctx, std::string op_a) {
     NotImplemented();
 }
 
