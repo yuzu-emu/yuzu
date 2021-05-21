@@ -184,6 +184,76 @@ GLenum AssemblyStage(size_t stage_index) {
     UNREACHABLE_MSG("{}", stage_index);
     return GL_NONE;
 }
+
+Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsProgramKey& key,
+                                    const Shader::IR::Program& program) {
+    UNIMPLEMENTED_IF_MSG(key.xfb_enabled != 0, "Transform feedbacks");
+
+    Shader::RuntimeInfo info;
+    switch (program.stage) {
+    case Shader::Stage::TessellationEval:
+        // We have to flip tessellation clockwise for some reason...
+        info.tess_clockwise = key.tessellation_clockwise == 0;
+        info.tess_primitive = [&key] {
+            switch (key.tessellation_primitive) {
+            case Maxwell::TessellationPrimitive::Isolines:
+                return Shader::TessPrimitive::Isolines;
+            case Maxwell::TessellationPrimitive::Triangles:
+                return Shader::TessPrimitive::Triangles;
+            case Maxwell::TessellationPrimitive::Quads:
+                return Shader::TessPrimitive::Quads;
+            }
+            UNREACHABLE();
+            return Shader::TessPrimitive::Triangles;
+        }();
+        info.tess_spacing = [&] {
+            switch (key.tessellation_spacing) {
+            case Maxwell::TessellationSpacing::Equal:
+                return Shader::TessSpacing::Equal;
+            case Maxwell::TessellationSpacing::FractionalOdd:
+                return Shader::TessSpacing::FractionalOdd;
+            case Maxwell::TessellationSpacing::FractionalEven:
+                return Shader::TessSpacing::FractionalEven;
+            }
+            UNREACHABLE();
+            return Shader::TessSpacing::Equal;
+        }();
+        break;
+    case Shader::Stage::Geometry:
+
+        break;
+    default:
+        break;
+    }
+    switch (key.gs_input_topology) {
+    case Maxwell::PrimitiveTopology::Points:
+        info.input_topology = Shader::InputTopology::Points;
+        break;
+    case Maxwell::PrimitiveTopology::Lines:
+    case Maxwell::PrimitiveTopology::LineLoop:
+    case Maxwell::PrimitiveTopology::LineStrip:
+        info.input_topology = Shader::InputTopology::Lines;
+        break;
+    case Maxwell::PrimitiveTopology::Triangles:
+    case Maxwell::PrimitiveTopology::TriangleStrip:
+    case Maxwell::PrimitiveTopology::TriangleFan:
+    case Maxwell::PrimitiveTopology::Quads:
+    case Maxwell::PrimitiveTopology::QuadStrip:
+    case Maxwell::PrimitiveTopology::Polygon:
+    case Maxwell::PrimitiveTopology::Patches:
+        info.input_topology = Shader::InputTopology::Triangles;
+        break;
+    case Maxwell::PrimitiveTopology::LinesAdjacency:
+    case Maxwell::PrimitiveTopology::LineStripAdjacency:
+        info.input_topology = Shader::InputTopology::LinesAdjacency;
+        break;
+    case Maxwell::PrimitiveTopology::TrianglesAdjacency:
+    case Maxwell::PrimitiveTopology::TriangleStripAdjacency:
+        info.input_topology = Shader::InputTopology::TrianglesAdjacency;
+        break;
+    }
+    return info;
+}
 } // Anonymous namespace
 
 ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindow& emu_window_,
@@ -283,11 +353,13 @@ std::unique_ptr<GraphicsProgram> ShaderCache::CreateGraphicsProgram(
         Shader::IR::Program& program{programs[index]};
         const size_t stage_index{index - 1};
         infos[stage_index] = &program.info;
+
+        const Shader::RuntimeInfo runtime_info{MakeRuntimeInfo(key, program)};
         if (device.UseAssemblyShaders()) {
-            const std::string code{EmitGLASM(profile, {}, program, binding)};
+            const std::string code{EmitGLASM(profile, runtime_info, program, binding)};
             assembly_programs[stage_index] = CompileProgram(code, AssemblyStage(stage_index));
         } else {
-            const std::vector<u32> code{EmitSPIRV(profile, {}, program, binding)};
+            const std::vector<u32> code{EmitSPIRV(profile, runtime_info, program, binding)};
             AddShader(Stage(stage_index), source_program.handle, code);
         }
     }
