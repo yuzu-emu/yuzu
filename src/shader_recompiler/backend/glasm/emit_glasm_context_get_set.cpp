@@ -163,11 +163,8 @@ void EmitGetPatch(EmitContext& ctx, IR::Inst& inst, IR::Patch patch) {
     const u32 index{IR::GenericPatchIndex(patch)};
     const u32 element{IR::GenericPatchElement(patch)};
     const char swizzle{"xyzw"[element]};
-    if (ctx.stage == Stage::TessellationControl) {
-        ctx.Add("MOV.F {},primitive.out.patch.attrib[{}].{};", inst, index, swizzle);
-    } else {
-        ctx.Add("MOV.F {},primitive.patch.attrib[{}].{};", inst, index, swizzle);
-    }
+    const std::string_view out{ctx.stage == Stage::TessellationControl ? ".out" : ""};
+    ctx.Add("MOV.F {},primitive{}.patch.attrib[{}].{};", inst, out, index, swizzle);
 }
 
 void EmitSetPatch(EmitContext& ctx, IR::Patch patch, ScalarF32 value) {
