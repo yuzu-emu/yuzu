@@ -140,13 +140,16 @@ OGLAssemblyProgram CompileProgram(std::string_view code, GLenum target) {
     glGenProgramsARB(1, &program.handle);
     glNamedProgramStringEXT(program.handle, target, GL_PROGRAM_FORMAT_ASCII_ARB,
                             static_cast<GLsizei>(code.size()), code.data());
-    if (!Settings::values.renderer_debug) {
-        return program;
-    }
-    const auto err = reinterpret_cast<const char*>(glGetString(GL_PROGRAM_ERROR_STRING_NV));
-    if (err && *err) {
-        LOG_CRITICAL(Render_OpenGL, "{}", err);
-        LOG_INFO(Render_OpenGL, "{}", code);
+    if (Settings::values.renderer_debug) {
+        const auto err = reinterpret_cast<const char*>(glGetString(GL_PROGRAM_ERROR_STRING_NV));
+        if (err && *err) {
+            if (std::strstr(err, "error")) {
+                LOG_CRITICAL(Render_OpenGL, "\n{}", err);
+                LOG_INFO(Render_OpenGL, "\n{}", code);
+            } else {
+                LOG_WARNING(Render_OpenGL, "\n{}", err);
+            }
+        }
     }
     return program;
 }
