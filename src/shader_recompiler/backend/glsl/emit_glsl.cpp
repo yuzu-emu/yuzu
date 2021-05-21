@@ -37,8 +37,6 @@ template <typename ArgType>
 ArgType Arg(EmitContext& ctx, const IR::Value& arg) {
     if constexpr (std::is_same_v<ArgType, std::string>) {
         return ctx.reg_alloc.Consume(arg);
-    } else if constexpr (std::is_same_v<ArgType, IR::Inst&>) {
-        return *arg.Inst();
     } else if constexpr (std::is_same_v<ArgType, const IR::Value&>) {
         return arg;
     } else if constexpr (std::is_same_v<ArgType, u32>) {
@@ -58,7 +56,7 @@ void Invoke(EmitContext& ctx, IR::Inst* inst, std::index_sequence<I...>) {
     if constexpr (std::is_same_v<typename Traits::ReturnType, Id>) {
         if constexpr (is_first_arg_inst) {
             SetDefinition<func>(
-                ctx, inst, inst,
+                ctx, inst, *inst,
                 Arg<typename Traits::template ArgType<I + 2>>(ctx, inst->Arg(I))...);
         } else {
             SetDefinition<func>(
@@ -66,7 +64,7 @@ void Invoke(EmitContext& ctx, IR::Inst* inst, std::index_sequence<I...>) {
         }
     } else {
         if constexpr (is_first_arg_inst) {
-            func(ctx, inst, Arg<typename Traits::template ArgType<I + 2>>(ctx, inst->Arg(I))...);
+            func(ctx, *inst, Arg<typename Traits::template ArgType<I + 2>>(ctx, inst->Arg(I))...);
         } else {
             func(ctx, Arg<typename Traits::template ArgType<I + 1>>(ctx, inst->Arg(I))...);
         }
@@ -81,7 +79,7 @@ void Invoke(EmitContext& ctx, IR::Inst* inst) {
         Invoke<func, false>(ctx, inst, std::make_index_sequence<0>{});
     } else {
         using FirstArgType = typename Traits::template ArgType<1>;
-        static constexpr bool is_first_arg_inst = std::is_same_v<FirstArgType, IR::Inst*>;
+        static constexpr bool is_first_arg_inst = std::is_same_v<FirstArgType, IR::Inst&>;
         using Indices = std::make_index_sequence<Traits::NUM_ARGS - (is_first_arg_inst ? 2 : 1)>;
         Invoke<func, is_first_arg_inst>(ctx, inst, Indices{});
     }
