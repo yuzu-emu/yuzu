@@ -36,42 +36,6 @@
 
 namespace OpenGL {
 namespace {
-// FIXME: Move this somewhere else
-const Shader::Profile profile{
-    .supported_spirv = 0x00010000,
-
-    .unified_descriptor_binding = false,
-    .support_descriptor_aliasing = false,
-    .support_int8 = false,
-    .support_int16 = false,
-    .support_vertex_instance_id = true,
-    .support_float_controls = false,
-    .support_separate_denorm_behavior = false,
-    .support_separate_rounding_mode = false,
-    .support_fp16_denorm_preserve = false,
-    .support_fp32_denorm_preserve = false,
-    .support_fp16_denorm_flush = false,
-    .support_fp32_denorm_flush = false,
-    .support_fp16_signed_zero_nan_preserve = false,
-    .support_fp32_signed_zero_nan_preserve = false,
-    .support_fp64_signed_zero_nan_preserve = false,
-    .support_explicit_workgroup_layout = false,
-    .support_vote = true,
-    .support_viewport_index_layer_non_geometry = true,
-    .support_viewport_mask = true,
-    .support_typeless_image_loads = true,
-    .support_demote_to_helper_invocation = false,
-    .support_int64_atomics = false,
-
-    .warp_size_potentially_larger_than_guest = true,
-    .lower_left_origin_mode = true,
-
-    .has_broken_spirv_clamp = true,
-    .has_broken_unsigned_image_offsets = true,
-    .has_broken_signed_operations = true,
-    .ignore_nan_fp_comparisons = true,
-};
-
 using Shader::Backend::GLASM::EmitGLASM;
 using Shader::Backend::SPIRV::EmitSPIRV;
 using Shader::Maxwell::TranslateProgram;
@@ -279,7 +243,43 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
     : VideoCommon::ShaderCache{rasterizer_, gpu_memory_, maxwell3d_, kepler_compute_},
       emu_window{emu_window_}, device{device_}, texture_cache{texture_cache_},
       buffer_cache{buffer_cache_}, program_manager{program_manager_}, state_tracker{
-                                                                          state_tracker_} {}
+                                                                          state_tracker_} {
+    profile = Shader::Profile{
+        .supported_spirv = 0x00010000,
+
+        .unified_descriptor_binding = false,
+        .support_descriptor_aliasing = false,
+        .support_int8 = false,
+        .support_int16 = false,
+        .support_vertex_instance_id = true,
+        .support_float_controls = false,
+        .support_separate_denorm_behavior = false,
+        .support_separate_rounding_mode = false,
+        .support_fp16_denorm_preserve = false,
+        .support_fp32_denorm_preserve = false,
+        .support_fp16_denorm_flush = false,
+        .support_fp32_denorm_flush = false,
+        .support_fp16_signed_zero_nan_preserve = false,
+        .support_fp32_signed_zero_nan_preserve = false,
+        .support_fp64_signed_zero_nan_preserve = false,
+        .support_explicit_workgroup_layout = false,
+        .support_vote = true,
+        .support_viewport_index_layer_non_geometry =
+            device.HasNvViewportArray2() || device.HasVertexViewportLayer(),
+        .support_viewport_mask = true,
+        .support_typeless_image_loads = device.HasImageLoadFormatted(),
+        .support_demote_to_helper_invocation = false,
+        .support_int64_atomics = false,
+
+        .warp_size_potentially_larger_than_guest = true,
+        .lower_left_origin_mode = true,
+
+        .has_broken_spirv_clamp = true,
+        .has_broken_unsigned_image_offsets = true,
+        .has_broken_signed_operations = true,
+        .ignore_nan_fp_comparisons = true,
+    };
+}
 
 ShaderCache::~ShaderCache() = default;
 

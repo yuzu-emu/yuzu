@@ -86,6 +86,8 @@ private:
     ShaderPools main_pools;
     std::unordered_map<GraphicsProgramKey, std::unique_ptr<GraphicsProgram>> graphics_cache;
     std::unordered_map<ComputeProgramKey, std::unique_ptr<ComputeProgram>> compute_cache;
+
+    Shader::Profile profile;
 };
 
 } // namespace OpenGL
