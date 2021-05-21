@@ -31,9 +31,33 @@ class EmitContext {
 public:
     explicit EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_);
 
+    // template <typename... Args>
+    // void Add(const char* format_str, IR::Inst& inst, Args&&... args) {
+    //     code += fmt::format(format_str, reg_alloc.Define(inst), std::forward<Args>(args)...);
+    //     // TODO: Remove this
+    //     code += '\n';
+    // }
+
     template <typename... Args>
-    void Add(const char* format_str, IR::Inst& inst, Args&&... args) {
-        code += fmt::format(format_str, reg_alloc.Define(inst), std::forward<Args>(args)...);
+    void AddU32(const char* format_str, IR::Inst& inst, Args&&... args) {
+        code +=
+            fmt::format(format_str, reg_alloc.Define(inst, Type::U32), std::forward<Args>(args)...);
+        // TODO: Remove this
+        code += '\n';
+    }
+
+    template <typename... Args>
+    void AddS32(const char* format_str, IR::Inst& inst, Args&&... args) {
+        code +=
+            fmt::format(format_str, reg_alloc.Define(inst, Type::S32), std::forward<Args>(args)...);
+        // TODO: Remove this
+        code += '\n';
+    }
+
+    template <typename... Args>
+    void AddF32(const char* format_str, IR::Inst& inst, Args&&... args) {
+        code +=
+            fmt::format(format_str, reg_alloc.Define(inst, Type::F32), std::forward<Args>(args)...);
         // TODO: Remove this
         code += '\n';
     }

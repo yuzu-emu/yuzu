@@ -13,7 +13,6 @@
 #pragma optimize("", off)
 namespace Shader::Backend::GLSL {
 namespace {
-constexpr std::string_view SWIZZLE = "xyzw";
 
 std::string Representation(Id id) {
     if (id.is_condition_code != 0) {
@@ -22,7 +21,6 @@ std::string Representation(Id id) {
     if (id.is_spill != 0) {
         throw NotImplementedException("Spilling");
     }
-    const u32 num_elements{id.num_elements_minus_one + 1};
     const u32 index{static_cast<u32>(id.index)};
     return fmt::format("R{}", index);
 }
@@ -45,10 +43,11 @@ std::string MakeImm(const IR::Value& value) {
 }
 } // Anonymous namespace
 
-std::string RegAlloc::Define(IR::Inst& inst, u32 num_elements, u32 alignment) {
-    const Id id{Alloc(num_elements, alignment)};
+std::string RegAlloc::Define(IR::Inst& inst, Type type) {
+    const Id id{Alloc()};
+    const auto type_str{GetType(type, id.index)};
     inst.SetDefinition<Id>(id);
-    return Representation(id);
+    return type_str + Representation(id);
 }
 
 std::string RegAlloc::Consume(const IR::Value& value) {
@@ -65,20 +64,37 @@ std::string RegAlloc::Consume(IR::Inst& inst) {
     return Representation(inst.Definition<Id>());
 }
 
-Id RegAlloc::Alloc(u32 num_elements, [[maybe_unused]] u32 alignment) {
-    for (size_t reg = 0; reg < NUM_REGS; ++reg) {
-        if (register_use[reg]) {
-            continue;
+std::string RegAlloc::GetType(Type type, u32 index) {
+    if (register_defined[index]) {
+        return "";
+    }
+    register_defined[index] = true;
+    switch (type) {
+    case Type::U32:
+        return "uint ";
+    case Type::S32:
+        return "int ";
+    case Type::F32:
+        return "float ";
+    default:
+        return "";
+    }
+}
+
+Id RegAlloc::Alloc() {
+    if (num_used_registers < NUM_REGS) {
+        for (size_t reg = 0; reg < NUM_REGS; ++reg) {
+            if (register_use[reg]) {
+                continue;
+            }
+            register_use[reg] = true;
+            Id ret{};
+            ret.index.Assign(static_cast<u32>(reg));
+            ret.is_long.Assign(0);
+            ret.is_spill.Assign(0);
+            ret.is_condition_code.Assign(0);
+            return ret;
         }
-        num_used_registers = std::max(num_used_registers, reg + 1);
-        register_use[reg] = true;
-        return Id{
-            .base_element = 0,
-            .num_elements_minus_one = num_elements - 1,
-            .index = static_cast<u32>(reg),
-            .is_spill = 0,
-            .is_condition_code = 0,
-        };
     }
     throw NotImplementedException("Register spilling");
 }

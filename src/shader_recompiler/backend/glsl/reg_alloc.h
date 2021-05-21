@@ -6,6 +6,7 @@
 
 #include <bitset>
 
+#include "common/bit_field.h"
 #include "common/common_types.h"
 
 namespace Shader::IR {
@@ -14,18 +15,36 @@ class Value;
 } // namespace Shader::IR
 
 namespace Shader::Backend::GLSL {
+enum class Type : u32 {
+    U32,
+    S32,
+    F32,
+    U64,
+    F64,
+    Void,
+};
 
 struct Id {
-    u32 base_element : 2;
-    u32 num_elements_minus_one : 2;
-    u32 index : 26;
-    u32 is_spill : 1;
-    u32 is_condition_code : 1;
+    union {
+        u32 raw;
+        BitField<0, 29, u32> index;
+        BitField<29, 1, u32> is_long;
+        BitField<30, 1, u32> is_spill;
+        BitField<31, 1, u32> is_condition_code;
+    };
+
+    bool operator==(Id rhs) const noexcept {
+        return raw == rhs.raw;
+    }
+    bool operator!=(Id rhs) const noexcept {
+        return !operator==(rhs);
+    }
 };
+static_assert(sizeof(Id) == sizeof(u32));
 
 class RegAlloc {
 public:
-    std::string Define(IR::Inst& inst, u32 num_elements = 1, u32 alignment = 1);
+    std::string Define(IR::Inst& inst, Type type = Type::Void);
 
     std::string Consume(const IR::Value& value);
 
@@ -40,13 +59,14 @@ private:
     static constexpr size_t NUM_ELEMENTS = 4;
 
     std::string Consume(IR::Inst& inst);
+    std::string GetType(Type type, u32 index);
 
-    Id Alloc(u32 num_elements, u32 alignment);
-
+    Id Alloc();
     void Free(Id id);
 
     size_t num_used_registers{};
     std::bitset<NUM_REGS> register_use{};
+    std::bitset<NUM_REGS> register_defined{};
 };
 
 } // namespace Shader::Backend::GLSL
