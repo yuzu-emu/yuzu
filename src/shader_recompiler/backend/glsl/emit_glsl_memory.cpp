@@ -51,49 +51,49 @@ void EmitLoadStorage128([[maybe_unused]] EmitContext& ctx,
 void EmitWriteStorageU8([[maybe_unused]] EmitContext& ctx,
                         [[maybe_unused]] const IR::Value& binding,
                         [[maybe_unused]] const IR::Value& offset,
-                        [[maybe_unused]] std::string value) {
+                        [[maybe_unused]] std::string_view value) {
     throw NotImplementedException("GLSL Instrucion");
 }
 
 void EmitWriteStorageS8([[maybe_unused]] EmitContext& ctx,
                         [[maybe_unused]] const IR::Value& binding,
                         [[maybe_unused]] const IR::Value& offset,
-                        [[maybe_unused]] std::string value) {
+                        [[maybe_unused]] std::string_view value) {
     throw NotImplementedException("GLSL Instrucion");
 }
 
 void EmitWriteStorageU16([[maybe_unused]] EmitContext& ctx,
                          [[maybe_unused]] const IR::Value& binding,
                          [[maybe_unused]] const IR::Value& offset,
-                         [[maybe_unused]] std::string value) {
+                         [[maybe_unused]] std::string_view value) {
     throw NotImplementedException("GLSL Instrucion");
 }
 
 void EmitWriteStorageS16([[maybe_unused]] EmitContext& ctx,
                          [[maybe_unused]] const IR::Value& binding,
                          [[maybe_unused]] const IR::Value& offset,
-                         [[maybe_unused]] std::string value) {
+                         [[maybe_unused]] std::string_view value) {
     throw NotImplementedException("GLSL Instrucion");
 }
 
 void EmitWriteStorage32([[maybe_unused]] EmitContext& ctx,
                         [[maybe_unused]] const IR::Value& binding,
                         [[maybe_unused]] const IR::Value& offset,
-                        [[maybe_unused]] std::string value) {
+                        [[maybe_unused]] std::string_view value) {
     ctx.Add("buff{}[{}]={};", binding.U32(), offset.U32(), value);
 }
 
 void EmitWriteStorage64([[maybe_unused]] EmitContext& ctx,
                         [[maybe_unused]] const IR::Value& binding,
                         [[maybe_unused]] const IR::Value& offset,
-                        [[maybe_unused]] std::string value) {
+                        [[maybe_unused]] std::string_view value) {
     throw NotImplementedException("GLSL Instrucion");
 }
 
 void EmitWriteStorage128([[maybe_unused]] EmitContext& ctx,
                          [[maybe_unused]] const IR::Value& binding,
                          [[maybe_unused]] const IR::Value& offset,
-                         [[maybe_unused]] std::string value) {
+                         [[maybe_unused]] std::string_view value) {
     throw NotImplementedException("GLSL Instrucion");
 }
 } // namespace Shader::Backend::GLSL
