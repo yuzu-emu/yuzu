@@ -16,6 +16,7 @@
 #include "video_core/renderer_opengl/gl_buffer_cache.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/renderer_opengl/gl_texture_cache.h"
+#include "video_core/transform_feedback.h"
 
 namespace OpenGL {
 
@@ -24,16 +25,6 @@ class ProgramManager;
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 
 struct GraphicsProgramKey {
-    struct TransformFeedbackState {
-        struct Layout {
-            u32 stream;
-            u32 varying_count;
-            u32 stride;
-        };
-        std::array<Layout, Maxwell::NumTransformFeedbackBuffers> layouts;
-        std::array<std::array<u8, 128>, Maxwell::NumTransformFeedbackBuffers> varyings;
-    };
-
     std::array<u64, 6> unique_hashes;
     union {
         u32 raw;
@@ -45,7 +36,7 @@ struct GraphicsProgramKey {
         BitField<10, 1, u32> tessellation_clockwise;
     };
     std::array<u32, 3> padding;
-    TransformFeedbackState xfb_state;
+    VideoCommon::TransformFeedbackState xfb_state;
 
     size_t Hash() const noexcept;
 
@@ -75,11 +66,22 @@ public:
                              ProgramManager& program_manager_, StateTracker& state_tracker_,
                              OGLProgram program_,
                              std::array<OGLAssemblyProgram, 5> assembly_programs_,
-                             const std::array<const Shader::Info*, 5>& infos);
+                             const std::array<const Shader::Info*, 5>& infos,
+                             const VideoCommon::TransformFeedbackState* xfb_state);
 
     void Configure(bool is_indexed);
 
+    void ConfigureTransformFeedback() const {
+        if (num_xfb_attribs != 0) {
+            ConfigureTransformFeedbackImpl();
+        }
+    }
+
 private:
+    void GenerateTransformFeedbackState(const VideoCommon::TransformFeedbackState& xfb_state);
+
+    void ConfigureTransformFeedbackImpl() const;
+
     TextureCache& texture_cache;
     BufferCache& buffer_cache;
     Tegra::MemoryManager& gpu_memory;
@@ -96,6 +98,12 @@ private:
     std::array<u32, 5> base_storage_bindings{};
     std::array<u32, 5> num_texture_buffers{};
     std::array<u32, 5> num_image_buffers{};
+
+    static constexpr std::size_t XFB_ENTRY_STRIDE = 3;
+    GLsizei num_xfb_attribs{};
+    GLsizei num_xfb_strides{};
+    std::array<GLint, 128 * XFB_ENTRY_STRIDE * Maxwell::NumTransformFeedbackBuffers> xfb_attribs{};
+    std::array<GLint, Maxwell::NumTransformFeedbackBuffers> xfb_streams{};
 };
 
 } // namespace OpenGL

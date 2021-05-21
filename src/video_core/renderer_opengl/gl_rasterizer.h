@@ -191,12 +191,8 @@ private:
     /// Syncs vertex instances to match the guest state
     void SyncVertexInstances();
 
-    /// Syncs transform feedback state to match guest state
-    /// @note Only valid on assembly shaders
-    void SyncTransformFeedback();
-
     /// Begin a transform feedback
-    void BeginTransformFeedback(GLenum primitive_mode);
+    void BeginTransformFeedback(GraphicsProgram* program, GLenum primitive_mode);
 
     /// End a transform feedback
     void EndTransformFeedback();

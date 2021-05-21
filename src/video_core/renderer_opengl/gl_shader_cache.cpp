@@ -254,6 +254,17 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsProgramKey& key,
     }
     return info;
 }
+
+void SetXfbState(VideoCommon::TransformFeedbackState& state, const Maxwell& regs) {
+    std::ranges::transform(regs.tfb_layouts, state.layouts.begin(), [](const auto& layout) {
+        return VideoCommon::TransformFeedbackState::Layout{
+            .stream = layout.stream,
+            .varying_count = layout.varying_count,
+            .stride = layout.stride,
+        };
+    });
+    state.varyings = regs.tfb_varying_locs;
+}
 } // Anonymous namespace
 
 ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindow& emu_window_,
@@ -282,7 +293,10 @@ GraphicsProgram* ShaderCache::CurrentGraphicsProgram() {
     graphics_key.tessellation_primitive.Assign(regs.tess_mode.prim.Value());
     graphics_key.tessellation_spacing.Assign(regs.tess_mode.spacing.Value());
     graphics_key.tessellation_clockwise.Assign(regs.tess_mode.cw.Value());
-
+    graphics_key.xfb_enabled.Assign(regs.tfb_enabled != 0 ? 1 : 0);
+    if (graphics_key.xfb_enabled) {
+        SetXfbState(graphics_key.xfb_state, regs);
+    }
     const auto [pair, is_new]{graphics_cache.try_emplace(graphics_key)};
     auto& program{pair->second};
     if (is_new) {
@@ -368,7 +382,8 @@ std::unique_ptr<GraphicsProgram> ShaderCache::CreateGraphicsProgram(
     }
     return std::make_unique<GraphicsProgram>(
         texture_cache, buffer_cache, gpu_memory, maxwell3d, program_manager, state_tracker,
-        std::move(source_program), std::move(assembly_programs), infos);
+        std::move(source_program), std::move(assembly_programs), infos,
+        key.xfb_enabled != 0 ? &key.xfb_state : nullptr);
 }
 
 std::unique_ptr<ComputeProgram> ShaderCache::CreateComputeProgram(

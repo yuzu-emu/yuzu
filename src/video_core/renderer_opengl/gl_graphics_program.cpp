@@ -12,13 +12,42 @@
 #include "video_core/texture_cache/texture_cache.h"
 
 namespace OpenGL {
-
+namespace {
 using Shader::ImageBufferDescriptor;
 using Tegra::Texture::TexturePair;
 using VideoCommon::ImageId;
 
 constexpr u32 MAX_TEXTURES = 64;
 constexpr u32 MAX_IMAGES = 8;
+
+/// Translates hardware transform feedback indices
+/// @param location Hardware location
+/// @return Pair of ARB_transform_feedback3 token stream first and third arguments
+/// @note Read https://www.khronos.org/registry/OpenGL/extensions/ARB/ARB_transform_feedback3.txt
+std::pair<GLint, GLint> TransformFeedbackEnum(u8 location) {
+    const u8 index = location / 4;
+    if (index >= 8 && index <= 39) {
+        return {GL_GENERIC_ATTRIB_NV, index - 8};
+    }
+    if (index >= 48 && index <= 55) {
+        return {GL_TEXTURE_COORD_NV, index - 48};
+    }
+    switch (index) {
+    case 7:
+        return {GL_POSITION, 0};
+    case 40:
+        return {GL_PRIMARY_COLOR_NV, 0};
+    case 41:
+        return {GL_SECONDARY_COLOR_NV, 0};
+    case 42:
+        return {GL_BACK_PRIMARY_COLOR_NV, 0};
+    case 43:
+        return {GL_BACK_SECONDARY_COLOR_NV, 0};
+    }
+    UNIMPLEMENTED_MSG("index={}", index);
+    return {GL_POSITION, 0};
+}
+} // Anonymous namespace
 
 size_t GraphicsProgramKey::Hash() const noexcept {
     return static_cast<size_t>(Common::CityHash64(reinterpret_cast<const char*>(this), Size()));
@@ -34,7 +63,8 @@ GraphicsProgram::GraphicsProgram(TextureCache& texture_cache_, BufferCache& buff
                                  ProgramManager& program_manager_, StateTracker& state_tracker_,
                                  OGLProgram program_,
                                  std::array<OGLAssemblyProgram, 5> assembly_programs_,
-                                 const std::array<const Shader::Info*, 5>& infos)
+                                 const std::array<const Shader::Info*, 5>& infos,
+                                 const VideoCommon::TransformFeedbackState* xfb_state)
     : texture_cache{texture_cache_}, buffer_cache{buffer_cache_},
       gpu_memory{gpu_memory_}, maxwell3d{maxwell3d_}, program_manager{program_manager_},
       state_tracker{state_tracker_}, program{std::move(program_)}, assembly_programs{std::move(
@@ -74,6 +104,10 @@ GraphicsProgram::GraphicsProgram(TextureCache& texture_cache_, BufferCache& buff
     }
     ASSERT(num_textures <= MAX_TEXTURES);
     ASSERT(num_images <= MAX_IMAGES);
+
+    if (assembly_programs[0].handle != 0 && xfb_state) {
+        GenerateTransformFeedbackState(*xfb_state);
+    }
 }
 
 struct Spec {
@@ -300,6 +334,58 @@ void GraphicsProgram::Configure(bool is_indexed) {
     if (image_binding != 0) {
         glBindImageTextures(0, image_binding, images.data());
     }
+}
+
+void GraphicsProgram::GenerateTransformFeedbackState(
+    const VideoCommon::TransformFeedbackState& xfb_state) {
+    // TODO(Rodrigo): Inject SKIP_COMPONENTS*_NV when required. An unimplemented message will signal
+    // when this is required.
+    const auto& regs{maxwell3d.regs};
+
+    GLint* cursor{xfb_attribs.data()};
+    GLint* current_stream{xfb_streams.data()};
+
+    for (size_t feedback = 0; feedback < Maxwell::NumTransformFeedbackBuffers; ++feedback) {
+        const auto& layout = regs.tfb_layouts[feedback];
+        UNIMPLEMENTED_IF_MSG(layout.stride != layout.varying_count * 4, "Stride padding");
+        if (layout.varying_count == 0) {
+            continue;
+        }
+        *current_stream = static_cast<GLint>(feedback);
+        if (current_stream != xfb_streams.data()) {
+            // When stepping one stream, push the expected token
+            cursor[0] = GL_NEXT_BUFFER_NV;
+            cursor[1] = 0;
+            cursor[2] = 0;
+            cursor += XFB_ENTRY_STRIDE;
+        }
+        ++current_stream;
+
+        const auto& locations = regs.tfb_varying_locs[feedback];
+        std::optional<u8> current_index;
+        for (u32 offset = 0; offset < layout.varying_count; ++offset) {
+            const u8 location = locations[offset];
+            const u8 index = location / 4;
+
+            if (current_index == index) {
+                // Increase number of components of the previous attachment
+                ++cursor[-2];
+                continue;
+            }
+            current_index = index;
+
+            std::tie(cursor[0], cursor[2]) = TransformFeedbackEnum(location);
+            cursor[1] = 1;
+            cursor += XFB_ENTRY_STRIDE;
+        }
+    }
+    num_xfb_attribs = static_cast<GLsizei>((cursor - xfb_attribs.data()) / XFB_ENTRY_STRIDE);
+    num_xfb_strides = static_cast<GLsizei>(current_stream - xfb_streams.data());
+}
+
+void GraphicsProgram::ConfigureTransformFeedbackImpl() const {
+    glTransformFeedbackStreamAttribsNV(num_xfb_attribs, xfb_attribs.data(), num_xfb_strides,
+                                       xfb_streams.data(), GL_INTERLEAVED_ATTRIBS);
 }
 
 } // namespace OpenGL
