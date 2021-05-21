@@ -187,6 +187,8 @@ add_library(video_core STATIC
     textures/decoders.h
     textures/texture.cpp
     textures/texture.h
+    transform_feedback.cpp
+    transform_feedback.h
     video_core.cpp
     video_core.h
     vulkan_common/vulkan_debug_callback.cpp

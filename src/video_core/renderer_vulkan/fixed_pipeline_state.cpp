@@ -15,9 +15,7 @@
 #include "video_core/renderer_vulkan/vk_state_tracker.h"
 
 namespace Vulkan {
-
 namespace {
-
 constexpr size_t POINT = 0;
 constexpr size_t LINE = 1;
 constexpr size_t POLYGON = 2;
@@ -39,6 +37,16 @@ constexpr std::array POLYGON_OFFSET_ENABLE_LUT = {
     POLYGON, // Patches
 };
 
+void RefreshXfbState(VideoCommon::TransformFeedbackState& state, const Maxwell& regs) {
+    std::ranges::transform(regs.tfb_layouts, state.layouts.begin(), [](const auto& layout) {
+        return VideoCommon::TransformFeedbackState::Layout{
+            .stream = layout.stream,
+            .varying_count = layout.varying_count,
+            .stride = layout.stride,
+        };
+    });
+    state.varyings = regs.tfb_varying_locs;
+}
 } // Anonymous namespace
 
 void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
@@ -121,7 +129,7 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
         dynamic_state.Refresh(regs);
     }
     if (xfb_enabled != 0) {
-        xfb_state.Refresh(regs);
+        RefreshXfbState(xfb_state, regs);
     }
 }
 
@@ -162,17 +170,6 @@ void FixedPipelineState::BlendingAttachment::Refresh(const Maxwell& regs, size_t
     factor_source_a.Assign(PackBlendFactor(src.factor_source_a));
     factor_dest_a.Assign(PackBlendFactor(src.factor_dest_a));
     enable.Assign(1);
-}
-
-void FixedPipelineState::TransformFeedbackState::Refresh(const Maxwell& regs) {
-    std::ranges::transform(regs.tfb_layouts, layouts.begin(), [](const auto& layout) {
-        return Layout{
-            .stream = layout.stream,
-            .varying_count = layout.varying_count,
-            .stride = layout.stride,
-        };
-    });
-    varyings = regs.tfb_varying_locs;
 }
 
 void FixedPipelineState::DynamicState::Refresh(const Maxwell& regs) {
