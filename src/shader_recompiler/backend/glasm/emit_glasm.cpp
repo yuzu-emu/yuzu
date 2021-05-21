@@ -307,9 +307,9 @@ std::string_view StageHeader(Stage stage) {
     case Stage::VertexB:
         return "!!NVvp5.0\n";
     case Stage::TessellationControl:
-        return "!!NVtcs5.0\n";
+        return "!!NVtcp5.0\n";
     case Stage::TessellationEval:
-        return "!!NVtes5.0\n";
+        return "!!NVtep5.0\n";
     case Stage::Geometry:
         return "!!NVgp5.0\n";
     case Stage::Fragment:
