@@ -53,7 +53,7 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr, Scal
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, ScalarF32 value, ScalarU32 vertex);
 void EmitGetAttributeIndexed(EmitContext& ctx, ScalarU32 offset, ScalarU32 vertex);
 void EmitSetAttributeIndexed(EmitContext& ctx, ScalarU32 offset, ScalarF32 value, ScalarU32 vertex);
-void EmitGetPatch(EmitContext& ctx, IR::Patch patch);
+void EmitGetPatch(EmitContext& ctx, IR::Inst& inst, IR::Patch patch);
 void EmitSetPatch(EmitContext& ctx, IR::Patch patch, ScalarF32 value);
 void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, ScalarF32 value);
 void EmitSetSampleMask(EmitContext& ctx, ScalarS32 value);
