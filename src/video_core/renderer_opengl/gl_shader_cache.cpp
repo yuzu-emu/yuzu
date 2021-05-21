@@ -266,7 +266,7 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
         .support_vote = true,
         .support_viewport_index_layer_non_geometry =
             device.HasNvViewportArray2() || device.HasVertexViewportLayer(),
-        .support_viewport_mask = true,
+        .support_viewport_mask = device.HasNvViewportArray2(),
         .support_typeless_image_loads = device.HasImageLoadFormatted(),
         .support_demote_to_helper_invocation = false,
         .support_int64_atomics = false,
