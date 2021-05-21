@@ -21,9 +21,12 @@ void GetCbuf(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU
 }
 
 std::string VertexIndex(EmitContext& ctx, ScalarU32 vertex) {
-    if (ctx.stage == Stage::Geometry) {
+    switch (ctx.stage) {
+    case Stage::TessellationControl:
+    case Stage::TessellationEval:
+    case Stage::Geometry:
         return fmt::format("[{}]", vertex);
-    } else {
+    default:
         return "";
     }
 }
