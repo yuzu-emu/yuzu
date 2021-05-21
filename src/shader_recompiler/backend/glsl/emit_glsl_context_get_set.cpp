@@ -30,10 +30,10 @@ void EmitGetCbufS16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] const IR
     throw NotImplementedException("GLSL");
 }
 
-void EmitGetCbufU32(EmitContext& ctx, IR::Inst* inst, const IR::Value& binding,
+void EmitGetCbufU32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                     const IR::Value& offset) {
     const auto u32_offset{offset.U32()};
-    ctx.AddU32("{}=floatBitsToUint(cbuf{}[{}][{}]);", *inst, binding.U32(), u32_offset / 16,
+    ctx.AddU32("{}=floatBitsToUint(cbuf{}[{}][{}]);", inst, binding.U32(), u32_offset / 16,
                (u32_offset / 4) % 4);
 }
 

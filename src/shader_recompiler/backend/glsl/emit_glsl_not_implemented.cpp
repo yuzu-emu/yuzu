@@ -19,7 +19,7 @@ static void NotImplemented() {
     throw NotImplementedException("GLSL instruction");
 }
 
-void EmitPhi(EmitContext& ctx, IR::Inst* inst) {
+void EmitPhi(EmitContext& ctx, IR::Inst& inst) {
     NotImplemented();
 }
 
@@ -648,27 +648,27 @@ void EmitFPAbs64(EmitContext& ctx, std::string value) {
     NotImplemented();
 }
 
-void EmitFPAdd16(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b) {
+void EmitFPAdd16(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitFPAdd32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b) {
+void EmitFPAdd32(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitFPAdd64(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b) {
+void EmitFPAdd64(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitFPFma16(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b, std::string c) {
+void EmitFPFma16(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b, std::string c) {
     NotImplemented();
 }
 
-void EmitFPFma32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b, std::string c) {
+void EmitFPFma32(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b, std::string c) {
     NotImplemented();
 }
 
-void EmitFPFma64(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b, std::string c) {
+void EmitFPFma64(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b, std::string c) {
     NotImplemented();
 }
 
@@ -688,15 +688,15 @@ void EmitFPMin64(EmitContext& ctx, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitFPMul16(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b) {
+void EmitFPMul16(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitFPMul32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b) {
+void EmitFPMul32(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b) {
     NotImplemented();
 }
 
-void EmitFPMul64(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b) {
+void EmitFPMul64(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b) {
     NotImplemented();
 }
 
@@ -1582,64 +1582,64 @@ void EmitBoundImageWrite(EmitContext&) {
     NotImplemented();
 }
 
-void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                 std::string coords, std::string bias_lc, const IR::Value& offset) {
     NotImplemented();
 }
 
-void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                 std::string coords, std::string lod_lc, const IR::Value& offset) {
     NotImplemented();
 }
 
-void EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                     std::string coords, std::string dref, std::string bias_lc,
                                     const IR::Value& offset) {
     NotImplemented();
 }
 
-void EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                     std::string coords, std::string dref, std::string lod_lc,
                                     const IR::Value& offset) {
     NotImplemented();
 }
 
-void EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, std::string coords,
+void EmitImageGather(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, std::string coords,
                      const IR::Value& offset, const IR::Value& offset2) {
     NotImplemented();
 }
 
-void EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                          std::string coords, const IR::Value& offset, const IR::Value& offset2,
                          std::string dref) {
     NotImplemented();
 }
 
-void EmitImageFetch(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, std::string coords,
+void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, std::string coords,
                     std::string offset, std::string lod, std::string ms) {
     NotImplemented();
 }
 
-void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                               std::string lod) {
     NotImplemented();
 }
 
-void EmitImageQueryLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageQueryLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                        std::string coords) {
     NotImplemented();
 }
 
-void EmitImageGradient(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, std::string coords,
+void EmitImageGradient(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, std::string coords,
                        std::string derivates, std::string offset, std::string lod_clamp) {
     NotImplemented();
 }
 
-void EmitImageRead(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, std::string coords) {
+void EmitImageRead(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, std::string coords) {
     NotImplemented();
 }
 
-void EmitImageWrite(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, std::string coords,
+void EmitImageWrite(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, std::string coords,
                     std::string color) {
     NotImplemented();
 }
@@ -1732,57 +1732,57 @@ void EmitBoundImageAtomicExchange32(EmitContext&) {
     NotImplemented();
 }
 
-void EmitImageAtomicIAdd32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                            std::string coords, std::string value) {
     NotImplemented();
 }
 
-void EmitImageAtomicSMin32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicSMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                            std::string coords, std::string value) {
     NotImplemented();
 }
 
-void EmitImageAtomicUMin32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicUMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                            std::string coords, std::string value) {
     NotImplemented();
 }
 
-void EmitImageAtomicSMax32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicSMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                            std::string coords, std::string value) {
     NotImplemented();
 }
 
-void EmitImageAtomicUMax32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicUMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                            std::string coords, std::string value) {
     NotImplemented();
 }
 
-void EmitImageAtomicInc32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicInc32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                           std::string coords, std::string value) {
     NotImplemented();
 }
 
-void EmitImageAtomicDec32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicDec32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                           std::string coords, std::string value) {
     NotImplemented();
 }
 
-void EmitImageAtomicAnd32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicAnd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                           std::string coords, std::string value) {
     NotImplemented();
 }
 
-void EmitImageAtomicOr32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicOr32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                          std::string coords, std::string value) {
     NotImplemented();
 }
 
-void EmitImageAtomicXor32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicXor32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                           std::string coords, std::string value) {
     NotImplemented();
 }
 
-void EmitImageAtomicExchange32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicExchange32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                std::string coords, std::string value) {
     NotImplemented();
 }
@@ -1827,22 +1827,22 @@ void EmitSubgroupGeMask(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitShuffleIndex(EmitContext& ctx, IR::Inst* inst, std::string value, std::string index,
+void EmitShuffleIndex(EmitContext& ctx, IR::Inst& inst, std::string value, std::string index,
                       std::string clamp, std::string segmentation_mask) {
     NotImplemented();
 }
 
-void EmitShuffleUp(EmitContext& ctx, IR::Inst* inst, std::string value, std::string index,
+void EmitShuffleUp(EmitContext& ctx, IR::Inst& inst, std::string value, std::string index,
                    std::string clamp, std::string segmentation_mask) {
     NotImplemented();
 }
 
-void EmitShuffleDown(EmitContext& ctx, IR::Inst* inst, std::string value, std::string index,
+void EmitShuffleDown(EmitContext& ctx, IR::Inst& inst, std::string value, std::string index,
                      std::string clamp, std::string segmentation_mask) {
     NotImplemented();
 }
 
-void EmitShuffleButterfly(EmitContext& ctx, IR::Inst* inst, std::string value, std::string index,
+void EmitShuffleButterfly(EmitContext& ctx, IR::Inst& inst, std::string value, std::string index,
                           std::string clamp, std::string segmentation_mask) {
     NotImplemented();
 }

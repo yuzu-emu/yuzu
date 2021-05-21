@@ -11,221 +11,221 @@
 #include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::GLSL {
-void EmitIAdd32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitIAdd32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string a, [[maybe_unused]] std::string b) {
-    ctx.AddU32("{}={}+{};", *inst, a, b);
+    ctx.AddU32("{}={}+{};", inst, a, b);
 }
 
-void EmitIAdd64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
-                [[maybe_unused]] std::string a, [[maybe_unused]] std::string b) {
-    throw NotImplementedException("GLSL Instruction");
-}
-
-void EmitISub32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitIAdd64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string a, [[maybe_unused]] std::string b) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitISub64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitISub32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string a, [[maybe_unused]] std::string b) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitIMul32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitISub64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string a, [[maybe_unused]] std::string b) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitINeg32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitIMul32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                [[maybe_unused]] std::string a, [[maybe_unused]] std::string b) {
+    throw NotImplementedException("GLSL Instruction");
+}
+
+void EmitINeg32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string value) {
-    ctx.AddU32("{}=-{};", *inst, value);
+    ctx.AddU32("{}=-{};", inst, value);
 }
 
-void EmitINeg64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
-                [[maybe_unused]] std::string value) {
-    throw NotImplementedException("GLSL Instruction");
-}
-
-void EmitIAbs32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitINeg64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string value) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitIAbs64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitIAbs32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string value) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitShiftLeftLogical32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitIAbs64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                [[maybe_unused]] std::string value) {
+    throw NotImplementedException("GLSL Instruction");
+}
+
+void EmitShiftLeftLogical32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                             [[maybe_unused]] std::string base, [[maybe_unused]] std::string shift) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitShiftLeftLogical64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitShiftLeftLogical64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                             [[maybe_unused]] std::string base, [[maybe_unused]] std::string shift) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitShiftRightLogical32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitShiftRightLogical32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                              [[maybe_unused]] std::string base,
                              [[maybe_unused]] std::string shift) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitShiftRightLogical64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitShiftRightLogical64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                              [[maybe_unused]] std::string base,
                              [[maybe_unused]] std::string shift) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitShiftRightArithmetic32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitShiftRightArithmetic32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                                 [[maybe_unused]] std::string base,
                                 [[maybe_unused]] std::string shift) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitShiftRightArithmetic64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitShiftRightArithmetic64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                                 [[maybe_unused]] std::string base,
                                 [[maybe_unused]] std::string shift) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitBitwiseAnd32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitBitwiseAnd32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string a, [[maybe_unused]] std::string b) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitBitwiseOr32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitBitwiseOr32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                      [[maybe_unused]] std::string a, [[maybe_unused]] std::string b) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitBitwiseXor32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitBitwiseXor32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string a, [[maybe_unused]] std::string b) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitBitFieldInsert([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitBitFieldInsert([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                         [[maybe_unused]] std::string base, [[maybe_unused]] std::string insert,
                         [[maybe_unused]] std::string offset, std::string count) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitBitFieldSExtract([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitBitFieldSExtract([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                           [[maybe_unused]] std::string base, [[maybe_unused]] std::string offset,
                           std::string count) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitBitFieldUExtract([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitBitFieldUExtract([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                           [[maybe_unused]] std::string base, [[maybe_unused]] std::string offset,
                           std::string count) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitBitReverse32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitBitReverse32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string value) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitBitCount32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitBitCount32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                     [[maybe_unused]] std::string value) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitBitwiseNot32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitBitwiseNot32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string value) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitFindSMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitFindSMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                     [[maybe_unused]] std::string value) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitFindUMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitFindUMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                     [[maybe_unused]] std::string value) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitSMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitSMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string a, [[maybe_unused]] std::string b) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitUMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitUMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string a, [[maybe_unused]] std::string b) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitSMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitSMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string a, [[maybe_unused]] std::string b) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitUMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitUMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string a, [[maybe_unused]] std::string b) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitSClamp32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitSClamp32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                   [[maybe_unused]] std::string value, [[maybe_unused]] std::string min,
                   std::string max) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitUClamp32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitUClamp32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                   [[maybe_unused]] std::string value, [[maybe_unused]] std::string min,
                   std::string max) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitSLessThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitSLessThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                    [[maybe_unused]] std::string lhs, [[maybe_unused]] std::string rhs) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitULessThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitULessThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                    [[maybe_unused]] std::string lhs, [[maybe_unused]] std::string rhs) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitIEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitIEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string lhs, [[maybe_unused]] std::string rhs) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitSLessThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitSLessThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                         [[maybe_unused]] std::string lhs, [[maybe_unused]] std::string rhs) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitULessThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitULessThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                         [[maybe_unused]] std::string lhs, [[maybe_unused]] std::string rhs) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitSGreaterThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitSGreaterThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string lhs, [[maybe_unused]] std::string rhs) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitUGreaterThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitUGreaterThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string lhs, [[maybe_unused]] std::string rhs) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitINotEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitINotEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                    [[maybe_unused]] std::string lhs, [[maybe_unused]] std::string rhs) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitSGreaterThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitSGreaterThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                            [[maybe_unused]] std::string lhs, [[maybe_unused]] std::string rhs) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitUGreaterThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst* inst,
+void EmitUGreaterThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                            [[maybe_unused]] std::string lhs, [[maybe_unused]] std::string rhs) {
     throw NotImplementedException("GLSL Instruction");
 }

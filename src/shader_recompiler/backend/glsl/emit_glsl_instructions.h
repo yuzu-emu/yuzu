@@ -25,9 +25,9 @@ inline void EmitSetLoopSafetyVariable(EmitContext&) {}
 inline void EmitGetLoopSafetyVariable(EmitContext&) {}
 
 // Microinstruction emitters
-void EmitPhi(EmitContext& ctx, IR::Inst* inst);
+void EmitPhi(EmitContext& ctx, IR::Inst& inst);
 void EmitVoid(EmitContext& ctx);
-void EmitIdentity(EmitContext& ctx, IR::Inst* inst, const IR::Value& value);
+void EmitIdentity(EmitContext& ctx, IR::Inst& inst, const IR::Value& value);
 void EmitConditionRef(EmitContext& ctx, IR::Inst& inst, const IR::Value& value);
 void EmitReference(EmitContext&);
 void EmitPhiMove(EmitContext& ctx, const IR::Value& phi, const IR::Value& value);
@@ -59,7 +59,7 @@ void EmitGetCbufU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& 
 void EmitGetCbufS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 void EmitGetCbufU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 void EmitGetCbufS16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
-void EmitGetCbufU32(EmitContext& ctx, IR::Inst* inst, const IR::Value& binding,
+void EmitGetCbufU32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                     const IR::Value& offset);
 void EmitGetCbufF32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 void EmitGetCbufU32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
@@ -231,19 +231,19 @@ void EmitGetInBoundsFromOp(EmitContext& ctx);
 void EmitFPAbs16(EmitContext& ctx, std::string value);
 void EmitFPAbs32(EmitContext& ctx, std::string value);
 void EmitFPAbs64(EmitContext& ctx, std::string value);
-void EmitFPAdd16(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitFPAdd32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitFPAdd64(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitFPFma16(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b, std::string c);
-void EmitFPFma32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b, std::string c);
-void EmitFPFma64(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b, std::string c);
+void EmitFPAdd16(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitFPAdd32(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitFPAdd64(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitFPFma16(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b, std::string c);
+void EmitFPFma32(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b, std::string c);
+void EmitFPFma64(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b, std::string c);
 void EmitFPMax32(EmitContext& ctx, std::string a, std::string b);
 void EmitFPMax64(EmitContext& ctx, std::string a, std::string b);
 void EmitFPMin32(EmitContext& ctx, std::string a, std::string b);
 void EmitFPMin64(EmitContext& ctx, std::string a, std::string b);
-void EmitFPMul16(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitFPMul32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitFPMul64(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
+void EmitFPMul16(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitFPMul32(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitFPMul64(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
 void EmitFPNeg16(EmitContext& ctx, std::string value);
 void EmitFPNeg32(EmitContext& ctx, std::string value);
 void EmitFPNeg64(EmitContext& ctx, std::string value);
@@ -316,55 +316,55 @@ void EmitFPUnordGreaterThanEqual64(EmitContext& ctx, std::string lhs, std::strin
 void EmitFPIsNan16(EmitContext& ctx, std::string value);
 void EmitFPIsNan32(EmitContext& ctx, std::string value);
 void EmitFPIsNan64(EmitContext& ctx, std::string value);
-void EmitIAdd32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitIAdd64(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitISub32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitISub64(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitIMul32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitINeg32(EmitContext& ctx, IR::Inst* inst, std::string value);
-void EmitINeg64(EmitContext& ctx, IR::Inst* inst, std::string value);
-void EmitIAbs32(EmitContext& ctx, IR::Inst* inst, std::string value);
-void EmitIAbs64(EmitContext& ctx, IR::Inst* inst, std::string value);
-void EmitShiftLeftLogical32(EmitContext& ctx, IR::Inst* inst, std::string base, std::string shift);
-void EmitShiftLeftLogical64(EmitContext& ctx, IR::Inst* inst, std::string base, std::string shift);
-void EmitShiftRightLogical32(EmitContext& ctx, IR::Inst* inst, std::string base, std::string shift);
-void EmitShiftRightLogical64(EmitContext& ctx, IR::Inst* inst, std::string base, std::string shift);
-void EmitShiftRightArithmetic32(EmitContext& ctx, IR::Inst* inst, std::string base,
+void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitIAdd64(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitISub32(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitISub64(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitIMul32(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitINeg32(EmitContext& ctx, IR::Inst& inst, std::string value);
+void EmitINeg64(EmitContext& ctx, IR::Inst& inst, std::string value);
+void EmitIAbs32(EmitContext& ctx, IR::Inst& inst, std::string value);
+void EmitIAbs64(EmitContext& ctx, IR::Inst& inst, std::string value);
+void EmitShiftLeftLogical32(EmitContext& ctx, IR::Inst& inst, std::string base, std::string shift);
+void EmitShiftLeftLogical64(EmitContext& ctx, IR::Inst& inst, std::string base, std::string shift);
+void EmitShiftRightLogical32(EmitContext& ctx, IR::Inst& inst, std::string base, std::string shift);
+void EmitShiftRightLogical64(EmitContext& ctx, IR::Inst& inst, std::string base, std::string shift);
+void EmitShiftRightArithmetic32(EmitContext& ctx, IR::Inst& inst, std::string base,
                                 std::string shift);
-void EmitShiftRightArithmetic64(EmitContext& ctx, IR::Inst* inst, std::string base,
+void EmitShiftRightArithmetic64(EmitContext& ctx, IR::Inst& inst, std::string base,
                                 std::string shift);
-void EmitBitwiseAnd32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitBitwiseOr32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitBitwiseXor32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitBitFieldInsert(EmitContext& ctx, IR::Inst* inst, std::string base, std::string insert,
+void EmitBitwiseAnd32(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitBitwiseOr32(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitBitwiseXor32(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitBitFieldInsert(EmitContext& ctx, IR::Inst& inst, std::string base, std::string insert,
                         std::string offset, std::string count);
-void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst* inst, std::string base, std::string offset,
+void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst& inst, std::string base, std::string offset,
                           std::string count);
-void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst* inst, std::string base, std::string offset,
+void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst& inst, std::string base, std::string offset,
                           std::string count);
-void EmitBitReverse32(EmitContext& ctx, IR::Inst* inst, std::string value);
-void EmitBitCount32(EmitContext& ctx, IR::Inst* inst, std::string value);
-void EmitBitwiseNot32(EmitContext& ctx, IR::Inst* inst, std::string value);
-void EmitFindSMsb32(EmitContext& ctx, IR::Inst* inst, std::string value);
-void EmitFindUMsb32(EmitContext& ctx, IR::Inst* inst, std::string value);
-void EmitSMin32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitUMin32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitSMax32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitUMax32(EmitContext& ctx, IR::Inst* inst, std::string a, std::string b);
-void EmitSClamp32(EmitContext& ctx, IR::Inst* inst, std::string value, std::string min,
+void EmitBitReverse32(EmitContext& ctx, IR::Inst& inst, std::string value);
+void EmitBitCount32(EmitContext& ctx, IR::Inst& inst, std::string value);
+void EmitBitwiseNot32(EmitContext& ctx, IR::Inst& inst, std::string value);
+void EmitFindSMsb32(EmitContext& ctx, IR::Inst& inst, std::string value);
+void EmitFindUMsb32(EmitContext& ctx, IR::Inst& inst, std::string value);
+void EmitSMin32(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitUMin32(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitSMax32(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitUMax32(EmitContext& ctx, IR::Inst& inst, std::string a, std::string b);
+void EmitSClamp32(EmitContext& ctx, IR::Inst& inst, std::string value, std::string min,
                   std::string max);
-void EmitUClamp32(EmitContext& ctx, IR::Inst* inst, std::string value, std::string min,
+void EmitUClamp32(EmitContext& ctx, IR::Inst& inst, std::string value, std::string min,
                   std::string max);
-void EmitSLessThan(EmitContext& ctx, IR::Inst* inst, std::string lhs, std::string rhs);
-void EmitULessThan(EmitContext& ctx, IR::Inst* inst, std::string lhs, std::string rhs);
-void EmitIEqual(EmitContext& ctx, IR::Inst* inst, std::string lhs, std::string rhs);
-void EmitSLessThanEqual(EmitContext& ctx, IR::Inst* inst, std::string lhs, std::string rhs);
-void EmitULessThanEqual(EmitContext& ctx, IR::Inst* inst, std::string lhs, std::string rhs);
-void EmitSGreaterThan(EmitContext& ctx, IR::Inst* inst, std::string lhs, std::string rhs);
-void EmitUGreaterThan(EmitContext& ctx, IR::Inst* inst, std::string lhs, std::string rhs);
-void EmitINotEqual(EmitContext& ctx, IR::Inst* inst, std::string lhs, std::string rhs);
-void EmitSGreaterThanEqual(EmitContext& ctx, IR::Inst* inst, std::string lhs, std::string rhs);
-void EmitUGreaterThanEqual(EmitContext& ctx, IR::Inst* inst, std::string lhs, std::string rhs);
+void EmitSLessThan(EmitContext& ctx, IR::Inst& inst, std::string lhs, std::string rhs);
+void EmitULessThan(EmitContext& ctx, IR::Inst& inst, std::string lhs, std::string rhs);
+void EmitIEqual(EmitContext& ctx, IR::Inst& inst, std::string lhs, std::string rhs);
+void EmitSLessThanEqual(EmitContext& ctx, IR::Inst& inst, std::string lhs, std::string rhs);
+void EmitULessThanEqual(EmitContext& ctx, IR::Inst& inst, std::string lhs, std::string rhs);
+void EmitSGreaterThan(EmitContext& ctx, IR::Inst& inst, std::string lhs, std::string rhs);
+void EmitUGreaterThan(EmitContext& ctx, IR::Inst& inst, std::string lhs, std::string rhs);
+void EmitINotEqual(EmitContext& ctx, IR::Inst& inst, std::string lhs, std::string rhs);
+void EmitSGreaterThanEqual(EmitContext& ctx, IR::Inst& inst, std::string lhs, std::string rhs);
+void EmitUGreaterThanEqual(EmitContext& ctx, IR::Inst& inst, std::string lhs, std::string rhs);
 void EmitSharedAtomicIAdd32(EmitContext& ctx, std::string pointer_offset, std::string value);
 void EmitSharedAtomicSMin32(EmitContext& ctx, std::string pointer_offset, std::string value);
 void EmitSharedAtomicUMin32(EmitContext& ctx, std::string pointer_offset, std::string value);
@@ -536,31 +536,31 @@ void EmitBoundImageQueryLod(EmitContext&);
 void EmitBoundImageGradient(EmitContext&);
 void EmitBoundImageRead(EmitContext&);
 void EmitBoundImageWrite(EmitContext&);
-void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                 std::string coords, std::string bias_lc, const IR::Value& offset);
-void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                 std::string coords, std::string lod_lc, const IR::Value& offset);
-void EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                     std::string coords, std::string dref, std::string bias_lc,
                                     const IR::Value& offset);
-void EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                     std::string coords, std::string dref, std::string lod_lc,
                                     const IR::Value& offset);
-void EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, std::string coords,
+void EmitImageGather(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, std::string coords,
                      const IR::Value& offset, const IR::Value& offset2);
-void EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                          std::string coords, const IR::Value& offset, const IR::Value& offset2,
                          std::string dref);
-void EmitImageFetch(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, std::string coords,
+void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, std::string coords,
                     std::string offset, std::string lod, std::string ms);
-void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                               std::string lod);
-void EmitImageQueryLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageQueryLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                        std::string coords);
-void EmitImageGradient(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, std::string coords,
+void EmitImageGradient(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, std::string coords,
                        std::string derivates, std::string offset, std::string lod_clamp);
-void EmitImageRead(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, std::string coords);
-void EmitImageWrite(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, std::string coords,
+void EmitImageRead(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, std::string coords);
+void EmitImageWrite(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, std::string coords,
                     std::string color);
 void EmitBindlessImageAtomicIAdd32(EmitContext&);
 void EmitBindlessImageAtomicSMin32(EmitContext&);
@@ -584,27 +584,27 @@ void EmitBoundImageAtomicAnd32(EmitContext&);
 void EmitBoundImageAtomicOr32(EmitContext&);
 void EmitBoundImageAtomicXor32(EmitContext&);
 void EmitBoundImageAtomicExchange32(EmitContext&);
-void EmitImageAtomicIAdd32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                            std::string coords, std::string value);
-void EmitImageAtomicSMin32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicSMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                            std::string coords, std::string value);
-void EmitImageAtomicUMin32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicUMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                            std::string coords, std::string value);
-void EmitImageAtomicSMax32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicSMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                            std::string coords, std::string value);
-void EmitImageAtomicUMax32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicUMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                            std::string coords, std::string value);
-void EmitImageAtomicInc32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicInc32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                           std::string coords, std::string value);
-void EmitImageAtomicDec32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicDec32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                           std::string coords, std::string value);
-void EmitImageAtomicAnd32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicAnd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                           std::string coords, std::string value);
-void EmitImageAtomicOr32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicOr32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                          std::string coords, std::string value);
-void EmitImageAtomicXor32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicXor32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                           std::string coords, std::string value);
-void EmitImageAtomicExchange32(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
+void EmitImageAtomicExchange32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                std::string coords, std::string value);
 void EmitLaneId(EmitContext& ctx);
 void EmitVoteAll(EmitContext& ctx, std::string pred);
@@ -616,13 +616,13 @@ void EmitSubgroupLtMask(EmitContext& ctx);
 void EmitSubgroupLeMask(EmitContext& ctx);
 void EmitSubgroupGtMask(EmitContext& ctx);
 void EmitSubgroupGeMask(EmitContext& ctx);
-void EmitShuffleIndex(EmitContext& ctx, IR::Inst* inst, std::string value, std::string index,
+void EmitShuffleIndex(EmitContext& ctx, IR::Inst& inst, std::string value, std::string index,
                       std::string clamp, std::string segmentation_mask);
-void EmitShuffleUp(EmitContext& ctx, IR::Inst* inst, std::string value, std::string index,
+void EmitShuffleUp(EmitContext& ctx, IR::Inst& inst, std::string value, std::string index,
                    std::string clamp, std::string segmentation_mask);
-void EmitShuffleDown(EmitContext& ctx, IR::Inst* inst, std::string value, std::string index,
+void EmitShuffleDown(EmitContext& ctx, IR::Inst& inst, std::string value, std::string index,
                      std::string clamp, std::string segmentation_mask);
-void EmitShuffleButterfly(EmitContext& ctx, IR::Inst* inst, std::string value, std::string index,
+void EmitShuffleButterfly(EmitContext& ctx, IR::Inst& inst, std::string value, std::string index,
                           std::string clamp, std::string segmentation_mask);
 void EmitFSwizzleAdd(EmitContext& ctx, std::string op_a, std::string op_b, std::string swizzle);
 void EmitDPdxFine(EmitContext& ctx, std::string op_a);

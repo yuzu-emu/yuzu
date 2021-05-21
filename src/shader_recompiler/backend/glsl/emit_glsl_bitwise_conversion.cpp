@@ -22,7 +22,7 @@ static void Alias(IR::Inst& inst, const IR::Value& value) {
 }
 } // namespace
 
-void EmitIdentity(EmitContext&, IR::Inst* inst, const IR::Value& value) {
-    Alias(*inst, value);
+void EmitIdentity(EmitContext&, IR::Inst& inst, const IR::Value& value) {
+    Alias(inst, value);
 }
 } // namespace Shader::Backend::GLSL
