@@ -347,6 +347,30 @@ std::string_view OutputPrimitive(OutputTopology topology) {
     }
     throw InvalidArgument("Invalid output topology {}", topology);
 }
+
+std::string_view GetTessMode(TessPrimitive primitive) {
+    switch (primitive) {
+    case TessPrimitive::Triangles:
+        return "TRIANGLES";
+    case TessPrimitive::Quads:
+        return "QUADS";
+    case TessPrimitive::Isolines:
+        return "ISOLINES";
+    }
+    throw InvalidArgument("Invalid tessellation primitive {}", primitive);
+}
+
+std::string_view GetTessSpacing(TessSpacing spacing) {
+    switch (spacing) {
+    case TessSpacing::Equal:
+        return "EQUAL";
+    case TessSpacing::FractionalOdd:
+        return "FRACTIONAL_ODD";
+    case TessSpacing::FractionalEven:
+        return "FRACTIONAL_EVEN";
+    }
+    throw InvalidArgument("Invalid tessellation spacing {}", spacing);
+}
 } // Anonymous namespace
 
 std::string EmitGLASM(const Profile& profile, IR::Program& program, Bindings& bindings) {
@@ -356,6 +380,17 @@ std::string EmitGLASM(const Profile& profile, IR::Program& program, Bindings& bi
     std::string header{StageHeader(program.stage)};
     SetupOptions(program, profile, header);
     switch (program.stage) {
+    case Stage::TessellationControl:
+        header += fmt::format("VERTICES_OUT {};", program.invocations);
+        break;
+    case Stage::TessellationEval:
+        header +=
+            fmt::format("TESS_MODE {};"
+                        "TESS_SPACING {};"
+                        "TESS_VERTEX_ORDER {};",
+                        GetTessMode(profile.tess_primitive), GetTessSpacing(profile.tess_spacing),
+                        profile.tess_clockwise ? "CW" : "CCW");
+        break;
     case Stage::Geometry:
         header += fmt::format("PRIMITIVE_IN {};"
                               "PRIMITIVE_OUT {};"
