@@ -10,9 +10,8 @@
 #include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::GLSL {
-void EmitCompositeConstructU32x2([[maybe_unused]] EmitContext& ctx, IR::Inst& inst,
-                                 [[maybe_unused]] std::string_view e1,
-                                 [[maybe_unused]] std::string_view e2) {
+void EmitCompositeConstructU32x2(EmitContext& ctx, IR::Inst& inst, std::string_view e1,
+                                 std::string_view e2) {
     ctx.AddU32x2("{}=uvec2({},{});", inst, e1, e2);
 }
 
@@ -31,9 +30,8 @@ void EmitCompositeConstructU32x4([[maybe_unused]] EmitContext& ctx,
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitCompositeExtractU32x2([[maybe_unused]] EmitContext& ctx, IR::Inst& inst,
-                               [[maybe_unused]] std::string_view composite,
-                               [[maybe_unused]] u32 index) {
+void EmitCompositeExtractU32x2(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
+                               u32 index) {
     ctx.AddU32("{}={}[{}];", inst, composite, index);
 }
 
@@ -130,10 +128,9 @@ void EmitCompositeInsertF16x4([[maybe_unused]] EmitContext& ctx,
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitCompositeConstructF32x2([[maybe_unused]] EmitContext& ctx,
-                                 [[maybe_unused]] std::string_view e1,
-                                 [[maybe_unused]] std::string_view e2) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitCompositeConstructF32x2(EmitContext& ctx, IR::Inst& inst, std::string_view e1,
+                                 std::string_view e2) {
+    ctx.AddF32x2("{}=uvec2({},{});", inst, e1, e2);
 }
 
 void EmitCompositeConstructF32x3([[maybe_unused]] EmitContext& ctx,
@@ -151,10 +148,9 @@ void EmitCompositeConstructF32x4([[maybe_unused]] EmitContext& ctx,
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitCompositeExtractF32x2([[maybe_unused]] EmitContext& ctx,
-                               [[maybe_unused]] std::string_view composite,
-                               [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitCompositeExtractF32x2(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
+                               u32 index) {
+    ctx.AddF32("{}={}[{}];", inst, composite, index);
 }
 
 void EmitCompositeExtractF32x3([[maybe_unused]] EmitContext& ctx,
