@@ -10,136 +10,108 @@
 #include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::GLSL {
-void EmitIAdd32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
+void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
     ctx.AddU32("{}={}+{};", inst, a, b);
 }
 
-void EmitIAdd64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitIAdd64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
+    ctx.AddU64("{}={}+{};", inst, a, b);
 }
 
-void EmitISub32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
+void EmitISub32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
     ctx.AddU32("{}={}-{};", inst, a, b);
 }
 
-void EmitISub64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitISub64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
+    ctx.AddU64("{}={}-{};", inst, a, b);
 }
 
-void EmitIMul32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitIMul32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
+    ctx.AddU32("{}={}*{};", inst, a, b);
 }
 
-void EmitINeg32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                [[maybe_unused]] std::string_view value) {
+void EmitINeg32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
     ctx.AddU32("{}=-{};", inst, value);
 }
 
-void EmitINeg64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitINeg64(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
+    ctx.AddU64("{}=-{};", inst, value);
 }
 
-void EmitIAbs32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                [[maybe_unused]] std::string_view value) {
+void EmitIAbs32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
     ctx.AddU32("{}=abs({});", inst, value);
 }
 
-void EmitIAbs64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitIAbs64(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
+    ctx.AddU64("{}=abs({});", inst, value);
 }
 
-void EmitShiftLeftLogical32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                            [[maybe_unused]] std::string_view base,
-                            [[maybe_unused]] std::string_view shift) {
+void EmitShiftLeftLogical32(EmitContext& ctx, IR::Inst& inst, std::string_view base,
+                            std::string_view shift) {
     ctx.AddU32("{}={}<<{};", inst, base, shift);
 }
 
-void EmitShiftLeftLogical64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                            [[maybe_unused]] std::string_view base,
-                            [[maybe_unused]] std::string_view shift) {
+void EmitShiftLeftLogical64(EmitContext& ctx, IR::Inst& inst, std::string_view base,
+                            std::string_view shift) {
     ctx.AddU64("{}={}<<{};", inst, base, shift);
 }
 
-void EmitShiftRightLogical32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                             [[maybe_unused]] std::string_view base,
-                             [[maybe_unused]] std::string_view shift) {
+void EmitShiftRightLogical32(EmitContext& ctx, IR::Inst& inst, std::string_view base,
+                             std::string_view shift) {
     ctx.AddU32("{}={}>>{};", inst, base, shift);
 }
 
-void EmitShiftRightLogical64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                             [[maybe_unused]] std::string_view base,
-                             [[maybe_unused]] std::string_view shift) {
+void EmitShiftRightLogical64(EmitContext& ctx, IR::Inst& inst, std::string_view base,
+                             std::string_view shift) {
     ctx.AddU64("{}={}>>{};", inst, base, shift);
 }
 
-void EmitShiftRightArithmetic32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                                [[maybe_unused]] std::string_view base,
-                                [[maybe_unused]] std::string_view shift) {
+void EmitShiftRightArithmetic32(EmitContext& ctx, IR::Inst& inst, std::string_view base,
+                                std::string_view shift) {
     ctx.AddS32("{}=int({})>>{};", inst, base, shift);
 }
 
-void EmitShiftRightArithmetic64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                                [[maybe_unused]] std::string_view base,
-                                [[maybe_unused]] std::string_view shift) {
+void EmitShiftRightArithmetic64(EmitContext& ctx, IR::Inst& inst, std::string_view base,
+                                std::string_view shift) {
     ctx.AddU64("{}=int64_t({})>>{};", inst, base, shift);
 }
 
-void EmitBitwiseAnd32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                      [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
+void EmitBitwiseAnd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
     ctx.AddU32("{}={}&{};", inst, a, b);
 }
 
-void EmitBitwiseOr32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                     [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
+void EmitBitwiseOr32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
     ctx.AddU32("{}={}|{};", inst, a, b);
 }
 
-void EmitBitwiseXor32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                      [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
+void EmitBitwiseXor32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
     ctx.AddU32("{}={}^{};", inst, a, b);
 }
 
-void EmitBitFieldInsert([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                        [[maybe_unused]] std::string_view base,
-                        [[maybe_unused]] std::string_view insert,
-                        [[maybe_unused]] std::string_view offset,
-                        [[maybe_unused]] std::string_view count) {
+void EmitBitFieldInsert(EmitContext& ctx, IR::Inst& inst, std::string_view base,
+                        std::string_view insert, std::string_view offset, std::string_view count) {
     ctx.AddU32("{}=bitfieldInsert({}, {}, int({}), int({}));", inst, base, insert, offset, count);
 }
 
-void EmitBitFieldSExtract([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                          [[maybe_unused]] std::string_view base,
-                          [[maybe_unused]] std::string_view offset,
-                          [[maybe_unused]] std::string_view count) {
+void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst& inst, std::string_view base,
+                          std::string_view offset, std::string_view count) {
     ctx.AddU32("{}=bitfieldExtract(int({}), int({}), int({}));", inst, base, offset, count);
 }
 
-void EmitBitFieldUExtract([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                          [[maybe_unused]] std::string_view base,
-                          [[maybe_unused]] std::string_view offset,
-                          [[maybe_unused]] std::string_view count) {
+void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst& inst, std::string_view base,
+                          std::string_view offset, std::string_view count) {
     ctx.AddU32("{}=bitfieldExtract({}, int({}), int({}));", inst, base, offset, count);
 }
 
-void EmitBitReverse32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                      [[maybe_unused]] std::string_view value) {
+void EmitBitReverse32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
     ctx.AddU32("{}=bitfieldReverse({});", inst, value);
 }
 
-void EmitBitCount32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                    [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitBitCount32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
+    ctx.AddU32("{}=bitCount({});", inst, value);
 }
 
-void EmitBitwiseNot32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                      [[maybe_unused]] std::string_view value) {
+void EmitBitwiseNot32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
     ctx.AddU32("{}=~{};", inst, value);
 }
 
@@ -153,91 +125,75 @@ void EmitFindUMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitSMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
+void EmitSMin32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
     ctx.AddU32("{}=min(int({}), int({}));", inst, a, b);
 }
 
-void EmitUMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
+void EmitUMin32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
     ctx.AddU32("{}=min(uint({}), uint({}));", inst, a, b);
 }
 
-void EmitSMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
+void EmitSMax32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
     ctx.AddU32("{}=max(int({}), int({}));", inst, a, b);
 }
 
-void EmitUMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
+void EmitUMax32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
     ctx.AddU32("{}=max(uint({}), uint({}));", inst, a, b);
 }
 
-void EmitSClamp32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                  [[maybe_unused]] std::string_view value, [[maybe_unused]] std::string_view min,
-                  [[maybe_unused]] std::string_view max) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitSClamp32(EmitContext& ctx, IR::Inst& inst, std::string_view value, std::string_view min,
+                  std::string_view max) {
+    ctx.AddU32("{}=clamp(int({}), int({}), int({}));", inst, value, min, max);
 }
 
-void EmitUClamp32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                  [[maybe_unused]] std::string_view value, [[maybe_unused]] std::string_view min,
-                  [[maybe_unused]] std::string_view max) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitUClamp32(EmitContext& ctx, IR::Inst& inst, std::string_view value, std::string_view min,
+                  std::string_view max) {
+    ctx.AddU32("{}=clamp(uint({}), uint({}), uint({}));", inst, value, min, max);
 }
 
-void EmitSLessThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                   [[maybe_unused]] std::string_view lhs, [[maybe_unused]] std::string_view rhs) {
+void EmitSLessThan(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs) {
     ctx.AddU1("{}=int({})<int({});", inst, lhs, rhs);
 }
 
-void EmitULessThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                   [[maybe_unused]] std::string_view lhs, [[maybe_unused]] std::string_view rhs) {
+void EmitULessThan(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs) {
     ctx.AddU1("{}=uint({})<uint({)};", inst, lhs, rhs);
 }
 
-void EmitIEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                [[maybe_unused]] std::string_view lhs, [[maybe_unused]] std::string_view rhs) {
+void EmitIEqual(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs) {
     ctx.AddU1("{}={}=={};", inst, lhs, rhs);
 }
 
-void EmitSLessThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                        [[maybe_unused]] std::string_view lhs,
-                        [[maybe_unused]] std::string_view rhs) {
+void EmitSLessThanEqual(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
+                        std::string_view rhs) {
     ctx.AddU1("{}=int({})<=int({});", inst, lhs, rhs);
 }
 
-void EmitULessThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                        [[maybe_unused]] std::string_view lhs,
-                        [[maybe_unused]] std::string_view rhs) {
+void EmitULessThanEqual(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
+                        std::string_view rhs) {
     ctx.AddU1("{}=uint({})<=uint({});", inst, lhs, rhs);
 }
 
-void EmitSGreaterThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                      [[maybe_unused]] std::string_view lhs,
-                      [[maybe_unused]] std::string_view rhs) {
+void EmitSGreaterThan(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
+                      std::string_view rhs) {
     ctx.AddU1("{}=int({})>int({});", inst, lhs, rhs);
 }
 
-void EmitUGreaterThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                      [[maybe_unused]] std::string_view lhs,
-                      [[maybe_unused]] std::string_view rhs) {
+void EmitUGreaterThan(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
+                      std::string_view rhs) {
     ctx.AddU1("{}=uint({})>uint({});", inst, lhs, rhs);
 }
 
-void EmitINotEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                   [[maybe_unused]] std::string_view lhs, [[maybe_unused]] std::string_view rhs) {
+void EmitINotEqual(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs) {
     ctx.AddU1("{}={}!={};", inst, lhs, rhs);
 }
 
-void EmitSGreaterThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                           [[maybe_unused]] std::string_view lhs,
-                           [[maybe_unused]] std::string_view rhs) {
+void EmitSGreaterThanEqual(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
+                           std::string_view rhs) {
     ctx.AddU1("{}=int({})>=int({});", inst, lhs, rhs);
 }
 
-void EmitUGreaterThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                           [[maybe_unused]] std::string_view lhs,
-                           [[maybe_unused]] std::string_view rhs) {
+void EmitUGreaterThanEqual(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
+                           std::string_view rhs) {
     ctx.AddU1("{}=uint({})>=uint({});", inst, lhs, rhs);
 }
 } // namespace Shader::Backend::GLSL

@@ -28,10 +28,8 @@ void EmitSelectU16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::stri
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitSelectU32([[maybe_unused]] EmitContext& ctx, IR::Inst& inst,
-                   [[maybe_unused]] std::string_view cond,
-                   [[maybe_unused]] std::string_view true_value,
-                   [[maybe_unused]] std::string_view false_value) {
+void EmitSelectU32(EmitContext& ctx, IR::Inst& inst, std::string_view cond,
+                   std::string_view true_value, std::string_view false_value) {
     ctx.AddU32("{}={}?{}:{};", inst, cond, true_value, false_value);
 }
 
@@ -47,10 +45,9 @@ void EmitSelectF16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::stri
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitSelectF32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view cond,
-                   [[maybe_unused]] std::string_view true_value,
-                   [[maybe_unused]] std::string_view false_value) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitSelectF32(EmitContext& ctx, IR::Inst& inst, std::string_view cond,
+                   std::string_view true_value, std::string_view false_value) {
+    ctx.AddF32("{}={}?{}:{};", inst, cond, true_value, false_value);
 }
 
 void EmitSelectF64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view cond,
