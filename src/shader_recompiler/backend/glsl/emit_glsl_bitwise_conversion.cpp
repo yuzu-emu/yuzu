@@ -25,4 +25,17 @@ static void Alias(IR::Inst& inst, const IR::Value& value) {
 void EmitIdentity(EmitContext&, IR::Inst& inst, const IR::Value& value) {
     Alias(inst, value);
 }
+
+void EmitConditionRef(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
+    ctx.AddU1("{}={};", inst, ctx.reg_alloc.Consume(value));
+}
+
+void EmitPackUint2x32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
+    ctx.AddU64("{}=packUint2x32({});", inst, value);
+}
+
+void EmitUnpackUint2x32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
+    ctx.AddU32x2("{}=unpackUint2x32({});", inst, value);
+}
+
 } // namespace Shader::Backend::GLSL

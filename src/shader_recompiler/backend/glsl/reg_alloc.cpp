@@ -57,9 +57,10 @@ std::string RegAlloc::Consume(const IR::Value& value) {
 std::string RegAlloc::Consume(IR::Inst& inst) {
     const Id id{inst.Definition<Id>()};
     inst.DestructiveRemoveUsage();
-    if (!inst.HasUses()) {
-        Free(id);
-    }
+    // TODO: reuse variables of same type if possible
+    // if (!inst.HasUses()) {
+    //     Free(id);
+    // }
     return Representation(inst.Definition<Id>());
 }
 
@@ -69,14 +70,24 @@ std::string RegAlloc::GetType(Type type, u32 index) {
     }
     register_defined[index] = true;
     switch (type) {
+    case Type::U1:
+        return "bool ";
     case Type::U32:
         return "uint ";
     case Type::S32:
         return "int ";
     case Type::F32:
         return "float ";
-    default:
+    case Type::U64:
+        return "uint64_t ";
+    case Type::U32x2:
+        return "uvec2 ";
+    case Type::F32x2:
+        return "vec2 ";
+    case Type::Void:
         return "";
+    default:
+        throw NotImplementedException("Type {}", type);
     }
 }
 
