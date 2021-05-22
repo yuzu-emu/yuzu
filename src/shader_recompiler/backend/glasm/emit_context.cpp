@@ -30,9 +30,8 @@ bool IsInputArray(Stage stage) {
 
 EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
                          const RuntimeInfo& runtime_info_)
-    : profile{profile_}, runtime_info{runtime_info_} {
+    : info{program.info}, profile{profile_}, runtime_info{runtime_info_} {
     // FIXME: Temporary partial implementation
-    const auto& info{program.info};
     u32 cbuf_index{};
     for (const auto& desc : info.constant_buffer_descriptors) {
         if (desc.count != 1) {

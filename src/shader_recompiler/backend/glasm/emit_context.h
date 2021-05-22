@@ -58,6 +58,7 @@ public:
 
     std::string code;
     RegAlloc reg_alloc{*this};
+    const Info& info;
     const Profile& profile;
     const RuntimeInfo& runtime_info;
 
