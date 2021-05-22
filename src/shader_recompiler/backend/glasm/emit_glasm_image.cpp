@@ -205,6 +205,16 @@ std::string_view FormatStorage(ImageFormat format) {
     }
     throw InvalidArgument("Invalid image format {}", format);
 }
+
+template <typename T>
+void ImageAtomic(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord, T value,
+                 std::string_view op) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const std::string_view type{TextureType(info)};
+    const std::string image{Image(ctx, info, index)};
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    ctx.Add("ATOMIM.{} {},{},{},{},{};", op, ret, value, coord, image, type);
+}
 } // Anonymous namespace
 
 void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
@@ -590,6 +600,61 @@ void EmitImageWrite(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Re
     ctx.Add("STOREIM.{} {},{},{},{};", format, image, color, coord, type);
 }
 
+void EmitImageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
+                           ScalarU32 value) {
+    ImageAtomic(ctx, inst, index, coord, value, "ADD.U32");
+}
+
+void EmitImageAtomicSMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
+                           ScalarS32 value) {
+    ImageAtomic(ctx, inst, index, coord, value, "MIN.S32");
+}
+
+void EmitImageAtomicUMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
+                           ScalarU32 value) {
+    ImageAtomic(ctx, inst, index, coord, value, "MIN.U32");
+}
+
+void EmitImageAtomicSMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
+                           ScalarS32 value) {
+    ImageAtomic(ctx, inst, index, coord, value, "MAX.S32");
+}
+
+void EmitImageAtomicUMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
+                           ScalarU32 value) {
+    ImageAtomic(ctx, inst, index, coord, value, "MAX.U32");
+}
+
+void EmitImageAtomicInc32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
+                          ScalarU32 value) {
+    ImageAtomic(ctx, inst, index, coord, value, "IWRAP.U32");
+}
+
+void EmitImageAtomicDec32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
+                          ScalarU32 value) {
+    ImageAtomic(ctx, inst, index, coord, value, "DWRAP.U32");
+}
+
+void EmitImageAtomicAnd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
+                          ScalarU32 value) {
+    ImageAtomic(ctx, inst, index, coord, value, "AND.U32");
+}
+
+void EmitImageAtomicOr32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
+                         ScalarU32 value) {
+    ImageAtomic(ctx, inst, index, coord, value, "OR.U32");
+}
+
+void EmitImageAtomicXor32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord,
+                          ScalarU32 value) {
+    ImageAtomic(ctx, inst, index, coord, value, "XOR.U32");
+}
+
+void EmitImageAtomicExchange32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                               Register coord, ScalarU32 value) {
+    ImageAtomic(ctx, inst, index, coord, value, "EXCH.U32");
+}
+
 void EmitBindlessImageSampleImplicitLod(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
@@ -683,6 +748,94 @@ void EmitBoundImageRead(EmitContext&) {
 }
 
 void EmitBoundImageWrite(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageAtomicIAdd32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageAtomicSMin32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageAtomicUMin32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageAtomicSMax32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageAtomicUMax32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageAtomicInc32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageAtomicDec32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageAtomicAnd32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageAtomicOr32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageAtomicXor32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBindlessImageAtomicExchange32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageAtomicIAdd32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageAtomicSMin32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageAtomicUMin32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageAtomicSMax32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageAtomicUMax32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageAtomicInc32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageAtomicDec32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageAtomicAnd32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageAtomicOr32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageAtomicXor32(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitBoundImageAtomicExchange32(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
 

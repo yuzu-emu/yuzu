@@ -13,7 +13,6 @@ add_library(shader_recompiler STATIC
     backend/glasm/emit_glasm_convert.cpp
     backend/glasm/emit_glasm_floating_point.cpp
     backend/glasm/emit_glasm_image.cpp
-    backend/glasm/emit_glasm_image_atomic.cpp
     backend/glasm/emit_glasm_instructions.h
     backend/glasm/emit_glasm_integer.cpp
     backend/glasm/emit_glasm_logical.cpp
