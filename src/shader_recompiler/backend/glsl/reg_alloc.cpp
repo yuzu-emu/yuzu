@@ -78,8 +78,12 @@ std::string RegAlloc::GetType(Type type, u32 index) {
         return "int ";
     case Type::F32:
         return "float ";
+    case Type::S64:
+        return "int64_t ";
     case Type::U64:
         return "uint64_t ";
+    case Type::F64:
+        return "double ";
     case Type::U32x2:
         return "uvec2 ";
     case Type::F32x2:

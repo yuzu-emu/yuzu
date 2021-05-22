@@ -66,8 +66,18 @@ public:
     }
 
     template <typename... Args>
+    void AddS64(const char* format_str, IR::Inst& inst, Args&&... args) {
+        Add<Type::S64>(format_str, inst, args...);
+    }
+
+    template <typename... Args>
     void AddU64(const char* format_str, IR::Inst& inst, Args&&... args) {
         Add<Type::U64>(format_str, inst, args...);
+    }
+
+    template <typename... Args>
+    void AddF64(const char* format_str, IR::Inst& inst, Args&&... args) {
+        Add<Type::F64>(format_str, inst, args...);
     }
 
     template <typename... Args>

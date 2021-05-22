@@ -76,18 +76,15 @@ void EmitWriteStorageS16([[maybe_unused]] EmitContext& ctx,
     throw NotImplementedException("GLSL Instrucion");
 }
 
-void EmitWriteStorage32([[maybe_unused]] EmitContext& ctx,
-                        [[maybe_unused]] const IR::Value& binding,
-                        [[maybe_unused]] const IR::Value& offset,
-                        [[maybe_unused]] std::string_view value) {
+void EmitWriteStorage32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                        std::string_view value) {
     ctx.Add("buff{}[{}]={};", binding.U32(), offset.U32(), value);
 }
 
-void EmitWriteStorage64([[maybe_unused]] EmitContext& ctx,
-                        [[maybe_unused]] const IR::Value& binding,
-                        [[maybe_unused]] const IR::Value& offset,
-                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instrucion");
+void EmitWriteStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                        std::string_view value) {
+    ctx.Add("buff{}[{}]={}.x;", binding.U32(), offset.U32(), value);
+    ctx.Add("buff{}[{}]={}.y;", binding.U32(), offset.U32() + 1, value);
 }
 
 void EmitWriteStorage128([[maybe_unused]] EmitContext& ctx,

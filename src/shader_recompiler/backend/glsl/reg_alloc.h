@@ -17,9 +17,10 @@ class Value;
 namespace Shader::Backend::GLSL {
 enum class Type : u32 {
     U1,
-    U32,
     S32,
+    U32,
     F32,
+    S64,
     U64,
     F64,
     U32x2,
