@@ -30,11 +30,11 @@ std::string MakeImm(const IR::Value& value) {
     case IR::Type::U1:
         return fmt::format("{}", value.U1() ? "true" : "false");
     case IR::Type::U32:
-        return fmt::format("{}", value.U32());
+        return fmt::format("{}u", value.U32());
     case IR::Type::F32:
-        return fmt::format("{}", value.F32());
+        return fmt::format("{}f", value.F32());
     case IR::Type::U64:
-        return fmt::format("{}", value.U64());
+        return fmt::format("{}ul", value.U64());
     case IR::Type::F64:
         return fmt::format("{}", value.F64());
     default:

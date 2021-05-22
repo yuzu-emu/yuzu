@@ -690,22 +690,6 @@ void EmitGlobalAtomicMaxF32x2(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitLogicalOr(EmitContext& ctx, std::string_view a, std::string_view b) {
-    NotImplemented();
-}
-
-void EmitLogicalAnd(EmitContext& ctx, std::string_view a, std::string_view b) {
-    NotImplemented();
-}
-
-void EmitLogicalXor(EmitContext& ctx, std::string_view a, std::string_view b) {
-    NotImplemented();
-}
-
-void EmitLogicalNot(EmitContext& ctx, std::string_view value) {
-    NotImplemented();
-}
-
 void EmitBindlessImageSampleImplicitLod(EmitContext&) {
     NotImplemented();
 }
