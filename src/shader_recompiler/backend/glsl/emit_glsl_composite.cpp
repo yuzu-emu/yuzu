@@ -10,6 +10,8 @@
 #include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::GLSL {
+static constexpr std::string_view SWIZZLE{"xyzw"};
+
 void EmitCompositeConstructU32x2(EmitContext& ctx, IR::Inst& inst, std::string_view e1,
                                  std::string_view e2) {
     ctx.AddU32x2("{}=uvec2({},{});", inst, e1, e2);
@@ -32,7 +34,7 @@ void EmitCompositeConstructU32x4([[maybe_unused]] EmitContext& ctx,
 
 void EmitCompositeExtractU32x2(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
                                u32 index) {
-    ctx.AddU32("{}={}[{}];", inst, composite, index);
+    ctx.AddU32("{}={}.{};", inst, composite, SWIZZLE[index]);
 }
 
 void EmitCompositeExtractU32x3([[maybe_unused]] EmitContext& ctx,
@@ -130,7 +132,7 @@ void EmitCompositeInsertF16x4([[maybe_unused]] EmitContext& ctx,
 
 void EmitCompositeConstructF32x2(EmitContext& ctx, IR::Inst& inst, std::string_view e1,
                                  std::string_view e2) {
-    ctx.AddF32x2("{}=uvec2({},{});", inst, e1, e2);
+    ctx.AddF32x2("{}=vec2({},{});", inst, e1, e2);
 }
 
 void EmitCompositeConstructF32x3([[maybe_unused]] EmitContext& ctx,
@@ -150,7 +152,7 @@ void EmitCompositeConstructF32x4([[maybe_unused]] EmitContext& ctx,
 
 void EmitCompositeExtractF32x2(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
                                u32 index) {
-    ctx.AddF32("{}={}[{}];", inst, composite, index);
+    ctx.AddF32("{}={}.{};", inst, composite, SWIZZLE[index]);
 }
 
 void EmitCompositeExtractF32x3([[maybe_unused]] EmitContext& ctx,

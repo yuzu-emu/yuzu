@@ -47,7 +47,7 @@ void EmitConvertS64F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 
 void EmitConvertS64F32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    ctx.AddS64("{}=int64_t({});", inst, value);
+    ctx.AddS64("{}=int64_t(double({}));", inst, value);
 }
 
 void EmitConvertS64F64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -92,7 +92,7 @@ void EmitConvertU64F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 
 void EmitConvertU64F32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    ctx.AddU64("{}=uint64_t({});", inst, value);
+    ctx.AddU64("{}=uint64_t(double({}));", inst, value);
 }
 
 void EmitConvertU64F64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
