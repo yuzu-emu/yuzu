@@ -8,6 +8,72 @@
 
 namespace Shader::Backend::GLASM {
 
+void EmitImageAtomicIAdd32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                           [[maybe_unused]] const IR::Value& index,
+                           [[maybe_unused]] Register coords, [[maybe_unused]] ScalarU32 value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitImageAtomicSMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                           [[maybe_unused]] const IR::Value& index,
+                           [[maybe_unused]] Register coords, [[maybe_unused]] ScalarS32 value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitImageAtomicUMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                           [[maybe_unused]] const IR::Value& index,
+                           [[maybe_unused]] Register coords, [[maybe_unused]] ScalarU32 value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitImageAtomicSMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                           [[maybe_unused]] const IR::Value& index,
+                           [[maybe_unused]] Register coords, [[maybe_unused]] ScalarS32 value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitImageAtomicUMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                           [[maybe_unused]] const IR::Value& index,
+                           [[maybe_unused]] Register coords, [[maybe_unused]] ScalarU32 value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitImageAtomicInc32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                          [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords,
+                          [[maybe_unused]] ScalarU32 value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitImageAtomicDec32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                          [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords,
+                          [[maybe_unused]] ScalarU32 value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitImageAtomicAnd32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                          [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords,
+                          [[maybe_unused]] ScalarU32 value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitImageAtomicOr32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                         [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords,
+                         [[maybe_unused]] ScalarU32 value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitImageAtomicXor32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                          [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords,
+                          [[maybe_unused]] ScalarU32 value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
+void EmitImageAtomicExchange32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                               [[maybe_unused]] const IR::Value& index,
+                               [[maybe_unused]] Register coords, [[maybe_unused]] ScalarU32 value) {
+    throw NotImplementedException("GLASM instruction");
+}
+
 void EmitBindlessImageAtomicIAdd32(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
@@ -94,72 +160,6 @@ void EmitBoundImageAtomicXor32(EmitContext&) {
 
 void EmitBoundImageAtomicExchange32(EmitContext&) {
     throw LogicError("Unreachable instruction");
-}
-
-void EmitImageAtomicIAdd32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                           [[maybe_unused]] const IR::Value& index,
-                           [[maybe_unused]] Register coords, [[maybe_unused]] ScalarU32 value) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitImageAtomicSMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                           [[maybe_unused]] const IR::Value& index,
-                           [[maybe_unused]] Register coords, [[maybe_unused]] ScalarS32 value) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitImageAtomicUMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                           [[maybe_unused]] const IR::Value& index,
-                           [[maybe_unused]] Register coords, [[maybe_unused]] ScalarU32 value) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitImageAtomicSMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                           [[maybe_unused]] const IR::Value& index,
-                           [[maybe_unused]] Register coords, [[maybe_unused]] ScalarS32 value) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitImageAtomicUMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                           [[maybe_unused]] const IR::Value& index,
-                           [[maybe_unused]] Register coords, [[maybe_unused]] ScalarU32 value) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitImageAtomicInc32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                          [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords,
-                          [[maybe_unused]] ScalarU32 value) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitImageAtomicDec32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                          [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords,
-                          [[maybe_unused]] ScalarU32 value) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitImageAtomicAnd32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                          [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords,
-                          [[maybe_unused]] ScalarU32 value) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitImageAtomicOr32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                         [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords,
-                         [[maybe_unused]] ScalarU32 value) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitImageAtomicXor32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                          [[maybe_unused]] const IR::Value& index, [[maybe_unused]] Register coords,
-                          [[maybe_unused]] ScalarU32 value) {
-    throw NotImplementedException("GLASM instruction");
-}
-
-void EmitImageAtomicExchange32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                               [[maybe_unused]] const IR::Value& index,
-                               [[maybe_unused]] Register coords, [[maybe_unused]] ScalarU32 value) {
-    throw NotImplementedException("GLASM instruction");
 }
 
 } // namespace Shader::Backend::GLASM
