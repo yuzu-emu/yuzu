@@ -22,7 +22,7 @@ void EmitIAdd64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& in
 
 void EmitISub32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU32("{}={}-{};", inst, a, b);
 }
 
 void EmitISub64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -111,26 +111,26 @@ void EmitBitFieldInsert([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::
                         [[maybe_unused]] std::string_view insert,
                         [[maybe_unused]] std::string_view offset,
                         [[maybe_unused]] std::string_view count) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU32("{}=bitfieldInsert({}, {}, int({}), int({}));", inst, base, insert, offset, count);
 }
 
 void EmitBitFieldSExtract([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                           [[maybe_unused]] std::string_view base,
                           [[maybe_unused]] std::string_view offset,
                           [[maybe_unused]] std::string_view count) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU32("{}=bitfieldExtract(int({}), int({}), int({}));", inst, base, offset, count);
 }
 
 void EmitBitFieldUExtract([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                           [[maybe_unused]] std::string_view base,
                           [[maybe_unused]] std::string_view offset,
                           [[maybe_unused]] std::string_view count) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU32("{}=bitfieldExtract({}, int({}), int({}));", inst, base, offset, count);
 }
 
 void EmitBitReverse32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU32("{}=bitfieldReverse({});", inst, value);
 }
 
 void EmitBitCount32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,

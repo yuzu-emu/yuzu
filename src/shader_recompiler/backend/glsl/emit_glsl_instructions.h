@@ -201,8 +201,8 @@ void EmitSelectU8(EmitContext& ctx, std::string_view cond, std::string_view true
                   std::string_view false_value);
 void EmitSelectU16(EmitContext& ctx, std::string_view cond, std::string_view true_value,
                    std::string_view false_value);
-void EmitSelectU32(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                   std::string_view false_value);
+void EmitSelectU32(EmitContext& ctx, IR::Inst& inst, std::string_view cond,
+                   std::string_view true_value, std::string_view false_value);
 void EmitSelectU64(EmitContext& ctx, std::string_view cond, std::string_view true_value,
                    std::string_view false_value);
 void EmitSelectF16(EmitContext& ctx, std::string_view cond, std::string_view true_value,
