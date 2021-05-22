@@ -134,6 +134,13 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, ScalarF32 value,
         ctx.Add("MOV.F result.clip[{}].x,{};", index, value);
         break;
     }
+    case IR::Attribute::Layer:
+        if (ctx.stage == Stage::Geometry || ctx.profile.support_viewport_index_layer_non_geometry) {
+            ctx.Add("MOV.F result.layer.x,{};", value);
+        } else {
+            // LOG_WARNING
+        }
+        break;
     case IR::Attribute::ViewportIndex:
         if (ctx.stage == Stage::Geometry || ctx.profile.support_viewport_index_layer_non_geometry) {
             ctx.Add("MOV.F result.viewport.x,{};", value);
