@@ -69,7 +69,7 @@ void EmitSetOFlag(EmitContext& ctx);
 void EmitWorkgroupId(EmitContext& ctx, IR::Inst& inst);
 void EmitLocalInvocationId(EmitContext& ctx, IR::Inst& inst);
 void EmitInvocationId(EmitContext& ctx, IR::Inst& inst);
-void EmitSampleId(EmitContext& ctx);
+void EmitSampleId(EmitContext& ctx, IR::Inst& inst);
 void EmitIsHelperInvocation(EmitContext& ctx, IR::Inst& inst);
 void EmitYDirection(EmitContext& ctx);
 void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, ScalarU32 word_offset);

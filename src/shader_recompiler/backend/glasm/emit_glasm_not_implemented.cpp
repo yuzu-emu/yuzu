@@ -164,8 +164,8 @@ void EmitInvocationId(EmitContext& ctx, IR::Inst& inst) {
     ctx.Add("MOV.S {}.x,primitive_invocation.x;", inst);
 }
 
-void EmitSampleId(EmitContext& ctx) {
-    NotImplemented();
+void EmitSampleId(EmitContext& ctx, IR::Inst& inst) {
+    ctx.Add("MOV.S {}.x,fragment.sampleid.x;", inst);
 }
 
 void EmitIsHelperInvocation(EmitContext& ctx, IR::Inst& inst) {
