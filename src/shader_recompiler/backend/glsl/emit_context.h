@@ -38,28 +38,46 @@ public:
     //     code += '\n';
     // }
 
-    template <typename... Args>
-    void AddU32(const char* format_str, IR::Inst& inst, Args&&... args) {
-        code +=
-            fmt::format(format_str, reg_alloc.Define(inst, Type::U32), std::forward<Args>(args)...);
+    template <Type type, typename... Args>
+    void Add(const char* format_str, IR::Inst& inst, Args&&... args) {
+        code += fmt::format(format_str, reg_alloc.Define(inst, type), std::forward<Args>(args)...);
         // TODO: Remove this
         code += '\n';
+    }
+
+    template <typename... Args>
+    void AddU1(const char* format_str, IR::Inst& inst, Args&&... args) {
+        Add<Type::U1>(format_str, inst, args...);
+    }
+
+    template <typename... Args>
+    void AddU32(const char* format_str, IR::Inst& inst, Args&&... args) {
+        Add<Type::U32>(format_str, inst, args...);
     }
 
     template <typename... Args>
     void AddS32(const char* format_str, IR::Inst& inst, Args&&... args) {
-        code +=
-            fmt::format(format_str, reg_alloc.Define(inst, Type::S32), std::forward<Args>(args)...);
-        // TODO: Remove this
-        code += '\n';
+        Add<Type::S32>(format_str, inst, args...);
     }
 
     template <typename... Args>
     void AddF32(const char* format_str, IR::Inst& inst, Args&&... args) {
-        code +=
-            fmt::format(format_str, reg_alloc.Define(inst, Type::F32), std::forward<Args>(args)...);
-        // TODO: Remove this
-        code += '\n';
+        Add<Type::F32>(format_str, inst, args...);
+    }
+
+    template <typename... Args>
+    void AddU64(const char* format_str, IR::Inst& inst, Args&&... args) {
+        Add<Type::U64>(format_str, inst, args...);
+    }
+
+    template <typename... Args>
+    void AddU32x2(const char* format_str, IR::Inst& inst, Args&&... args) {
+        Add<Type::U32x2>(format_str, inst, args...);
+    }
+
+    template <typename... Args>
+    void AddF32x2(const char* format_str, IR::Inst& inst, Args&&... args) {
+        Add<Type::F32x2>(format_str, inst, args...);
     }
 
     template <typename... Args>
@@ -75,6 +93,7 @@ public:
     const Profile& profile;
 
 private:
+    void SetupExtensions(std::string& header);
     void DefineConstantBuffers();
     void DefineStorageBuffers();
 };

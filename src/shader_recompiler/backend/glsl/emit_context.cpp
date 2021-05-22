@@ -12,6 +12,7 @@ EmitContext::EmitContext(IR::Program& program, [[maybe_unused]] Bindings& bindin
                          const Profile& profile_)
     : info{program.info}, profile{profile_} {
     std::string header = "#version 450\n";
+    SetupExtensions(header);
     if (program.stage == Stage::Compute) {
         header += fmt::format("layout(local_size_x={},local_size_y={},local_size_z={}) in;\n",
                               program.workgroup_size[0], program.workgroup_size[1],
@@ -21,6 +22,12 @@ EmitContext::EmitContext(IR::Program& program, [[maybe_unused]] Bindings& bindin
     DefineConstantBuffers();
     DefineStorageBuffers();
     code += "void main(){\n";
+}
+
+void EmitContext::SetupExtensions(std::string& header) {
+    if (info.uses_int64) {
+        header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
+    }
 }
 
 void EmitContext::DefineConstantBuffers() {

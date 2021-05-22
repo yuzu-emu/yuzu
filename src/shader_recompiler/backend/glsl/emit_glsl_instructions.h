@@ -142,12 +142,14 @@ void EmitWriteSharedU16(EmitContext& ctx, std::string_view offset, std::string_v
 void EmitWriteSharedU32(EmitContext& ctx, std::string_view offset, std::string_view value);
 void EmitWriteSharedU64(EmitContext& ctx, std::string_view offset, std::string_view value);
 void EmitWriteSharedU128(EmitContext& ctx, std::string_view offset, std::string_view value);
-void EmitCompositeConstructU32x2(EmitContext& ctx, std::string_view e1, std::string_view e2);
+void EmitCompositeConstructU32x2(EmitContext& ctx, IR::Inst& inst, std::string_view e1,
+                                 std::string_view e2);
 void EmitCompositeConstructU32x3(EmitContext& ctx, std::string_view e1, std::string_view e2,
                                  std::string_view e3);
 void EmitCompositeConstructU32x4(EmitContext& ctx, std::string_view e1, std::string_view e2,
                                  std::string_view e3, std::string_view e4);
-void EmitCompositeExtractU32x2(EmitContext& ctx, std::string_view composite, u32 index);
+void EmitCompositeExtractU32x2(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
+                               u32 index);
 void EmitCompositeExtractU32x3(EmitContext& ctx, std::string_view composite, u32 index);
 void EmitCompositeExtractU32x4(EmitContext& ctx, std::string_view composite, u32 index);
 void EmitCompositeInsertU32x2(EmitContext& ctx, std::string_view composite, std::string_view object,
@@ -218,8 +220,8 @@ void EmitBitCastU64F64(EmitContext& ctx);
 void EmitBitCastF16U16(EmitContext& ctx);
 void EmitBitCastF32U32(EmitContext& ctx, std::string_view value);
 void EmitBitCastF64U64(EmitContext& ctx);
-void EmitPackUint2x32(EmitContext& ctx, std::string_view value);
-void EmitUnpackUint2x32(EmitContext& ctx, std::string_view value);
+void EmitPackUint2x32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
+void EmitUnpackUint2x32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
 void EmitPackFloat2x16(EmitContext& ctx, std::string_view value);
 void EmitUnpackFloat2x16(EmitContext& ctx, std::string_view value);
 void EmitPackHalf2x16(EmitContext& ctx, std::string_view value);

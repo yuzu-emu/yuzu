@@ -1,4 +1,3 @@
-
 // Copyright 2021 yuzu Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -48,7 +47,7 @@ void EmitINeg64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& in
 
 void EmitIAbs32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU32("{}=abs({});", inst, value);
 }
 
 void EmitIAbs64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -59,52 +58,52 @@ void EmitIAbs64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& in
 void EmitShiftLeftLogical32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                             [[maybe_unused]] std::string_view base,
                             [[maybe_unused]] std::string_view shift) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU32("{}={}<<{};", inst, base, shift);
 }
 
 void EmitShiftLeftLogical64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                             [[maybe_unused]] std::string_view base,
                             [[maybe_unused]] std::string_view shift) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU64("{}={}<<{};", inst, base, shift);
 }
 
 void EmitShiftRightLogical32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                              [[maybe_unused]] std::string_view base,
                              [[maybe_unused]] std::string_view shift) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU32("{}={}>>{};", inst, base, shift);
 }
 
 void EmitShiftRightLogical64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                              [[maybe_unused]] std::string_view base,
                              [[maybe_unused]] std::string_view shift) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU64("{}={}>>{};", inst, base, shift);
 }
 
 void EmitShiftRightArithmetic32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                                 [[maybe_unused]] std::string_view base,
                                 [[maybe_unused]] std::string_view shift) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddS32("{}=int({})>>{};", inst, base, shift);
 }
 
 void EmitShiftRightArithmetic64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                                 [[maybe_unused]] std::string_view base,
                                 [[maybe_unused]] std::string_view shift) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU64("{}=int64_t({})>>{};", inst, base, shift);
 }
 
 void EmitBitwiseAnd32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU32("{}={}&{};", inst, a, b);
 }
 
 void EmitBitwiseOr32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                      [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU32("{}={}|{};", inst, a, b);
 }
 
 void EmitBitwiseXor32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU32("{}={}^{};", inst, a, b);
 }
 
 void EmitBitFieldInsert([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -141,7 +140,7 @@ void EmitBitCount32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
 
 void EmitBitwiseNot32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU32("{}=~{};", inst, value);
 }
 
 void EmitFindSMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -156,22 +155,22 @@ void EmitFindUMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
 
 void EmitSMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU32("{}=min(int({}), int({}));", inst, a, b);
 }
 
 void EmitUMin32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU32("{}=min(uint({}), uint({}));", inst, a, b);
 }
 
 void EmitSMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU32("{}=max(int({}), int({}));", inst, a, b);
 }
 
 void EmitUMax32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU32("{}=max(uint({}), uint({}));", inst, a, b);
 }
 
 void EmitSClamp32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -188,57 +187,57 @@ void EmitUClamp32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& 
 
 void EmitSLessThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                    [[maybe_unused]] std::string_view lhs, [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU1("{}=int({})<int({});", inst, lhs, rhs);
 }
 
 void EmitULessThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                    [[maybe_unused]] std::string_view lhs, [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU1("{}=uint({})<uint({)};", inst, lhs, rhs);
 }
 
 void EmitIEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                 [[maybe_unused]] std::string_view lhs, [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU1("{}={}=={};", inst, lhs, rhs);
 }
 
 void EmitSLessThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                         [[maybe_unused]] std::string_view lhs,
                         [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU1("{}=int({})<=int({});", inst, lhs, rhs);
 }
 
 void EmitULessThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                         [[maybe_unused]] std::string_view lhs,
                         [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU1("{}=uint({})<=uint({});", inst, lhs, rhs);
 }
 
 void EmitSGreaterThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view lhs,
                       [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU1("{}=int({})>int({});", inst, lhs, rhs);
 }
 
 void EmitUGreaterThan([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view lhs,
                       [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU1("{}=uint({})>uint({});", inst, lhs, rhs);
 }
 
 void EmitINotEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                    [[maybe_unused]] std::string_view lhs, [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU1("{}={}!={};", inst, lhs, rhs);
 }
 
 void EmitSGreaterThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                            [[maybe_unused]] std::string_view lhs,
                            [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU1("{}=int({})>=int({});", inst, lhs, rhs);
 }
 
 void EmitUGreaterThanEqual([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                            [[maybe_unused]] std::string_view lhs,
                            [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddU1("{}=uint({})>=uint({});", inst, lhs, rhs);
 }
 } // namespace Shader::Backend::GLSL
