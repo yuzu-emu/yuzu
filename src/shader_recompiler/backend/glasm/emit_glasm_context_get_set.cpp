@@ -8,6 +8,7 @@
 #include "shader_recompiler/backend/glasm/emit_glasm_instructions.h"
 #include "shader_recompiler/frontend/ir/value.h"
 #include "shader_recompiler/profile.h"
+#include "shader_recompiler/shader_info.h"
 
 namespace Shader::Backend::GLASM {
 namespace {
@@ -153,9 +154,67 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, ScalarF32 value,
     }
 }
 
-void EmitGetAttributeIndexed([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 offset,
-                             [[maybe_unused]] ScalarU32 vertex) {
-    throw NotImplementedException("GLASM instruction");
+void EmitGetAttributeIndexed(EmitContext& ctx, IR::Inst& inst, ScalarS32 offset, ScalarU32 vertex) {
+    // RC.x = base_index
+    // RC.y = masked_index
+    // RC.z = compare_index
+    ctx.Add("SHR.S RC.x,{},2;"
+            "AND.S RC.y,RC.x,3;"
+            "SHR.S RC.z,{},4;",
+            offset, offset);
+
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    u32 num_endifs{};
+    const auto read{[&](u32 compare_index, const std::array<std::string, 4>& values) {
+        ++num_endifs;
+        ctx.Add("SEQ.S.CC RC.w,RC.z,{};" // compare_index
+                "IF NE.w;"
+                // X
+                "SEQ.S.CC RC.w,RC.y,0;"
+                "IF NE.w;"
+                "MOV {}.x,{};"
+                "ELSE;"
+                // Y
+                "SEQ.S.CC RC.w,RC.y,1;"
+                "IF NE.w;"
+                "MOV {}.x,{};"
+                "ELSE;"
+                // Z
+                "SEQ.S.CC RC.w,RC.y,2;"
+                "IF NE.w;"
+                "MOV {}.x,{};"
+                "ELSE;"
+                // W
+                "MOV {}.x,{};"
+                "ENDIF;"
+                "ENDIF;"
+                "ENDIF;"
+                "ELSE;",
+                compare_index, ret, values[0], ret, values[1], ret, values[2], ret, values[3]);
+    }};
+    const auto read_swizzled{[&](u32 compare_index, std::string_view value) {
+        const std::array values{fmt::format("{}.x", value), fmt::format("{}.y", value),
+                                fmt::format("{}.z", value), fmt::format("{}.w", value)};
+        read(compare_index, values);
+    }};
+    if (ctx.info.loads_position) {
+        const u32 index{static_cast<u32>(IR::Attribute::PositionX)};
+        if (IsInputArray(ctx.stage)) {
+            read_swizzled(index, fmt::format("vertex_position{}", VertexIndex(ctx, vertex)));
+        } else {
+            read_swizzled(index, fmt::format("{}.position", ctx.attrib_name));
+        }
+    }
+    const u32 base_attribute_value{static_cast<u32>(IR::Attribute::Generic0X) >> 2};
+    for (u32 index = 0; index < ctx.info.input_generics.size(); ++index) {
+        if (!ctx.info.input_generics[index].used) {
+            continue;
+        }
+        read_swizzled(index, fmt::format("in_attr{}{}[0]", index, VertexIndex(ctx, vertex)));
+    }
+    for (u32 i = 0; i < num_endifs; ++i) {
+        ctx.Add("ENDIF;");
+    }
 }
 
 void EmitSetAttributeIndexed([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] ScalarU32 offset,
