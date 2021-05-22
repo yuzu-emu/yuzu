@@ -156,12 +156,12 @@ void EmitFPSqrt([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& in
 
 void EmitFPSaturate16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view value) {
-    ctx.AddF64("{}=sqrt({});", inst, value);
+    throw NotImplementedException("GLSL");
 }
 
 void EmitFPSaturate32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view value) {
-    ctx.AddF32("{}=clamp({},0.0f,1.0f);", inst, value);
+    ctx.AddF32("{}=clamp({},0.0,1.0);", inst, value);
 }
 
 void EmitFPSaturate64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -197,12 +197,12 @@ void EmitFPRoundEven16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 
 void EmitFPRoundEven32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    ctx.AddF32("{}=round({});", inst, value);
+    ctx.AddF32("{}=roundEven({});", inst, value);
 }
 
 void EmitFPRoundEven64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    ctx.AddF64("{}=round({});", inst, value);
+    ctx.AddF64("{}=roundEven({});", inst, value);
 }
 
 void EmitFPFloor16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,

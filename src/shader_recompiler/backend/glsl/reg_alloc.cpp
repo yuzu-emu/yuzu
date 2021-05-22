@@ -36,7 +36,7 @@ std::string MakeImm(const IR::Value& value) {
     case IR::Type::U64:
         return fmt::format("{}ul", value.U64());
     case IR::Type::F64:
-        return fmt::format("{}", value.F64());
+        return fmt::format("{}lf", value.F64());
     default:
         throw NotImplementedException("Immediate type {}", value.Type());
     }
