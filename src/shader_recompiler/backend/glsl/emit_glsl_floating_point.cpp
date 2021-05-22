@@ -33,12 +33,12 @@ void EmitFPAdd16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& i
 
 void EmitFPAdd32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                  [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    ctx.AddF32("{}={}+{};", inst, a, b);
+    ctx.AddF32("{}=float({})+float({});", inst, a, b);
 }
 
 void EmitFPAdd64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                  [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    ctx.AddF64("{}={}+{};", inst, a, b);
+    ctx.AddF64("{}=double({})+double({});", inst, a, b);
 }
 
 void EmitFPFma16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -180,14 +180,14 @@ void EmitFPClamp32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst&
                    [[maybe_unused]] std::string_view value,
                    [[maybe_unused]] std::string_view min_value,
                    [[maybe_unused]] std::string_view max_value) {
-    ctx.AddF32("{}=clamp({},{},{});", inst, value, min_value, max_value);
+    ctx.AddF32("{}=clamp({},float({}),float({}));", inst, value, min_value, max_value);
 }
 
 void EmitFPClamp64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                    [[maybe_unused]] std::string_view value,
                    [[maybe_unused]] std::string_view min_value,
                    [[maybe_unused]] std::string_view max_value) {
-    ctx.AddF64("{}=clamp({},{},{});", inst, value, min_value, max_value);
+    ctx.AddF64("{}=clamp({},double({}),double({}));", inst, value, min_value, max_value);
 }
 
 void EmitFPRoundEven16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -259,7 +259,7 @@ void EmitFPOrdEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::In
 void EmitFPOrdEqual32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view lhs,
                       [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL");
+    ctx.AddU1("{}={}=={};", inst, lhs, rhs);
 }
 
 void EmitFPOrdEqual64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
