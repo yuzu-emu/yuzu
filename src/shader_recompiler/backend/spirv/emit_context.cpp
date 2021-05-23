@@ -526,12 +526,12 @@ void EmitContext::DefineCommonTypes(const Info& info) {
     output_f32 = Name(TypePointer(spv::StorageClass::Output, F32[1]), "output_f32");
     output_u32 = Name(TypePointer(spv::StorageClass::Output, U32[1]), "output_u32");
 
-    if (info.uses_int8) {
+    if (info.uses_int8 && profile.support_int8) {
         AddCapability(spv::Capability::Int8);
         U8 = Name(TypeInt(8, false), "u8");
         S8 = Name(TypeInt(8, true), "s8");
     }
-    if (info.uses_int16) {
+    if (info.uses_int16 && profile.support_int16) {
         AddCapability(spv::Capability::Int16);
         U16 = Name(TypeInt(16, false), "u16");
         S16 = Name(TypeInt(16, true), "s16");
