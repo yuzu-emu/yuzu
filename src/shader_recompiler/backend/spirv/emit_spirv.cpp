@@ -212,7 +212,11 @@ void DefineEntryPoint(const IR::Program& program, EmitContext& ctx, Id main) {
         break;
     case Stage::Fragment:
         execution_model = spv::ExecutionModel::Fragment;
-        ctx.AddExecutionMode(main, spv::ExecutionMode::OriginUpperLeft);
+        if (ctx.profile.lower_left_origin_mode) {
+            ctx.AddExecutionMode(main, spv::ExecutionMode::OriginLowerLeft);
+        } else {
+            ctx.AddExecutionMode(main, spv::ExecutionMode::OriginUpperLeft);
+        }
         if (program.info.stores_frag_depth) {
             ctx.AddExecutionMode(main, spv::ExecutionMode::DepthReplacing);
         }
