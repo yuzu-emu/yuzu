@@ -17,6 +17,14 @@ namespace Shader::Backend::SPIRV {
 
 using Sirit::Id;
 
+struct Bindings {
+    u32 unified{};
+    u32 uniform_buffer{};
+    u32 storage_buffer{};
+    u32 texture{};
+    u32 image{};
+};
+
 class VectorTypes {
 public:
     void Define(Sirit::Module& sirit_ctx, Id base_type, std::string_view name);
@@ -62,6 +70,7 @@ struct UniformDefinitions {
     Id U32{};
     Id F32{};
     Id U32x2{};
+    Id U32x4{};
 };
 
 struct StorageTypeDefinition {
@@ -101,10 +110,13 @@ struct GenericElementInfo {
 
 class EmitContext final : public Sirit::Module {
 public:
-    explicit EmitContext(const Profile& profile, IR::Program& program, u32& binding);
+    explicit EmitContext(const Profile& profile, IR::Program& program, Bindings& binding);
     ~EmitContext();
 
     [[nodiscard]] Id Def(const IR::Value& value);
+
+    [[nodiscard]] Id BitOffset8(const IR::Value& offset);
+    [[nodiscard]] Id BitOffset16(const IR::Value& offset);
 
     Id Const(u32 value) {
         return Constant(U32[1], value);
@@ -139,6 +151,7 @@ public:
     Id U64{};
     VectorTypes F32;
     VectorTypes U32;
+    VectorTypes S32;
     VectorTypes F16;
     VectorTypes F64;
 

@@ -127,6 +127,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxw
     base_profile = Shader::Profile{
         .supported_spirv = device.IsKhrSpirv1_4Supported() ? 0x00010400U : 0x00010000U,
         .unified_descriptor_binding = true,
+        .support_descriptor_aliasing = true,
         .support_vertex_instance_id = false,
         .support_float_controls = true,
         .support_separate_denorm_behavior = float_control.denormBehaviorIndependence ==
@@ -149,9 +150,11 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxw
             device.IsExtShaderViewportIndexLayerSupported(),
         .support_viewport_mask = device.IsNvViewportArray2Supported(),
         .support_typeless_image_loads = device.IsFormatlessImageLoadSupported(),
+        .support_demote_to_helper_invocation = true,
         .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyBiggerThanGuest(),
         .support_int64_atomics = device.IsExtShaderAtomicInt64Supported(),
         .has_broken_spirv_clamp = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS_KHR,
+        .has_broken_unsigned_image_offsets = false,
         .generic_input_types{},
         .fixed_state_point_size{},
         .alpha_test_func{},
@@ -312,7 +315,7 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
     std::array<const Shader::Info*, Maxwell::MaxShaderStage> infos{};
     std::array<vk::ShaderModule, Maxwell::MaxShaderStage> modules;
 
-    u32 binding{0};
+    Shader::Backend::SPIRV::Bindings binding;
     for (size_t index = uses_vertex_a && uses_vertex_b ? 1 : 0; index < Maxwell::MaxShaderProgram; ++index) {
         if (key.unique_hashes[index] == 0) {
             continue;
@@ -398,7 +401,7 @@ std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
 
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
     Shader::IR::Program program{TranslateProgram(pools.inst, pools.block, env, cfg)};
-    u32 binding{0};
+    Shader::Backend::SPIRV::Bindings binding;
     const std::vector<u32> code{EmitSPIRV(base_profile, program, binding)};
     device.SaveShader(code);
     vk::ShaderModule spv_module{BuildShader(device, code)};

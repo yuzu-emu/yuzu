@@ -14,7 +14,7 @@
 namespace Shader::Backend::SPIRV {
 
 [[nodiscard]] std::vector<u32> EmitSPIRV(const Profile& profile, IR::Program& program,
-                                         u32& binding);
+                                         Bindings& binding);
 
 // Microinstruction emitters
 Id EmitPhi(EmitContext& ctx, IR::Inst* inst);
