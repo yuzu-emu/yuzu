@@ -48,11 +48,16 @@ void EmitContext::DefineStorageBuffers() {
     }
     u32 binding{};
     for (const auto& desc : info.storage_buffers_descriptors) {
-        Add("layout(std430,binding={}) buffer ssbo_{}_u32{{uint ssbo{}_u32[];}};", binding, binding,
-            desc.cbuf_index, desc.count);
-        // TODO: Track ssbo data type usage
-        Add("layout(std430,binding={}) buffer ssbo_{}_u64{{uvec2 ssbo{}_u64[];}};", binding,
-            binding, desc.cbuf_index, desc.count);
+        if (True(info.used_storage_buffer_types & IR::Type::U32) ||
+            True(info.used_storage_buffer_types & IR::Type::F32)) {
+            Add("layout(std430,binding={}) buffer ssbo_{}_u32{{uint ssbo{}_u32[];}};", binding,
+                binding, desc.cbuf_index, desc.count);
+        }
+        if (True(info.used_storage_buffer_types & IR::Type::U32x2) ||
+            True(info.used_storage_buffer_types & IR::Type::F32x2)) {
+            Add("layout(std430,binding={}) buffer ssbo_{}_u64{{uvec2 ssbo{}_u64[];}};", binding,
+                binding, desc.cbuf_index, desc.count);
+        }
         ++binding;
     }
 }

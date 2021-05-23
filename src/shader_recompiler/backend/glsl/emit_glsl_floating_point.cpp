@@ -161,12 +161,12 @@ void EmitFPSaturate16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::In
 
 void EmitFPSaturate32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view value) {
-    ctx.AddF32("{}=clamp({},0.0,1.0);", inst, value);
+    ctx.AddF32("{}=min(max({},0.0),1.0);", inst, value);
 }
 
 void EmitFPSaturate64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view value) {
-    ctx.AddF64("{}=clamp({},0.0,1.0);", inst, value);
+    ctx.AddF64("{}=min(max({},0.0),1.0);", inst, value);
 }
 
 void EmitFPClamp16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -180,14 +180,16 @@ void EmitFPClamp32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst&
                    [[maybe_unused]] std::string_view value,
                    [[maybe_unused]] std::string_view min_value,
                    [[maybe_unused]] std::string_view max_value) {
-    ctx.AddF32("{}=clamp({},float({}),float({}));", inst, value, min_value, max_value);
+    // GLSL's clamp does not produce desirable results
+    ctx.AddF32("{}=min(max({},float({})),float({}));", inst, value, min_value, max_value);
 }
 
 void EmitFPClamp64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                    [[maybe_unused]] std::string_view value,
                    [[maybe_unused]] std::string_view min_value,
                    [[maybe_unused]] std::string_view max_value) {
-    ctx.AddF64("{}=clamp({},double({}),double({}));", inst, value, min_value, max_value);
+    // GLSL's clamp does not produce desirable results
+    ctx.AddF64("{}=min(max({},double({})),double({}));", inst, value, min_value, max_value);
 }
 
 void EmitFPRoundEven16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
