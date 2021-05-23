@@ -31,11 +31,11 @@ void EmitIMul32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::strin
 }
 
 void EmitINeg32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
-    ctx.AddU32("{}=-{};", inst, value);
+    ctx.AddU32("{}=-({});", inst, value);
 }
 
 void EmitINeg64(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
-    ctx.AddU64("{}=-{};", inst, value);
+    ctx.AddU64("{}=-({});", inst, value);
 }
 
 void EmitIAbs32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
