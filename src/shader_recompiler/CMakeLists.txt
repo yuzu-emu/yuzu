@@ -22,8 +22,6 @@ add_library(shader_recompiler STATIC
     backend/spirv/emit_spirv_warp.cpp
     environment.h
     exception.h
-    file_environment.cpp
-    file_environment.h
     frontend/ir/attribute.cpp
     frontend/ir/attribute.h
     frontend/ir/basic_block.cpp
@@ -178,9 +176,6 @@ add_library(shader_recompiler STATIC
 
 target_link_libraries(shader_recompiler PUBLIC common fmt::fmt sirit)
 
-add_executable(shader_util main.cpp)
-target_link_libraries(shader_util PRIVATE shader_recompiler)
-
 if (MSVC)
     target_compile_options(shader_recompiler PRIVATE
         /W4
@@ -213,4 +208,3 @@ else()
 endif()
 
 create_target_directory_groups(shader_recompiler)
-create_target_directory_groups(shader_util)
