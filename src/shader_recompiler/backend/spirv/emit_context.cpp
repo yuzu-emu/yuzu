@@ -222,13 +222,39 @@ std::optional<AttrInfo> AttrTypes(EmitContext& ctx, u32 index) {
     throw InvalidArgument("Invalid attribute type {}", type);
 }
 
+std::string_view StageName(Stage stage) {
+    switch (stage) {
+    case Stage::VertexA:
+        return "vs_a";
+    case Stage::VertexB:
+        return "vs";
+    case Stage::TessellationControl:
+        return "tcs";
+    case Stage::TessellationEval:
+        return "tes";
+    case Stage::Geometry:
+        return "gs";
+    case Stage::Fragment:
+        return "fs";
+    case Stage::Compute:
+        return "cs";
+    }
+    throw InvalidArgument("Invalid stage {}", stage);
+}
+
+template <typename... Args>
+void Name(EmitContext& ctx, Id object, std::string_view format_str, Args&&... args) {
+    ctx.Name(object,
+             fmt::format(format_str, StageName(ctx.stage), std::forward<Args>(args)...).c_str());
+}
+
 void DefineConstBuffers(EmitContext& ctx, const Info& info, Id UniformDefinitions::*member_type,
                         u32 binding, Id type, char type_char, u32 element_size) {
     const Id array_type{ctx.TypeArray(type, ctx.Const(65536U / element_size))};
     ctx.Decorate(array_type, spv::Decoration::ArrayStride, element_size);
 
     const Id struct_type{ctx.TypeStruct(array_type)};
-    ctx.Name(struct_type, fmt::format("cbuf_block_{}{}", type_char, element_size * CHAR_BIT));
+    Name(ctx, struct_type, "{}_cbuf_block_{}{}", ctx.stage, type_char, element_size * CHAR_BIT);
     ctx.Decorate(struct_type, spv::Decoration::Block);
     ctx.MemberName(struct_type, 0, "data");
     ctx.MemberDecorate(struct_type, 0, spv::Decoration::Offset, 0U);
@@ -382,11 +408,13 @@ Id CasLoop(EmitContext& ctx, Operation operation, Id array_pointer, Id element_p
 }
 
 template <typename Desc>
-std::string NameOf(const Desc& desc, std::string_view prefix) {
+std::string NameOf(Stage stage, const Desc& desc, std::string_view prefix) {
     if (desc.count > 1) {
-        return fmt::format("{}{}_{:02x}x{}", prefix, desc.cbuf_index, desc.cbuf_offset, desc.count);
+        return fmt::format("{}_{}{}_{:02x}x{}", StageName(stage), prefix, desc.cbuf_index,
+                           desc.cbuf_offset, desc.count);
     } else {
-        return fmt::format("{}{}_{:02x}", prefix, desc.cbuf_index, desc.cbuf_offset);
+        return fmt::format("{}_{}{}_{:02x}", StageName(stage), prefix, desc.cbuf_index,
+                           desc.cbuf_offset);
     }
 }
 
@@ -989,7 +1017,7 @@ void EmitContext::DefineTextureBuffers(const Info& info, u32& binding) {
         const Id id{AddGlobalVariable(type, spv::StorageClass::UniformConstant)};
         Decorate(id, spv::Decoration::Binding, binding);
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
-        Name(id, NameOf(desc, "texbuf"));
+        Name(id, NameOf(stage, desc, "texbuf"));
         texture_buffers.push_back({
             .id = id,
             .count = desc.count,
@@ -1008,12 +1036,12 @@ void EmitContext::DefineImageBuffers(const Info& info, u32& binding) {
             throw NotImplementedException("Array of image buffers");
         }
         const spv::ImageFormat format{GetImageFormat(desc.format)};
-        const Id image_type{TypeImage(U32[4], spv::Dim::Buffer, false, false, false, 2, format)};
+        const Id image_type{TypeImage(U32[1], spv::Dim::Buffer, false, false, false, 2, format)};
         const Id pointer_type{TypePointer(spv::StorageClass::UniformConstant, image_type)};
         const Id id{AddGlobalVariable(pointer_type, spv::StorageClass::UniformConstant)};
         Decorate(id, spv::Decoration::Binding, binding);
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
-        Name(id, NameOf(desc, "imgbuf"));
+        Name(id, NameOf(stage, desc, "imgbuf"));
         image_buffers.push_back({
             .id = id,
             .image_type = image_type,
@@ -1036,7 +1064,7 @@ void EmitContext::DefineTextures(const Info& info, u32& binding) {
         const Id id{AddGlobalVariable(desc_type, spv::StorageClass::UniformConstant)};
         Decorate(id, spv::Decoration::Binding, binding);
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
-        Name(id, NameOf(desc, "tex"));
+        Name(id, NameOf(stage, desc, "tex"));
         textures.push_back({
             .id = id,
             .sampled_type = sampled_type,
@@ -1062,7 +1090,7 @@ void EmitContext::DefineImages(const Info& info, u32& binding) {
         const Id id{AddGlobalVariable(pointer_type, spv::StorageClass::UniformConstant)};
         Decorate(id, spv::Decoration::Binding, binding);
         Decorate(id, spv::Decoration::DescriptorSet, 0U);
-        Name(id, NameOf(desc, "img"));
+        Name(id, NameOf(stage, desc, "img"));
         images.push_back({
             .id = id,
             .image_type = image_type,
