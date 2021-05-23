@@ -104,7 +104,7 @@ private:
             return;
         }
         if (offset.IsImmediate()) {
-            Add(spv::ImageOperandsMask::ConstOffset, ctx.Const(offset.U32()));
+            Add(spv::ImageOperandsMask::ConstOffset, ctx.SConst(offset.U32()));
             return;
         }
         IR::Inst* const inst{offset.InstRecursive()};
@@ -112,16 +112,16 @@ private:
             switch (inst->GetOpcode()) {
             case IR::Opcode::CompositeConstructU32x2:
                 Add(spv::ImageOperandsMask::ConstOffset,
-                    ctx.Const(inst->Arg(0).U32(), inst->Arg(1).U32()));
+                    ctx.SConst(inst->Arg(0).U32(), inst->Arg(1).U32()));
                 return;
             case IR::Opcode::CompositeConstructU32x3:
                 Add(spv::ImageOperandsMask::ConstOffset,
-                    ctx.Const(inst->Arg(0).U32(), inst->Arg(1).U32(), inst->Arg(2).U32()));
+                    ctx.SConst(inst->Arg(0).U32(), inst->Arg(1).U32(), inst->Arg(2).U32()));
                 return;
             case IR::Opcode::CompositeConstructU32x4:
                 Add(spv::ImageOperandsMask::ConstOffset,
-                    ctx.Const(inst->Arg(0).U32(), inst->Arg(1).U32(), inst->Arg(2).U32(),
-                              inst->Arg(3).U32()));
+                    ctx.SConst(inst->Arg(0).U32(), inst->Arg(1).U32(), inst->Arg(2).U32(),
+                               inst->Arg(3).U32()));
                 return;
             default:
                 break;
