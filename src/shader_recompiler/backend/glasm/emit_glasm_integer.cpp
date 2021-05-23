@@ -37,18 +37,16 @@ void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
     }
 }
 
-void EmitIAdd64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register a,
-                [[maybe_unused]] Register b) {
-    throw NotImplementedException("GLASM instruction");
+void EmitIAdd64(EmitContext& ctx, IR::Inst& inst, Register a, Register b) {
+    ctx.LongAdd("ADD.S64 {}.x,{}.x,{}.x;", inst, a, b);
 }
 
 void EmitISub32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
     ctx.Add("SUB.S {}.x,{},{};", inst, a, b);
 }
 
-void EmitISub64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] Register a,
-                [[maybe_unused]] Register b) {
-    throw NotImplementedException("GLASM instruction");
+void EmitISub64(EmitContext& ctx, IR::Inst& inst, Register a, Register b) {
+    ctx.LongAdd("SUB.S64 {}.x,{}.x,{}.x;", inst, a, b);
 }
 
 void EmitIMul32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
