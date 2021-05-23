@@ -171,7 +171,13 @@ Id EmitFindUMsb32(EmitContext& ctx, Id value) {
 }
 
 Id EmitSMin32(EmitContext& ctx, Id a, Id b) {
-    return ctx.OpSMin(ctx.U32[1], a, b);
+    const bool is_broken{ctx.profile.has_broken_signed_operations};
+    if (is_broken) {
+        a = ctx.OpBitcast(ctx.S32[1], a);
+        b = ctx.OpBitcast(ctx.S32[1], b);
+    }
+    const Id result{ctx.OpSMin(ctx.U32[1], a, b)};
+    return is_broken ? ctx.OpBitcast(ctx.U32[1], result) : result;
 }
 
 Id EmitUMin32(EmitContext& ctx, Id a, Id b) {
@@ -179,7 +185,13 @@ Id EmitUMin32(EmitContext& ctx, Id a, Id b) {
 }
 
 Id EmitSMax32(EmitContext& ctx, Id a, Id b) {
-    return ctx.OpSMax(ctx.U32[1], a, b);
+    const bool is_broken{ctx.profile.has_broken_signed_operations};
+    if (is_broken) {
+        a = ctx.OpBitcast(ctx.S32[1], a);
+        b = ctx.OpBitcast(ctx.S32[1], b);
+    }
+    const Id result{ctx.OpSMax(ctx.U32[1], a, b)};
+    return is_broken ? ctx.OpBitcast(ctx.U32[1], result) : result;
 }
 
 Id EmitUMax32(EmitContext& ctx, Id a, Id b) {
@@ -187,14 +199,32 @@ Id EmitUMax32(EmitContext& ctx, Id a, Id b) {
 }
 
 Id EmitSClamp32(EmitContext& ctx, IR::Inst* inst, Id value, Id min, Id max) {
-    const Id result{ctx.OpSClamp(ctx.U32[1], value, min, max)};
+    Id result{};
+    if (ctx.profile.has_broken_signed_operations || ctx.profile.has_broken_spirv_clamp) {
+        value = ctx.OpBitcast(ctx.S32[1], value);
+        min = ctx.OpBitcast(ctx.S32[1], min);
+        max = ctx.OpBitcast(ctx.S32[1], max);
+        if (ctx.profile.has_broken_spirv_clamp) {
+            result = ctx.OpSMax(ctx.S32[1], ctx.OpSMin(ctx.S32[1], value, max), min);
+        } else {
+            result = ctx.OpSClamp(ctx.S32[1], value, min, max);
+        }
+        result = ctx.OpBitcast(ctx.U32[1], result);
+    } else {
+        result = ctx.OpSClamp(ctx.U32[1], value, min, max);
+    }
     SetZeroFlag(ctx, inst, result);
     SetSignFlag(ctx, inst, result);
     return result;
 }
 
 Id EmitUClamp32(EmitContext& ctx, IR::Inst* inst, Id value, Id min, Id max) {
-    const Id result{ctx.OpUClamp(ctx.U32[1], value, min, max)};
+    Id result{};
+    if (ctx.profile.has_broken_spirv_clamp) {
+        result = ctx.OpUMax(ctx.U32[1], ctx.OpUMin(ctx.U32[1], value, max), min);
+    } else {
+        result = ctx.OpUClamp(ctx.U32[1], value, min, max);
+    }
     SetZeroFlag(ctx, inst, result);
     SetSignFlag(ctx, inst, result);
     return result;
