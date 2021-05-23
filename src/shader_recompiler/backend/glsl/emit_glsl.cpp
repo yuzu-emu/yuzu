@@ -146,7 +146,6 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
 std::string EmitGLSL(const Profile& profile, const RuntimeInfo&, IR::Program& program,
                      Bindings& bindings) {
     EmitContext ctx{program, bindings, profile};
-    // ctx.SetupBuffers();
     EmitCode(ctx, program);
     ctx.code += "}";
     return ctx.code;

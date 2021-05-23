@@ -10,10 +10,9 @@
 #include "shader_recompiler/backend/glsl/reg_alloc.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/value.h"
-#pragma optimize("", off)
+
 namespace Shader::Backend::GLSL {
 namespace {
-
 std::string Representation(Id id) {
     if (id.is_condition_code != 0) {
         throw NotImplementedException("Condition code");
@@ -25,6 +24,13 @@ std::string Representation(Id id) {
     return fmt::format("R{}", index);
 }
 
+std::string FormatFloat(std::string_view value, IR::Type type) {
+    const bool needs_dot = value.find_first_of('.') == std::string_view::npos;
+    const bool needs_suffix = !value.ends_with('f');
+    const auto suffix = type == IR::Type::F32 ? "f" : "lf";
+    return fmt::format("{}{}{}", value, needs_dot ? "." : "", needs_suffix ? suffix : "");
+}
+
 std::string MakeImm(const IR::Value& value) {
     switch (value.Type()) {
     case IR::Type::U1:
@@ -32,11 +38,11 @@ std::string MakeImm(const IR::Value& value) {
     case IR::Type::U32:
         return fmt::format("{}u", value.U32());
     case IR::Type::F32:
-        return fmt::format("{}f", value.F32());
+        return FormatFloat(fmt::format("{}", value.F32()), IR::Type::F32);
     case IR::Type::U64:
         return fmt::format("{}ul", value.U64());
     case IR::Type::F64:
-        return fmt::format("{}lf", value.F64());
+        return FormatFloat(fmt::format("{}", value.F64()), IR::Type::F64);
     default:
         throw NotImplementedException("Immediate type {}", value.Type());
     }

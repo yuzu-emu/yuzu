@@ -101,12 +101,12 @@ void EmitFPNeg16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& i
 
 void EmitFPNeg32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                  [[maybe_unused]] std::string_view value) {
-    ctx.AddF32("{}=-{};", inst, value);
+    ctx.AddF32("{}=-({});", inst, value);
 }
 
 void EmitFPNeg64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                  [[maybe_unused]] std::string_view value) {
-    ctx.AddF64("{}=-{};", inst, value);
+    ctx.AddF64("{}=-({});", inst, value);
 }
 
 void EmitFPSin([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
