@@ -205,7 +205,6 @@ void EmitGetAttributeIndexed(EmitContext& ctx, IR::Inst& inst, ScalarS32 offset,
             read_swizzled(index, fmt::format("{}.position", ctx.attrib_name));
         }
     }
-    const u32 base_attribute_value{static_cast<u32>(IR::Attribute::Generic0X) >> 2};
     for (u32 index = 0; index < ctx.info.input_generics.size(); ++index) {
         if (!ctx.info.input_generics[index].used) {
             continue;
