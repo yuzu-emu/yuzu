@@ -368,7 +368,7 @@ void PatchPhiNodes(IR::Program& program, EmitContext& ctx) {
 }
 } // Anonymous namespace
 
-std::vector<u32> EmitSPIRV(const Profile& profile, IR::Program& program, u32& binding) {
+std::vector<u32> EmitSPIRV(const Profile& profile, IR::Program& program, Bindings& binding) {
     EmitContext ctx{profile, program, binding};
     const Id main{DefineMain(ctx, program)};
     DefineEntryPoint(program, ctx, main);

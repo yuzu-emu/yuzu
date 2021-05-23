@@ -441,8 +441,13 @@ void VectorTypes::Define(Sirit::Module& sirit_ctx, Id base_type, std::string_vie
     }
 }
 
-EmitContext::EmitContext(const Profile& profile_, IR::Program& program, u32& binding)
+EmitContext::EmitContext(const Profile& profile_, IR::Program& program, Bindings& binding)
     : Sirit::Module(profile_.supported_spirv), profile{profile_}, stage{program.stage} {
+    const bool is_unified{profile.unified_descriptor_binding};
+    u32& uniform_binding{is_unified ? binding.unified : binding.uniform_buffer};
+    u32& storage_binding{is_unified ? binding.unified : binding.storage_buffer};
+    u32& texture_binding{is_unified ? binding.unified : binding.texture};
+    u32& image_binding{is_unified ? binding.unified : binding.image};
     AddCapability(spv::Capability::Shader);
     DefineCommonTypes(program.info);
     DefineCommonConstants();
@@ -450,12 +455,12 @@ EmitContext::EmitContext(const Profile& profile_, IR::Program& program, u32& bin
     DefineLocalMemory(program);
     DefineSharedMemory(program);
     DefineSharedMemoryFunctions(program);
-    DefineConstantBuffers(program.info, binding);
-    DefineStorageBuffers(program.info, binding);
-    DefineTextureBuffers(program.info, binding);
-    DefineImageBuffers(program.info, binding);
-    DefineTextures(program.info, binding);
-    DefineImages(program.info, binding);
+    DefineConstantBuffers(program.info, uniform_binding);
+    DefineStorageBuffers(program.info, storage_binding);
+    DefineTextureBuffers(program.info, texture_binding);
+    DefineImageBuffers(program.info, image_binding);
+    DefineTextures(program.info, texture_binding);
+    DefineImages(program.info, image_binding);
     DefineAttributeMemAccess(program.info);
     DefineGlobalMemoryFunctions(program.info);
     DefineLabels(program);
@@ -489,6 +494,20 @@ Id EmitContext::Def(const IR::Value& value) {
     }
 }
 
+Id EmitContext::BitOffset8(const IR::Value& offset) {
+    if (offset.IsImmediate()) {
+        return Const((offset.U32() % 4) * 8);
+    }
+    return OpBitwiseAnd(U32[1], OpShiftLeftLogical(U32[1], Def(offset), Const(3u)), Const(24u));
+}
+
+Id EmitContext::BitOffset16(const IR::Value& offset) {
+    if (offset.IsImmediate()) {
+        return Const(((offset.U32() / 2) % 2) * 16);
+    }
+    return OpBitwiseAnd(U32[1], OpShiftLeftLogical(U32[1], Def(offset), Const(3u)), Const(16u));
+}
+
 void EmitContext::DefineCommonTypes(const Info& info) {
     void_id = TypeVoid();
 
@@ -496,6 +515,7 @@ void EmitContext::DefineCommonTypes(const Info& info) {
 
     F32.Define(*this, TypeFloat(32), "f32");
     U32.Define(*this, TypeInt(32, false), "u32");
+    S32.Define(*this, TypeInt(32, true), "s32");
 
     private_u32 = Name(TypePointer(spv::StorageClass::Private, U32[1]), "private_u32");
 
@@ -889,28 +909,36 @@ void EmitContext::DefineConstantBuffers(const Info& info, u32& binding) {
     if (info.constant_buffer_descriptors.empty()) {
         return;
     }
-    if (True(info.used_constant_buffer_types & IR::Type::U8)) {
-        DefineConstBuffers(*this, info, &UniformDefinitions::U8, binding, U8, 'u', sizeof(u8));
-        DefineConstBuffers(*this, info, &UniformDefinitions::S8, binding, S8, 's', sizeof(s8));
-    }
-    if (True(info.used_constant_buffer_types & IR::Type::U16)) {
-        DefineConstBuffers(*this, info, &UniformDefinitions::U16, binding, U16, 'u', sizeof(u16));
-        DefineConstBuffers(*this, info, &UniformDefinitions::S16, binding, S16, 's', sizeof(s16));
-    }
-    if (True(info.used_constant_buffer_types & IR::Type::U32)) {
-        DefineConstBuffers(*this, info, &UniformDefinitions::U32, binding, U32[1], 'u',
-                           sizeof(u32));
-    }
-    if (True(info.used_constant_buffer_types & IR::Type::F32)) {
-        DefineConstBuffers(*this, info, &UniformDefinitions::F32, binding, F32[1], 'f',
-                           sizeof(f32));
-    }
-    if (True(info.used_constant_buffer_types & IR::Type::U32x2)) {
-        DefineConstBuffers(*this, info, &UniformDefinitions::U32x2, binding, U32[2], 'u',
-                           sizeof(u32[2]));
-    }
-    for (const ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
-        binding += desc.count;
+    if (profile.support_descriptor_aliasing) {
+        if (True(info.used_constant_buffer_types & IR::Type::U8)) {
+            DefineConstBuffers(*this, info, &UniformDefinitions::U8, binding, U8, 'u', sizeof(u8));
+            DefineConstBuffers(*this, info, &UniformDefinitions::S8, binding, S8, 's', sizeof(s8));
+        }
+        if (True(info.used_constant_buffer_types & IR::Type::U16)) {
+            DefineConstBuffers(*this, info, &UniformDefinitions::U16, binding, U16, 'u',
+                               sizeof(u16));
+            DefineConstBuffers(*this, info, &UniformDefinitions::S16, binding, S16, 's',
+                               sizeof(s16));
+        }
+        if (True(info.used_constant_buffer_types & IR::Type::U32)) {
+            DefineConstBuffers(*this, info, &UniformDefinitions::U32, binding, U32[1], 'u',
+                               sizeof(u32));
+        }
+        if (True(info.used_constant_buffer_types & IR::Type::F32)) {
+            DefineConstBuffers(*this, info, &UniformDefinitions::F32, binding, F32[1], 'f',
+                               sizeof(f32));
+        }
+        if (True(info.used_constant_buffer_types & IR::Type::U32x2)) {
+            DefineConstBuffers(*this, info, &UniformDefinitions::U32x2, binding, U32[2], 'u',
+                               sizeof(u32[2]));
+        }
+        binding += static_cast<u32>(info.constant_buffer_descriptors.size());
+    } else {
+        DefineConstBuffers(*this, info, &UniformDefinitions::U32x4, binding, U32[4], 'u',
+                           sizeof(u32[4]));
+        for (const ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
+            binding += desc.count;
+        }
     }
 }
 
@@ -920,35 +948,37 @@ void EmitContext::DefineStorageBuffers(const Info& info, u32& binding) {
     }
     AddExtension("SPV_KHR_storage_buffer_storage_class");
 
-    if (True(info.used_storage_buffer_types & IR::Type::U8)) {
+    const IR::Type used_types{profile.support_descriptor_aliasing ? info.used_storage_buffer_types
+                                                                  : IR::Type::U32};
+    if (True(used_types & IR::Type::U8)) {
         DefineSsbos(*this, storage_types.U8, &StorageDefinitions::U8, info, binding, U8,
                     sizeof(u8));
         DefineSsbos(*this, storage_types.S8, &StorageDefinitions::S8, info, binding, S8,
                     sizeof(u8));
     }
-    if (True(info.used_storage_buffer_types & IR::Type::U16)) {
+    if (True(used_types & IR::Type::U16)) {
         DefineSsbos(*this, storage_types.U16, &StorageDefinitions::U16, info, binding, U16,
                     sizeof(u16));
         DefineSsbos(*this, storage_types.S16, &StorageDefinitions::S16, info, binding, S16,
                     sizeof(u16));
     }
-    if (True(info.used_storage_buffer_types & IR::Type::U32)) {
+    if (True(used_types & IR::Type::U32)) {
         DefineSsbos(*this, storage_types.U32, &StorageDefinitions::U32, info, binding, U32[1],
                     sizeof(u32));
     }
-    if (True(info.used_storage_buffer_types & IR::Type::F32)) {
+    if (True(used_types & IR::Type::F32)) {
         DefineSsbos(*this, storage_types.F32, &StorageDefinitions::F32, info, binding, F32[1],
                     sizeof(f32));
     }
-    if (True(info.used_storage_buffer_types & IR::Type::U64)) {
+    if (True(used_types & IR::Type::U64)) {
         DefineSsbos(*this, storage_types.U64, &StorageDefinitions::U64, info, binding, U64,
                     sizeof(u64));
     }
-    if (True(info.used_storage_buffer_types & IR::Type::U32x2)) {
+    if (True(used_types & IR::Type::U32x2)) {
         DefineSsbos(*this, storage_types.U32x2, &StorageDefinitions::U32x2, info, binding, U32[2],
                     sizeof(u32[2]));
     }
-    if (True(info.used_storage_buffer_types & IR::Type::U32x4)) {
+    if (True(used_types & IR::Type::U32x4)) {
         DefineSsbos(*this, storage_types.U32x4, &StorageDefinitions::U32x4, info, binding, U32[4],
                     sizeof(u32[4]));
     }
