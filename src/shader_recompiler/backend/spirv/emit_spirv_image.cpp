@@ -94,6 +94,10 @@ public:
         return std::span{operands.data(), operands.size()};
     }
 
+    std::optional<spv::ImageOperandsMask> MaskOptional() const noexcept {
+        return mask != spv::ImageOperandsMask{} ? std::make_optional(mask) : std::nullopt;
+    }
+
     spv::ImageOperandsMask Mask() const noexcept {
         return mask;
     }
@@ -318,7 +322,7 @@ Id EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value&
                                      bias_lc, offset);
         return Emit(&EmitContext::OpImageSparseSampleImplicitLod,
                     &EmitContext::OpImageSampleImplicitLod, ctx, inst, ctx.F32[4],
-                    Texture(ctx, info, index), coords, operands.Mask(), operands.Span());
+                    Texture(ctx, info, index), coords, operands.MaskOptional(), operands.Span());
     } else {
         // We can't use implicit lods on non-fragment stages on SPIR-V. Maxwell hardware behaves as
         // if the lod was explicitly zero.  This may change on Turing with implicit compute
@@ -347,7 +351,7 @@ Id EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Va
                                  offset);
     return Emit(&EmitContext::OpImageSparseSampleDrefImplicitLod,
                 &EmitContext::OpImageSampleDrefImplicitLod, ctx, inst, ctx.F32[1],
-                Texture(ctx, info, index), coords, dref, operands.Mask(), operands.Span());
+                Texture(ctx, info, index), coords, dref, operands.MaskOptional(), operands.Span());
 }
 
 Id EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
@@ -365,7 +369,7 @@ Id EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id 
     const ImageOperands operands(ctx, offset, offset2);
     return Emit(&EmitContext::OpImageSparseGather, &EmitContext::OpImageGather, ctx, inst,
                 ctx.F32[4], Texture(ctx, info, index), coords, ctx.Const(info.gather_component),
-                operands.Mask(), operands.Span());
+                operands.MaskOptional(), operands.Span());
 }
 
 Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords,
@@ -373,7 +377,7 @@ Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
     const auto info{inst->Flags<IR::TextureInstInfo>()};
     const ImageOperands operands(ctx, offset, offset2);
     return Emit(&EmitContext::OpImageSparseDrefGather, &EmitContext::OpImageDrefGather, ctx, inst,
-                ctx.F32[4], Texture(ctx, info, index), coords, dref, operands.Mask(),
+                ctx.F32[4], Texture(ctx, info, index), coords, dref, operands.MaskOptional(),
                 operands.Span());
 }
 
@@ -385,7 +389,7 @@ Id EmitImageFetch(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id c
     }
     const ImageOperands operands(offset, lod, ms);
     return Emit(&EmitContext::OpImageSparseFetch, &EmitContext::OpImageFetch, ctx, inst, ctx.F32[4],
-                TextureImage(ctx, info, index), coords, operands.Mask(), operands.Span());
+                TextureImage(ctx, info, index), coords, operands.MaskOptional(), operands.Span());
 }
 
 Id EmitImageQueryDimensions(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id lod) {
