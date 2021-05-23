@@ -122,10 +122,6 @@ public:
         return Constant(U32[1], value);
     }
 
-    Id Const(f32 value) {
-        return Constant(F32[1], value);
-    }
-
     Id Const(u32 element_1, u32 element_2) {
         return ConstantComposite(U32[2], Const(element_1), Const(element_2));
     }
@@ -137,6 +133,27 @@ public:
     Id Const(u32 element_1, u32 element_2, u32 element_3, u32 element_4) {
         return ConstantComposite(U32[4], Const(element_1), Const(element_2), Const(element_3),
                                  Const(element_4));
+    }
+
+    Id SConst(s32 value) {
+        return Constant(S32[1], value);
+    }
+
+    Id SConst(s32 element_1, s32 element_2) {
+        return ConstantComposite(S32[2], SConst(element_1), SConst(element_2));
+    }
+
+    Id SConst(s32 element_1, s32 element_2, s32 element_3) {
+        return ConstantComposite(S32[3], SConst(element_1), SConst(element_2), SConst(element_3));
+    }
+
+    Id SConst(s32 element_1, s32 element_2, s32 element_3, s32 element_4) {
+        return ConstantComposite(S32[4], SConst(element_1), SConst(element_2), SConst(element_3),
+                                 SConst(element_4));
+    }
+
+    Id Const(f32 value) {
+        return Constant(F32[1], value);
     }
 
     const Profile& profile;
