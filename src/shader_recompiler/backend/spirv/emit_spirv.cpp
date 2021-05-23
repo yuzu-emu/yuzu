@@ -300,9 +300,6 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
         ctx.AddExtension("SPV_EXT_demote_to_helper_invocation");
         ctx.AddCapability(spv::Capability::DemoteToHelperInvocationEXT);
     }
-    if (info.stores_layer) {
-        ctx.AddCapability(spv::Capability::ShaderLayer);
-    }
     if (info.stores_viewport_index) {
         ctx.AddCapability(spv::Capability::MultiViewport);
     }
