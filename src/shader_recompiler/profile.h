@@ -61,6 +61,9 @@ struct Profile {
     u32 supported_spirv{0x00010000};
 
     bool unified_descriptor_binding{};
+    bool support_descriptor_aliasing{};
+    bool support_int8{};
+    bool support_int16{};
     bool support_vertex_instance_id{};
     bool support_float_controls{};
     bool support_separate_denorm_behavior{};
@@ -77,11 +80,19 @@ struct Profile {
     bool support_viewport_index_layer_non_geometry{};
     bool support_viewport_mask{};
     bool support_typeless_image_loads{};
+    bool support_demote_to_helper_invocation{};
     bool warp_size_potentially_larger_than_guest{};
     bool support_int64_atomics{};
+    bool lower_left_origin_mode{};
 
     // FClamp is broken and OpFMax + OpFMin should be used instead
     bool has_broken_spirv_clamp{};
+    // Offset image operands with an unsigned type do not work
+    bool has_broken_unsigned_image_offsets{};
+    // Signed instructions with unsigned data types are misinterpreted
+    bool has_broken_signed_operations{};
+    // Ignores SPIR-V ordered vs unordered using GLSL semantics
+    bool ignore_nan_fp_comparisons{};
 
     std::array<AttributeType, 32> generic_input_types{};
     bool convert_depth_mode{};
