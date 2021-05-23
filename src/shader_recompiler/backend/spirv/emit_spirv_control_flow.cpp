@@ -35,8 +35,12 @@ void EmitUnreachable(EmitContext& ctx) {
 }
 
 void EmitDemoteToHelperInvocation(EmitContext& ctx, Id continue_label) {
-    ctx.OpDemoteToHelperInvocationEXT();
-    ctx.OpBranch(continue_label);
+    if (ctx.profile.support_demote_to_helper_invocation) {
+        ctx.OpDemoteToHelperInvocationEXT();
+        ctx.OpBranch(continue_label);
+    } else {
+        ctx.OpKill();
+    }
 }
 
 } // namespace Shader::Backend::SPIRV
