@@ -19,7 +19,7 @@
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
 #include "video_core/vulkan_common/vulkan_device.h"
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && defined(NDEBUG)
 #define LAMBDA_FORCEINLINE [[msvc::forceinline]]
 #else
 #define LAMBDA_FORCEINLINE
@@ -30,6 +30,7 @@ namespace {
 using boost::container::small_vector;
 using boost::container::static_vector;
 using Shader::ImageBufferDescriptor;
+using Tegra::Texture::TexturePair;
 using VideoCore::Surface::PixelFormat;
 using VideoCore::Surface::PixelFormatFromDepthFormat;
 using VideoCore::Surface::PixelFormatFromRenderTargetFormat;
@@ -289,15 +290,15 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
                     const u32 lhs_raw{gpu_memory.Read<u32>(addr)};
                     const u32 rhs_raw{gpu_memory.Read<u32>(separate_addr)};
                     const u32 raw{lhs_raw | rhs_raw};
-                    return TextureHandle{raw, via_header_index};
+                    return TexturePair(raw, via_header_index);
                 }
             }
-            return TextureHandle{gpu_memory.Read<u32>(addr), via_header_index};
+            return TexturePair(gpu_memory.Read<u32>(addr), via_header_index);
         }};
         const auto add_image{[&](const auto& desc) {
             for (u32 index = 0; index < desc.count; ++index) {
-                const TextureHandle handle{read_handle(desc, index)};
-                image_view_indices[image_index++] = handle.image;
+                const auto handle{read_handle(desc, index)};
+                image_view_indices[image_index++] = handle.first;
             }
         }};
         if constexpr (Spec::has_texture_buffers) {
@@ -312,10 +313,10 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
         }
         for (const auto& desc : info.texture_descriptors) {
             for (u32 index = 0; index < desc.count; ++index) {
-                const TextureHandle handle{read_handle(desc, index)};
-                image_view_indices[image_index++] = handle.image;
+                const auto handle{read_handle(desc, index)};
+                image_view_indices[image_index++] = handle.first;
 
-                Sampler* const sampler{texture_cache.GetGraphicsSampler(handle.sampler)};
+                Sampler* const sampler{texture_cache.GetGraphicsSampler(handle.second)};
                 samplers[sampler_index++] = sampler->Handle();
             }
         }
@@ -347,15 +348,16 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
     const auto bind_stage_info{[&](size_t stage) LAMBDA_FORCEINLINE {
         size_t index{};
         const auto add_buffer{[&](const auto& desc) {
+            constexpr bool is_image = std::is_same_v<decltype(desc), const ImageBufferDescriptor&>;
             for (u32 i = 0; i < desc.count; ++i) {
                 bool is_written{false};
-                if constexpr (std::is_same_v<decltype(desc), const ImageBufferDescriptor&>) {
+                if constexpr (is_image) {
                     is_written = desc.is_written;
                 }
                 ImageView& image_view{texture_cache.GetImageView(*texture_buffer_index)};
                 buffer_cache.BindGraphicsTextureBuffer(stage, index, image_view.GpuAddr(),
                                                        image_view.BufferSize(), image_view.format,
-                                                       is_written);
+                                                       is_written, is_image);
                 ++index;
                 ++texture_buffer_index;
             }

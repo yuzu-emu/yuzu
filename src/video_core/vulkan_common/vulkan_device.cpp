@@ -282,7 +282,7 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     VkPhysicalDevice16BitStorageFeaturesKHR bit16_storage{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR,
         .pNext = nullptr,
-        .storageBuffer16BitAccess = false,
+        .storageBuffer16BitAccess = true,
         .uniformAndStorageBuffer16BitAccess = true,
         .storagePushConstant16 = false,
         .storageInputOutput16 = false,

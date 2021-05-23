@@ -187,8 +187,8 @@ std::optional<u64> GenericEnvironment::TryFindSize() {
 
 Shader::TextureType GenericEnvironment::ReadTextureTypeImpl(GPUVAddr tic_addr, u32 tic_limit,
                                                             bool via_header_index, u32 raw) {
-    const TextureHandle handle{raw, via_header_index};
-    const GPUVAddr descriptor_addr{tic_addr + handle.image * sizeof(Tegra::Texture::TICEntry)};
+    const auto handle{Tegra::Texture::TexturePair(raw, via_header_index)};
+    const GPUVAddr descriptor_addr{tic_addr + handle.first * sizeof(Tegra::Texture::TICEntry)};
     Tegra::Texture::TICEntry entry;
     gpu_memory->ReadBlock(descriptor_addr, &entry, sizeof(entry));
     const Shader::TextureType result{ConvertType(entry)};

@@ -2,14 +2,18 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
 #include <span>
 
 #include "video_core/buffer_cache/buffer_cache.h"
 #include "video_core/renderer_opengl/gl_buffer_cache.h"
 #include "video_core/renderer_opengl/gl_device.h"
+#include "video_core/renderer_opengl/maxwell_to_gl.h"
 
 namespace OpenGL {
 namespace {
+using VideoCore::Surface::PixelFormat;
+
 struct BindlessSSBO {
     GLuint64EXT address;
     GLsizei length;
@@ -60,6 +64,26 @@ void Buffer::MakeResident(GLenum access) noexcept {
         glMakeNamedBufferNonResidentNV(buffer.handle);
     }
     glMakeNamedBufferResidentNV(buffer.handle, access);
+}
+
+GLuint Buffer::View(u32 offset, u32 size, PixelFormat format) {
+    const auto it{std::ranges::find_if(views, [offset, size, format](const BufferView& view) {
+        return offset == view.offset && size == view.size && format == view.format;
+    })};
+    if (it != views.end()) {
+        return it->texture.handle;
+    }
+    OGLTexture texture;
+    texture.Create(GL_TEXTURE_BUFFER);
+    const GLenum gl_format{MaxwellToGL::GetFormatTuple(format).internal_format};
+    glTextureBufferRange(texture.handle, gl_format, buffer.handle, offset, size);
+    views.push_back({
+        .offset = offset,
+        .size = size,
+        .format = format,
+        .texture = std::move(texture),
+    });
+    return views.back().texture.handle;
 }
 
 BufferCacheRuntime::BufferCacheRuntime(const Device& device_)
@@ -138,7 +162,7 @@ void BufferCacheRuntime::BindUniformBuffer(size_t stage, u32 binding_index, Buff
         glBindBufferRangeNV(PABO_LUT[stage], binding_index, handle, 0,
                             static_cast<GLsizeiptr>(size));
     } else {
-        const GLuint base_binding = device.GetBaseBindings(stage).uniform_buffer;
+        const GLuint base_binding = graphics_base_uniform_bindings[stage];
         const GLuint binding = base_binding + binding_index;
         glBindBufferRange(GL_UNIFORM_BUFFER, binding, buffer.Handle(),
                           static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size));
@@ -175,7 +199,7 @@ void BufferCacheRuntime::BindStorageBuffer(size_t stage, u32 binding_index, Buff
         glProgramLocalParametersI4uivNV(PROGRAM_LUT[stage], binding_index, 1,
                                         reinterpret_cast<const GLuint*>(&ssbo));
     } else {
-        const GLuint base_binding = device.GetBaseBindings(stage).shader_storage_buffer;
+        const GLuint base_binding = graphics_base_storage_bindings[stage];
         const GLuint binding = base_binding + binding_index;
         glBindBufferRange(GL_SHADER_STORAGE_BUFFER, binding, buffer.Handle(),
                           static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size));
@@ -205,6 +229,15 @@ void BufferCacheRuntime::BindTransformFeedbackBuffer(u32 index, Buffer& buffer, 
                                                      u32 size) {
     glBindBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER, index, buffer.Handle(),
                       static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size));
+}
+
+void BufferCacheRuntime::BindTextureBuffer(Buffer& buffer, u32 offset, u32 size,
+                                           PixelFormat format) {
+    *texture_handles++ = buffer.View(offset, size, format);
+}
+
+void BufferCacheRuntime::BindImageBuffer(Buffer& buffer, u32 offset, u32 size, PixelFormat format) {
+    *image_handles++ = buffer.View(offset, size, format);
 }
 
 } // namespace OpenGL

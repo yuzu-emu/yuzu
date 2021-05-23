@@ -255,8 +255,7 @@ struct RenderTargets;
 
 [[nodiscard]] std::string Name(const ImageBase& image);
 
-[[nodiscard]] std::string Name(const ImageViewBase& image_view,
-                               std::optional<ImageViewType> type = std::nullopt);
+[[nodiscard]] std::string Name(const ImageViewBase& image_view);
 
 [[nodiscard]] std::string Name(const RenderTargets& render_targets);
 

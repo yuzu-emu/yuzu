@@ -154,6 +154,15 @@ union TextureHandle {
 };
 static_assert(sizeof(TextureHandle) == 4, "TextureHandle has wrong size");
 
+[[nodiscard]] inline std::pair<u32, u32> TexturePair(u32 raw, bool via_header_index) {
+    if (via_header_index) {
+        return {raw, raw};
+    } else {
+        const Tegra::Texture::TextureHandle handle{raw};
+        return {handle.tic_id, via_header_index ? handle.tic_id : handle.tsc_id};
+    }
+}
+
 struct TICEntry {
     union {
         struct {

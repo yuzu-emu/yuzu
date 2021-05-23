@@ -12,7 +12,6 @@
 #include "video_core/renderer_opengl/gl_device.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
-#include "video_core/renderer_opengl/gl_shader_manager.h"
 #include "video_core/renderer_opengl/gl_state_tracker.h"
 
 namespace Core {
@@ -111,9 +110,7 @@ private:
     // OpenGL object IDs
     OGLSampler present_sampler;
     OGLBuffer vertex_buffer;
-    OGLProgram vertex_program;
-    OGLProgram fragment_program;
-    OGLPipeline pipeline;
+    OGLProgram present_program;
     OGLFramebuffer screenshot_framebuffer;
 
     // GPU address of the vertex buffer

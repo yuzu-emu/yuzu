@@ -5,20 +5,18 @@
 #pragma once
 
 #include <array>
-#include <atomic>
-#include <bitset>
-#include <memory>
-#include <string>
-#include <tuple>
 #include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
 #include <glad/glad.h>
 
 #include "common/common_types.h"
+#include "shader_recompiler/frontend/ir/basic_block.h"
+#include "shader_recompiler/frontend/ir/value.h"
+#include "shader_recompiler/frontend/maxwell/control_flow.h"
+#include "shader_recompiler/object_pool.h"
 #include "video_core/engines/shader_type.h"
-#include "video_core/renderer_opengl/gl_resource_manager.h"
+#include "video_core/renderer_opengl/gl_compute_program.h"
+#include "video_core/renderer_opengl/gl_graphics_program.h"
 #include "video_core/shader_cache.h"
 
 namespace Tegra {
@@ -32,64 +30,62 @@ class EmuWindow;
 namespace OpenGL {
 
 class Device;
+class ProgramManager;
 class RasterizerOpenGL;
 
-using Maxwell = Tegra::Engines::Maxwell3D::Regs;
-
-struct GraphicsProgramKey {
-    struct TransformFeedbackState {
-        struct Layout {
-            u32 stream;
-            u32 varying_count;
-            u32 stride;
-        };
-        std::array<Layout, Maxwell::NumTransformFeedbackBuffers> layouts;
-        std::array<std::array<u8, 128>, Maxwell::NumTransformFeedbackBuffers> varyings;
-    };
-
-    std::array<u64, 6> unique_hashes;
-    std::array<u8, Maxwell::NumRenderTargets> color_formats;
-    union {
-        u32 raw;
-        BitField<0, 1, u32> xfb_enabled;
-        BitField<1, 1, u32> early_z;
-        BitField<2, 4, Maxwell::PrimitiveTopology> gs_input_topology;
-        BitField<6, 2, u32> tessellation_primitive;
-        BitField<8, 2, u32> tessellation_spacing;
-        BitField<10, 1, u32> tessellation_clockwise;
-    };
-    u32 padding;
-    TransformFeedbackState xfb_state;
-
-    [[nodiscard]] size_t Size() const noexcept {
-        if (xfb_enabled != 0) {
-            return sizeof(GraphicsProgramKey);
-        } else {
-            return offsetof(GraphicsProgramKey, padding);
-        }
+struct ShaderPools {
+    void ReleaseContents() {
+        flow_block.ReleaseContents();
+        block.ReleaseContents();
+        inst.ReleaseContents();
     }
-};
-static_assert(std::has_unique_object_representations_v<GraphicsProgramKey>);
-static_assert(std::is_trivially_copyable_v<GraphicsProgramKey>);
-static_assert(std::is_trivially_constructible_v<GraphicsProgramKey>);
 
-class GraphicsProgram {
-public:
-private:
+    Shader::ObjectPool<Shader::IR::Inst> inst;
+    Shader::ObjectPool<Shader::IR::Block> block;
+    Shader::ObjectPool<Shader::Maxwell::Flow::Block> flow_block;
 };
 
 class ShaderCache : public VideoCommon::ShaderCache {
 public:
     explicit ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindow& emu_window_,
-                         Tegra::GPU& gpu_, Tegra::Engines::Maxwell3D& maxwell3d_,
+                         Tegra::Engines::Maxwell3D& maxwell3d_,
                          Tegra::Engines::KeplerCompute& kepler_compute_,
-                         Tegra::MemoryManager& gpu_memory_, const Device& device_);
+                         Tegra::MemoryManager& gpu_memory_, const Device& device_,
+                         TextureCache& texture_cache_, BufferCache& buffer_cache_,
+                         ProgramManager& program_manager_, StateTracker& state_tracker_);
     ~ShaderCache();
 
+    [[nodiscard]] GraphicsProgram* CurrentGraphicsProgram();
+
+    [[nodiscard]] ComputeProgram* CurrentComputeProgram();
+
 private:
+    std::unique_ptr<GraphicsProgram> CreateGraphicsProgram();
+
+    std::unique_ptr<GraphicsProgram> CreateGraphicsProgram(
+        ShaderPools& pools, const GraphicsProgramKey& key,
+        std::span<Shader::Environment* const> envs, bool build_in_parallel);
+
+    std::unique_ptr<ComputeProgram> CreateComputeProgram(const ComputeProgramKey& key,
+                                                         const VideoCommon::ShaderInfo* shader);
+
+    std::unique_ptr<ComputeProgram> CreateComputeProgram(ShaderPools& pools,
+                                                         const ComputeProgramKey& key,
+                                                         Shader::Environment& env,
+                                                         bool build_in_parallel);
+
     Core::Frontend::EmuWindow& emu_window;
-    Tegra::GPU& gpu;
     const Device& device;
+    TextureCache& texture_cache;
+    BufferCache& buffer_cache;
+    ProgramManager& program_manager;
+    StateTracker& state_tracker;
+
+    GraphicsProgramKey graphics_key{};
+
+    ShaderPools main_pools;
+    std::unordered_map<GraphicsProgramKey, std::unique_ptr<GraphicsProgram>> graphics_cache;
+    std::unordered_map<ComputeProgramKey, std::unique_ptr<ComputeProgram>> compute_cache;
 };
 
 } // namespace OpenGL

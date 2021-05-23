@@ -342,28 +342,15 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
 }
 
 std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline() {
+    GraphicsEnvironments environments;
+    GetGraphicsEnvironments(environments, graphics_key.unique_hashes);
+
     main_pools.ReleaseContents();
-
-    std::array<GraphicsEnvironment, Maxwell::MaxShaderProgram> graphics_envs;
-    boost::container::static_vector<Shader::Environment*, Maxwell::MaxShaderProgram> envs;
-
-    const GPUVAddr base_addr{maxwell3d.regs.code_address.CodeAddress()};
-    for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
-        if (graphics_key.unique_hashes[index] == 0) {
-            continue;
-        }
-        const auto program{static_cast<Maxwell::ShaderProgram>(index)};
-        auto& env{graphics_envs[index]};
-        const u32 start_address{maxwell3d.regs.shader_config[index].offset};
-        env = GraphicsEnvironment{maxwell3d, gpu_memory, program, base_addr, start_address};
-        env.SetCachedSize(shader_infos[index]->size_bytes);
-        envs.push_back(&env);
-    }
-    auto pipeline{CreateGraphicsPipeline(main_pools, graphics_key, MakeSpan(envs), true)};
+    auto pipeline{CreateGraphicsPipeline(main_pools, graphics_key, environments.Span(), true)};
     if (pipeline_cache_filename.empty()) {
         return pipeline;
     }
-    serialization_thread.QueueWork([this, key = graphics_key, envs = std::move(graphics_envs)] {
+    serialization_thread.QueueWork([this, key = graphics_key, envs = std::move(environments.envs)] {
         boost::container::static_vector<const GenericEnvironment*, Maxwell::MaxShaderProgram>
             env_ptrs;
         for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {

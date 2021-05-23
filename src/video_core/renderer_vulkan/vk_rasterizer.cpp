@@ -96,17 +96,6 @@ VkRect2D GetScissorState(const Maxwell& regs, size_t index) {
     return scissor;
 }
 
-struct TextureHandle {
-    constexpr TextureHandle(u32 data, bool via_header_index) {
-        const Tegra::Texture::TextureHandle handle{data};
-        image = handle.tic_id;
-        sampler = via_header_index ? image : handle.tsc_id.Value();
-    }
-
-    u32 image;
-    u32 sampler;
-};
-
 DrawParams MakeDrawParams(const Maxwell& regs, u32 num_instances, bool is_instanced,
                           bool is_indexed) {
     DrawParams params{

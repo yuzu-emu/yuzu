@@ -67,10 +67,14 @@ add_library(video_core STATIC
     renderer_base.h
     renderer_opengl/gl_buffer_cache.cpp
     renderer_opengl/gl_buffer_cache.h
+    renderer_opengl/gl_compute_program.cpp
+    renderer_opengl/gl_compute_program.h
     renderer_opengl/gl_device.cpp
     renderer_opengl/gl_device.h
     renderer_opengl/gl_fence_manager.cpp
     renderer_opengl/gl_fence_manager.h
+    renderer_opengl/gl_graphics_program.cpp
+    renderer_opengl/gl_graphics_program.h
     renderer_opengl/gl_rasterizer.cpp
     renderer_opengl/gl_rasterizer.h
     renderer_opengl/gl_resource_manager.cpp

@@ -138,8 +138,8 @@ struct BufferCacheParams {
     static constexpr bool HAS_FULL_INDEX_AND_PRIMITIVE_SUPPORT = false;
     static constexpr bool NEEDS_BIND_UNIFORM_INDEX = false;
     static constexpr bool NEEDS_BIND_STORAGE_INDEX = false;
-    static constexpr bool NEEDS_BIND_TEXTURE_BUFFER_INDEX = false;
     static constexpr bool USE_MEMORY_MAPS = true;
+    static constexpr bool SEPARATE_IMAGE_BUFFER_BINDINGS = false;
 };
 
 using BufferCache = VideoCommon::BufferCache<BufferCacheParams>;
