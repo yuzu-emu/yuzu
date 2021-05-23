@@ -12,13 +12,6 @@ namespace OpenGL {
 
 class Device {
 public:
-    struct BaseBindings {
-        u32 uniform_buffer{};
-        u32 shader_storage_buffer{};
-        u32 sampler{};
-        u32 image{};
-    };
-
     explicit Device();
     explicit Device(std::nullptr_t);
 
@@ -26,14 +19,6 @@ public:
 
     u32 GetMaxUniformBuffers(Tegra::Engines::ShaderType shader_type) const noexcept {
         return max_uniform_buffers[static_cast<std::size_t>(shader_type)];
-    }
-
-    const BaseBindings& GetBaseBindings(std::size_t stage_index) const noexcept {
-        return base_bindings[stage_index];
-    }
-
-    const BaseBindings& GetBaseBindings(Tegra::Engines::ShaderType shader_type) const noexcept {
-        return GetBaseBindings(static_cast<std::size_t>(shader_type));
     }
 
     size_t GetUniformBufferAlignment() const {
@@ -134,7 +119,6 @@ private:
 
     std::string vendor_name;
     std::array<u32, Tegra::Engines::MaxShaderTypes> max_uniform_buffers{};
-    std::array<BaseBindings, Tegra::Engines::MaxShaderTypes> base_bindings{};
     size_t uniform_buffer_alignment{};
     size_t shader_storage_alignment{};
     u32 max_vertex_attributes{};

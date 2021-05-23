@@ -98,7 +98,8 @@ RasterizerOpenGL::RasterizerOpenGL(Core::Frontend::EmuWindow& emu_window_, Tegra
       texture_cache(texture_cache_runtime, *this, maxwell3d, kepler_compute, gpu_memory),
       buffer_cache_runtime(device),
       buffer_cache(*this, maxwell3d, kepler_compute, gpu_memory, cpu_memory_, buffer_cache_runtime),
-      shader_cache(*this, emu_window_, gpu, maxwell3d, kepler_compute, gpu_memory, device),
+      shader_cache(*this, emu_window_, maxwell3d, kepler_compute, gpu_memory, device, texture_cache,
+                   buffer_cache, program_manager, state_tracker),
       query_cache(*this, maxwell3d, gpu_memory), accelerate_dma(buffer_cache),
       fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache) {}
 
@@ -246,12 +247,10 @@ void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
 
     SyncState();
 
-    // Setup shaders and their used resources.
-    std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+    GraphicsProgram* const program{shader_cache.CurrentGraphicsProgram()};
 
-    texture_cache.UpdateRenderTargets(false);
-    state_tracker.BindFramebuffer(texture_cache.GetFramebuffer()->Handle());
-    program_manager.BindGraphicsPipeline();
+    std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+    program->Configure(is_indexed);
 
     const GLenum primitive_mode = MaxwellToGL::PrimitiveTopology(maxwell3d.regs.draw.topology);
     BeginTransformFeedback(primitive_mode);
@@ -293,7 +292,6 @@ void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
                                               num_instances, base_instance);
         }
     }
-
     EndTransformFeedback();
 
     ++num_queued_commands;
@@ -302,7 +300,14 @@ void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
 }
 
 void RasterizerOpenGL::DispatchCompute() {
-    UNREACHABLE_MSG("Not implemented");
+    ComputeProgram* const program{shader_cache.CurrentComputeProgram()};
+    if (!program) {
+        return;
+    }
+    program->Configure();
+    const auto& qmd{kepler_compute.launch_description};
+    glDispatchCompute(qmd.grid_dim_x, qmd.grid_dim_y, qmd.grid_dim_z);
+    ++num_queued_commands;
 }
 
 void RasterizerOpenGL::ResetCounter(VideoCore::QueryType type) {
@@ -515,7 +520,7 @@ bool RasterizerOpenGL::AccelerateDisplay(const Tegra::FramebufferConfig& config,
     // ASSERT_MSG(image_view->size.width == config.width, "Framebuffer width is different");
     // ASSERT_MSG(image_view->size.height == config.height, "Framebuffer height is different");
 
-    screen_info.display_texture = image_view->Handle(ImageViewType::e2D);
+    screen_info.display_texture = image_view->Handle(Shader::TextureType::Color2D);
     screen_info.display_srgb = VideoCore::Surface::IsPixelFormatSRGB(image_view->format);
     return true;
 }

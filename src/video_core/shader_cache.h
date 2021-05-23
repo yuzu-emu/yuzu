@@ -4,14 +4,18 @@
 
 #pragma once
 
+#include <algorithm>
+#include <array>
 #include <memory>
 #include <mutex>
+#include <span>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "common/common_types.h"
 #include "video_core/rasterizer_interface.h"
+#include "video_core/shader_environment.h"
 
 namespace Tegra {
 class MemoryManager;
@@ -29,6 +33,8 @@ struct ShaderInfo {
 class ShaderCache {
     static constexpr u64 PAGE_BITS = 14;
     static constexpr u64 PAGE_SIZE = u64(1) << PAGE_BITS;
+
+    static constexpr size_t NUM_PROGRAMS = 6;
 
     struct Entry {
         VAddr addr_start;
@@ -58,6 +64,15 @@ public:
     void SyncGuestHost();
 
 protected:
+    struct GraphicsEnvironments {
+        std::array<GraphicsEnvironment, NUM_PROGRAMS> envs;
+        std::array<Shader::Environment*, NUM_PROGRAMS> env_ptrs;
+
+        std::span<Shader::Environment* const> Span() const noexcept {
+            return std::span(env_ptrs.begin(), std::ranges::find(env_ptrs, nullptr));
+        }
+    };
+
     explicit ShaderCache(VideoCore::RasterizerInterface& rasterizer_,
                          Tegra::MemoryManager& gpu_memory_, Tegra::Engines::Maxwell3D& maxwell3d_,
                          Tegra::Engines::KeplerCompute& kepler_compute_);
@@ -65,17 +80,21 @@ protected:
     /// @brief Update the hashes and information of shader stages
     /// @param unique_hashes Shader hashes to store into when a stage is enabled
     /// @return True no success, false on error
-    bool RefreshStages(std::array<u64, 6>& unique_hashes);
+    bool RefreshStages(std::array<u64, NUM_PROGRAMS>& unique_hashes);
 
     /// @brief Returns information about the current compute shader
     /// @return Pointer to a valid shader, nullptr on error
     const ShaderInfo* ComputeShader();
 
+    /// @brief Collect the current graphics environments
+    void GetGraphicsEnvironments(GraphicsEnvironments& result,
+                                 const std::array<u64, NUM_PROGRAMS>& unique_hashes);
+
     Tegra::MemoryManager& gpu_memory;
     Tegra::Engines::Maxwell3D& maxwell3d;
     Tegra::Engines::KeplerCompute& kepler_compute;
 
-    std::array<const ShaderInfo*, 6> shader_infos{};
+    std::array<const ShaderInfo*, NUM_PROGRAMS> shader_infos{};
     bool last_shaders_valid = false;
 
 private:

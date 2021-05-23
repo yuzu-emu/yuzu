@@ -91,6 +91,23 @@ const ShaderInfo* ShaderCache::ComputeShader() {
     return MakeShaderInfo(env, *cpu_shader_addr);
 }
 
+void ShaderCache::GetGraphicsEnvironments(GraphicsEnvironments& result,
+                                          const std::array<u64, NUM_PROGRAMS>& unique_hashes) {
+    size_t env_index{};
+    const GPUVAddr base_addr{maxwell3d.regs.code_address.CodeAddress()};
+    for (size_t index = 0; index < NUM_PROGRAMS; ++index) {
+        if (unique_hashes[index] == 0) {
+            continue;
+        }
+        const auto program{static_cast<Tegra::Engines::Maxwell3D::Regs::ShaderProgram>(index)};
+        auto& env{result.envs[index]};
+        const u32 start_address{maxwell3d.regs.shader_config[index].offset};
+        env = GraphicsEnvironment{maxwell3d, gpu_memory, program, base_addr, start_address};
+        env.SetCachedSize(shader_infos[index]->size_bytes);
+        result.env_ptrs[env_index++] = &env;
+    }
+}
+
 ShaderInfo* ShaderCache::TryGet(VAddr addr) const {
     std::scoped_lock lock{lookup_mutex};
 

@@ -32,6 +32,8 @@ public:
 
     void MakeResident(GLenum access) noexcept;
 
+    [[nodiscard]] GLuint View(u32 offset, u32 size, VideoCore::Surface::PixelFormat format);
+
     [[nodiscard]] GLuint64EXT HostGpuAddr() const noexcept {
         return address;
     }
@@ -41,9 +43,17 @@ public:
     }
 
 private:
+    struct BufferView {
+        u32 offset;
+        u32 size;
+        VideoCore::Surface::PixelFormat format;
+        OGLTexture texture;
+    };
+
     GLuint64EXT address = 0;
     OGLBuffer buffer;
     GLenum current_residency_access = GL_NONE;
+    std::vector<BufferView> views;
 };
 
 class BufferCacheRuntime {
@@ -73,13 +83,19 @@ public:
 
     void BindTransformFeedbackBuffer(u32 index, Buffer& buffer, u32 offset, u32 size);
 
+    void BindTextureBuffer(Buffer& buffer, u32 offset, u32 size,
+                           VideoCore::Surface::PixelFormat format);
+
+    void BindImageBuffer(Buffer& buffer, u32 offset, u32 size,
+                         VideoCore::Surface::PixelFormat format);
+
     void BindFastUniformBuffer(size_t stage, u32 binding_index, u32 size) {
         if (use_assembly_shaders) {
             const GLuint handle = fast_uniforms[stage][binding_index].handle;
             const GLsizeiptr gl_size = static_cast<GLsizeiptr>(size);
             glBindBufferRangeNV(PABO_LUT[stage], binding_index, handle, 0, gl_size);
         } else {
-            const GLuint base_binding = device.GetBaseBindings(stage).uniform_buffer;
+            const GLuint base_binding = graphics_base_uniform_bindings[stage];
             const GLuint binding = base_binding + binding_index;
             glBindBufferRange(GL_UNIFORM_BUFFER, binding,
                               fast_uniforms[stage][binding_index].handle, 0,
@@ -101,7 +117,7 @@ public:
 
     std::span<u8> BindMappedUniformBuffer(size_t stage, u32 binding_index, u32 size) noexcept {
         const auto [mapped_span, offset] = stream_buffer->Request(static_cast<size_t>(size));
-        const GLuint base_binding = device.GetBaseBindings(stage).uniform_buffer;
+        const GLuint base_binding = graphics_base_uniform_bindings[stage];
         const GLuint binding = base_binding + binding_index;
         glBindBufferRange(GL_UNIFORM_BUFFER, binding, stream_buffer->Handle(),
                           static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size));
@@ -114,6 +130,19 @@ public:
 
     [[nodiscard]] bool HasFastBufferSubData() const noexcept {
         return has_fast_buffer_sub_data;
+    }
+
+    void SetBaseUniformBindings(const std::array<GLuint, 5>& bindings) {
+        graphics_base_uniform_bindings = bindings;
+    }
+
+    void SetBaseStorageBindings(const std::array<GLuint, 5>& bindings) {
+        graphics_base_storage_bindings = bindings;
+    }
+
+    void SetImagePointers(GLuint* texture_handles_, GLuint* image_handles_) {
+        texture_handles = texture_handles_;
+        image_handles = image_handles_;
     }
 
 private:
@@ -130,6 +159,11 @@ private:
     bool has_unified_vertex_buffers = false;
 
     u32 max_attributes = 0;
+
+    std::array<GLuint, 5> graphics_base_uniform_bindings{};
+    std::array<GLuint, 5> graphics_base_storage_bindings{};
+    GLuint* texture_handles = nullptr;
+    GLuint* image_handles = nullptr;
 
     std::optional<StreamBuffer> stream_buffer;
 
@@ -153,8 +187,8 @@ struct BufferCacheParams {
     static constexpr bool HAS_FULL_INDEX_AND_PRIMITIVE_SUPPORT = true;
     static constexpr bool NEEDS_BIND_UNIFORM_INDEX = true;
     static constexpr bool NEEDS_BIND_STORAGE_INDEX = true;
-    static constexpr bool NEEDS_BIND_TEXTURE_BUFFER_INDEX = true;
     static constexpr bool USE_MEMORY_MAPS = false;
+    static constexpr bool SEPARATE_IMAGE_BUFFER_BINDINGS = true;
 };
 
 using BufferCache = VideoCommon::BufferCache<BufferCacheParams>;

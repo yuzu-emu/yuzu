@@ -22,33 +22,10 @@
 
 namespace OpenGL {
 namespace {
-// One uniform block is reserved for emulation purposes
-constexpr u32 ReservedUniformBlocks = 1;
-
-constexpr u32 NumStages = 5;
-
 constexpr std::array LIMIT_UBOS = {
     GL_MAX_VERTEX_UNIFORM_BLOCKS,          GL_MAX_TESS_CONTROL_UNIFORM_BLOCKS,
     GL_MAX_TESS_EVALUATION_UNIFORM_BLOCKS, GL_MAX_GEOMETRY_UNIFORM_BLOCKS,
     GL_MAX_FRAGMENT_UNIFORM_BLOCKS,        GL_MAX_COMPUTE_UNIFORM_BLOCKS,
-};
-constexpr std::array LIMIT_SSBOS = {
-    GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS,          GL_MAX_TESS_CONTROL_SHADER_STORAGE_BLOCKS,
-    GL_MAX_TESS_EVALUATION_SHADER_STORAGE_BLOCKS, GL_MAX_GEOMETRY_SHADER_STORAGE_BLOCKS,
-    GL_MAX_FRAGMENT_SHADER_STORAGE_BLOCKS,        GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS,
-};
-constexpr std::array LIMIT_SAMPLERS = {
-    GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS,
-    GL_MAX_TESS_CONTROL_TEXTURE_IMAGE_UNITS,
-    GL_MAX_TESS_EVALUATION_TEXTURE_IMAGE_UNITS,
-    GL_MAX_GEOMETRY_TEXTURE_IMAGE_UNITS,
-    GL_MAX_TEXTURE_IMAGE_UNITS,
-    GL_MAX_COMPUTE_TEXTURE_IMAGE_UNITS,
-};
-constexpr std::array LIMIT_IMAGES = {
-    GL_MAX_VERTEX_IMAGE_UNIFORMS,          GL_MAX_TESS_CONTROL_IMAGE_UNIFORMS,
-    GL_MAX_TESS_EVALUATION_IMAGE_UNIFORMS, GL_MAX_GEOMETRY_IMAGE_UNIFORMS,
-    GL_MAX_FRAGMENT_IMAGE_UNIFORMS,        GL_MAX_COMPUTE_IMAGE_UNIFORMS,
 };
 
 template <typename T>
@@ -82,76 +59,11 @@ bool HasExtension(std::span<const std::string_view> extensions, std::string_view
     return std::ranges::find(extensions, extension) != extensions.end();
 }
 
-u32 Extract(u32& base, u32& num, u32 amount, std::optional<GLenum> limit = {}) {
-    ASSERT(num >= amount);
-    if (limit) {
-        amount = std::min(amount, GetInteger<u32>(*limit));
-    }
-    num -= amount;
-    return std::exchange(base, base + amount);
-}
-
 std::array<u32, Tegra::Engines::MaxShaderTypes> BuildMaxUniformBuffers() noexcept {
     std::array<u32, Tegra::Engines::MaxShaderTypes> max;
     std::ranges::transform(LIMIT_UBOS, max.begin(),
                            [](GLenum pname) { return GetInteger<u32>(pname); });
     return max;
-}
-
-std::array<Device::BaseBindings, Tegra::Engines::MaxShaderTypes> BuildBaseBindings() noexcept {
-    std::array<Device::BaseBindings, Tegra::Engines::MaxShaderTypes> bindings;
-
-    static constexpr std::array<std::size_t, 5> stage_swizzle{0, 1, 2, 3, 4};
-    const u32 total_ubos = GetInteger<u32>(GL_MAX_UNIFORM_BUFFER_BINDINGS);
-    const u32 total_ssbos = GetInteger<u32>(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS);
-    const u32 total_samplers = GetInteger<u32>(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS);
-
-    u32 num_ubos = total_ubos - ReservedUniformBlocks;
-    u32 num_ssbos = total_ssbos;
-    u32 num_samplers = total_samplers;
-
-    u32 base_ubo = ReservedUniformBlocks;
-    u32 base_ssbo = 0;
-    u32 base_samplers = 0;
-
-    for (std::size_t i = 0; i < NumStages; ++i) {
-        const std::size_t stage = stage_swizzle[i];
-        bindings[stage] = {
-            Extract(base_ubo, num_ubos, total_ubos / NumStages, LIMIT_UBOS[stage]),
-            Extract(base_ssbo, num_ssbos, total_ssbos / NumStages, LIMIT_SSBOS[stage]),
-            Extract(base_samplers, num_samplers, total_samplers / NumStages,
-                    LIMIT_SAMPLERS[stage])};
-    }
-
-    u32 num_images = GetInteger<u32>(GL_MAX_IMAGE_UNITS);
-    u32 base_images = 0;
-
-    // GL_MAX_IMAGE_UNITS is guaranteed by the spec to have a minimum value of 8.
-    // Due to the limitation of GL_MAX_IMAGE_UNITS, reserve at least 4 image bindings on the
-    // fragment stage, and at least 1 for the rest of the stages.
-    // So far games are observed to use 1 image binding on vertex and 4 on fragment stages.
-
-    // Reserve at least 4 image bindings on the fragment stage.
-    bindings[4].image =
-        Extract(base_images, num_images, std::max(4U, num_images / NumStages), LIMIT_IMAGES[4]);
-
-    // This is guaranteed to be at least 1.
-    const u32 total_extracted_images = num_images / (NumStages - 1);
-
-    // Reserve the other image bindings.
-    for (std::size_t i = 0; i < NumStages; ++i) {
-        const std::size_t stage = stage_swizzle[i];
-        if (stage == 4) {
-            continue;
-        }
-        bindings[stage].image =
-            Extract(base_images, num_images, total_extracted_images, LIMIT_IMAGES[stage]);
-    }
-
-    // Compute doesn't care about any of this.
-    bindings[5] = {0, 0, 0, 0};
-
-    return bindings;
 }
 
 bool IsASTCSupported() {
@@ -225,7 +137,6 @@ Device::Device() {
     }
 
     max_uniform_buffers = BuildMaxUniformBuffers();
-    base_bindings = BuildBaseBindings();
     uniform_buffer_alignment = GetInteger<size_t>(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT);
     shader_storage_alignment = GetInteger<size_t>(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT);
     max_vertex_attributes = GetInteger<u32>(GL_MAX_VERTEX_ATTRIBS);

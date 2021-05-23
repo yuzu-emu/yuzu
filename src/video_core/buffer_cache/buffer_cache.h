@@ -70,8 +70,8 @@ class BufferCache {
         P::HAS_FULL_INDEX_AND_PRIMITIVE_SUPPORT;
     static constexpr bool NEEDS_BIND_UNIFORM_INDEX = P::NEEDS_BIND_UNIFORM_INDEX;
     static constexpr bool NEEDS_BIND_STORAGE_INDEX = P::NEEDS_BIND_STORAGE_INDEX;
-    static constexpr bool NEEDS_BIND_TEXTURE_BUFFER_INDEX = P::NEEDS_BIND_TEXTURE_BUFFER_INDEX;
     static constexpr bool USE_MEMORY_MAPS = P::USE_MEMORY_MAPS;
+    static constexpr bool SEPARATE_IMAGE_BUFFERS_BINDINGS = P::SEPARATE_IMAGE_BUFFER_BINDINGS;
 
     static constexpr BufferId NULL_BUFFER_ID{0};
 
@@ -154,7 +154,7 @@ public:
     void UnbindGraphicsTextureBuffers(size_t stage);
 
     void BindGraphicsTextureBuffer(size_t stage, size_t tbo_index, GPUVAddr gpu_addr, u32 size,
-                                   PixelFormat format, bool is_written);
+                                   PixelFormat format, bool is_written, bool is_image);
 
     void UnbindComputeStorageBuffers();
 
@@ -164,7 +164,7 @@ public:
     void UnbindComputeTextureBuffers();
 
     void BindComputeTextureBuffer(size_t tbo_index, GPUVAddr gpu_addr, u32 size, PixelFormat format,
-                                  bool is_written);
+                                  bool is_written, bool is_image);
 
     void FlushCachedWrites();
 
@@ -192,6 +192,7 @@ public:
     [[nodiscard]] bool IsRegionCpuModified(VAddr addr, size_t size);
 
     std::mutex mutex;
+    Runtime& runtime;
 
 private:
     template <typename Func>
@@ -359,7 +360,6 @@ private:
     Tegra::Engines::KeplerCompute& kepler_compute;
     Tegra::MemoryManager& gpu_memory;
     Core::Memory::Memory& cpu_memory;
-    Runtime& runtime;
 
     SlotVector<Buffer> slot_buffers;
     DelayedDestructionRing<Buffer, 8> delayed_destruction_ring;
@@ -387,8 +387,10 @@ private:
 
     std::array<u32, NUM_STAGES> enabled_texture_buffers{};
     std::array<u32, NUM_STAGES> written_texture_buffers{};
+    std::array<u32, NUM_STAGES> image_texture_buffers{};
     u32 enabled_compute_texture_buffers = 0;
     u32 written_compute_texture_buffers = 0;
+    u32 image_compute_texture_buffers = 0;
 
     std::array<u32, NUM_STAGES> fast_bound_uniform_buffers{};
 
@@ -424,8 +426,8 @@ BufferCache<P>::BufferCache(VideoCore::RasterizerInterface& rasterizer_,
                             Tegra::Engines::KeplerCompute& kepler_compute_,
                             Tegra::MemoryManager& gpu_memory_, Core::Memory::Memory& cpu_memory_,
                             Runtime& runtime_)
-    : rasterizer{rasterizer_}, maxwell3d{maxwell3d_}, kepler_compute{kepler_compute_},
-      gpu_memory{gpu_memory_}, cpu_memory{cpu_memory_}, runtime{runtime_} {
+    : runtime{runtime_}, rasterizer{rasterizer_}, maxwell3d{maxwell3d_},
+      kepler_compute{kepler_compute_}, gpu_memory{gpu_memory_}, cpu_memory{cpu_memory_} {
     // Ensure the first slot is used for the null buffer
     void(slot_buffers.insert(runtime, NullBufferParams{}));
     deletion_iterator = slot_buffers.end();
@@ -663,13 +665,18 @@ template <class P>
 void BufferCache<P>::UnbindGraphicsTextureBuffers(size_t stage) {
     enabled_texture_buffers[stage] = 0;
     written_texture_buffers[stage] = 0;
+    image_texture_buffers[stage] = 0;
 }
 
 template <class P>
 void BufferCache<P>::BindGraphicsTextureBuffer(size_t stage, size_t tbo_index, GPUVAddr gpu_addr,
-                                               u32 size, PixelFormat format, bool is_written) {
+                                               u32 size, PixelFormat format, bool is_written,
+                                               bool is_image) {
     enabled_texture_buffers[stage] |= 1U << tbo_index;
     written_texture_buffers[stage] |= (is_written ? 1U : 0U) << tbo_index;
+    if constexpr (SEPARATE_IMAGE_BUFFERS_BINDINGS) {
+        image_texture_buffers[stage] |= (is_image ? 1U : 0U) << tbo_index;
+    }
     texture_buffers[stage][tbo_index] = GetTextureBufferBinding(gpu_addr, size, format);
 }
 
@@ -677,6 +684,7 @@ template <class P>
 void BufferCache<P>::UnbindComputeStorageBuffers() {
     enabled_compute_storage_buffers = 0;
     written_compute_storage_buffers = 0;
+    image_compute_texture_buffers = 0;
 }
 
 template <class P>
@@ -697,13 +705,17 @@ template <class P>
 void BufferCache<P>::UnbindComputeTextureBuffers() {
     enabled_compute_texture_buffers = 0;
     written_compute_texture_buffers = 0;
+    image_compute_texture_buffers = 0;
 }
 
 template <class P>
 void BufferCache<P>::BindComputeTextureBuffer(size_t tbo_index, GPUVAddr gpu_addr, u32 size,
-                                              PixelFormat format, bool is_written) {
+                                              PixelFormat format, bool is_written, bool is_image) {
     enabled_compute_texture_buffers |= 1U << tbo_index;
     written_compute_texture_buffers |= (is_written ? 1U : 0U) << tbo_index;
+    if constexpr (SEPARATE_IMAGE_BUFFERS_BINDINGS) {
+        image_compute_texture_buffers |= (is_image ? 1U : 0U) << tbo_index;
+    }
     compute_texture_buffers[tbo_index] = GetTextureBufferBinding(gpu_addr, size, format);
 }
 
@@ -996,7 +1008,6 @@ void BufferCache<P>::BindHostGraphicsStorageBuffers(size_t stage) {
 
 template <class P>
 void BufferCache<P>::BindHostGraphicsTextureBuffers(size_t stage) {
-    u32 binding_index = 0;
     ForEachEnabledBit(enabled_texture_buffers[stage], [&](u32 index) {
         const TextureBufferBinding& binding = texture_buffers[stage][index];
         Buffer& buffer = slot_buffers[binding.buffer_id];
@@ -1005,9 +1016,12 @@ void BufferCache<P>::BindHostGraphicsTextureBuffers(size_t stage) {
 
         const u32 offset = buffer.Offset(binding.cpu_addr);
         const PixelFormat format = binding.format;
-        if constexpr (NEEDS_BIND_TEXTURE_BUFFER_INDEX) {
-            runtime.BindTextureBuffer(binding_index, buffer, offset, size, format);
-            ++binding_index;
+        if constexpr (SEPARATE_IMAGE_BUFFERS_BINDINGS) {
+            if (((image_texture_buffers[stage] >> index) & 1) != 0) {
+                runtime.BindImageBuffer(buffer, offset, size, format);
+            } else {
+                runtime.BindTextureBuffer(buffer, offset, size, format);
+            }
         } else {
             runtime.BindTextureBuffer(buffer, offset, size, format);
         }
@@ -1078,7 +1092,6 @@ void BufferCache<P>::BindHostComputeStorageBuffers() {
 
 template <class P>
 void BufferCache<P>::BindHostComputeTextureBuffers() {
-    u32 binding_index = 0;
     ForEachEnabledBit(enabled_compute_texture_buffers, [&](u32 index) {
         const TextureBufferBinding& binding = compute_texture_buffers[index];
         Buffer& buffer = slot_buffers[binding.buffer_id];
@@ -1087,9 +1100,12 @@ void BufferCache<P>::BindHostComputeTextureBuffers() {
 
         const u32 offset = buffer.Offset(binding.cpu_addr);
         const PixelFormat format = binding.format;
-        if constexpr (NEEDS_BIND_TEXTURE_BUFFER_INDEX) {
-            runtime.BindTextureBuffer(binding_index, buffer, offset, size, format);
-            ++binding_index;
+        if constexpr (SEPARATE_IMAGE_BUFFERS_BINDINGS) {
+            if (((image_compute_texture_buffers >> index) & 1) != 0) {
+                runtime.BindImageBuffer(buffer, offset, size, format);
+            } else {
+                runtime.BindTextureBuffer(buffer, offset, size, format);
+            }
         } else {
             runtime.BindTextureBuffer(buffer, offset, size, format);
         }
@@ -1278,11 +1294,10 @@ void BufferCache<P>::UpdateComputeStorageBuffers() {
     ForEachEnabledBit(enabled_compute_storage_buffers, [&](u32 index) {
         // Resolve buffer
         Binding& binding = compute_storage_buffers[index];
-        const BufferId buffer_id = FindBuffer(binding.cpu_addr, binding.size);
-        binding.buffer_id = buffer_id;
+        binding.buffer_id = FindBuffer(binding.cpu_addr, binding.size);
         // Mark as written if needed
         if (((written_compute_storage_buffers >> index) & 1) != 0) {
-            MarkWrittenBuffer(buffer_id, binding.cpu_addr, binding.size);
+            MarkWrittenBuffer(binding.buffer_id, binding.cpu_addr, binding.size);
         }
     });
 }

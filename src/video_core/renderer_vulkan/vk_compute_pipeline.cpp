@@ -18,6 +18,9 @@
 
 namespace Vulkan {
 
+using Shader::ImageBufferDescriptor;
+using Tegra::Texture::TexturePair;
+
 ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descriptor_pool,
                                  VKUpdateDescriptorQueue& update_descriptor_queue_,
                                  Common::ThreadWorker* thread_worker, const Shader::Info& info_,
@@ -106,25 +109,25 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
                                              secondary_offset};
                 const u32 lhs_raw{gpu_memory.Read<u32>(addr)};
                 const u32 rhs_raw{gpu_memory.Read<u32>(separate_addr)};
-                return TextureHandle{lhs_raw | rhs_raw, via_header_index};
+                return TexturePair(lhs_raw | rhs_raw, via_header_index);
             }
         }
-        return TextureHandle{gpu_memory.Read<u32>(addr), via_header_index};
+        return TexturePair(gpu_memory.Read<u32>(addr), via_header_index);
     }};
     const auto add_image{[&](const auto& desc) {
         for (u32 index = 0; index < desc.count; ++index) {
-            const TextureHandle handle{read_handle(desc, index)};
-            image_view_indices.push_back(handle.image);
+            const auto handle{read_handle(desc, index)};
+            image_view_indices.push_back(handle.first);
         }
     }};
     std::ranges::for_each(info.texture_buffer_descriptors, add_image);
     std::ranges::for_each(info.image_buffer_descriptors, add_image);
     for (const auto& desc : info.texture_descriptors) {
         for (u32 index = 0; index < desc.count; ++index) {
-            const TextureHandle handle{read_handle(desc, index)};
-            image_view_indices.push_back(handle.image);
+            const auto handle{read_handle(desc, index)};
+            image_view_indices.push_back(handle.first);
 
-            Sampler* const sampler = texture_cache.GetComputeSampler(handle.sampler);
+            Sampler* const sampler = texture_cache.GetComputeSampler(handle.second);
             samplers.push_back(sampler->Handle());
         }
     }
@@ -137,15 +140,16 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
     ImageId* texture_buffer_ids{image_view_ids.data()};
     size_t index{};
     const auto add_buffer{[&](const auto& desc) {
+        constexpr bool is_image = std::is_same_v<decltype(desc), const ImageBufferDescriptor&>;
         for (u32 i = 0; i < desc.count; ++i) {
             bool is_written{false};
-            if constexpr (std::is_same_v<decltype(desc), const Shader::ImageBufferDescriptor&>) {
+            if constexpr (is_image) {
                 is_written = desc.is_written;
             }
             ImageView& image_view = texture_cache.GetImageView(*texture_buffer_ids);
             buffer_cache.BindComputeTextureBuffer(index, image_view.GpuAddr(),
                                                   image_view.BufferSize(), image_view.format,
-                                                  is_written);
+                                                  is_written, is_image);
             ++texture_buffer_ids;
             ++index;
         }

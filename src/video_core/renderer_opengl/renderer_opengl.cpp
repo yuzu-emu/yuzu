@@ -130,7 +130,6 @@ RendererOpenGL::RendererOpenGL(Core::TelemetrySession& telemetry_session_,
                                std::unique_ptr<Core::Frontend::GraphicsContext> context_)
     : RendererBase{emu_window_, std::move(context_)}, telemetry_session{telemetry_session_},
       emu_window{emu_window_}, cpu_memory{cpu_memory_}, gpu{gpu_}, state_tracker{gpu},
-      program_manager{device},
       rasterizer(emu_window, gpu, cpu_memory, device, screen_info, program_manager, state_tracker) {
     if (Settings::values.renderer_debug && GLAD_GL_KHR_debug) {
         glEnable(GL_DEBUG_OUTPUT);
@@ -236,12 +235,7 @@ void RendererOpenGL::InitOpenGLObjects() {
     OGLShader fragment_shader;
     fragment_shader.Create(HostShaders::OPENGL_PRESENT_FRAG, GL_FRAGMENT_SHADER);
 
-    vertex_program.Create(true, false, vertex_shader.handle);
-    fragment_program.Create(true, false, fragment_shader.handle);
-
-    pipeline.Create();
-    glUseProgramStages(pipeline.handle, GL_VERTEX_SHADER_BIT, vertex_program.handle);
-    glUseProgramStages(pipeline.handle, GL_FRAGMENT_SHADER_BIT, fragment_program.handle);
+    present_program.Create(false, false, vertex_shader.handle, fragment_shader.handle);
 
     // Generate presentation sampler
     present_sampler.Create();
@@ -338,12 +332,11 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
                      Settings::values.bg_green.GetValue() / 255.0f,
                      Settings::values.bg_blue.GetValue() / 255.0f, 1.0f);
     }
-
     // Set projection matrix
     const std::array ortho_matrix =
         MakeOrthographicMatrix(static_cast<float>(layout.width), static_cast<float>(layout.height));
-    glProgramUniformMatrix3x2fv(vertex_program.handle, ModelViewMatrixLocation, 1, GL_FALSE,
-                                std::data(ortho_matrix));
+    program_manager.BindProgram(present_program.handle);
+    glUniformMatrix3x2fv(ModelViewMatrixLocation, 1, GL_FALSE, ortho_matrix.data());
 
     const auto& texcoords = screen_info.display_texcoords;
     auto left = texcoords.left;
@@ -404,8 +397,6 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     state_tracker.NotifyClipControl();
     state_tracker.NotifyAlphaTest();
 
-    program_manager.BindHostPipeline(pipeline.handle);
-
     state_tracker.ClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
     glEnable(GL_CULL_FACE);
     if (screen_info.display_srgb) {
@@ -453,7 +444,8 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     glClear(GL_COLOR_BUFFER_BIT);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    program_manager.RestoreGuestPipeline();
+    // TODO
+    // program_manager.RestoreGuestPipeline();
 }
 
 void RendererOpenGL::RenderScreenshot() {

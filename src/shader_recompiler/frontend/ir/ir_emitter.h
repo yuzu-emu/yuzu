@@ -95,6 +95,7 @@ public:
     [[nodiscard]] U32 WorkgroupIdY();
     [[nodiscard]] U32 WorkgroupIdZ();
 
+    [[nodiscard]] Value LocalInvocationId();
     [[nodiscard]] U32 LocalInvocationIdX();
     [[nodiscard]] U32 LocalInvocationIdY();
     [[nodiscard]] U32 LocalInvocationIdZ();

@@ -120,6 +120,13 @@ enum class SpecialRegister : u64 {
     case SpecialRegister::SR_INVOCATION_INFO:
         // LOG_WARNING(..., "SR_INVOCATION_INFO is stubbed");
         return ir.Imm32(0x00ff'0000);
+    case SpecialRegister::SR_TID: {
+        const IR::Value tid{ir.LocalInvocationId()};
+        return ir.BitFieldInsert(ir.BitFieldInsert(IR::U32{ir.CompositeExtract(tid, 0)},
+                                                   IR::U32{ir.CompositeExtract(tid, 1)},
+                                                   ir.Imm32(16), ir.Imm32(8)),
+                                 IR::U32{ir.CompositeExtract(tid, 2)}, ir.Imm32(26), ir.Imm32(6));
+    }
     case SpecialRegister::SR_TID_X:
         return ir.LocalInvocationIdX();
     case SpecialRegister::SR_TID_Y:

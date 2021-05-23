@@ -19,23 +19,6 @@
 
 namespace Vulkan {
 
-struct TextureHandle {
-    explicit TextureHandle(u32 data, bool via_header_index) {
-        [[likely]] if (via_header_index) {
-            image = data;
-            sampler = data;
-        }
-        else {
-            const Tegra::Texture::TextureHandle handle{data};
-            image = handle.tic_id;
-            sampler = via_header_index ? image : handle.tsc_id.Value();
-        }
-    }
-
-    u32 image;
-    u32 sampler;
-};
-
 class DescriptorLayoutBuilder {
 public:
     DescriptorLayoutBuilder(const vk::Device& device_) : device{&device_} {}
