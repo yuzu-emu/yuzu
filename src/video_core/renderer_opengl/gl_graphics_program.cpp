@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
 #include <cstring>
 
 #include "common/cityhash.h"
@@ -14,11 +15,23 @@
 namespace OpenGL {
 namespace {
 using Shader::ImageBufferDescriptor;
+using Shader::ImageDescriptor;
+using Shader::TextureBufferDescriptor;
+using Shader::TextureDescriptor;
 using Tegra::Texture::TexturePair;
 using VideoCommon::ImageId;
 
 constexpr u32 MAX_TEXTURES = 64;
 constexpr u32 MAX_IMAGES = 8;
+
+template <typename Range>
+u32 AccumulateCount(Range&& range) {
+    u32 num{};
+    for (const auto& desc : range) {
+        num += desc.count;
+    }
+    return num;
+}
 
 /// Translates hardware transform feedback indices
 /// @param location Hardware location
@@ -77,30 +90,25 @@ GraphicsProgram::GraphicsProgram(TextureCache& texture_cache_, BufferCache& buff
     }
     u32 num_textures{};
     u32 num_images{};
-    for (size_t stage = 0; stage < base_uniform_bindings.size() - 1; ++stage) {
+    for (size_t stage = 0; stage < base_uniform_bindings.size(); ++stage) {
         const auto& info{stage_infos[stage]};
-        base_uniform_bindings[stage + 1] = base_uniform_bindings[stage];
-        base_storage_bindings[stage + 1] = base_storage_bindings[stage];
-        for (const auto& desc : info.constant_buffer_descriptors) {
-            base_uniform_bindings[stage + 1] += desc.count;
+        if (stage < 4) {
+            base_uniform_bindings[stage + 1] = base_uniform_bindings[stage];
+            base_storage_bindings[stage + 1] = base_storage_bindings[stage];
+
+            base_uniform_bindings[stage + 1] += AccumulateCount(info.constant_buffer_descriptors);
+            base_storage_bindings[stage + 1] += AccumulateCount(info.storage_buffers_descriptors);
         }
-        for (const auto& desc : info.storage_buffers_descriptors) {
-            base_storage_bindings[stage + 1] += desc.count;
-        }
-        for (const auto& desc : info.texture_buffer_descriptors) {
-            num_texture_buffers[stage] += desc.count;
-            num_textures += desc.count;
-        }
-        for (const auto& desc : info.image_buffer_descriptors) {
-            num_image_buffers[stage] += desc.count;
-            num_images += desc.count;
-        }
-        for (const auto& desc : info.texture_descriptors) {
-            num_textures += desc.count;
-        }
-        for (const auto& desc : info.image_descriptors) {
-            num_images += desc.count;
-        }
+        const u32 num_tex_buffer_bindings{AccumulateCount(info.texture_buffer_descriptors)};
+        num_texture_buffers[stage] += num_tex_buffer_bindings;
+        num_textures += num_tex_buffer_bindings;
+
+        const u32 num_img_buffers_bindings{AccumulateCount(info.image_buffer_descriptors)};
+        num_image_buffers[stage] += num_img_buffers_bindings;
+        num_images += num_img_buffers_bindings;
+
+        num_textures += AccumulateCount(info.texture_descriptors);
+        num_images += AccumulateCount(info.image_descriptors);
     }
     ASSERT(num_textures <= MAX_TEXTURES);
     ASSERT(num_images <= MAX_IMAGES);
@@ -151,8 +159,8 @@ void GraphicsProgram::Configure(bool is_indexed) {
             const u32 index_offset{index << desc.size_shift};
             const u32 offset{desc.cbuf_offset + index_offset};
             const GPUVAddr addr{cbufs[desc.cbuf_index].address + offset};
-            if constexpr (std::is_same_v<decltype(desc), const Shader::TextureDescriptor&> ||
-                          std::is_same_v<decltype(desc), const Shader::TextureBufferDescriptor&>) {
+            if constexpr (std::is_same_v<decltype(desc), const TextureDescriptor&> ||
+                          std::is_same_v<decltype(desc), const TextureBufferDescriptor&>) {
                 if (desc.has_secondary) {
                     ASSERT(cbufs[desc.secondary_cbuf_index].enabled);
                     const u32 second_offset{desc.secondary_cbuf_offset + index_offset};
@@ -296,6 +304,9 @@ void GraphicsProgram::Configure(bool is_indexed) {
 
         texture_binding += num_texture_buffers[stage];
         image_binding += num_image_buffers[stage];
+
+        views_it += num_texture_buffers[stage];
+        views_it += num_image_buffers[stage];
 
         const auto& info{stage_infos[stage]};
         for (const auto& desc : info.texture_descriptors) {
