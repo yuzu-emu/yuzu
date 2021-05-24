@@ -23,7 +23,7 @@ void EmitPhi(EmitContext& ctx, IR::Inst& inst);
 void EmitVoid(EmitContext& ctx);
 void EmitIdentity(EmitContext& ctx, IR::Inst& inst, const IR::Value& value);
 void EmitConditionRef(EmitContext& ctx, IR::Inst& inst, const IR::Value& value);
-void EmitReference(EmitContext&);
+void EmitReference(EmitContext&, const IR::Value& value);
 void EmitPhiMove(EmitContext& ctx, const IR::Value& phi, const IR::Value& value);
 void EmitJoin(EmitContext& ctx);
 void EmitDemoteToHelperInvocation(EmitContext& ctx);
