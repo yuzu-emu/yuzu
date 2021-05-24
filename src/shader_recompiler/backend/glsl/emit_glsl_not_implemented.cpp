@@ -28,11 +28,14 @@ void EmitVoid(EmitContext& ctx) {
 }
 
 void EmitReference(EmitContext&) {
-    NotImplemented();
+    // NotImplemented();
 }
 
 void EmitPhiMove(EmitContext& ctx, const IR::Value& phi, const IR::Value& value) {
-    NotImplemented();
+    if (phi == value) {
+        return;
+    }
+    ctx.Add("{}={};", ctx.reg_alloc.Consume(phi), ctx.reg_alloc.Consume(value));
 }
 
 void EmitBranch(EmitContext& ctx, std::string_view label) {

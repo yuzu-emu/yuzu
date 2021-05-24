@@ -74,6 +74,23 @@ std::string RegAlloc::Define(IR::Inst& inst, Type type) {
     return type_str + Representation(id);
 }
 
+std::string RegAlloc::Define(IR::Inst& inst, IR::Type type) {
+    switch (type) {
+    case IR::Type::U1:
+        return Define(inst, Type::U1);
+    case IR::Type::U32:
+        return Define(inst, Type::U32);
+    case IR::Type::F32:
+        return Define(inst, Type::F32);
+    case IR::Type::U64:
+        return Define(inst, Type::U64);
+    case IR::Type::F64:
+        return Define(inst, Type::F64);
+    default:
+        throw NotImplementedException("IR type {}", type);
+    }
+}
+
 std::string RegAlloc::Consume(const IR::Value& value) {
     return value.IsImmediate() ? MakeImm(value) : Consume(*value.InstRecursive());
 }

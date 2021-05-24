@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <ranges>
 #include <string>
 #include <tuple>
 
@@ -9,6 +10,7 @@
 #include "shader_recompiler/backend/glsl/emit_context.h"
 #include "shader_recompiler/backend/glsl/emit_glsl.h"
 #include "shader_recompiler/backend/glsl/emit_glsl_instructions.h"
+#include "shader_recompiler/frontend/ir/ir_emitter.h"
 #include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/profile.h"
 
@@ -96,6 +98,22 @@ void EmitInst(EmitContext& ctx, IR::Inst* inst) {
     throw LogicError("Invalid opcode {}", inst->GetOpcode());
 }
 
+void Precolor(EmitContext& ctx, const IR::Program& program) {
+    for (IR::Block* const block : program.blocks) {
+        for (IR::Inst& phi : block->Instructions() | std::views::take_while(IR::IsPhi)) {
+            ctx.Add("{};", ctx.reg_alloc.Define(phi, phi.Arg(0).Type()));
+            const size_t num_args{phi.NumArgs()};
+            for (size_t i = 0; i < num_args; ++i) {
+                IR::IREmitter{*phi.PhiBlock(i)}.PhiMove(phi, phi.Arg(i));
+            }
+            // Add reference to the phi node on the phi predecessor to avoid overwritting it
+            for (size_t i = 0; i < num_args; ++i) {
+                IR::IREmitter{*phi.PhiBlock(i)}.Reference(IR::Value{&phi});
+            }
+        }
+    }
+}
+
 void EmitCode(EmitContext& ctx, const IR::Program& program) {
     for (const IR::AbstractSyntaxNode& node : program.syntax_list) {
         switch (node.type) {
@@ -105,37 +123,31 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
             }
             break;
         case IR::AbstractSyntaxNode::Type::If:
-            ctx.Add("if (");
+            ctx.Add("if ({}){{", ctx.reg_alloc.Consume(node.data.if_node.cond));
             break;
         case IR::AbstractSyntaxNode::Type::EndIf:
-            ctx.Add("){{");
-            break;
-        case IR::AbstractSyntaxNode::Type::Loop:
-            ctx.Add("while (");
-            break;
-        case IR::AbstractSyntaxNode::Type::Repeat:
-            if (node.data.repeat.cond.IsImmediate()) {
-                if (node.data.repeat.cond.U1()) {
-                    ctx.Add("ENDREP;");
-                } else {
-                    ctx.Add("BRK;"
-                            "ENDREP;");
-                }
-            }
+            ctx.Add("}}");
             break;
         case IR::AbstractSyntaxNode::Type::Break:
             if (node.data.break_node.cond.IsImmediate()) {
                 if (node.data.break_node.cond.U1()) {
                     ctx.Add("break;");
                 }
+            } else {
+                // TODO: implement this
+                ctx.Add("MOV.S.CC RC,{};"
+                        "BRK (NE.x);",
+                        0);
             }
             break;
         case IR::AbstractSyntaxNode::Type::Return:
         case IR::AbstractSyntaxNode::Type::Unreachable:
-            ctx.Add("return;");
+            ctx.Add("return;\n}}");
             break;
+        case IR::AbstractSyntaxNode::Type::Loop:
+        case IR::AbstractSyntaxNode::Type::Repeat:
         default:
-            ctx.Add("UNAHNDLED {}", node.type);
+            throw NotImplementedException("{}", node.type);
             break;
         }
     }
@@ -146,8 +158,8 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
 std::string EmitGLSL(const Profile& profile, const RuntimeInfo&, IR::Program& program,
                      Bindings& bindings) {
     EmitContext ctx{program, bindings, profile};
+    Precolor(ctx, program);
     EmitCode(ctx, program);
-    ctx.code += "}";
     return ctx.code;
 }
 

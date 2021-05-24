@@ -12,6 +12,7 @@
 namespace Shader::IR {
 class Inst;
 class Value;
+enum class Type;
 } // namespace Shader::IR
 
 namespace Shader::Backend::GLSL {
@@ -50,6 +51,7 @@ class RegAlloc {
 public:
     std::string Define(IR::Inst& inst);
     std::string Define(IR::Inst& inst, Type type);
+    std::string Define(IR::Inst& inst, IR::Type type);
 
     std::string Consume(const IR::Value& value);
 
