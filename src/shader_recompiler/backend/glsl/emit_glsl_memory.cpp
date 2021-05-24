@@ -32,9 +32,9 @@ void EmitLoadStorageS16([[maybe_unused]] EmitContext& ctx,
     throw NotImplementedException("GLSL Instrucion");
 }
 
-void EmitLoadStorage32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] const IR::Value& binding,
-                       [[maybe_unused]] const IR::Value& offset) {
-    throw NotImplementedException("GLSL Instrucion");
+void EmitLoadStorage32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                       const IR::Value& offset) {
+    ctx.AddU32("{}=ssbo{}_u32[{}];", inst, binding.U32(), offset.U32());
 }
 
 void EmitLoadStorage64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] const IR::Value& binding,
@@ -83,7 +83,7 @@ void EmitWriteStorage32(EmitContext& ctx, const IR::Value& binding, const IR::Va
 
 void EmitWriteStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
                         std::string_view value) {
-    ctx.Add("ssbo{}_u64[{}]={};", binding.U32(), offset.U32(), value);
+    ctx.Add("ssbo{}_u32x2[{}]={};", binding.U32(), offset.U32(), value);
 }
 
 void EmitWriteStorage128([[maybe_unused]] EmitContext& ctx,

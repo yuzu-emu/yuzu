@@ -48,7 +48,8 @@ static_assert(sizeof(Id) == sizeof(u32));
 
 class RegAlloc {
 public:
-    std::string Define(IR::Inst& inst, Type type = Type::Void);
+    std::string Define(IR::Inst& inst);
+    std::string Define(IR::Inst& inst, Type type);
 
     std::string Consume(const IR::Value& value);
 

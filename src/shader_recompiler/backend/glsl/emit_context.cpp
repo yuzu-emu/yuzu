@@ -19,14 +19,25 @@ EmitContext::EmitContext(IR::Program& program, [[maybe_unused]] Bindings& bindin
                               program.workgroup_size[2]);
     }
     code += header;
+
     DefineConstantBuffers();
     DefineStorageBuffers();
+    DefineHelperFunctions();
     code += "void main(){\n";
 }
 
 void EmitContext::SetupExtensions(std::string& header) {
     if (info.uses_int64) {
         header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
+    }
+    if (info.uses_int64_bit_atomics) {
+        header += "#extension GL_NV_shader_atomic_int64 : enable\n";
+    }
+    if (info.uses_atomic_f32_add) {
+        header += "#extension GL_NV_shader_atomic_float : enable\n";
+    }
+    if (info.uses_atomic_f16x2_add || info.uses_atomic_f16x2_min || info.uses_atomic_f16x2_max) {
+        header += "#extension NV_shader_atomic_fp16_vector : enable\n";
     }
 }
 
@@ -48,17 +59,38 @@ void EmitContext::DefineStorageBuffers() {
     }
     u32 binding{};
     for (const auto& desc : info.storage_buffers_descriptors) {
-        if (True(info.used_storage_buffer_types & IR::Type::U32) ||
-            True(info.used_storage_buffer_types & IR::Type::F32)) {
+        if (info.uses_s32_atomics) {
+            Add("layout(std430,binding={}) buffer ssbo_{}_s32{{int ssbo{}_s32[];}};", binding,
+                binding, desc.cbuf_index, desc.count);
+        }
+        if (True(info.used_storage_buffer_types & IR::Type::U32)) {
             Add("layout(std430,binding={}) buffer ssbo_{}_u32{{uint ssbo{}_u32[];}};", binding,
                 binding, desc.cbuf_index, desc.count);
         }
-        if (True(info.used_storage_buffer_types & IR::Type::U32x2) ||
-            True(info.used_storage_buffer_types & IR::Type::F32x2)) {
-            Add("layout(std430,binding={}) buffer ssbo_{}_u64{{uvec2 ssbo{}_u64[];}};", binding,
+        if (True(info.used_storage_buffer_types & IR::Type::F32)) {
+            Add("layout(std430,binding={}) buffer ssbo_{}_f32{{float ssbo{}_f32[];}};", binding,
+                binding, desc.cbuf_index, desc.count);
+        }
+        if (True(info.used_storage_buffer_types & IR::Type::U32x2)) {
+            Add("layout(std430,binding={}) buffer ssbo_{}_u32x2{{uvec2 ssbo{}_u32x2[];}};", binding,
+                binding, desc.cbuf_index, desc.count);
+        }
+        if (True(info.used_storage_buffer_types & IR::Type::U64) ||
+            True(info.used_storage_buffer_types & IR::Type::F64)) {
+            Add("layout(std430,binding={}) buffer ssbo_{}_u64{{uint64_t ssbo{}_u64[];}};", binding,
                 binding, desc.cbuf_index, desc.count);
         }
         ++binding;
+    }
+}
+
+void EmitContext::DefineHelperFunctions() {
+    if (info.uses_global_increment) {
+        code += "uint CasIncrement(uint op_a,uint op_b){return(op_a>=op_b)?0u:(op_a+1u);}\n";
+    }
+    if (info.uses_global_decrement) {
+        code +=
+            "uint CasDecrement(uint op_a,uint op_b){return(op_a==0||op_a>op_b)?op_b:(op_a-1u);}\n";
     }
 }
 

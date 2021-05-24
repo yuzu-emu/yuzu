@@ -687,9 +687,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::LoadStorage32:
     case IR::Opcode::WriteStorage32:
     case IR::Opcode::StorageAtomicIAdd32:
-    case IR::Opcode::StorageAtomicSMin32:
     case IR::Opcode::StorageAtomicUMin32:
-    case IR::Opcode::StorageAtomicSMax32:
     case IR::Opcode::StorageAtomicUMax32:
     case IR::Opcode::StorageAtomicAnd32:
     case IR::Opcode::StorageAtomicOr32:
@@ -713,6 +711,13 @@ void VisitUsages(Info& info, IR::Inst& inst) {
         break;
     case IR::Opcode::SharedAtomicExchange64:
         info.uses_int64_bit_atomics = true;
+        break;
+    case IR::Opcode::GlobalAtomicSMin32:
+    case IR::Opcode::GlobalAtomicSMax32:
+    case IR::Opcode::StorageAtomicSMin32:
+    case IR::Opcode::StorageAtomicSMax32:
+        info.used_storage_buffer_types |= IR::Type::U32;
+        info.uses_s32_atomics = true;
         break;
     case IR::Opcode::GlobalAtomicInc32:
     case IR::Opcode::StorageAtomicInc32:
