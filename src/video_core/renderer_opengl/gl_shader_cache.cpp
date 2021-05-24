@@ -159,8 +159,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsProgramKey& key,
     Shader::RuntimeInfo info;
     switch (program.stage) {
     case Shader::Stage::TessellationEval:
-        // We have to flip tessellation clockwise for some reason...
-        info.tess_clockwise = key.tessellation_clockwise == 0;
+        info.tess_clockwise = key.tessellation_clockwise != 0;
         info.tess_primitive = [&key] {
             switch (key.tessellation_primitive) {
             case Maxwell::TessellationPrimitive::Isolines:
