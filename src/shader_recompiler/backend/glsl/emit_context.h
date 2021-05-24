@@ -31,13 +31,6 @@ class EmitContext {
 public:
     explicit EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_);
 
-    // template <typename... Args>
-    // void Add(const char* format_str, IR::Inst& inst, Args&&... args) {
-    //     code += fmt::format(format_str, reg_alloc.Define(inst), std::forward<Args>(args)...);
-    //     // TODO: Remove this
-    //     code += '\n';
-    // }
-
     template <Type type, typename... Args>
     void Add(const char* format_str, IR::Inst& inst, Args&&... args) {
         code += fmt::format(format_str, reg_alloc.Define(inst, type), std::forward<Args>(args)...);
@@ -106,6 +99,7 @@ private:
     void SetupExtensions(std::string& header);
     void DefineConstantBuffers();
     void DefineStorageBuffers();
+    void DefineHelperFunctions();
 };
 
 } // namespace Shader::Backend::GLSL

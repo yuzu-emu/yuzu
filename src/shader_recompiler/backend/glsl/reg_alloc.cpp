@@ -61,6 +61,12 @@ std::string MakeImm(const IR::Value& value) {
 }
 } // Anonymous namespace
 
+std::string RegAlloc::Define(IR::Inst& inst) {
+    const Id id{Alloc()};
+    inst.SetDefinition<Id>(id);
+    return Representation(id);
+}
+
 std::string RegAlloc::Define(IR::Inst& inst, Type type) {
     const Id id{Alloc()};
     const auto type_str{GetType(type, id.index)};
