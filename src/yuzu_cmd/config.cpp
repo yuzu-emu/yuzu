@@ -402,6 +402,9 @@ void Config::ReadValues() {
     }
 
     Settings::values.device_name = sdl2_config->GetString("System", "device_name", "Yuzu");
+    if (Settings::values.device_name.length() > 128) {
+        Settings::values.device_name = Settings::values.device_name.substr(0, 127);
+    }
 
     const auto custom_rtc_enabled = sdl2_config->GetBoolean("System", "custom_rtc_enabled", false);
     if (custom_rtc_enabled) {
