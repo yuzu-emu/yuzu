@@ -41,6 +41,7 @@ void LogSettings() {
     LOG_INFO(Config, "yuzu Configuration:");
     log_setting("Controls_UseDockedMode", values.use_docked_mode.GetValue());
     log_setting("System_RngSeed", values.rng_seed.GetValue().value_or(0));
+    log_setting("System_DeviceName", values.device_name);
     log_setting("System_CurrentUser", values.current_user);
     log_setting("System_LanguageIndex", values.language_index.GetValue());
     log_setting("System_RegionIndex", values.region_index.GetValue());

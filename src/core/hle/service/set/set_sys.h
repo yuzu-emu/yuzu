@@ -28,6 +28,7 @@ private:
     void GetFirmwareVersion2(Kernel::HLERequestContext& ctx);
     void GetColorSetId(Kernel::HLERequestContext& ctx);
     void SetColorSetId(Kernel::HLERequestContext& ctx);
+    void GetDeviceNickName(Kernel::HLERequestContext& ctx);
 
     ColorSet color_set = ColorSet::BasicWhite;
 };

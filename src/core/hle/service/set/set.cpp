@@ -189,6 +189,13 @@ void SET::GetKeyCodeMap2(Kernel::HLERequestContext& ctx) {
     GetKeyCodeMapImpl(ctx);
 }
 
+void SET::GetDeviceNickName(Kernel::HLERequestContext& ctx) {
+    LOG_DEBUG(Service_SET, "called");
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+    ctx.WriteBuffer(Settings::values.device_name);
+}
+
 SET::SET(Core::System& system_) : ServiceFramework{system_, "set"} {
     // clang-format off
     static const FunctionInfo functions[] = {
@@ -203,7 +210,7 @@ SET::SET(Core::System& system_) : ServiceFramework{system_, "set"} {
         {8, &SET::GetQuestFlag, "GetQuestFlag"},
         {9, &SET::GetKeyCodeMap2, "GetKeyCodeMap2"},
         {10, nullptr, "GetFirmwareVersionForDebug"},
-        {11, nullptr, "GetDeviceNickName"},
+        {11, &SET::GetDeviceNickName, "GetDeviceNickName"},
     };
     // clang-format on
 

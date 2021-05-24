@@ -162,6 +162,7 @@ struct Values {
 
     // System
     Setting<std::optional<u32>> rng_seed;
+    std::string device_name;
     // Measured in seconds since epoch
     std::optional<std::chrono::seconds> custom_rtc;
     // Set on game boot, reset on stop. Seconds difference between current time and `custom_rtc`

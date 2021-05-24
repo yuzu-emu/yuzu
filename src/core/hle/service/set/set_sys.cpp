@@ -4,6 +4,7 @@
 
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "common/settings.h"
 #include "core/file_sys/errors.h"
 #include "core/file_sys/system_archive/system_version.h"
 #include "core/hle/ipc_helpers.h"
@@ -103,6 +104,13 @@ void SET_SYS::SetColorSetId(Kernel::HLERequestContext& ctx) {
     rb.Push(ResultSuccess);
 }
 
+void SET_SYS::GetDeviceNickName(Kernel::HLERequestContext& ctx) {
+    LOG_DEBUG(Service_SET, "called");
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+    ctx.WriteBuffer(Settings::values.device_name);
+}
+
 SET_SYS::SET_SYS(Core::System& system_) : ServiceFramework{system_, "set:sys"} {
     // clang-format off
     static const FunctionInfo functions[] = {
@@ -180,7 +188,7 @@ SET_SYS::SET_SYS(Core::System& system_) : ServiceFramework{system_, "set:sys"} {
         {74, nullptr, "SetWirelessLanEnableFlag"},
         {75, nullptr, "GetInitialLaunchSettings"},
         {76, nullptr, "SetInitialLaunchSettings"},
-        {77, nullptr, "GetDeviceNickName"},
+        {77, &SET_SYS::GetDeviceNickName, "GetDeviceNickName"},
         {78, nullptr, "SetDeviceNickName"},
         {79, nullptr, "GetProductModel"},
         {80, nullptr, "GetLdnChannel"},
