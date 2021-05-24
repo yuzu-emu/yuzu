@@ -17,18 +17,26 @@ namespace Shader::Backend::GLASM {
 
 #define NotImplemented() throw NotImplementedException("GLASM instruction {}", __LINE__)
 
-void EmitPhi(EmitContext&, IR::Inst&) {}
+void EmitPhi(EmitContext& ctx, IR::Inst& inst) {
+    const size_t num_args{inst.NumArgs()};
+    for (size_t i = 0; i < num_args; ++i) {
+        ctx.reg_alloc.Consume(inst.Arg(i));
+    }
+}
 
 void EmitVoid(EmitContext&) {}
 
-void EmitReference(EmitContext&) {}
+void EmitReference(EmitContext& ctx, const IR::Value& value) {
+    ctx.reg_alloc.Consume(value);
+}
 
 void EmitPhiMove(EmitContext& ctx, const IR::Value& phi, const IR::Value& value) {
+    const Register phi_reg{ctx.reg_alloc.Consume(phi)};
+    const Value eval_value{ctx.reg_alloc.Consume(value)};
+
     if (phi == value) {
         return;
     }
-    const Register phi_reg{ctx.reg_alloc.Consume(phi)};
-    const Value eval_value{ctx.reg_alloc.Consume(value)};
     switch (phi.Inst()->Flags<IR::Type>()) {
     case IR::Type::U1:
     case IR::Type::U32:

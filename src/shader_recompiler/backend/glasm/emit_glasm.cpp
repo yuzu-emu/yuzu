@@ -178,6 +178,10 @@ void EmitInst(EmitContext& ctx, IR::Inst* inst) {
     throw LogicError("Invalid opcode {}", inst->GetOpcode());
 }
 
+bool IsReference(IR::Inst& inst) {
+    return inst.GetOpcode() == IR::Opcode::Reference;
+}
+
 void Precolor(EmitContext& ctx, const IR::Program& program) {
     for (IR::Block* const block : program.blocks) {
         for (IR::Inst& phi : block->Instructions() | std::views::take_while(IR::IsPhi)) {
@@ -194,11 +198,13 @@ void Precolor(EmitContext& ctx, const IR::Program& program) {
             default:
                 throw NotImplementedException("Phi node type {}", phi.Type());
             }
+            // Insert phi moves before references to avoid overwritting them
             const size_t num_args{phi.NumArgs()};
             for (size_t i = 0; i < num_args; ++i) {
-                IR::IREmitter{*phi.PhiBlock(i)}.PhiMove(phi, phi.Arg(i));
+                IR::Block& phi_block{*phi.PhiBlock(i)};
+                auto it{std::find_if_not(phi_block.rbegin(), phi_block.rend(), IsReference).base()};
+                IR::IREmitter{phi_block, it}.PhiMove(phi, phi.Arg(i));
             }
-            // Add reference to the phi node on the phi predecessor to avoid overwritting it
             for (size_t i = 0; i < num_args; ++i) {
                 IR::IREmitter{*phi.PhiBlock(i)}.Reference(IR::Value{&phi});
             }
@@ -237,7 +243,7 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
                 }
             } else {
                 ctx.Add("MOV.S.CC RC,{};"
-                        "BRK (EQ.x);"
+                        "BRK(EQ.x);"
                         "ENDREP;",
                         eval(node.data.repeat.cond));
             }
