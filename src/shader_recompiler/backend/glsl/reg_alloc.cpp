@@ -25,6 +25,18 @@ std::string Representation(Id id) {
 }
 
 std::string FormatFloat(std::string_view value, IR::Type type) {
+    // TODO: Confirm FP64 nan/inf
+    if (type == IR::Type::F32) {
+        if (value == "nan") {
+            return "uintBitsToFloat(0x7fc00000)";
+        }
+        if (value == "inf") {
+            return "uintBitsToFloat(0x7f800000)";
+        }
+        if (value == "-inf") {
+            return "uintBitsToFloat(0xff800000)";
+        }
+    }
     const bool needs_dot = value.find_first_of('.') == std::string_view::npos;
     const bool needs_suffix = !value.ends_with('f');
     const auto suffix = type == IR::Type::F32 ? "f" : "lf";

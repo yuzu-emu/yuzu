@@ -286,71 +286,60 @@ void EmitFPCeil64(EmitContext& ctx, IR::Inst& inst, std::string_view value);
 void EmitFPTrunc16(EmitContext& ctx, IR::Inst& inst, std::string_view value);
 void EmitFPTrunc32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
 void EmitFPTrunc64(EmitContext& ctx, IR::Inst& inst, std::string_view value);
-void EmitFPOrdEqual16(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs);
+void EmitFPOrdEqual16(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
 void EmitFPOrdEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs);
 void EmitFPOrdEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs);
-void EmitFPUnordEqual16(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
-                        std::string_view rhs);
+void EmitFPUnordEqual16(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
 void EmitFPUnordEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                         std::string_view rhs);
 void EmitFPUnordEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                         std::string_view rhs);
-void EmitFPOrdNotEqual16(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
-                         std::string_view rhs);
+void EmitFPOrdNotEqual16(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
 void EmitFPOrdNotEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                          std::string_view rhs);
 void EmitFPOrdNotEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                          std::string_view rhs);
-void EmitFPUnordNotEqual16(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
-                           std::string_view rhs);
+void EmitFPUnordNotEqual16(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
 void EmitFPUnordNotEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                            std::string_view rhs);
 void EmitFPUnordNotEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                            std::string_view rhs);
-void EmitFPOrdLessThan16(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
-                         std::string_view rhs);
+void EmitFPOrdLessThan16(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
 void EmitFPOrdLessThan32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                          std::string_view rhs);
 void EmitFPOrdLessThan64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                          std::string_view rhs);
-void EmitFPUnordLessThan16(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
-                           std::string_view rhs);
+void EmitFPUnordLessThan16(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
 void EmitFPUnordLessThan32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                            std::string_view rhs);
 void EmitFPUnordLessThan64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                            std::string_view rhs);
-void EmitFPOrdGreaterThan16(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
-                            std::string_view rhs);
+void EmitFPOrdGreaterThan16(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
 void EmitFPOrdGreaterThan32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                             std::string_view rhs);
 void EmitFPOrdGreaterThan64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                             std::string_view rhs);
-void EmitFPUnordGreaterThan16(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
-                              std::string_view rhs);
+void EmitFPUnordGreaterThan16(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
 void EmitFPUnordGreaterThan32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                               std::string_view rhs);
 void EmitFPUnordGreaterThan64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                               std::string_view rhs);
-void EmitFPOrdLessThanEqual16(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
-                              std::string_view rhs);
+void EmitFPOrdLessThanEqual16(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
 void EmitFPOrdLessThanEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                               std::string_view rhs);
 void EmitFPOrdLessThanEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                               std::string_view rhs);
-void EmitFPUnordLessThanEqual16(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
-                                std::string_view rhs);
+void EmitFPUnordLessThanEqual16(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
 void EmitFPUnordLessThanEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                                 std::string_view rhs);
 void EmitFPUnordLessThanEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                                 std::string_view rhs);
-void EmitFPOrdGreaterThanEqual16(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
-                                 std::string_view rhs);
+void EmitFPOrdGreaterThanEqual16(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
 void EmitFPOrdGreaterThanEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                                  std::string_view rhs);
 void EmitFPOrdGreaterThanEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                                  std::string_view rhs);
-void EmitFPUnordGreaterThanEqual16(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
-                                   std::string_view rhs);
+void EmitFPUnordGreaterThanEqual16(EmitContext& ctx, std::string_view lhs, std::string_view rhs);
 void EmitFPUnordGreaterThanEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                                    std::string_view rhs);
 void EmitFPUnordGreaterThanEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
