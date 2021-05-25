@@ -5,6 +5,8 @@
 #pragma once
 
 #include <array>
+#include <filesystem>
+#include <stop_token>
 #include <unordered_map>
 
 #include <glad/glad.h>
@@ -21,10 +23,6 @@
 
 namespace Tegra {
 class MemoryManager;
-}
-
-namespace Core::Frontend {
-class EmuWindow;
 }
 
 namespace OpenGL {
@@ -54,6 +52,9 @@ public:
                          TextureCache& texture_cache_, BufferCache& buffer_cache_,
                          ProgramManager& program_manager_, StateTracker& state_tracker_);
     ~ShaderCache();
+
+    void LoadDiskResources(u64 title_id, std::stop_token stop_loading,
+                           const VideoCore::DiskResourceLoadCallback& callback);
 
     [[nodiscard]] GraphicsPipeline* CurrentGraphicsPipeline();
 
@@ -88,6 +89,7 @@ private:
     std::unordered_map<ComputePipelineKey, std::unique_ptr<ComputePipeline>> compute_cache;
 
     Shader::Profile profile;
+    std::filesystem::path shader_cache_filename;
 };
 
 } // namespace OpenGL

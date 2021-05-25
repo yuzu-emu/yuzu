@@ -3,17 +3,19 @@
 // Refer to the license.txt file included.
 
 #include <atomic>
+#include <fstream>
 #include <functional>
 #include <mutex>
-#include <optional>
 #include <string>
 #include <thread>
-#include <unordered_set>
 
 #include "common/alignment.h"
 #include "common/assert.h"
+#include "common/fs/fs.h"
+#include "common/fs/path_util.h"
 #include "common/logging/log.h"
 #include "common/scope_exit.h"
+#include "common/thread_worker.h"
 #include "core/core.h"
 #include "core/frontend/emu_window.h"
 #include "shader_recompiler/backend/glasm/emit_glasm.h"
@@ -40,6 +42,8 @@ using Shader::Backend::GLASM::EmitGLASM;
 using Shader::Backend::SPIRV::EmitSPIRV;
 using Shader::Maxwell::TranslateProgram;
 using VideoCommon::ComputeEnvironment;
+using VideoCommon::FileEnvironment;
+using VideoCommon::GenericEnvironment;
 using VideoCommon::GraphicsEnvironment;
 
 template <typename Container>
@@ -154,8 +158,6 @@ GLenum AssemblyStage(size_t stage_index) {
 
 Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
                                     const Shader::IR::Program& program) {
-    UNIMPLEMENTED_IF_MSG(key.xfb_enabled != 0, "Transform feedbacks");
-
     Shader::RuntimeInfo info;
     switch (program.stage) {
     case Shader::Stage::TessellationEval:
@@ -282,6 +284,89 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
 
 ShaderCache::~ShaderCache() = default;
 
+void ShaderCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
+                                    const VideoCore::DiskResourceLoadCallback& callback) {
+    if (title_id == 0) {
+        return;
+    }
+    auto shader_dir{Common::FS::GetYuzuPath(Common::FS::YuzuPath::ShaderDir)};
+    auto base_dir{shader_dir / "new_opengl"};
+    auto transferable_dir{base_dir / "transferable"};
+    auto precompiled_dir{base_dir / "precompiled"};
+    if (!Common::FS::CreateDir(shader_dir) || !Common::FS::CreateDir(base_dir) ||
+        !Common::FS::CreateDir(transferable_dir) || !Common::FS::CreateDir(precompiled_dir)) {
+        LOG_ERROR(Common_Filesystem, "Failed to create pipeline cache directories");
+        return;
+    }
+    shader_cache_filename = transferable_dir / fmt::format("{:016x}.bin", title_id);
+
+    struct Context {
+        explicit Context(Core::Frontend::EmuWindow& emu_window)
+            : gl_context{emu_window.CreateSharedContext()}, scoped{*gl_context} {}
+
+        std::unique_ptr<Core::Frontend::GraphicsContext> gl_context;
+        Core::Frontend::GraphicsContext::Scoped scoped;
+        ShaderPools pools;
+    };
+    Common::StatefulThreadWorker<Context> workers(
+        std::max(std::thread::hardware_concurrency(), 2U) - 1, "yuzu:ShaderBuilder",
+        [this] { return Context{emu_window}; });
+
+    struct {
+        std::mutex mutex;
+        size_t total{0};
+        size_t built{0};
+        bool has_loaded{false};
+    } state;
+
+    const auto load_compute{[&](std::ifstream& file, FileEnvironment env) {
+        ComputePipelineKey key;
+        file.read(reinterpret_cast<char*>(&key), sizeof(key));
+        workers.QueueWork(
+            [this, key, env = std::move(env), &state, &callback](Context* ctx) mutable {
+                ctx->pools.ReleaseContents();
+                auto pipeline{CreateComputePipeline(ctx->pools, key, env, false)};
+
+                std::lock_guard lock{state.mutex};
+                compute_cache.emplace(key, std::move(pipeline));
+                ++state.built;
+                if (state.has_loaded) {
+                    callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
+                }
+            });
+        ++state.total;
+    }};
+    const auto load_graphics{[&](std::ifstream& file, std::vector<FileEnvironment> envs) {
+        GraphicsPipelineKey key;
+        file.read(reinterpret_cast<char*>(&key), sizeof(key));
+        workers.QueueWork(
+            [this, key, envs = std::move(envs), &state, &callback](Context* ctx) mutable {
+                boost::container::static_vector<Shader::Environment*, 5> env_ptrs;
+                for (auto& env : envs) {
+                    env_ptrs.push_back(&env);
+                }
+                ctx->pools.ReleaseContents();
+                auto pipeline{CreateGraphicsPipeline(ctx->pools, key, MakeSpan(env_ptrs), false)};
+
+                std::lock_guard lock{state.mutex};
+                graphics_cache.emplace(key, std::move(pipeline));
+                ++state.built;
+                if (state.has_loaded) {
+                    callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
+                }
+            });
+        ++state.total;
+    }};
+    VideoCommon::LoadPipelines(stop_loading, shader_cache_filename, load_compute, load_graphics);
+
+    std::unique_lock lock{state.mutex};
+    callback(VideoCore::LoadCallbackStage::Build, 0, state.total);
+    state.has_loaded = true;
+    lock.unlock();
+
+    workers.WaitForRequests();
+}
+
 GraphicsPipeline* ShaderCache::CurrentGraphicsPipeline() {
     if (!RefreshStages(graphics_key.unique_hashes)) {
         return nullptr;
@@ -332,7 +417,18 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline() {
     GetGraphicsEnvironments(environments, graphics_key.unique_hashes);
 
     main_pools.ReleaseContents();
-    return CreateGraphicsPipeline(main_pools, graphics_key, environments.Span(), true);
+    auto pipeline{CreateGraphicsPipeline(main_pools, graphics_key, environments.Span(), true)};
+    if (shader_cache_filename.empty()) {
+        return pipeline;
+    }
+    boost::container::static_vector<const GenericEnvironment*, Maxwell::MaxShaderProgram> env_ptrs;
+    for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
+        if (graphics_key.unique_hashes[index] != 0) {
+            env_ptrs.push_back(&environments.envs[index]);
+        }
+    }
+    VideoCommon::SerializePipeline(graphics_key, env_ptrs, shader_cache_filename);
+    return pipeline;
 }
 
 std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
@@ -396,7 +492,12 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
     env.SetCachedSize(shader->size_bytes);
 
     main_pools.ReleaseContents();
-    return CreateComputePipeline(main_pools, key, env, true);
+    auto pipeline{CreateComputePipeline(main_pools, key, env, true)};
+    if (!shader_cache_filename.empty()) {
+        VideoCommon::SerializePipeline(key, std::array<const GenericEnvironment*, 1>{&env},
+                                       shader_cache_filename);
+    }
+    return pipeline;
 }
 
 std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(ShaderPools& pools,
