@@ -67,7 +67,11 @@ void EmitIMul32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
 }
 
 void EmitINeg32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value) {
-    ctx.Add("MOV.S {},-{};", inst, value);
+    if (value.type != Type::Register && static_cast<s32>(value.imm_u32) < 0) {
+        ctx.Add("MOV.S {},{};", inst, -static_cast<s32>(value.imm_u32));
+    } else {
+        ctx.Add("MOV.S {},-{};", inst, value);
+    }
 }
 
 void EmitINeg64(EmitContext& ctx, IR::Inst& inst, Register value) {
