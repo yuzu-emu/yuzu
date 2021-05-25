@@ -110,7 +110,8 @@ void EmitLoadStorageU16(EmitContext& ctx, const IR::Value& binding, const IR::Va
 void EmitLoadStorageS16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 void EmitLoadStorage32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                        const IR::Value& offset);
-void EmitLoadStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
+void EmitLoadStorage64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                       const IR::Value& offset);
 void EmitLoadStorage128(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 void EmitWriteStorageU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
                         std::string_view value);

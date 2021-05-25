@@ -59,27 +59,8 @@ void EmitContext::DefineStorageBuffers() {
     }
     u32 binding{};
     for (const auto& desc : info.storage_buffers_descriptors) {
-        if (info.uses_s32_atomics) {
-            Add("layout(std430,binding={}) buffer ssbo_{}_s32{{int ssbo{}_s32[];}};", binding,
-                binding, desc.cbuf_index, desc.count);
-        }
-        if (True(info.used_storage_buffer_types & IR::Type::U32)) {
-            Add("layout(std430,binding={}) buffer ssbo_{}_u32{{uint ssbo{}_u32[];}};", binding,
-                binding, desc.cbuf_index, desc.count);
-        }
-        if (True(info.used_storage_buffer_types & IR::Type::F32)) {
-            Add("layout(std430,binding={}) buffer ssbo_{}_f32{{float ssbo{}_f32[];}};", binding,
-                binding, desc.cbuf_index, desc.count);
-        }
-        if (True(info.used_storage_buffer_types & IR::Type::U32x2)) {
-            Add("layout(std430,binding={}) buffer ssbo_{}_u32x2{{uvec2 ssbo{}_u32x2[];}};", binding,
-                binding, desc.cbuf_index, desc.count);
-        }
-        if (True(info.used_storage_buffer_types & IR::Type::U64) ||
-            True(info.used_storage_buffer_types & IR::Type::F64)) {
-            Add("layout(std430,binding={}) buffer ssbo_{}_u64{{uint64_t ssbo{}_u64[];}};", binding,
-                binding, desc.cbuf_index, desc.count);
-        }
+        Add("layout(std430,binding={}) buffer ssbo_{}{{uint ssbo{}[];}};", binding, binding,
+            desc.cbuf_index, desc.count);
         ++binding;
     }
 }
@@ -92,6 +73,25 @@ void EmitContext::DefineHelperFunctions() {
         code +=
             "uint CasDecrement(uint op_a,uint op_b){return(op_a==0||op_a>op_b)?op_b:(op_a-1u);}\n";
     }
+    if (info.uses_atomic_f32_add) {
+        code += "uint CasFloatAdd(uint op_a,uint op_b){return "
+                "floatBitsToUint(uintBitsToFloat(op_a)+uintBitsToFloat(op_b));}\n";
+    }
+    if (info.uses_atomic_f32x2_add) {
+        code += "uint CasFloatAdd32x2(uint op_a,uint op_b){return "
+                "packHalf2x16(unpackHalf2x16(op_a)+unpackHalf2x16(op_b));}\n";
+    }
+    if (info.uses_atomic_f32x2_min) {
+        code += "uint CasFloatMin32x2(uint op_a,uint op_b){return "
+                "packHalf2x16(min(unpackHalf2x16(op_a),unpackHalf2x16(op_b)));}\n";
+    }
+    if (info.uses_atomic_f32x2_max) {
+        code += "uint CasFloatMax32x2(uint op_a,uint op_b){return "
+                "packHalf2x16(max(unpackHalf2x16(op_a),unpackHalf2x16(op_b)));}\n";
+    }
+    // TODO: Track this usage
+    code += "uint CasMinS32(uint op_a,uint op_b){return uint(min(int(op_a),int(op_b)));}";
+    code += "uint CasMaxS32(uint op_a,uint op_b){return uint(max(int(op_a),int(op_b)));}";
 }
 
 } // namespace Shader::Backend::GLSL
