@@ -62,13 +62,12 @@ void EmitUnpackUint2x32(EmitContext& ctx, IR::Inst& inst, std::string_view value
     ctx.AddU32x2("{}=unpackUint2x32({});", inst, value);
 }
 
-void EmitPackFloat2x16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitPackFloat2x16(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
+    ctx.AddU32("{}=packFloat2x16({});", inst, value);
 }
 
-void EmitUnpackFloat2x16([[maybe_unused]] EmitContext& ctx,
-                         [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitUnpackFloat2x16(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
+    ctx.AddF16x2("{}=unpackFloat2x16({});", inst, value);
 }
 
 void EmitPackHalf2x16(EmitContext& ctx, IR::Inst& inst, std::string_view value) {

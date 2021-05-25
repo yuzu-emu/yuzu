@@ -12,8 +12,7 @@
 
 namespace Shader::Backend::GLSL {
 namespace {
-static constexpr std::string_view cas_loop{R"(
-uint {};
+static constexpr std::string_view cas_loop{R"(uint {};
 for (;;){{
     uint old_value={};
     {}=atomicCompSwap({},old_value,{}({},{}));
@@ -46,6 +45,14 @@ void CasFunctionF32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding
                       const IR::Value& offset, std::string_view value, std::string_view function) {
     const std::string ssbo{fmt::format("ssbo{}[{}]", binding.U32(), offset.U32())};
     const std::string u32_value{fmt::format("packHalf2x16({})", value)};
+    const auto ret{ctx.reg_alloc.Define(inst)};
+    CasFunction(ctx, ret, ssbo, u32_value, function);
+}
+
+void CasFunctionF16x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                      const IR::Value& offset, std::string_view value, std::string_view function) {
+    const std::string ssbo{fmt::format("ssbo{}[{}]", binding.U32(), offset.U32())};
+    const std::string u32_value{fmt::format("packFloat2x16({})", value)};
     const auto ret{ctx.reg_alloc.Define(inst)};
     CasFunction(ctx, ret, ssbo, u32_value, function);
 }
@@ -122,11 +129,8 @@ void EmitStorageAtomicSMin64(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
     // LOG_WARNING(..., "Op falling to non-atomic");
     ctx.AddS64("{}=int64_t(ivec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
                binding.U32(), offset.U32() + 1);
-    ctx.Add(R"(
-for(int i=0;i<2;++i){{
-ssbo{}[{}+i]=uint(min(int(ssbo{}[{}+i]),unpackInt2x32(int64_t({}))[i]));
-}}
-)",
+    ctx.Add("for(int i=0;i<2;++i){{ "
+            "ssbo{}[{}+i]=uint(min(int(ssbo{}[{}+i]),unpackInt2x32(int64_t({}))[i]));}}",
             binding.U32(), offset.U32(), binding.U32(), offset.U32(), value);
 }
 
@@ -135,12 +139,9 @@ void EmitStorageAtomicUMin64(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
     // LOG_WARNING(..., "Op falling to non-atomic");
     ctx.AddU64("{}=uint64_t(uvec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
                binding.U32(), offset.U32() + 1);
-    ctx.Add(R"(
-for(int i=0;i<2;++i){{
-ssbo{}[{}+i]=min(ssbo{}[{}+i],unpackUint2x32(uint64_t({}))[i]);
-}}
-)",
-            binding.U32(), offset.U32(), binding.U32(), offset.U32(), value);
+    ctx.Add(
+        "for(int i=0;i<2;++i){{ ssbo{}[{}+i]=min(ssbo{}[{}+i],unpackUint2x32(uint64_t({}))[i]);}}",
+        binding.U32(), offset.U32(), binding.U32(), offset.U32(), value);
 }
 
 void EmitStorageAtomicSMax64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -148,11 +149,8 @@ void EmitStorageAtomicSMax64(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
     // LOG_WARNING(..., "Op falling to non-atomic");
     ctx.AddS64("{}=int64_t(ivec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
                binding.U32(), offset.U32() + 1);
-    ctx.Add(R"(
-for(int i=0;i<2;++i){{
-ssbo{}[{}+i]=uint(max(int(ssbo{}[{}+i]),unpackInt2x32(int64_t({}))[i]));
-}}
-)",
+    ctx.Add("for(int i=0;i<2;++i){{ "
+            "ssbo{}[{}+i]=uint(max(int(ssbo{}[{}+i]),unpackInt2x32(int64_t({}))[i]));}}",
             binding.U32(), offset.U32(), binding.U32(), offset.U32(), value);
 }
 
@@ -161,12 +159,9 @@ void EmitStorageAtomicUMax64(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
     // LOG_WARNING(..., "Op falling to non-atomic");
     ctx.AddU64("{}=uint64_t(uvec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
                binding.U32(), offset.U32() + 1);
-    ctx.Add(R"(
-for(int i=0;i<2;++i){{
-ssbo{}[{}+i]=max(ssbo{}[{}+i],unpackUint2x32(uint64_t({}))[i]);
-}}
-)",
-            binding.U32(), offset.U32(), binding.U32(), offset.U32(), value);
+    ctx.Add(
+        "for(int i=0;i<2;++i){{ssbo{}[{}+i]=max(ssbo{}[{}+i],unpackUint2x32(uint64_t({}))[i]);}}",
+        binding.U32(), offset.U32(), binding.U32(), offset.U32(), value);
 }
 
 void EmitStorageAtomicAnd64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -202,45 +197,33 @@ void EmitStorageAtomicAddF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
     CasFunctionF32(ctx, inst, binding, offset, value, "CasFloatAdd");
 }
 
-void EmitStorageAtomicAddF16x2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                               [[maybe_unused]] const IR::Value& binding,
-                               [[maybe_unused]] const IR::Value& offset,
-                               [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instrucion");
+void EmitStorageAtomicAddF16x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               const IR::Value& offset, std::string_view value) {
+    CasFunctionF16x2(ctx, inst, binding, offset, value, "CasFloatAdd16x2");
 }
 
-void EmitStorageAtomicAddF32x2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                               [[maybe_unused]] const IR::Value& binding,
-                               [[maybe_unused]] const IR::Value& offset,
-                               [[maybe_unused]] std::string_view value) {
+void EmitStorageAtomicAddF32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               const IR::Value& offset, std::string_view value) {
     CasFunctionF32x2(ctx, inst, binding, offset, value, "CasFloatAdd32x2");
 }
 
-void EmitStorageAtomicMinF16x2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                               [[maybe_unused]] const IR::Value& binding,
-                               [[maybe_unused]] const IR::Value& offset,
-                               [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instrucion");
+void EmitStorageAtomicMinF16x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               const IR::Value& offset, std::string_view value) {
+    CasFunctionF16x2(ctx, inst, binding, offset, value, "CasFloatMin16x2");
 }
 
-void EmitStorageAtomicMinF32x2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                               [[maybe_unused]] const IR::Value& binding,
-                               [[maybe_unused]] const IR::Value& offset,
-                               [[maybe_unused]] std::string_view value) {
+void EmitStorageAtomicMinF32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               const IR::Value& offset, std::string_view value) {
     CasFunctionF32x2(ctx, inst, binding, offset, value, "CasFloatMin32x2");
 }
 
-void EmitStorageAtomicMaxF16x2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                               [[maybe_unused]] const IR::Value& binding,
-                               [[maybe_unused]] const IR::Value& offset,
-                               [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instrucion");
+void EmitStorageAtomicMaxF16x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               const IR::Value& offset, std::string_view value) {
+    CasFunctionF16x2(ctx, inst, binding, offset, value, "CasFloatMax16x2");
 }
 
-void EmitStorageAtomicMaxF32x2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                               [[maybe_unused]] const IR::Value& binding,
-                               [[maybe_unused]] const IR::Value& offset,
-                               [[maybe_unused]] std::string_view value) {
+void EmitStorageAtomicMaxF32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                               const IR::Value& offset, std::string_view value) {
     CasFunctionF32x2(ctx, inst, binding, offset, value, "CasFloatMax32x2");
 }
 

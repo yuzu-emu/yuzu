@@ -224,8 +224,8 @@ void EmitBitCastF32U32(EmitContext& ctx, IR::Inst& inst, std::string_view value)
 void EmitBitCastF64U64(EmitContext& ctx, IR::Inst& inst, std::string_view value);
 void EmitPackUint2x32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
 void EmitUnpackUint2x32(EmitContext& ctx, IR::Inst& inst, std::string_view value);
-void EmitPackFloat2x16(EmitContext& ctx, std::string_view value);
-void EmitUnpackFloat2x16(EmitContext& ctx, std::string_view value);
+void EmitPackFloat2x16(EmitContext& ctx, IR::Inst& inst, std::string_view value);
+void EmitUnpackFloat2x16(EmitContext& ctx, IR::Inst& inst, std::string_view value);
 void EmitPackHalf2x16(EmitContext& ctx, IR::Inst& inst, std::string_view value);
 void EmitUnpackHalf2x16(EmitContext& ctx, IR::Inst& inst, std::string_view value);
 void EmitPackDouble2x32(EmitContext& ctx, IR::Inst& inst, std::string_view value);

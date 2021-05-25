@@ -18,6 +18,7 @@ enum class Type;
 namespace Shader::Backend::GLSL {
 enum class Type : u32 {
     U1,
+    F16x2,
     S32,
     U32,
     F32,

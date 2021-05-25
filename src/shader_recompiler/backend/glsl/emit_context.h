@@ -44,6 +44,11 @@ public:
     }
 
     template <typename... Args>
+    void AddF16x2(const char* format_str, IR::Inst& inst, Args&&... args) {
+        Add<Type::F16x2>(format_str, inst, args...);
+    }
+
+    template <typename... Args>
     void AddU32(const char* format_str, IR::Inst& inst, Args&&... args) {
         Add<Type::U32>(format_str, inst, args...);
     }
