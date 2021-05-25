@@ -51,6 +51,10 @@ void EmitSubgroupGeMask(EmitContext& ctx, IR::Inst& inst) {
 static void Shuffle(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU32 index,
                     const IR::Value& clamp, const IR::Value& segmentation_mask,
                     std::string_view op) {
+    IR::Inst* const in_bounds{inst.GetAssociatedPseudoOperation(IR::Opcode::GetInBoundsFromOp)};
+    if (in_bounds) {
+        in_bounds->Invalidate();
+    }
     std::string mask;
     if (clamp.IsImmediate() && segmentation_mask.IsImmediate()) {
         mask = fmt::to_string(clamp.U32() | (segmentation_mask.U32() << 8));
@@ -61,13 +65,11 @@ static void Shuffle(EmitContext& ctx, IR::Inst& inst, ScalarU32 value, ScalarU32
                 ScalarU32{ctx.reg_alloc.Consume(clamp)});
     }
     const Register value_ret{ctx.reg_alloc.Define(inst)};
-    IR::Inst* const in_bounds{inst.GetAssociatedPseudoOperation(IR::Opcode::GetInBoundsFromOp)};
     if (in_bounds) {
         const Register bounds_ret{ctx.reg_alloc.Define(*in_bounds)};
         ctx.Add("SHF{}.U {},{},{},{};"
                 "MOV.U {}.x,{}.y;",
                 op, bounds_ret, value, index, mask, value_ret, bounds_ret);
-        in_bounds->Invalidate();
     } else {
         ctx.Add("SHF{}.U {},{},{},{};"
                 "MOV.U {}.x,{}.y;",

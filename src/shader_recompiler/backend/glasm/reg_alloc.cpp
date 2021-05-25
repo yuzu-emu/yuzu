@@ -22,11 +22,19 @@ Register RegAlloc::LongDefine(IR::Inst& inst) {
 }
 
 Value RegAlloc::Peek(const IR::Value& value) {
-    return value.IsImmediate() ? MakeImm(value) : PeekInst(*value.InstRecursive());
+    if (value.IsImmediate()) {
+        return MakeImm(value);
+    } else {
+        return PeekInst(*value.Inst());
+    }
 }
 
 Value RegAlloc::Consume(const IR::Value& value) {
-    return value.IsImmediate() ? MakeImm(value) : ConsumeInst(*value.InstRecursive());
+    if (value.IsImmediate()) {
+        return MakeImm(value);
+    } else {
+        return ConsumeInst(*value.Inst());
+    }
 }
 
 void RegAlloc::Unref(IR::Inst& inst) {
@@ -88,7 +96,14 @@ Value RegAlloc::MakeImm(const IR::Value& value) {
 }
 
 Register RegAlloc::Define(IR::Inst& inst, bool is_long) {
-    inst.SetDefinition<Id>(Alloc(is_long));
+    if (inst.HasUses()) {
+        inst.SetDefinition<Id>(Alloc(is_long));
+    } else {
+        Id id{};
+        id.is_long.Assign(is_long ? 1 : 0);
+        id.is_null.Assign(1);
+        inst.SetDefinition<Id>(id);
+    }
     return Register{PeekInst(inst)};
 }
 
@@ -115,10 +130,12 @@ Id RegAlloc::Alloc(bool is_long) {
             num_regs = std::max(num_regs, reg + 1);
             use[reg] = true;
             Id ret{};
-            ret.index.Assign(static_cast<u32>(reg));
+            ret.is_valid.Assign(1);
             ret.is_long.Assign(is_long ? 1 : 0);
             ret.is_spill.Assign(0);
             ret.is_condition_code.Assign(0);
+            ret.is_null.Assign(0);
+            ret.index.Assign(static_cast<u32>(reg));
             return ret;
         }
     }
@@ -126,6 +143,9 @@ Id RegAlloc::Alloc(bool is_long) {
 }
 
 void RegAlloc::Free(Id id) {
+    if (id.is_valid == 0) {
+        throw LogicError("Freeing invalid register");
+    }
     if (id.is_spill != 0) {
         throw NotImplementedException("Free spill");
     }

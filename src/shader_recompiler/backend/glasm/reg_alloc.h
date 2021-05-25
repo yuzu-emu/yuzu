@@ -35,10 +35,12 @@ enum class Type : u32 {
 struct Id {
     union {
         u32 raw;
-        BitField<0, 29, u32> index;
-        BitField<29, 1, u32> is_long;
-        BitField<30, 1, u32> is_spill;
-        BitField<31, 1, u32> is_condition_code;
+        BitField<0, 1, u32> is_valid;
+        BitField<1, 1, u32> is_long;
+        BitField<2, 1, u32> is_spill;
+        BitField<3, 1, u32> is_condition_code;
+        BitField<4, 1, u32> is_null;
+        BitField<5, 27, u32> index;
     };
 
     bool operator==(Id rhs) const noexcept {
@@ -164,12 +166,18 @@ auto FormatTo(FormatContext& ctx, Id id) {
         throw NotImplementedException("Spill emission");
     }
     if constexpr (scalar) {
+        if (id.is_null != 0) {
+            return fmt::format_to(ctx.out(), "{}", id.is_long != 0 ? "DC.x" : "RC.x");
+        }
         if (id.is_long != 0) {
             return fmt::format_to(ctx.out(), "D{}.x", id.index.Value());
         } else {
             return fmt::format_to(ctx.out(), "R{}.x", id.index.Value());
         }
     } else {
+        if (id.is_null != 0) {
+            return fmt::format_to(ctx.out(), "{}", id.is_long != 0 ? "DC" : "RC");
+        }
         if (id.is_long != 0) {
             return fmt::format_to(ctx.out(), "D{}", id.index.Value());
         } else {

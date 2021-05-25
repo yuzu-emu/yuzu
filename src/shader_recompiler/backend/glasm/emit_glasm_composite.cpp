@@ -52,7 +52,9 @@ void CompositeInsert(EmitContext& ctx, IR::Inst& inst, Register composite, Objec
         // The input composite is not aliased with the return value so we have to copy it before
         // hand. But the insert object is not aliased with the return value, so we don't have to
         // worry about that
-        ctx.Add("MOV.{} {},{};MOV.{} {}.{},{};", type, ret, composite, type, ret, swizzle, object);
+        ctx.Add("MOV.{} {},{};"
+                "MOV.{} {}.{},{};",
+                type, ret, composite, type, ret, swizzle, object);
     } else {
         // The return value is alised so we can just insert the object, it doesn't matter if it's
         // aliased

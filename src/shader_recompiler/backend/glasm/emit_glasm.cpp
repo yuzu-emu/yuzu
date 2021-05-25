@@ -203,7 +203,13 @@ void Precolor(EmitContext& ctx, const IR::Program& program) {
             for (size_t i = 0; i < num_args; ++i) {
                 IR::Block& phi_block{*phi.PhiBlock(i)};
                 auto it{std::find_if_not(phi_block.rbegin(), phi_block.rend(), IsReference).base()};
-                IR::IREmitter{phi_block, it}.PhiMove(phi, phi.Arg(i));
+                IR::IREmitter ir{phi_block, it};
+                const IR::Value arg{phi.Arg(i)};
+                if (arg.IsImmediate()) {
+                    ir.PhiMove(phi, arg);
+                } else {
+                    ir.PhiMove(phi, IR::Value{&RegAlloc::AliasInst(*arg.Inst())});
+                }
             }
             for (size_t i = 0; i < num_args; ++i) {
                 IR::IREmitter{*phi.PhiBlock(i)}.Reference(IR::Value{&phi});

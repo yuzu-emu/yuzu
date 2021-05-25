@@ -181,7 +181,6 @@ void StoreSparse(EmitContext& ctx, IR::Inst* sparse_inst) {
     ctx.Add("MOV.S {},-1;"
             "MOV.S {}(NONRESIDENT),0;",
             sparse_ret, sparse_ret);
-    sparse_inst->Invalidate();
 }
 
 std::string_view FormatStorage(ImageFormat format) {
@@ -215,12 +214,20 @@ void ImageAtomic(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Regis
     const Register ret{ctx.reg_alloc.Define(inst)};
     ctx.Add("ATOMIM.{} {},{},{},{},{};", op, ret, value, coord, image, type);
 }
+
+IR::Inst* PrepareSparse(IR::Inst& inst) {
+    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    if (sparse_inst) {
+        sparse_inst->Invalidate();
+    }
+    return sparse_inst;
+}
 } // Anonymous namespace
 
 void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                 const IR::Value& coord, Register bias_lc, const IR::Value& offset) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const auto sparse_inst{PrepareSparse(inst)};
     const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
     const std::string_view lod_clamp_mod{info.has_lod_clamp ? ".LODCLAMP" : ""};
     const std::string_view type{TextureType(info)};
@@ -259,7 +266,7 @@ void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Valu
 void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                 const IR::Value& coord, ScalarF32 lod, const IR::Value& offset) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const auto sparse_inst{PrepareSparse(inst)};
     const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
     const std::string_view type{TextureType(info)};
     const std::string texture{Texture(ctx, info, index)};
@@ -288,7 +295,7 @@ void EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::
     }
     const ScalarF32 dref_val{ctx.reg_alloc.Consume(dref)};
     const Register bias_lc_vec{ctx.reg_alloc.Consume(bias_lc)};
-    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const auto sparse_inst{PrepareSparse(inst)};
     const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
     const std::string_view type{TextureType(info)};
     const std::string texture{Texture(ctx, info, index)};
@@ -393,7 +400,7 @@ void EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::
     }
     const ScalarF32 dref_val{ctx.reg_alloc.Consume(dref)};
     const ScalarF32 lod_val{ctx.reg_alloc.Consume(lod)};
-    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const auto sparse_inst{PrepareSparse(inst)};
     const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
     const std::string_view type{TextureType(info)};
     const std::string texture{Texture(ctx, info, index)};
@@ -436,7 +443,7 @@ void EmitImageGather(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
     const auto [off_x, off_y]{AllocOffsetsRegs(ctx, offset2)};
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const char comp{"xyzw"[info.gather_component]};
-    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const auto sparse_inst{PrepareSparse(inst)};
     const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
     const std::string_view type{TextureType(info)};
     const std::string texture{Texture(ctx, info, index)};
@@ -462,7 +469,7 @@ void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& inde
     // Allocate offsets early so they don't overwrite any consumed register
     const auto [off_x, off_y]{AllocOffsetsRegs(ctx, offset2)};
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const auto sparse_inst{PrepareSparse(inst)};
     const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
     const std::string_view type{TextureType(info)};
     const std::string texture{Texture(ctx, info, index)};
@@ -500,7 +507,7 @@ void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& inde
 void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                     const IR::Value& coord, const IR::Value& offset, ScalarS32 lod, ScalarS32 ms) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const auto sparse_inst{PrepareSparse(inst)};
     const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
     const std::string_view type{TextureType(info)};
     const std::string texture{Texture(ctx, info, index)};
@@ -547,7 +554,7 @@ void EmitImageGradient(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
         dpdx = ScopedRegister{ctx.reg_alloc};
         dpdy = ScopedRegister{ctx.reg_alloc};
     }
-    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const auto sparse_inst{PrepareSparse(inst)};
     const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
     const std::string_view type{TextureType(info)};
     const std::string texture{Texture(ctx, info, index)};
@@ -581,7 +588,7 @@ void EmitImageGradient(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
 
 void EmitImageRead(EmitContext& ctx, IR::Inst& inst, const IR::Value& index, Register coord) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    const auto sparse_inst{PrepareSparse(inst)};
     const std::string_view format{FormatStorage(info.image_format)};
     const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
     const std::string_view type{TextureType(info)};
