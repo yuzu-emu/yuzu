@@ -14,7 +14,7 @@ class UniqueFunction {
     class CallableBase {
     public:
         virtual ~CallableBase() = default;
-        virtual ResultType operator()(Args&&...) = 0;
+        virtual ResultType operator()(Args...) = 0;
     };
 
     template <typename Functor>
@@ -23,7 +23,7 @@ class UniqueFunction {
         Callable(Functor&& functor_) : functor{std::move(functor_)} {}
         ~Callable() override = default;
 
-        ResultType operator()(Args&&... args) override {
+        ResultType operator()(Args... args) override {
             return functor(std::forward<Args>(args)...);
         }
 
@@ -46,8 +46,12 @@ public:
     UniqueFunction(UniqueFunction<ResultType, Args...>&& rhs) noexcept
         : callable{std::move(rhs.callable)} {}
 
-    ResultType operator()(Args&&... args) const {
+    ResultType operator()(Args... args) const {
         return (*callable)(std::forward<Args>(args)...);
+    }
+
+    explicit operator bool() const noexcept {
+        return callable != nullptr;
     }
 
     UniqueFunction& operator=(const UniqueFunction<ResultType, Args...>&) = delete;

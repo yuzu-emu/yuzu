@@ -126,7 +126,6 @@ add_library(common STATIC
     thread.cpp
     thread.h
     thread_queue_list.h
-    thread_worker.cpp
     thread_worker.h
     threadsafe_queue.h
     time_zone.cpp
