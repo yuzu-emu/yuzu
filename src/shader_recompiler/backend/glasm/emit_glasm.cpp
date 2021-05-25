@@ -49,8 +49,7 @@ public:
             inst = ir_value.InstRecursive();
             reg = Register{value};
         } else {
-            const bool is_long{value.type == Type::F64 || value.type == Type::U64};
-            reg = is_long ? reg_alloc.AllocLongReg() : reg_alloc.AllocReg();
+            reg = value.type == Type::U64 ? reg_alloc.AllocLongReg() : reg_alloc.AllocReg();
         }
         switch (value.type) {
         case Type::Register:
@@ -59,17 +58,8 @@ public:
         case Type::U32:
             ctx.Add("MOV.U {}.x,{};", reg, value.imm_u32);
             break;
-        case Type::S32:
-            ctx.Add("MOV.S {}.x,{};", reg, value.imm_s32);
-            break;
-        case Type::F32:
-            ctx.Add("MOV.F {}.x,{};", reg, value.imm_f32);
-            break;
         case Type::U64:
             ctx.Add("MOV.U64 {}.x,{};", reg, value.imm_u64);
-            break;
-        case Type::F64:
-            ctx.Add("MOV.F64 {}.x,{};", reg, value.imm_f64);
             break;
         }
     }

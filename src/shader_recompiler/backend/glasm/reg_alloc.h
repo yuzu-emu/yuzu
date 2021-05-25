@@ -26,10 +26,7 @@ enum class Type : u32 {
     Void,
     Register,
     U32,
-    S32,
-    F32,
     U64,
-    F64,
 };
 
 struct Id {
@@ -57,10 +54,7 @@ struct Value {
     union {
         Id id;
         u32 imm_u32;
-        s32 imm_s32;
-        f32 imm_f32;
         u64 imm_u64;
-        f64 imm_f64;
     };
 
     bool operator==(const Value& rhs) const noexcept {
@@ -74,14 +68,8 @@ struct Value {
             return id == rhs.id;
         case Type::U32:
             return imm_u32 == rhs.imm_u32;
-        case Type::S32:
-            return imm_s32 == rhs.imm_s32;
-        case Type::F32:
-            return Common::BitCast<u32>(imm_f32) == Common::BitCast<u32>(rhs.imm_f32);
         case Type::U64:
             return imm_u64 == rhs.imm_u64;
-        case Type::F64:
-            return Common::BitCast<u64>(imm_f64) == Common::BitCast<u64>(rhs.imm_f64);
         }
         return false;
     }
@@ -245,12 +233,7 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarU32> {
             return Shader::Backend::GLASM::FormatTo<true>(ctx, value.id);
         case Shader::Backend::GLASM::Type::U32:
             return fmt::format_to(ctx.out(), "{}", value.imm_u32);
-        case Shader::Backend::GLASM::Type::S32:
-            return fmt::format_to(ctx.out(), "{}", static_cast<u32>(value.imm_s32));
-        case Shader::Backend::GLASM::Type::F32:
-            return fmt::format_to(ctx.out(), "{}", Common::BitCast<u32>(value.imm_f32));
         case Shader::Backend::GLASM::Type::U64:
-        case Shader::Backend::GLASM::Type::F64:
             break;
         }
         throw Shader::InvalidArgument("Invalid value type {}", value.type);
@@ -271,12 +254,7 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarS32> {
             return Shader::Backend::GLASM::FormatTo<true>(ctx, value.id);
         case Shader::Backend::GLASM::Type::U32:
             return fmt::format_to(ctx.out(), "{}", static_cast<s32>(value.imm_u32));
-        case Shader::Backend::GLASM::Type::S32:
-            return fmt::format_to(ctx.out(), "{}", value.imm_s32);
-        case Shader::Backend::GLASM::Type::F32:
-            return fmt::format_to(ctx.out(), "{}", Common::BitCast<s32>(value.imm_f32));
         case Shader::Backend::GLASM::Type::U64:
-        case Shader::Backend::GLASM::Type::F64:
             break;
         }
         throw Shader::InvalidArgument("Invalid value type {}", value.type);
@@ -296,13 +274,8 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarF32> {
         case Shader::Backend::GLASM::Type::Register:
             return Shader::Backend::GLASM::FormatTo<true>(ctx, value.id);
         case Shader::Backend::GLASM::Type::U32:
-            return fmt::format_to(ctx.out(), "{}", Common::BitCast<u32>(value.imm_u32));
-        case Shader::Backend::GLASM::Type::S32:
-            return fmt::format_to(ctx.out(), "{}", Common::BitCast<s32>(value.imm_s32));
-        case Shader::Backend::GLASM::Type::F32:
-            return fmt::format_to(ctx.out(), "{}", value.imm_f32);
+            return fmt::format_to(ctx.out(), "{}", Common::BitCast<f32>(value.imm_u32));
         case Shader::Backend::GLASM::Type::U64:
-        case Shader::Backend::GLASM::Type::F64:
             break;
         }
         throw Shader::InvalidArgument("Invalid value type {}", value.type);
@@ -322,13 +295,9 @@ struct fmt::formatter<Shader::Backend::GLASM::ScalarF64> {
         case Shader::Backend::GLASM::Type::Register:
             return Shader::Backend::GLASM::FormatTo<true>(ctx, value.id);
         case Shader::Backend::GLASM::Type::U32:
-        case Shader::Backend::GLASM::Type::S32:
-        case Shader::Backend::GLASM::Type::F32:
             break;
         case Shader::Backend::GLASM::Type::U64:
             return format_to(ctx.out(), "{}", Common::BitCast<f64>(value.imm_u64));
-        case Shader::Backend::GLASM::Type::F64:
-            return format_to(ctx.out(), "{}", value.imm_f64);
         }
         throw Shader::InvalidArgument("Invalid value type {}", value.type);
     }

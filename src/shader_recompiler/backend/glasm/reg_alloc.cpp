@@ -78,16 +78,16 @@ Value RegAlloc::MakeImm(const IR::Value& value) {
         ret.imm_u32 = value.U32();
         break;
     case IR::Type::F32:
-        ret.type = Type::F32;
-        ret.imm_f32 = value.F32();
+        ret.type = Type::U32;
+        ret.imm_u32 = Common::BitCast<u32>(value.F32());
         break;
     case IR::Type::U64:
         ret.type = Type::U64;
         ret.imm_u64 = value.U64();
         break;
     case IR::Type::F64:
-        ret.type = Type::F64;
-        ret.imm_f64 = value.F64();
+        ret.type = Type::U64;
+        ret.imm_u64 = Common::BitCast<u64>(value.F64());
         break;
     default:
         throw NotImplementedException("Immediate type {}", value.Type());
