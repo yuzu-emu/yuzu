@@ -172,38 +172,29 @@ bool IsReference(IR::Inst& inst) {
     return inst.GetOpcode() == IR::Opcode::Reference;
 }
 
-void Precolor(EmitContext& ctx, const IR::Program& program) {
+void PrecolorInst(IR::Inst& phi) {
+    // Insert phi moves before references to avoid overwritting other phis
+    const size_t num_args{phi.NumArgs()};
+    for (size_t i = 0; i < num_args; ++i) {
+        IR::Block& phi_block{*phi.PhiBlock(i)};
+        auto it{std::find_if_not(phi_block.rbegin(), phi_block.rend(), IsReference).base()};
+        IR::IREmitter ir{phi_block, it};
+        const IR::Value arg{phi.Arg(i)};
+        if (arg.IsImmediate()) {
+            ir.PhiMove(phi, arg);
+        } else {
+            ir.PhiMove(phi, IR::Value{&RegAlloc::AliasInst(*arg.Inst())});
+        }
+    }
+    for (size_t i = 0; i < num_args; ++i) {
+        IR::IREmitter{*phi.PhiBlock(i)}.Reference(IR::Value{&phi});
+    }
+}
+
+void Precolor(const IR::Program& program) {
     for (IR::Block* const block : program.blocks) {
         for (IR::Inst& phi : block->Instructions() | std::views::take_while(IR::IsPhi)) {
-            switch (phi.Arg(0).Type()) {
-            case IR::Type::U1:
-            case IR::Type::U32:
-            case IR::Type::F32:
-                ctx.reg_alloc.Define(phi);
-                break;
-            case IR::Type::U64:
-            case IR::Type::F64:
-                ctx.reg_alloc.LongDefine(phi);
-                break;
-            default:
-                throw NotImplementedException("Phi node type {}", phi.Type());
-            }
-            // Insert phi moves before references to avoid overwritting them
-            const size_t num_args{phi.NumArgs()};
-            for (size_t i = 0; i < num_args; ++i) {
-                IR::Block& phi_block{*phi.PhiBlock(i)};
-                auto it{std::find_if_not(phi_block.rbegin(), phi_block.rend(), IsReference).base()};
-                IR::IREmitter ir{phi_block, it};
-                const IR::Value arg{phi.Arg(i)};
-                if (arg.IsImmediate()) {
-                    ir.PhiMove(phi, arg);
-                } else {
-                    ir.PhiMove(phi, IR::Value{&RegAlloc::AliasInst(*arg.Inst())});
-                }
-            }
-            for (size_t i = 0; i < num_args; ++i) {
-                IR::IREmitter{*phi.PhiBlock(i)}.Reference(IR::Value{&phi});
-            }
+            PrecolorInst(phi);
         }
     }
 }
@@ -388,7 +379,7 @@ std::string_view GetTessSpacing(TessSpacing spacing) {
 std::string EmitGLASM(const Profile& profile, const RuntimeInfo& runtime_info, IR::Program& program,
                       Bindings& bindings) {
     EmitContext ctx{program, bindings, profile, runtime_info};
-    Precolor(ctx, program);
+    Precolor(program);
     EmitCode(ctx, program);
     std::string header{StageHeader(program.stage)};
     SetupOptions(program, profile, runtime_info, header);

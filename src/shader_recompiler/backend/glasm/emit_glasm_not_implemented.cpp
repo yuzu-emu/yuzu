@@ -17,10 +17,30 @@ namespace Shader::Backend::GLASM {
 
 #define NotImplemented() throw NotImplementedException("GLASM instruction {}", __LINE__)
 
-void EmitPhi(EmitContext& ctx, IR::Inst& inst) {
-    const size_t num_args{inst.NumArgs()};
+static void DefinePhi(EmitContext& ctx, IR::Inst& phi) {
+    switch (phi.Arg(0).Type()) {
+    case IR::Type::U1:
+    case IR::Type::U32:
+    case IR::Type::F32:
+        ctx.reg_alloc.Define(phi);
+        break;
+    case IR::Type::U64:
+    case IR::Type::F64:
+        ctx.reg_alloc.LongDefine(phi);
+        break;
+    default:
+        throw NotImplementedException("Phi node type {}", phi.Type());
+    }
+}
+
+void EmitPhi(EmitContext& ctx, IR::Inst& phi) {
+    const size_t num_args{phi.NumArgs()};
     for (size_t i = 0; i < num_args; ++i) {
-        ctx.reg_alloc.Consume(inst.Arg(i));
+        ctx.reg_alloc.Consume(phi.Arg(i));
+    }
+    if (!phi.Definition<Id>().is_valid) {
+        // The phi node wasn't forward defined
+        DefinePhi(ctx, phi);
     }
 }
 
@@ -30,14 +50,19 @@ void EmitReference(EmitContext& ctx, const IR::Value& value) {
     ctx.reg_alloc.Consume(value);
 }
 
-void EmitPhiMove(EmitContext& ctx, const IR::Value& phi, const IR::Value& value) {
-    const Register phi_reg{ctx.reg_alloc.Consume(phi)};
+void EmitPhiMove(EmitContext& ctx, const IR::Value& phi_value, const IR::Value& value) {
+    IR::Inst& phi{RegAlloc::AliasInst(*phi_value.Inst())};
+    if (!phi.Definition<Id>().is_valid) {
+        // The phi node wasn't forward defined
+        DefinePhi(ctx, phi);
+    }
+    const Register phi_reg{ctx.reg_alloc.Consume(IR::Value{&phi})};
     const Value eval_value{ctx.reg_alloc.Consume(value)};
 
-    if (phi == value) {
+    if (phi_reg == eval_value) {
         return;
     }
-    switch (phi.Inst()->Flags<IR::Type>()) {
+    switch (phi.Flags<IR::Type>()) {
     case IR::Type::U1:
     case IR::Type::U32:
     case IR::Type::F32:
