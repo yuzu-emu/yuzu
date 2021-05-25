@@ -218,13 +218,13 @@ void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
 
     SyncState();
 
-    GraphicsProgram* const program{shader_cache.CurrentGraphicsProgram()};
+    GraphicsPipeline* const pipeline{shader_cache.CurrentGraphicsPipeline()};
 
     std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
-    program->Configure(is_indexed);
+    pipeline->Configure(is_indexed);
 
     const GLenum primitive_mode = MaxwellToGL::PrimitiveTopology(maxwell3d.regs.draw.topology);
-    BeginTransformFeedback(program, primitive_mode);
+    BeginTransformFeedback(pipeline, primitive_mode);
 
     const GLuint base_instance = static_cast<GLuint>(maxwell3d.regs.vb_base_instance);
     const GLsizei num_instances =
@@ -271,7 +271,7 @@ void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
 }
 
 void RasterizerOpenGL::DispatchCompute() {
-    ComputeProgram* const program{shader_cache.CurrentComputeProgram()};
+    ComputePipeline* const program{shader_cache.CurrentComputePipeline()};
     if (!program) {
         return;
     }
@@ -996,7 +996,7 @@ void RasterizerOpenGL::SyncFramebufferSRGB() {
     oglEnable(GL_FRAMEBUFFER_SRGB, maxwell3d.regs.framebuffer_srgb);
 }
 
-void RasterizerOpenGL::BeginTransformFeedback(GraphicsProgram* program, GLenum primitive_mode) {
+void RasterizerOpenGL::BeginTransformFeedback(GraphicsPipeline* program, GLenum primitive_mode) {
     const auto& regs = maxwell3d.regs;
     if (regs.tfb_enabled == 0) {
         return;

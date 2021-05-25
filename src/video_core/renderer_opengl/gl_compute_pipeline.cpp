@@ -5,7 +5,7 @@
 #include <cstring>
 
 #include "common/cityhash.h"
-#include "video_core/renderer_opengl/gl_compute_program.h"
+#include "video_core/renderer_opengl/gl_compute_pipeline.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
 
 namespace OpenGL {
@@ -17,20 +17,20 @@ using VideoCommon::ImageId;
 constexpr u32 MAX_TEXTURES = 64;
 constexpr u32 MAX_IMAGES = 16;
 
-size_t ComputeProgramKey::Hash() const noexcept {
+size_t ComputePipelineKey::Hash() const noexcept {
     return static_cast<size_t>(
         Common::CityHash64(reinterpret_cast<const char*>(this), sizeof *this));
 }
 
-bool ComputeProgramKey::operator==(const ComputeProgramKey& rhs) const noexcept {
+bool ComputePipelineKey::operator==(const ComputePipelineKey& rhs) const noexcept {
     return std::memcmp(this, &rhs, sizeof *this) == 0;
 }
 
-ComputeProgram::ComputeProgram(TextureCache& texture_cache_, BufferCache& buffer_cache_,
-                               Tegra::MemoryManager& gpu_memory_,
-                               Tegra::Engines::KeplerCompute& kepler_compute_,
-                               ProgramManager& program_manager_, const Shader::Info& info_,
-                               OGLProgram source_program_, OGLAssemblyProgram assembly_program_)
+ComputePipeline::ComputePipeline(TextureCache& texture_cache_, BufferCache& buffer_cache_,
+                                 Tegra::MemoryManager& gpu_memory_,
+                                 Tegra::Engines::KeplerCompute& kepler_compute_,
+                                 ProgramManager& program_manager_, const Shader::Info& info_,
+                                 OGLProgram source_program_, OGLAssemblyProgram assembly_program_)
     : texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, gpu_memory{gpu_memory_},
       kepler_compute{kepler_compute_}, program_manager{program_manager_}, info{info_},
       source_program{std::move(source_program_)}, assembly_program{std::move(assembly_program_)} {
@@ -53,7 +53,7 @@ ComputeProgram::ComputeProgram(TextureCache& texture_cache_, BufferCache& buffer
     ASSERT(num_images <= MAX_IMAGES);
 }
 
-void ComputeProgram::Configure() {
+void ComputePipeline::Configure() {
     buffer_cache.SetEnabledComputeUniformBuffers(info.constant_buffer_mask);
     buffer_cache.UnbindComputeStorageBuffers();
     size_t ssbo_index{};

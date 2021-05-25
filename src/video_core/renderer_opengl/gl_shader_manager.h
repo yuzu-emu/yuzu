@@ -9,8 +9,8 @@
 
 #include <glad/glad.h>
 
-#include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/renderer_opengl/gl_device.h"
+#include "video_core/renderer_opengl/gl_resource_manager.h"
 
 namespace OpenGL {
 

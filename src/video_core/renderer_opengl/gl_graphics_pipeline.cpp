@@ -7,7 +7,7 @@
 
 #include "common/cityhash.h"
 #include "shader_recompiler/shader_info.h"
-#include "video_core/renderer_opengl/gl_graphics_program.h"
+#include "video_core/renderer_opengl/gl_graphics_pipeline.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
 #include "video_core/renderer_opengl/gl_state_tracker.h"
 #include "video_core/texture_cache/texture_cache.h"
@@ -62,22 +62,22 @@ std::pair<GLint, GLint> TransformFeedbackEnum(u8 location) {
 }
 } // Anonymous namespace
 
-size_t GraphicsProgramKey::Hash() const noexcept {
+size_t GraphicsPipelineKey::Hash() const noexcept {
     return static_cast<size_t>(Common::CityHash64(reinterpret_cast<const char*>(this), Size()));
 }
 
-bool GraphicsProgramKey::operator==(const GraphicsProgramKey& rhs) const noexcept {
+bool GraphicsPipelineKey::operator==(const GraphicsPipelineKey& rhs) const noexcept {
     return std::memcmp(this, &rhs, Size()) == 0;
 }
 
-GraphicsProgram::GraphicsProgram(TextureCache& texture_cache_, BufferCache& buffer_cache_,
-                                 Tegra::MemoryManager& gpu_memory_,
-                                 Tegra::Engines::Maxwell3D& maxwell3d_,
-                                 ProgramManager& program_manager_, StateTracker& state_tracker_,
-                                 OGLProgram program_,
-                                 std::array<OGLAssemblyProgram, 5> assembly_programs_,
-                                 const std::array<const Shader::Info*, 5>& infos,
-                                 const VideoCommon::TransformFeedbackState* xfb_state)
+GraphicsPipeline::GraphicsPipeline(TextureCache& texture_cache_, BufferCache& buffer_cache_,
+                                   Tegra::MemoryManager& gpu_memory_,
+                                   Tegra::Engines::Maxwell3D& maxwell3d_,
+                                   ProgramManager& program_manager_, StateTracker& state_tracker_,
+                                   OGLProgram program_,
+                                   std::array<OGLAssemblyProgram, 5> assembly_programs_,
+                                   const std::array<const Shader::Info*, 5>& infos,
+                                   const VideoCommon::TransformFeedbackState* xfb_state)
     : texture_cache{texture_cache_}, buffer_cache{buffer_cache_},
       gpu_memory{gpu_memory_}, maxwell3d{maxwell3d_}, program_manager{program_manager_},
       state_tracker{state_tracker_}, program{std::move(program_)}, assembly_programs{std::move(
@@ -126,7 +126,7 @@ struct Spec {
     static constexpr bool has_images = true;
 };
 
-void GraphicsProgram::Configure(bool is_indexed) {
+void GraphicsPipeline::Configure(bool is_indexed) {
     std::array<ImageId, MAX_TEXTURES + MAX_IMAGES> image_view_ids;
     std::array<u32, MAX_TEXTURES + MAX_IMAGES> image_view_indices;
     std::array<GLuint, MAX_TEXTURES> samplers;
@@ -347,7 +347,7 @@ void GraphicsProgram::Configure(bool is_indexed) {
     }
 }
 
-void GraphicsProgram::GenerateTransformFeedbackState(
+void GraphicsPipeline::GenerateTransformFeedbackState(
     const VideoCommon::TransformFeedbackState& xfb_state) {
     // TODO(Rodrigo): Inject SKIP_COMPONENTS*_NV when required. An unimplemented message will signal
     // when this is required.
@@ -394,7 +394,7 @@ void GraphicsProgram::GenerateTransformFeedbackState(
     num_xfb_strides = static_cast<GLsizei>(current_stream - xfb_streams.data());
 }
 
-void GraphicsProgram::ConfigureTransformFeedbackImpl() const {
+void GraphicsPipeline::ConfigureTransformFeedbackImpl() const {
     glTransformFeedbackStreamAttribsNV(num_xfb_attribs, xfb_attribs.data(), num_xfb_strides,
                                        xfb_streams.data(), GL_INTERLEAVED_ATTRIBS);
 }
