@@ -271,6 +271,9 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
             break;
         }
     }
+    if (!ctx.reg_alloc.IsEmpty()) {
+        throw LogicError("Register allocator is not empty");
+    }
 }
 
 void SetupOptions(const IR::Program& program, const Profile& profile,

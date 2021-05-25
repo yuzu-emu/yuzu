@@ -128,6 +128,10 @@ public:
         return num_used_long_registers;
     }
 
+    [[nodiscard]] bool IsEmpty() const noexcept {
+        return register_use.none() && long_register_use.none();
+    }
+
     /// Returns true if the instruction is expected to be aliased to another
     static bool IsAliased(const IR::Inst& inst);
 
