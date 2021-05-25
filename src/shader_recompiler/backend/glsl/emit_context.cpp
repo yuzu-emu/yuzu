@@ -39,6 +39,10 @@ void EmitContext::SetupExtensions(std::string& header) {
     if (info.uses_atomic_f16x2_add || info.uses_atomic_f16x2_min || info.uses_atomic_f16x2_max) {
         header += "#extension NV_shader_atomic_fp16_vector : enable\n";
     }
+    if (info.uses_fp16) {
+        // TODO: AMD
+        header += "#extension GL_NV_gpu_shader5 : enable\n";
+    }
 }
 
 void EmitContext::DefineConstantBuffers() {
@@ -88,6 +92,18 @@ void EmitContext::DefineHelperFunctions() {
     if (info.uses_atomic_f32x2_max) {
         code += "uint CasFloatMax32x2(uint op_a,uint op_b){return "
                 "packHalf2x16(max(unpackHalf2x16(op_a),unpackHalf2x16(op_b)));}\n";
+    }
+    if (info.uses_atomic_f16x2_add) {
+        code += "uint CasFloatAdd16x2(uint op_a,uint op_b){return "
+                "packFloat2x16(unpackFloat2x16(op_a)+unpackFloat2x16(op_b));}\n";
+    }
+    if (info.uses_atomic_f16x2_min) {
+        code += "uint CasFloatMin16x2(uint op_a,uint op_b){return "
+                "packFloat2x16(min(unpackFloat2x16(op_a),unpackFloat2x16(op_b)));}\n";
+    }
+    if (info.uses_atomic_f16x2_max) {
+        code += "uint CasFloatMax16x2(uint op_a,uint op_b){return "
+                "packFloat2x16(max(unpackFloat2x16(op_a),unpackFloat2x16(op_b)));}\n";
     }
     // TODO: Track this usage
     code += "uint CasMinS32(uint op_a,uint op_b){return uint(min(int(op_a),int(op_b)));}";

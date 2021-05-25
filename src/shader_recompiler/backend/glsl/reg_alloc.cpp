@@ -113,6 +113,8 @@ std::string RegAlloc::GetType(Type type, u32 index) {
     switch (type) {
     case Type::U1:
         return "bool ";
+    case Type::F16x2:
+        return "f16vec2 ";
     case Type::U32:
         return "uint ";
     case Type::S32:
