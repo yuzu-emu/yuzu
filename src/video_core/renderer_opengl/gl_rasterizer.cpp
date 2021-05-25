@@ -140,7 +140,9 @@ void RasterizerOpenGL::SyncVertexInstances() {
 }
 
 void RasterizerOpenGL::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
-                                         const VideoCore::DiskResourceLoadCallback& callback) {}
+                                         const VideoCore::DiskResourceLoadCallback& callback) {
+    shader_cache.LoadDiskResources(title_id, stop_loading, callback);
+}
 
 void RasterizerOpenGL::Clear() {
     MICROPROFILE_SCOPE(OpenGL_Clears);
