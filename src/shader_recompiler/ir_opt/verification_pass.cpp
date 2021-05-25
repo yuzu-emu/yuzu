@@ -66,7 +66,6 @@ static void ValidateForwardDeclarations(const IR::Program& program) {
                     continue;
                 }
                 if (!definitions.contains(inst.Arg(arg).Inst())) {
-                    fmt::print("{}\n", IR::DumpBlock(*block));
                     throw LogicError("Forward declaration in block: {}", IR::DumpBlock(*block));
                 }
             }
@@ -80,7 +79,6 @@ static void ValidatePhiNodes(const IR::Program& program) {
         for (const IR::Inst& inst : *block) {
             if (inst.GetOpcode() == IR::Opcode::Phi) {
                 if (no_more_phis) {
-                    fmt::print("{}\n", IR::DumpBlock(*block));
                     throw LogicError("Interleaved phi nodes: {}", IR::DumpBlock(*block));
                 }
             } else {
