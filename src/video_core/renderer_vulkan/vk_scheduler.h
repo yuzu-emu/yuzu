@@ -6,11 +6,11 @@
 
 #include <atomic>
 #include <condition_variable>
-#include <queue>
 #include <cstddef>
 #include <memory>
 #include <thread>
 #include <utility>
+#include <queue>
 
 #include "common/alignment.h"
 #include "common/common_types.h"
