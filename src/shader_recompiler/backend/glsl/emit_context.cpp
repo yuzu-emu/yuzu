@@ -5,6 +5,7 @@
 #include "shader_recompiler/backend/bindings.h"
 #include "shader_recompiler/backend/glsl/emit_context.h"
 #include "shader_recompiler/frontend/ir/program.h"
+#include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::GLSL {
 
@@ -40,8 +41,12 @@ void EmitContext::SetupExtensions(std::string& header) {
         header += "#extension NV_shader_atomic_fp16_vector : enable\n";
     }
     if (info.uses_fp16) {
-        // TODO: AMD
-        header += "#extension GL_NV_gpu_shader5 : enable\n";
+        if (profile.support_gl_nv_gpu_shader_5) {
+            header += "#extension GL_NV_gpu_shader5 : enable\n";
+        }
+        if (profile.support_gl_amd_gpu_shader_half_float) {
+            header += "#extension GL_AMD_gpu_shader_half_float : enable\n";
+        }
     }
 }
 
