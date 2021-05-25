@@ -23,7 +23,13 @@ void EmitIdentity(EmitContext&, IR::Inst& inst, const IR::Value& value) {
 }
 
 void EmitConditionRef(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
-    ctx.Add("MOV.S {},{};", inst, ScalarS32{ctx.reg_alloc.Consume(value)});
+    // Fake one usage to get a real register out of the condition
+    inst.DestructiveAddUsage(1);
+    const Register ret{ctx.reg_alloc.Define(inst)};
+    const ScalarS32 input{ctx.reg_alloc.Consume(value)};
+    if (ret != input) {
+        ctx.Add("MOV.S {},{};", ret, input);
+    }
 }
 
 void EmitBitCastU16F16(EmitContext&, IR::Inst& inst, const IR::Value& value) {

@@ -9,6 +9,17 @@
 namespace Shader::Backend::GLASM {
 
 void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
+    const std::array flags{
+        inst.GetAssociatedPseudoOperation(IR::Opcode::GetZeroFromOp),
+        inst.GetAssociatedPseudoOperation(IR::Opcode::GetSignFromOp),
+        inst.GetAssociatedPseudoOperation(IR::Opcode::GetCarryFromOp),
+        inst.GetAssociatedPseudoOperation(IR::Opcode::GetOverflowFromOp),
+    };
+    for (IR::Inst* const flag_inst : flags) {
+        if (flag_inst) {
+            flag_inst->Invalidate();
+        }
+    }
     const bool cc{inst.HasAssociatedPseudoOperation()};
     const std::string_view cc_mod{cc ? ".CC" : ""};
     if (cc) {
@@ -19,20 +30,22 @@ void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
     if (!cc) {
         return;
     }
-    static constexpr std::array<std::string_view, 4> masks{"EQ", "SF", "CF", "OF"};
-    const std::array flags{
-        inst.GetAssociatedPseudoOperation(IR::Opcode::GetZeroFromOp),
-        inst.GetAssociatedPseudoOperation(IR::Opcode::GetSignFromOp),
-        inst.GetAssociatedPseudoOperation(IR::Opcode::GetCarryFromOp),
-        inst.GetAssociatedPseudoOperation(IR::Opcode::GetOverflowFromOp),
-    };
-    for (size_t i = 0; i < flags.size(); ++i) {
-        if (flags[i]) {
-            const auto flag_ret{ctx.reg_alloc.Define(*flags[i])};
-            ctx.Add("MOV.S {},0;"
-                    "MOV.S {}({}.x),-1;",
-                    flag_ret, flag_ret, masks[i]);
-            flags[i]->Invalidate();
+    static constexpr std::array<std::string_view, 4> masks{"", "SF", "CF", "OF"};
+    for (size_t flag_index = 0; flag_index < flags.size(); ++flag_index) {
+        if (!flags[flag_index]) {
+            continue;
+        }
+        const auto flag_ret{ctx.reg_alloc.Define(*flags[flag_index])};
+        if (flag_index == 0) {
+            ctx.Add("SEQ.S {}.x,{}.x,0;", flag_ret, ret);
+        } else {
+            // We could use conditional execution here, but it's broken on Nvidia's compiler
+            ctx.Add("IF {}.x;"
+                    "MOV.S {}.x,-1;"
+                    "ELSE;"
+                    "MOV.S {}.x,0;"
+                    "ENDIF;",
+                    masks[flag_index], flag_ret, flag_ret);
         }
     }
 }
@@ -136,6 +149,17 @@ void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst& inst, ScalarS32 base, Scal
 
 void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst& inst, ScalarU32 base, ScalarU32 offset,
                           ScalarU32 count) {
+    const auto zero = inst.GetAssociatedPseudoOperation(IR::Opcode::GetZeroFromOp);
+    const auto sign = inst.GetAssociatedPseudoOperation(IR::Opcode::GetSignFromOp);
+    if (zero) {
+        zero->Invalidate();
+    }
+    if (sign) {
+        sign->Invalidate();
+    }
+    if (zero || sign) {
+        ctx.reg_alloc.InvalidateConditionCodes();
+    }
     const Register ret{ctx.reg_alloc.Define(inst)};
     if (count.type != Type::Register && offset.type != Type::Register) {
         ctx.Add("BFE.U {},{{{},{},0,0}},{};", ret, count, offset, base);
@@ -145,13 +169,11 @@ void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst& inst, ScalarU32 base, Scal
                 "BFE.U {},RC,{};",
                 count, offset, ret, base);
     }
-    if (const auto zero = inst.GetAssociatedPseudoOperation(IR::Opcode::GetZeroFromOp)) {
+    if (zero) {
         ctx.Add("SEQ.S {},{},0;", *zero, ret);
-        zero->Invalidate();
     }
-    if (const auto sign = inst.GetAssociatedPseudoOperation(IR::Opcode::GetSignFromOp)) {
+    if (sign) {
         ctx.Add("SLT.S {},{},0;", *sign, ret);
-        sign->Invalidate();
     }
 }
 
