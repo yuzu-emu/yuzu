@@ -78,32 +78,32 @@ void EmitContext::DefineHelperFunctions() {
             "uint CasDecrement(uint op_a,uint op_b){return(op_a==0||op_a>op_b)?op_b:(op_a-1u);}\n";
     }
     if (info.uses_atomic_f32_add) {
-        code += "uint CasFloatAdd(uint op_a,uint op_b){return "
-                "floatBitsToUint(uintBitsToFloat(op_a)+uintBitsToFloat(op_b));}\n";
+        code += "uint CasFloatAdd(uint op_a,float op_b){return "
+                "floatBitsToUint(uintBitsToFloat(op_a)+op_b);}\n";
     }
     if (info.uses_atomic_f32x2_add) {
-        code += "uint CasFloatAdd32x2(uint op_a,uint op_b){return "
-                "packHalf2x16(unpackHalf2x16(op_a)+unpackHalf2x16(op_b));}\n";
+        code += "uint CasFloatAdd32x2(uint op_a,vec2 op_b){return "
+                "packHalf2x16(unpackHalf2x16(op_a)+op_b);}\n";
     }
     if (info.uses_atomic_f32x2_min) {
-        code += "uint CasFloatMin32x2(uint op_a,uint op_b){return "
-                "packHalf2x16(min(unpackHalf2x16(op_a),unpackHalf2x16(op_b)));}\n";
+        code += "uint CasFloatMin32x2(uint op_a,vec2 op_b){return "
+                "packHalf2x16(min(unpackHalf2x16(op_a),op_b));}\n";
     }
     if (info.uses_atomic_f32x2_max) {
-        code += "uint CasFloatMax32x2(uint op_a,uint op_b){return "
-                "packHalf2x16(max(unpackHalf2x16(op_a),unpackHalf2x16(op_b)));}\n";
+        code += "uint CasFloatMax32x2(uint op_a,vec2 op_b){return "
+                "packHalf2x16(max(unpackHalf2x16(op_a),op_b));}\n";
     }
     if (info.uses_atomic_f16x2_add) {
-        code += "uint CasFloatAdd16x2(uint op_a,uint op_b){return "
-                "packFloat2x16(unpackFloat2x16(op_a)+unpackFloat2x16(op_b));}\n";
+        code += "uint CasFloatAdd16x2(uint op_a,f16vec2 op_b){return "
+                "packFloat2x16(unpackFloat2x16(op_a)+op_b);}\n";
     }
     if (info.uses_atomic_f16x2_min) {
-        code += "uint CasFloatMin16x2(uint op_a,uint op_b){return "
-                "packFloat2x16(min(unpackFloat2x16(op_a),unpackFloat2x16(op_b)));}\n";
+        code += "uint CasFloatMin16x2(uint op_a,f16vec2 op_b){return "
+                "packFloat2x16(min(unpackFloat2x16(op_a),op_b));}\n";
     }
     if (info.uses_atomic_f16x2_max) {
-        code += "uint CasFloatMax16x2(uint op_a,uint op_b){return "
-                "packFloat2x16(max(unpackFloat2x16(op_a),unpackFloat2x16(op_b)));}\n";
+        code += "uint CasFloatMax16x2(uint op_a,f16vec2 op_b){return "
+                "packFloat2x16(max(unpackFloat2x16(op_a),op_b));}\n";
     }
     // TODO: Track this usage
     code += "uint CasMinS32(uint op_a,uint op_b){return uint(min(int(op_a),int(op_b)));}";

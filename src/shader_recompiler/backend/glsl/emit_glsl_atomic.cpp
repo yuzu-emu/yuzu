@@ -19,16 +19,11 @@ for (;;){{
     if ({}==old_value){{break;}}
 }})"};
 
-void CasFunction(EmitContext& ctx, std::string_view ret, std::string_view ssbo,
-                 std::string_view value, std::string_view function) {
-    ctx.Add(cas_loop.data(), ret, ssbo, ret, ssbo, function, ssbo, value, ret);
-}
-
-void CasFunctionInt32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
-                      const IR::Value& offset, std::string_view value, std::string_view function) {
+void CasFunction(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                 const IR::Value& offset, std::string_view value, std::string_view function) {
     const auto ret{ctx.reg_alloc.Define(inst)};
     const std::string ssbo{fmt::format("ssbo{}[{}]", binding.U32(), offset.U32())};
-    CasFunction(ctx, ret, ssbo, value, function);
+    ctx.Add(cas_loop.data(), ret, ssbo, ret, ssbo, function, ssbo, value, ret);
 }
 
 void CasFunctionF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -37,25 +32,10 @@ void CasFunctionF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
     const std::string u32_value{fmt::format("floatBitsToUint({})", value)};
     const auto ret{ctx.reg_alloc.Define(inst)};
     const auto ret_32{ret + "_u32"};
-    CasFunction(ctx, ret_32, ssbo, u32_value, function);
+    ctx.Add(cas_loop.data(), ret_32, ssbo, ret_32, ssbo, function, ssbo, value, ret_32);
     ctx.Add("float {}=uintBitsToFloat({});", ret, ret_32);
 }
 
-void CasFunctionF32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
-                      const IR::Value& offset, std::string_view value, std::string_view function) {
-    const std::string ssbo{fmt::format("ssbo{}[{}]", binding.U32(), offset.U32())};
-    const std::string u32_value{fmt::format("packHalf2x16({})", value)};
-    const auto ret{ctx.reg_alloc.Define(inst)};
-    CasFunction(ctx, ret, ssbo, u32_value, function);
-}
-
-void CasFunctionF16x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
-                      const IR::Value& offset, std::string_view value, std::string_view function) {
-    const std::string ssbo{fmt::format("ssbo{}[{}]", binding.U32(), offset.U32())};
-    const std::string u32_value{fmt::format("packFloat2x16({})", value)};
-    const auto ret{ctx.reg_alloc.Define(inst)};
-    CasFunction(ctx, ret, ssbo, u32_value, function);
-}
 } // namespace
 
 void EmitStorageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -66,7 +46,7 @@ void EmitStorageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 void EmitStorageAtomicSMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
     const std::string u32_value{fmt::format("uint({})", value)};
-    CasFunctionInt32(ctx, inst, binding, offset, u32_value, "CasMinS32");
+    CasFunction(ctx, inst, binding, offset, u32_value, "CasMinS32");
 }
 
 void EmitStorageAtomicUMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -77,7 +57,7 @@ void EmitStorageAtomicUMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 void EmitStorageAtomicSMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
     const std::string u32_value{fmt::format("uint({})", value)};
-    CasFunctionInt32(ctx, inst, binding, offset, u32_value, "CasMaxS32");
+    CasFunction(ctx, inst, binding, offset, u32_value, "CasMaxS32");
 }
 
 void EmitStorageAtomicUMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -87,12 +67,12 @@ void EmitStorageAtomicUMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 
 void EmitStorageAtomicInc32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                             const IR::Value& offset, std::string_view value) {
-    CasFunctionInt32(ctx, inst, binding, offset, value, "CasIncrement");
+    CasFunction(ctx, inst, binding, offset, value, "CasIncrement");
 }
 
 void EmitStorageAtomicDec32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                             const IR::Value& offset, std::string_view value) {
-    CasFunctionInt32(ctx, inst, binding, offset, value, "CasDecrement");
+    CasFunction(ctx, inst, binding, offset, value, "CasDecrement");
 }
 
 void EmitStorageAtomicAnd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -199,32 +179,32 @@ void EmitStorageAtomicAddF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 
 void EmitStorageAtomicAddF16x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                const IR::Value& offset, std::string_view value) {
-    CasFunctionF16x2(ctx, inst, binding, offset, value, "CasFloatAdd16x2");
+    CasFunction(ctx, inst, binding, offset, value, "CasFloatAdd16x2");
 }
 
 void EmitStorageAtomicAddF32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                const IR::Value& offset, std::string_view value) {
-    CasFunctionF32x2(ctx, inst, binding, offset, value, "CasFloatAdd32x2");
+    CasFunction(ctx, inst, binding, offset, value, "CasFloatAdd32x2");
 }
 
 void EmitStorageAtomicMinF16x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                const IR::Value& offset, std::string_view value) {
-    CasFunctionF16x2(ctx, inst, binding, offset, value, "CasFloatMin16x2");
+    CasFunction(ctx, inst, binding, offset, value, "CasFloatMin16x2");
 }
 
 void EmitStorageAtomicMinF32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                const IR::Value& offset, std::string_view value) {
-    CasFunctionF32x2(ctx, inst, binding, offset, value, "CasFloatMin32x2");
+    CasFunction(ctx, inst, binding, offset, value, "CasFloatMin32x2");
 }
 
 void EmitStorageAtomicMaxF16x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                const IR::Value& offset, std::string_view value) {
-    CasFunctionF16x2(ctx, inst, binding, offset, value, "CasFloatMax16x2");
+    CasFunction(ctx, inst, binding, offset, value, "CasFloatMax16x2");
 }
 
 void EmitStorageAtomicMaxF32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                const IR::Value& offset, std::string_view value) {
-    CasFunctionF32x2(ctx, inst, binding, offset, value, "CasFloatMax32x2");
+    CasFunction(ctx, inst, binding, offset, value, "CasFloatMax32x2");
 }
 
 void EmitGlobalAtomicIAdd32(EmitContext&) {
