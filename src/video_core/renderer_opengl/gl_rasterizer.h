@@ -179,7 +179,7 @@ private:
     void SyncVertexInstances();
 
     /// Begin a transform feedback
-    void BeginTransformFeedback(GraphicsProgram* program, GLenum primitive_mode);
+    void BeginTransformFeedback(GraphicsPipeline* pipeline, GLenum primitive_mode);
 
     /// End a transform feedback
     void EndTransformFeedback();

@@ -15,8 +15,8 @@
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
 #include "shader_recompiler/object_pool.h"
 #include "video_core/engines/shader_type.h"
-#include "video_core/renderer_opengl/gl_compute_program.h"
-#include "video_core/renderer_opengl/gl_graphics_program.h"
+#include "video_core/renderer_opengl/gl_compute_pipeline.h"
+#include "video_core/renderer_opengl/gl_graphics_pipeline.h"
 #include "video_core/shader_cache.h"
 
 namespace Tegra {
@@ -55,24 +55,24 @@ public:
                          ProgramManager& program_manager_, StateTracker& state_tracker_);
     ~ShaderCache();
 
-    [[nodiscard]] GraphicsProgram* CurrentGraphicsProgram();
+    [[nodiscard]] GraphicsPipeline* CurrentGraphicsPipeline();
 
-    [[nodiscard]] ComputeProgram* CurrentComputeProgram();
+    [[nodiscard]] ComputePipeline* CurrentComputePipeline();
 
 private:
-    std::unique_ptr<GraphicsProgram> CreateGraphicsProgram();
+    std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline();
 
-    std::unique_ptr<GraphicsProgram> CreateGraphicsProgram(
-        ShaderPools& pools, const GraphicsProgramKey& key,
+    std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline(
+        ShaderPools& pools, const GraphicsPipelineKey& key,
         std::span<Shader::Environment* const> envs, bool build_in_parallel);
 
-    std::unique_ptr<ComputeProgram> CreateComputeProgram(const ComputeProgramKey& key,
-                                                         const VideoCommon::ShaderInfo* shader);
+    std::unique_ptr<ComputePipeline> CreateComputePipeline(const ComputePipelineKey& key,
+                                                           const VideoCommon::ShaderInfo* shader);
 
-    std::unique_ptr<ComputeProgram> CreateComputeProgram(ShaderPools& pools,
-                                                         const ComputeProgramKey& key,
-                                                         Shader::Environment& env,
-                                                         bool build_in_parallel);
+    std::unique_ptr<ComputePipeline> CreateComputePipeline(ShaderPools& pools,
+                                                           const ComputePipelineKey& key,
+                                                           Shader::Environment& env,
+                                                           bool build_in_parallel);
 
     Core::Frontend::EmuWindow& emu_window;
     const Device& device;
@@ -81,11 +81,11 @@ private:
     ProgramManager& program_manager;
     StateTracker& state_tracker;
 
-    GraphicsProgramKey graphics_key{};
+    GraphicsPipelineKey graphics_key{};
 
     ShaderPools main_pools;
-    std::unordered_map<GraphicsProgramKey, std::unique_ptr<GraphicsProgram>> graphics_cache;
-    std::unordered_map<ComputeProgramKey, std::unique_ptr<ComputeProgram>> compute_cache;
+    std::unordered_map<GraphicsPipelineKey, std::unique_ptr<GraphicsPipeline>> graphics_cache;
+    std::unordered_map<ComputePipelineKey, std::unique_ptr<ComputePipeline>> compute_cache;
 
     Shader::Profile profile;
 };

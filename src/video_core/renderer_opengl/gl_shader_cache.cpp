@@ -152,7 +152,7 @@ GLenum AssemblyStage(size_t stage_index) {
     return GL_NONE;
 }
 
-Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsProgramKey& key,
+Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
                                     const Shader::IR::Program& program) {
     UNIMPLEMENTED_IF_MSG(key.xfb_enabled != 0, "Transform feedbacks");
 
@@ -282,7 +282,7 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
 
 ShaderCache::~ShaderCache() = default;
 
-GraphicsProgram* ShaderCache::CurrentGraphicsProgram() {
+GraphicsPipeline* ShaderCache::CurrentGraphicsPipeline() {
     if (!RefreshStages(graphics_key.unique_hashes)) {
         return nullptr;
     }
@@ -302,18 +302,18 @@ GraphicsProgram* ShaderCache::CurrentGraphicsProgram() {
     const auto [pair, is_new]{graphics_cache.try_emplace(graphics_key)};
     auto& program{pair->second};
     if (is_new) {
-        program = CreateGraphicsProgram();
+        program = CreateGraphicsPipeline();
     }
     return program.get();
 }
 
-ComputeProgram* ShaderCache::CurrentComputeProgram() {
+ComputePipeline* ShaderCache::CurrentComputePipeline() {
     const VideoCommon::ShaderInfo* const shader{ComputeShader()};
     if (!shader) {
         return nullptr;
     }
     const auto& qmd{kepler_compute.launch_description};
-    const ComputeProgramKey key{
+    const ComputePipelineKey key{
         .unique_hash = shader->unique_hash,
         .shared_memory_size = qmd.shared_alloc,
         .workgroup_size{qmd.block_dim_x, qmd.block_dim_y, qmd.block_dim_z},
@@ -323,20 +323,20 @@ ComputeProgram* ShaderCache::CurrentComputeProgram() {
     if (!is_new) {
         return pipeline.get();
     }
-    pipeline = CreateComputeProgram(key, shader);
+    pipeline = CreateComputePipeline(key, shader);
     return pipeline.get();
 }
 
-std::unique_ptr<GraphicsProgram> ShaderCache::CreateGraphicsProgram() {
+std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline() {
     GraphicsEnvironments environments;
     GetGraphicsEnvironments(environments, graphics_key.unique_hashes);
 
     main_pools.ReleaseContents();
-    return CreateGraphicsProgram(main_pools, graphics_key, environments.Span(), true);
+    return CreateGraphicsPipeline(main_pools, graphics_key, environments.Span(), true);
 }
 
-std::unique_ptr<GraphicsProgram> ShaderCache::CreateGraphicsProgram(
-    ShaderPools& pools, const GraphicsProgramKey& key, std::span<Shader::Environment* const> envs,
+std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
+    ShaderPools& pools, const GraphicsPipelineKey& key, std::span<Shader::Environment* const> envs,
     bool build_in_parallel) {
     LOG_INFO(Render_OpenGL, "0x{:016x}", key.Hash());
     size_t env_index{0};
@@ -382,27 +382,27 @@ std::unique_ptr<GraphicsProgram> ShaderCache::CreateGraphicsProgram(
     if (!device.UseAssemblyShaders()) {
         LinkProgram(source_program.handle);
     }
-    return std::make_unique<GraphicsProgram>(
+    return std::make_unique<GraphicsPipeline>(
         texture_cache, buffer_cache, gpu_memory, maxwell3d, program_manager, state_tracker,
         std::move(source_program), std::move(assembly_programs), infos,
         key.xfb_enabled != 0 ? &key.xfb_state : nullptr);
 }
 
-std::unique_ptr<ComputeProgram> ShaderCache::CreateComputeProgram(
-    const ComputeProgramKey& key, const VideoCommon::ShaderInfo* shader) {
+std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
+    const ComputePipelineKey& key, const VideoCommon::ShaderInfo* shader) {
     const GPUVAddr program_base{kepler_compute.regs.code_loc.Address()};
     const auto& qmd{kepler_compute.launch_description};
     ComputeEnvironment env{kepler_compute, gpu_memory, program_base, qmd.program_start};
     env.SetCachedSize(shader->size_bytes);
 
     main_pools.ReleaseContents();
-    return CreateComputeProgram(main_pools, key, env, true);
+    return CreateComputePipeline(main_pools, key, env, true);
 }
 
-std::unique_ptr<ComputeProgram> ShaderCache::CreateComputeProgram(ShaderPools& pools,
-                                                                  const ComputeProgramKey& key,
-                                                                  Shader::Environment& env,
-                                                                  bool build_in_parallel) {
+std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(ShaderPools& pools,
+                                                                    const ComputePipelineKey& key,
+                                                                    Shader::Environment& env,
+                                                                    bool build_in_parallel) {
     LOG_INFO(Render_OpenGL, "0x{:016x}", key.Hash());
 
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
@@ -418,9 +418,9 @@ std::unique_ptr<ComputeProgram> ShaderCache::CreateComputeProgram(ShaderPools& p
         AddShader(GL_COMPUTE_SHADER, source_program.handle, code);
         LinkProgram(source_program.handle);
     }
-    return std::make_unique<ComputeProgram>(texture_cache, buffer_cache, gpu_memory, kepler_compute,
-                                            program_manager, program.info,
-                                            std::move(source_program), std::move(asm_program));
+    return std::make_unique<ComputePipeline>(texture_cache, buffer_cache, gpu_memory,
+                                             kepler_compute, program_manager, program.info,
+                                             std::move(source_program), std::move(asm_program));
 }
 
 } // namespace OpenGL

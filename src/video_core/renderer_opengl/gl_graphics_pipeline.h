@@ -24,7 +24,7 @@ class ProgramManager;
 
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 
-struct GraphicsProgramKey {
+struct GraphicsPipelineKey {
     std::array<u64, 6> unique_hashes;
     union {
         u32 raw;
@@ -40,34 +40,34 @@ struct GraphicsProgramKey {
 
     size_t Hash() const noexcept;
 
-    bool operator==(const GraphicsProgramKey&) const noexcept;
+    bool operator==(const GraphicsPipelineKey&) const noexcept;
 
-    bool operator!=(const GraphicsProgramKey& rhs) const noexcept {
+    bool operator!=(const GraphicsPipelineKey& rhs) const noexcept {
         return !operator==(rhs);
     }
 
     [[nodiscard]] size_t Size() const noexcept {
         if (xfb_enabled != 0) {
-            return sizeof(GraphicsProgramKey);
+            return sizeof(GraphicsPipelineKey);
         } else {
-            return offsetof(GraphicsProgramKey, padding);
+            return offsetof(GraphicsPipelineKey, padding);
         }
     }
 };
-static_assert(std::has_unique_object_representations_v<GraphicsProgramKey>);
-static_assert(std::is_trivially_copyable_v<GraphicsProgramKey>);
-static_assert(std::is_trivially_constructible_v<GraphicsProgramKey>);
+static_assert(std::has_unique_object_representations_v<GraphicsPipelineKey>);
+static_assert(std::is_trivially_copyable_v<GraphicsPipelineKey>);
+static_assert(std::is_trivially_constructible_v<GraphicsPipelineKey>);
 
-class GraphicsProgram {
+class GraphicsPipeline {
 public:
-    explicit GraphicsProgram(TextureCache& texture_cache_, BufferCache& buffer_cache_,
-                             Tegra::MemoryManager& gpu_memory_,
-                             Tegra::Engines::Maxwell3D& maxwell3d_,
-                             ProgramManager& program_manager_, StateTracker& state_tracker_,
-                             OGLProgram program_,
-                             std::array<OGLAssemblyProgram, 5> assembly_programs_,
-                             const std::array<const Shader::Info*, 5>& infos,
-                             const VideoCommon::TransformFeedbackState* xfb_state);
+    explicit GraphicsPipeline(TextureCache& texture_cache_, BufferCache& buffer_cache_,
+                              Tegra::MemoryManager& gpu_memory_,
+                              Tegra::Engines::Maxwell3D& maxwell3d_,
+                              ProgramManager& program_manager_, StateTracker& state_tracker_,
+                              OGLProgram program_,
+                              std::array<OGLAssemblyProgram, 5> assembly_programs_,
+                              const std::array<const Shader::Info*, 5>& infos,
+                              const VideoCommon::TransformFeedbackState* xfb_state);
 
     void Configure(bool is_indexed);
 
@@ -110,8 +110,8 @@ private:
 
 namespace std {
 template <>
-struct hash<OpenGL::GraphicsProgramKey> {
-    size_t operator()(const OpenGL::GraphicsProgramKey& k) const noexcept {
+struct hash<OpenGL::GraphicsPipelineKey> {
+    size_t operator()(const OpenGL::GraphicsPipelineKey& k) const noexcept {
         return k.Hash();
     }
 };

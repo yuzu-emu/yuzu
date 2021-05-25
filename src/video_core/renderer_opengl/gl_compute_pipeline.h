@@ -30,30 +30,30 @@ namespace OpenGL {
 
 class ProgramManager;
 
-struct ComputeProgramKey {
+struct ComputePipelineKey {
     u64 unique_hash;
     u32 shared_memory_size;
     std::array<u32, 3> workgroup_size;
 
     size_t Hash() const noexcept;
 
-    bool operator==(const ComputeProgramKey&) const noexcept;
+    bool operator==(const ComputePipelineKey&) const noexcept;
 
-    bool operator!=(const ComputeProgramKey& rhs) const noexcept {
+    bool operator!=(const ComputePipelineKey& rhs) const noexcept {
         return !operator==(rhs);
     }
 };
-static_assert(std::has_unique_object_representations_v<ComputeProgramKey>);
-static_assert(std::is_trivially_copyable_v<ComputeProgramKey>);
-static_assert(std::is_trivially_constructible_v<ComputeProgramKey>);
+static_assert(std::has_unique_object_representations_v<ComputePipelineKey>);
+static_assert(std::is_trivially_copyable_v<ComputePipelineKey>);
+static_assert(std::is_trivially_constructible_v<ComputePipelineKey>);
 
-class ComputeProgram {
+class ComputePipeline {
 public:
-    explicit ComputeProgram(TextureCache& texture_cache_, BufferCache& buffer_cache_,
-                            Tegra::MemoryManager& gpu_memory_,
-                            Tegra::Engines::KeplerCompute& kepler_compute_,
-                            ProgramManager& program_manager_, const Shader::Info& info_,
-                            OGLProgram source_program_, OGLAssemblyProgram assembly_program_);
+    explicit ComputePipeline(TextureCache& texture_cache_, BufferCache& buffer_cache_,
+                             Tegra::MemoryManager& gpu_memory_,
+                             Tegra::Engines::KeplerCompute& kepler_compute_,
+                             ProgramManager& program_manager_, const Shader::Info& info_,
+                             OGLProgram source_program_, OGLAssemblyProgram assembly_program_);
 
     void Configure();
 
@@ -76,8 +76,8 @@ private:
 
 namespace std {
 template <>
-struct hash<OpenGL::ComputeProgramKey> {
-    size_t operator()(const OpenGL::ComputeProgramKey& k) const noexcept {
+struct hash<OpenGL::ComputePipelineKey> {
+    size_t operator()(const OpenGL::ComputePipelineKey& k) const noexcept {
         return k.Hash();
     }
 };
