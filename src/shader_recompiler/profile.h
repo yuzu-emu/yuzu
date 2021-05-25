@@ -83,6 +83,8 @@ struct Profile {
     bool support_demote_to_helper_invocation{};
     bool support_int64_atomics{};
     bool support_derivative_control{};
+    bool support_gl_nv_gpu_shader_5{};
+    bool support_gl_amd_gpu_shader_half_float{};
 
     bool warp_size_potentially_larger_than_guest{};
 

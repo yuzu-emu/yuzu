@@ -120,6 +120,14 @@ public:
         return has_depth_buffer_float;
     }
 
+    bool HasNvGpuShader5() const {
+        return has_nv_gpu_shader_5;
+    }
+
+    bool HasAmdShaderHalfFloat() const {
+        return has_amd_shader_half_float;
+    }
+
 private:
     static bool TestVariableAoffi();
     static bool TestPreciseBug();
@@ -151,6 +159,8 @@ private:
     bool use_asynchronous_shaders{};
     bool use_driver_cache{};
     bool has_depth_buffer_float{};
+    bool has_nv_gpu_shader_5{};
+    bool has_amd_shader_half_float{};
 };
 
 } // namespace OpenGL

@@ -158,6 +158,8 @@ Device::Device() {
     has_vertex_buffer_unified_memory = GLAD_GL_NV_vertex_buffer_unified_memory;
     has_debugging_tool_attached = IsDebugToolAttached(extensions);
     has_depth_buffer_float = HasExtension(extensions, "GL_NV_depth_buffer_float");
+    has_nv_gpu_shader_5 = GLAD_GL_NV_gpu_shader5;
+    has_amd_shader_half_float = GLAD_GL_AMD_gpu_shader_half_float;
 
     // At the moment of writing this, only Nvidia's driver optimizes BufferSubData on exclusive
     // uniform buffers as "push constants"
