@@ -189,8 +189,9 @@ struct Info {
     bool uses_atomic_f32x2_add{};
     bool uses_atomic_f32x2_min{};
     bool uses_atomic_f32x2_max{};
+    bool uses_atomic_s32_min{};
+    bool uses_atomic_s32_max{};
     bool uses_int64_bit_atomics{};
-    bool uses_s32_atomics{};
     bool uses_global_memory{};
     bool uses_atomic_image_u32{};
 
