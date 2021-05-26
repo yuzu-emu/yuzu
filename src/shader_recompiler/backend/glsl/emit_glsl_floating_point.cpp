@@ -12,12 +12,12 @@
 namespace Shader::Backend::GLSL {
 namespace {
 void Compare(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs,
-             std::string_view op, std::string_view, bool ordered, bool inequality = false) {
+             std::string_view op, bool ordered) {
     ctx.AddU1("{}={}{}{}", inst, lhs, op, rhs, lhs, rhs);
-    if (ordered && inequality) {
+    if (ordered) {
         ctx.code += fmt::format("&&!isnan({})&&!isnan({})", lhs, rhs);
-    } else if (!ordered && !inequality) {
-        ctx.code += fmt::format("||!isnan({})||!isnan({})", lhs, rhs);
+    } else {
+        ctx.code += fmt::format("||isnan({})||isnan({})", lhs, rhs);
     }
     ctx.code += ";";
 }
@@ -236,12 +236,12 @@ void EmitFPOrdEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::s
 
 void EmitFPOrdEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                       std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, "==", "F", true);
+    Compare(ctx, inst, lhs, rhs, "==", true);
 }
 
 void EmitFPOrdEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                       std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, "==", "F64", true);
+    Compare(ctx, inst, lhs, rhs, "==", true);
 }
 
 void EmitFPUnordEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
@@ -251,12 +251,12 @@ void EmitFPUnordEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std:
 
 void EmitFPUnordEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                         std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, "==", "F", false);
+    Compare(ctx, inst, lhs, rhs, "==", false);
 }
 
 void EmitFPUnordEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                         std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, "==", "F64", false);
+    Compare(ctx, inst, lhs, rhs, "==", false);
 }
 
 void EmitFPOrdNotEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
@@ -266,12 +266,12 @@ void EmitFPOrdNotEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std
 
 void EmitFPOrdNotEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                          std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, "!=", "F", true, true);
+    Compare(ctx, inst, lhs, rhs, "!=", true);
 }
 
 void EmitFPOrdNotEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                          std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, "!=", "F64", true, true);
+    Compare(ctx, inst, lhs, rhs, "!=", true);
 }
 
 void EmitFPUnordNotEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
@@ -281,12 +281,12 @@ void EmitFPUnordNotEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] s
 
 void EmitFPUnordNotEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                            std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, "!=", "F", false, true);
+    Compare(ctx, inst, lhs, rhs, "!=", false);
 }
 
 void EmitFPUnordNotEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                            std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, "!=", "F64", false, true);
+    Compare(ctx, inst, lhs, rhs, "!=", false);
 }
 
 void EmitFPOrdLessThan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
@@ -296,12 +296,12 @@ void EmitFPOrdLessThan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std
 
 void EmitFPOrdLessThan32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                          std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, "<", "F", true);
+    Compare(ctx, inst, lhs, rhs, "<", true);
 }
 
 void EmitFPOrdLessThan64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                          std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, "<", "F64", true);
+    Compare(ctx, inst, lhs, rhs, "<", true);
 }
 
 void EmitFPUnordLessThan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
@@ -311,12 +311,12 @@ void EmitFPUnordLessThan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] s
 
 void EmitFPUnordLessThan32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                            std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, "<", "F", false);
+    Compare(ctx, inst, lhs, rhs, "<", false);
 }
 
 void EmitFPUnordLessThan64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                            std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, "<", "F64", false);
+    Compare(ctx, inst, lhs, rhs, "<", false);
 }
 
 void EmitFPOrdGreaterThan16([[maybe_unused]] EmitContext& ctx,
@@ -327,12 +327,12 @@ void EmitFPOrdGreaterThan16([[maybe_unused]] EmitContext& ctx,
 
 void EmitFPOrdGreaterThan32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                             std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, ">", "F", true);
+    Compare(ctx, inst, lhs, rhs, ">", true);
 }
 
 void EmitFPOrdGreaterThan64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                             std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, ">", "F64", true);
+    Compare(ctx, inst, lhs, rhs, ">", true);
 }
 
 void EmitFPUnordGreaterThan16([[maybe_unused]] EmitContext& ctx,
@@ -343,12 +343,12 @@ void EmitFPUnordGreaterThan16([[maybe_unused]] EmitContext& ctx,
 
 void EmitFPUnordGreaterThan32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                               std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, ">", "F", false);
+    Compare(ctx, inst, lhs, rhs, ">", false);
 }
 
 void EmitFPUnordGreaterThan64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                               std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, ">", "F64", false);
+    Compare(ctx, inst, lhs, rhs, ">", false);
 }
 
 void EmitFPOrdLessThanEqual16([[maybe_unused]] EmitContext& ctx,
@@ -359,12 +359,12 @@ void EmitFPOrdLessThanEqual16([[maybe_unused]] EmitContext& ctx,
 
 void EmitFPOrdLessThanEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                               std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, "<=", "F", true);
+    Compare(ctx, inst, lhs, rhs, "<=", true);
 }
 
 void EmitFPOrdLessThanEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                               std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, "<=", "F64", true);
+    Compare(ctx, inst, lhs, rhs, "<=", true);
 }
 
 void EmitFPUnordLessThanEqual16([[maybe_unused]] EmitContext& ctx,
@@ -375,12 +375,12 @@ void EmitFPUnordLessThanEqual16([[maybe_unused]] EmitContext& ctx,
 
 void EmitFPUnordLessThanEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                                 std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, "<=", "F", false);
+    Compare(ctx, inst, lhs, rhs, "<=", false);
 }
 
 void EmitFPUnordLessThanEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                                 std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, "<=", "F64", false);
+    Compare(ctx, inst, lhs, rhs, "<=", false);
 }
 
 void EmitFPOrdGreaterThanEqual16([[maybe_unused]] EmitContext& ctx,
@@ -391,12 +391,12 @@ void EmitFPOrdGreaterThanEqual16([[maybe_unused]] EmitContext& ctx,
 
 void EmitFPOrdGreaterThanEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                                  std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, ">=", "F", true);
+    Compare(ctx, inst, lhs, rhs, ">=", true);
 }
 
 void EmitFPOrdGreaterThanEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                                  std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, ">=", "F64", true);
+    Compare(ctx, inst, lhs, rhs, ">=", true);
 }
 
 void EmitFPUnordGreaterThanEqual16([[maybe_unused]] EmitContext& ctx,
@@ -407,12 +407,12 @@ void EmitFPUnordGreaterThanEqual16([[maybe_unused]] EmitContext& ctx,
 
 void EmitFPUnordGreaterThanEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                                    std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, ">=", "F", false);
+    Compare(ctx, inst, lhs, rhs, ">=", false);
 }
 
 void EmitFPUnordGreaterThanEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                                    std::string_view rhs) {
-    Compare(ctx, inst, lhs, rhs, ">=", "F64", false);
+    Compare(ctx, inst, lhs, rhs, ">=", false);
 }
 
 void EmitFPIsNan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
