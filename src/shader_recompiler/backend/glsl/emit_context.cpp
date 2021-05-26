@@ -110,9 +110,12 @@ void EmitContext::DefineHelperFunctions() {
         code += "uint CasFloatMax16x2(uint op_a,f16vec2 op_b){return "
                 "packFloat2x16(max(unpackFloat2x16(op_a),op_b));}\n";
     }
-    // TODO: Track this usage
-    code += "uint CasMinS32(uint op_a,uint op_b){return uint(min(int(op_a),int(op_b)));}";
-    code += "uint CasMaxS32(uint op_a,uint op_b){return uint(max(int(op_a),int(op_b)));}";
+    if (info.uses_atomic_s32_min) {
+        code += "uint CasMinS32(uint op_a,uint op_b){return uint(min(int(op_a),int(op_b)));}";
+    }
+    if (info.uses_atomic_s32_max) {
+        code += "uint CasMaxS32(uint op_a,uint op_b){return uint(max(int(op_a),int(op_b)));}";
+    }
 }
 
 } // namespace Shader::Backend::GLSL
