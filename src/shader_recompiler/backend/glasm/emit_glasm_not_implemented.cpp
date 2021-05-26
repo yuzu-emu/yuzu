@@ -225,7 +225,7 @@ void EmitUndefU16(EmitContext& ctx, IR::Inst& inst) {
 }
 
 void EmitUndefU32(EmitContext& ctx, IR::Inst& inst) {
-    ctx.Add("MOV.S {}.x,0;\n", inst);
+    ctx.Add("MOV.S {}.x,0;", inst);
 }
 
 void EmitUndefU64(EmitContext& ctx, IR::Inst& inst) {
