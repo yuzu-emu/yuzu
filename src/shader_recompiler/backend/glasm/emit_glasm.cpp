@@ -439,6 +439,9 @@ std::string EmitGLASM(const Profile& profile, const RuntimeInfo& runtime_info, I
                   "MOV.F FSWZB[2],1;"
                   "MOV.F FSWZB[3],-1;";
     }
+    if (ctx.uses_y_direction) {
+        header += "PARAM y_direction[1]={state.material.front.ambient};";
+    }
     ctx.code.insert(0, header);
     ctx.code += "END";
     return ctx.code;

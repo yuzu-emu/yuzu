@@ -70,6 +70,8 @@ public:
     Stage stage{};
     std::string_view stage_name = "invalid";
     std::string_view attrib_name = "invalid";
+
+    bool uses_y_direction{};
 };
 
 } // namespace Shader::Backend::GLASM
