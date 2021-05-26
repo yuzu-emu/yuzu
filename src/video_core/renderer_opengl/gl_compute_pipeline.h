@@ -28,6 +28,7 @@ struct Info;
 
 namespace OpenGL {
 
+class Device;
 class ProgramManager;
 
 struct ComputePipelineKey {
@@ -49,13 +50,17 @@ static_assert(std::is_trivially_constructible_v<ComputePipelineKey>);
 
 class ComputePipeline {
 public:
-    explicit ComputePipeline(TextureCache& texture_cache_, BufferCache& buffer_cache_,
-                             Tegra::MemoryManager& gpu_memory_,
+    explicit ComputePipeline(const Device& device, TextureCache& texture_cache_,
+                             BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
                              Tegra::Engines::KeplerCompute& kepler_compute_,
                              ProgramManager& program_manager_, const Shader::Info& info_,
                              OGLProgram source_program_, OGLAssemblyProgram assembly_program_);
 
     void Configure();
+
+    [[nodiscard]] bool WritesGlobalMemory() const noexcept {
+        return writes_global_memory;
+    }
 
 private:
     TextureCache& texture_cache;
@@ -70,6 +75,9 @@ private:
 
     u32 num_texture_buffers{};
     u32 num_image_buffers{};
+
+    bool use_storage_buffers{};
+    bool writes_global_memory{};
 };
 
 } // namespace OpenGL

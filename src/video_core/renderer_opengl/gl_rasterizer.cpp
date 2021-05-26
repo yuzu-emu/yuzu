@@ -268,19 +268,21 @@ void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
     EndTransformFeedback();
 
     ++num_queued_commands;
+    has_written_global_memory |= pipeline->WritesGlobalMemory();
 
     gpu.TickWork();
 }
 
 void RasterizerOpenGL::DispatchCompute() {
-    ComputePipeline* const program{shader_cache.CurrentComputePipeline()};
-    if (!program) {
+    ComputePipeline* const pipeline{shader_cache.CurrentComputePipeline()};
+    if (!pipeline) {
         return;
     }
-    program->Configure();
+    pipeline->Configure();
     const auto& qmd{kepler_compute.launch_description};
     glDispatchCompute(qmd.grid_dim_x, qmd.grid_dim_y, qmd.grid_dim_z);
     ++num_queued_commands;
+    has_written_global_memory |= pipeline->WritesGlobalMemory();
 }
 
 void RasterizerOpenGL::ResetCounter(VideoCore::QueryType type) {
@@ -449,9 +451,8 @@ void RasterizerOpenGL::FlushCommands() {
 
     // Make sure memory stored from the previous GL command stream is visible
     // This is only needed on assembly shaders where we write to GPU memory with raw pointers
-    // TODO: Call this only when NV_shader_buffer_load or NV_shader_buffer_store have been used
-    //       and prefer using NV_shader_storage_buffer_object when possible
-    if (Settings::values.use_assembly_shaders.GetValue()) {
+    if (has_written_global_memory) {
+        has_written_global_memory = false;
         glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
     }
     glFlush();

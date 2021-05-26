@@ -111,7 +111,10 @@ struct RuntimeInfo {
     std::optional<CompareFunction> alpha_test_func;
     float alpha_test_reference{};
 
+    // Static y negate value
     bool y_negate{};
+    // Use storage buffers instead of global pointers on GLASM
+    bool glasm_use_storage_buffers{};
 
     std::vector<TransformFeedbackVarying> xfb_varyings;
 };

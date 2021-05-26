@@ -157,7 +157,8 @@ GLenum AssemblyStage(size_t stage_index) {
 }
 
 Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
-                                    const Shader::IR::Program& program) {
+                                    const Shader::IR::Program& program,
+                                    bool glasm_use_storage_buffers) {
     Shader::RuntimeInfo info;
     switch (program.stage) {
     case Shader::Stage::TessellationEval:
@@ -220,6 +221,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
         info.input_topology = Shader::InputTopology::TrianglesAdjacency;
         break;
     }
+    info.glasm_use_storage_buffers = glasm_use_storage_buffers;
     return info;
 }
 
@@ -435,7 +437,8 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
     ShaderPools& pools, const GraphicsPipelineKey& key, std::span<Shader::Environment* const> envs,
     bool build_in_parallel) {
     LOG_INFO(Render_OpenGL, "0x{:016x}", key.Hash());
-    size_t env_index{0};
+    size_t env_index{};
+    u32 total_storage_buffers{};
     std::array<Shader::IR::Program, Maxwell::MaxShaderProgram> programs;
     for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
         if (key.unique_hashes[index] == 0) {
@@ -447,7 +450,14 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
         const u32 cfg_offset{static_cast<u32>(env.StartAddress() + sizeof(Shader::ProgramHeader))};
         Shader::Maxwell::Flow::CFG cfg(env, pools.flow_block, cfg_offset);
         programs[index] = TranslateProgram(pools.inst, pools.block, env, cfg);
+
+        for (const auto& desc : programs[index].info.storage_buffers_descriptors) {
+            total_storage_buffers += desc.count;
+        }
     }
+    const u32 glasm_storage_buffer_limit{device.GetMaxGLASMStorageBufferBlocks()};
+    const bool glasm_use_storage_buffers{total_storage_buffers <= glasm_storage_buffer_limit};
+
     std::array<const Shader::Info*, Maxwell::MaxShaderStage> infos{};
 
     OGLProgram source_program;
@@ -466,7 +476,7 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
         const size_t stage_index{index - 1};
         infos[stage_index] = &program.info;
 
-        const Shader::RuntimeInfo runtime_info{MakeRuntimeInfo(key, program)};
+        const auto runtime_info{MakeRuntimeInfo(key, program, glasm_use_storage_buffers)};
         if (device.UseAssemblyShaders()) {
             const std::string code{EmitGLASM(profile, runtime_info, program, binding)};
             assembly_programs[stage_index] = CompileProgram(code, AssemblyStage(stage_index));
@@ -479,7 +489,7 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
         LinkProgram(source_program.handle);
     }
     return std::make_unique<GraphicsPipeline>(
-        texture_cache, buffer_cache, gpu_memory, maxwell3d, program_manager, state_tracker,
+        device, texture_cache, buffer_cache, gpu_memory, maxwell3d, program_manager, state_tracker,
         std::move(source_program), std::move(assembly_programs), infos,
         key.xfb_enabled != 0 ? &key.xfb_state : nullptr);
 }
@@ -508,10 +518,18 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(ShaderPools&
 
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
     Shader::IR::Program program{TranslateProgram(pools.inst, pools.block, env, cfg)};
+
+    u32 num_storage_buffers{};
+    for (const auto& desc : program.info.storage_buffers_descriptors) {
+        num_storage_buffers += desc.count;
+    }
+    Shader::RuntimeInfo info;
+    info.glasm_use_storage_buffers = num_storage_buffers <= device.GetMaxGLASMStorageBufferBlocks();
+
     OGLAssemblyProgram asm_program;
     OGLProgram source_program;
     if (device.UseAssemblyShaders()) {
-        const std::string code{EmitGLASM(profile, program)};
+        const std::string code{EmitGLASM(profile, info, program)};
         asm_program = CompileProgram(code, GL_COMPUTE_PROGRAM_NV);
     } else {
         const std::vector<u32> code{EmitSPIRV(profile, program)};
@@ -519,7 +537,7 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(ShaderPools&
         AddShader(GL_COMPUTE_SHADER, source_program.handle, code);
         LinkProgram(source_program.handle);
     }
-    return std::make_unique<ComputePipeline>(texture_cache, buffer_cache, gpu_memory,
+    return std::make_unique<ComputePipeline>(device, texture_cache, buffer_cache, gpu_memory,
                                              kepler_compute, program_manager, program.info,
                                              std::move(source_program), std::move(asm_program));
 }

@@ -25,7 +25,7 @@ constexpr u32 MAX_TEXTURES = 64;
 constexpr u32 MAX_IMAGES = 8;
 
 template <typename Range>
-u32 AccumulateCount(Range&& range) {
+u32 AccumulateCount(const Range& range) {
     u32 num{};
     for (const auto& desc : range) {
         num += desc.count;
@@ -70,8 +70,8 @@ bool GraphicsPipelineKey::operator==(const GraphicsPipelineKey& rhs) const noexc
     return std::memcmp(this, &rhs, Size()) == 0;
 }
 
-GraphicsPipeline::GraphicsPipeline(TextureCache& texture_cache_, BufferCache& buffer_cache_,
-                                   Tegra::MemoryManager& gpu_memory_,
+GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_cache_,
+                                   BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
                                    Tegra::Engines::Maxwell3D& maxwell3d_,
                                    ProgramManager& program_manager_, StateTracker& state_tracker_,
                                    OGLProgram program_,
@@ -90,6 +90,7 @@ GraphicsPipeline::GraphicsPipeline(TextureCache& texture_cache_, BufferCache& bu
     }
     u32 num_textures{};
     u32 num_images{};
+    u32 num_storage_buffers{};
     for (size_t stage = 0; stage < base_uniform_bindings.size(); ++stage) {
         const auto& info{stage_infos[stage]};
         if (stage < 4) {
@@ -109,11 +110,20 @@ GraphicsPipeline::GraphicsPipeline(TextureCache& texture_cache_, BufferCache& bu
 
         num_textures += AccumulateCount(info.texture_descriptors);
         num_images += AccumulateCount(info.image_descriptors);
+        num_storage_buffers += AccumulateCount(info.storage_buffers_descriptors);
+
+        writes_global_memory |= std::ranges::any_of(
+            info.storage_buffers_descriptors, [](const auto& desc) { return desc.is_written; });
     }
     ASSERT(num_textures <= MAX_TEXTURES);
     ASSERT(num_images <= MAX_IMAGES);
 
-    if (assembly_programs[0].handle != 0 && xfb_state) {
+    const bool assembly_shaders{assembly_programs[0].handle != 0};
+    use_storage_buffers =
+        !assembly_shaders || num_storage_buffers <= device.GetMaxGLASMStorageBufferBlocks();
+    writes_global_memory &= !use_storage_buffers;
+
+    if (assembly_shaders && xfb_state) {
         GenerateTransformFeedbackState(*xfb_state);
     }
 }
@@ -137,6 +147,7 @@ void GraphicsPipeline::Configure(bool is_indexed) {
 
     buffer_cache.runtime.SetBaseUniformBindings(base_uniform_bindings);
     buffer_cache.runtime.SetBaseStorageBindings(base_storage_bindings);
+    buffer_cache.runtime.SetEnableStorageBuffers(use_storage_buffers);
 
     const auto& regs{maxwell3d.regs};
     const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};

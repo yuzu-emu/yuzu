@@ -189,7 +189,12 @@ void BufferCacheRuntime::BindComputeUniformBuffer(u32 binding_index, Buffer& buf
 
 void BufferCacheRuntime::BindStorageBuffer(size_t stage, u32 binding_index, Buffer& buffer,
                                            u32 offset, u32 size, bool is_written) {
-    if (use_assembly_shaders) {
+    if (use_storage_buffers) {
+        const GLuint base_binding = graphics_base_storage_bindings[stage];
+        const GLuint binding = base_binding + binding_index;
+        glBindBufferRange(GL_SHADER_STORAGE_BUFFER, binding, buffer.Handle(),
+                          static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size));
+    } else {
         const BindlessSSBO ssbo{
             .address = buffer.HostGpuAddr() + offset,
             .length = static_cast<GLsizei>(size),
@@ -198,17 +203,19 @@ void BufferCacheRuntime::BindStorageBuffer(size_t stage, u32 binding_index, Buff
         buffer.MakeResident(is_written ? GL_READ_WRITE : GL_READ_ONLY);
         glProgramLocalParametersI4uivNV(PROGRAM_LUT[stage], binding_index, 1,
                                         reinterpret_cast<const GLuint*>(&ssbo));
-    } else {
-        const GLuint base_binding = graphics_base_storage_bindings[stage];
-        const GLuint binding = base_binding + binding_index;
-        glBindBufferRange(GL_SHADER_STORAGE_BUFFER, binding, buffer.Handle(),
-                          static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size));
     }
 }
 
 void BufferCacheRuntime::BindComputeStorageBuffer(u32 binding_index, Buffer& buffer, u32 offset,
                                                   u32 size, bool is_written) {
-    if (use_assembly_shaders) {
+    if (use_storage_buffers) {
+        if (size != 0) {
+            glBindBufferRange(GL_SHADER_STORAGE_BUFFER, binding_index, buffer.Handle(),
+                              static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size));
+        } else {
+            glBindBufferRange(GL_SHADER_STORAGE_BUFFER, binding_index, 0, 0, 0);
+        }
+    } else {
         const BindlessSSBO ssbo{
             .address = buffer.HostGpuAddr() + offset,
             .length = static_cast<GLsizei>(size),
@@ -217,11 +224,6 @@ void BufferCacheRuntime::BindComputeStorageBuffer(u32 binding_index, Buffer& buf
         buffer.MakeResident(is_written ? GL_READ_WRITE : GL_READ_ONLY);
         glProgramLocalParametersI4uivNV(GL_COMPUTE_PROGRAM_NV, binding_index, 1,
                                         reinterpret_cast<const GLuint*>(&ssbo));
-    } else if (size == 0) {
-        glBindBufferRange(GL_SHADER_STORAGE_BUFFER, binding_index, 0, 0, 0);
-    } else {
-        glBindBufferRange(GL_SHADER_STORAGE_BUFFER, binding_index, buffer.Handle(),
-                          static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size));
     }
 }
 

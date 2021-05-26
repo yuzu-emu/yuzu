@@ -13,7 +13,6 @@ namespace OpenGL {
 class Device {
 public:
     explicit Device();
-    explicit Device(std::nullptr_t);
 
     [[nodiscard]] std::string GetVendorName() const;
 
@@ -39,6 +38,10 @@ public:
 
     u32 GetMaxComputeSharedMemorySize() const {
         return max_compute_shared_memory_size;
+    }
+
+    u32 GetMaxGLASMStorageBufferBlocks() const {
+        return max_glasm_storage_buffer_blocks;
     }
 
     bool HasWarpIntrinsics() const {
@@ -124,6 +127,7 @@ private:
     u32 max_vertex_attributes{};
     u32 max_varyings{};
     u32 max_compute_shared_memory_size{};
+    u32 max_glasm_storage_buffer_blocks{};
     bool has_warp_intrinsics{};
     bool has_shader_ballot{};
     bool has_vertex_viewport_layer{};

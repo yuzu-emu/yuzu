@@ -20,6 +20,7 @@
 
 namespace OpenGL {
 
+class Device;
 class ProgramManager;
 
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
@@ -60,8 +61,8 @@ static_assert(std::is_trivially_constructible_v<GraphicsPipelineKey>);
 
 class GraphicsPipeline {
 public:
-    explicit GraphicsPipeline(TextureCache& texture_cache_, BufferCache& buffer_cache_,
-                              Tegra::MemoryManager& gpu_memory_,
+    explicit GraphicsPipeline(const Device& device, TextureCache& texture_cache_,
+                              BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
                               Tegra::Engines::Maxwell3D& maxwell3d_,
                               ProgramManager& program_manager_, StateTracker& state_tracker_,
                               OGLProgram program_,
@@ -75,6 +76,10 @@ public:
         if (num_xfb_attribs != 0) {
             ConfigureTransformFeedbackImpl();
         }
+    }
+
+    [[nodiscard]] bool WritesGlobalMemory() const noexcept {
+        return writes_global_memory;
     }
 
 private:
@@ -98,6 +103,9 @@ private:
     std::array<u32, 5> base_storage_bindings{};
     std::array<u32, 5> num_texture_buffers{};
     std::array<u32, 5> num_image_buffers{};
+
+    bool use_storage_buffers{};
+    bool writes_global_memory{};
 
     static constexpr std::size_t XFB_ENTRY_STRIDE = 3;
     GLsizei num_xfb_attribs{};

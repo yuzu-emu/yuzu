@@ -145,6 +145,10 @@ public:
         image_handles = image_handles_;
     }
 
+    void SetEnableStorageBuffers(bool use_storage_buffers_) {
+        use_storage_buffers = use_storage_buffers_;
+    }
+
 private:
     static constexpr std::array PABO_LUT{
         GL_VERTEX_PROGRAM_PARAMETER_BUFFER_NV,          GL_TESS_CONTROL_PROGRAM_PARAMETER_BUFFER_NV,
@@ -157,6 +161,8 @@ private:
     bool has_fast_buffer_sub_data = false;
     bool use_assembly_shaders = false;
     bool has_unified_vertex_buffers = false;
+
+    bool use_storage_buffers = false;
 
     u32 max_attributes = 0;
 

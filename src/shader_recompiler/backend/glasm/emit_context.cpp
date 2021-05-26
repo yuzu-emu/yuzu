@@ -7,6 +7,7 @@
 #include "shader_recompiler/backend/bindings.h"
 #include "shader_recompiler/backend/glasm/emit_context.h"
 #include "shader_recompiler/frontend/ir/program.h"
+#include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::GLASM {
 namespace {
@@ -40,13 +41,21 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         Add("CBUFFER c{}[]={{program.buffer[{}]}};", desc.index, cbuf_index);
         ++cbuf_index;
     }
+    u32 ssbo_index{};
     for (const auto& desc : info.storage_buffers_descriptors) {
         if (desc.count != 1) {
             throw NotImplementedException("Storage buffer descriptor array");
         }
+        if (runtime_info.glasm_use_storage_buffers) {
+            Add("STORAGE ssbo{}[]={{program.storage[{}]}};", ssbo_index, bindings.storage_buffer);
+            ++bindings.storage_buffer;
+            ++ssbo_index;
+        }
     }
-    if (const size_t num = info.storage_buffers_descriptors.size(); num > 0) {
-        Add("PARAM c[{}]={{program.local[0..{}]}};", num, num - 1);
+    if (!runtime_info.glasm_use_storage_buffers) {
+        if (const size_t num = info.storage_buffers_descriptors.size(); num > 0) {
+            Add("PARAM c[{}]={{program.local[0..{}]}};", num, num - 1);
+        }
     }
     stage = program.stage;
     switch (program.stage) {

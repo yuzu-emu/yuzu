@@ -4,7 +4,6 @@ add_library(shader_recompiler STATIC
     backend/glasm/emit_context.h
     backend/glasm/emit_glasm.cpp
     backend/glasm/emit_glasm.h
-    backend/glasm/emit_glasm_atomic.cpp
     backend/glasm/emit_glasm_barriers.cpp
     backend/glasm/emit_glasm_bitwise_conversion.cpp
     backend/glasm/emit_glasm_composite.cpp
