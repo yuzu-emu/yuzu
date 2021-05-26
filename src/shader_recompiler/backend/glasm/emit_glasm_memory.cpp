@@ -37,8 +37,8 @@ void GlobalStorageOp(EmitContext& ctx, Register address, std::string_view then_e
             continue;
         }
         const auto& ssbo{ctx.info.storage_buffers_descriptors[index]};
-        ctx.Add("LDC.U64 DC.x,c[{}];"     // ssbo_addr
-                "LDC.U32 RC.x,c[{}];"     // ssbo_size_u32
+        ctx.Add("LDC.U64 DC.x,c{}[{}];"   // ssbo_addr
+                "LDC.U32 RC.x,c{}[{}];"   // ssbo_size_u32
                 "CVT.U64.U32 DC.y,RC.x;"  // ssbo_size = ssbo_size_u32
                 "ADD.U64 DC.y,DC.y,DC.x;" // ssbo_end = ssbo_addr + ssbo_size
                 "SGE.U64 RC.x,{}.x,DC.x;" // a = input_addr >= ssbo_addr ? -1 : 1
@@ -48,9 +48,10 @@ void GlobalStorageOp(EmitContext& ctx, Register address, std::string_view then_e
                 "SUB.U64 DC.x,{}.x,DC.x;" // offset = input_addr - ssbo_addr
                 "PK64.U DC.y,c[{}];"      // host_ssbo = cbuf
                 "ADD.U64 DC.x,DC.x,DC.y;" // host_addr = host_ssbo + offset
-                "{}",
-                "ELSE;", index, index, ssbo.cbuf_offset, ssbo.cbuf_offset + 8, address, address,
-                address, index, then_expr);
+                "{}"
+                "ELSE;",
+                ssbo.cbuf_index, ssbo.cbuf_offset, ssbo.cbuf_index, ssbo.cbuf_offset + 8, address,
+                address, address, index, then_expr);
     }
     if (!else_expr.empty()) {
         ctx.Add("{}", else_expr);
