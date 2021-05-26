@@ -89,6 +89,11 @@ public:
     }
 
     template <typename... Args>
+    void AddF32x4(const char* format_str, IR::Inst& inst, Args&&... args) {
+        Add<Type::F32x4>(format_str, inst, args...);
+    }
+
+    template <typename... Args>
     void Add(const char* format_str, Args&&... args) {
         code += fmt::format(format_str, std::forward<Args>(args)...);
         // TODO: Remove this
@@ -99,6 +104,10 @@ public:
     RegAlloc reg_alloc;
     const Info& info;
     const Profile& profile;
+
+    Stage stage{};
+    std::string_view stage_name = "invalid";
+    std::string_view attrib_name = "invalid";
 
 private:
     void SetupExtensions(std::string& header);
