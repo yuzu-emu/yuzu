@@ -15,9 +15,10 @@ namespace Shader::Backend::GLASM {
 [[nodiscard]] std::string EmitGLASM(const Profile& profile, const RuntimeInfo& runtime_info,
                                     IR::Program& program, Bindings& bindings);
 
-[[nodiscard]] inline std::string EmitGLASM(const Profile& profile, IR::Program& program) {
+[[nodiscard]] inline std::string EmitGLASM(const Profile& profile, const RuntimeInfo& runtime_info,
+                                           IR::Program& program) {
     Bindings binding;
-    return EmitGLASM(profile, {}, program, binding);
+    return EmitGLASM(profile, runtime_info, program, binding);
 }
 
 } // namespace Shader::Backend::GLASM

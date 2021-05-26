@@ -17,6 +17,15 @@ using VideoCommon::ImageId;
 constexpr u32 MAX_TEXTURES = 64;
 constexpr u32 MAX_IMAGES = 16;
 
+template <typename Range>
+u32 AccumulateCount(const Range& range) {
+    u32 num{};
+    for (const auto& desc : range) {
+        num += desc.count;
+    }
+    return num;
+}
+
 size_t ComputePipelineKey::Hash() const noexcept {
     return static_cast<size_t>(
         Common::CityHash64(reinterpret_cast<const char*>(this), sizeof *this));
@@ -26,31 +35,31 @@ bool ComputePipelineKey::operator==(const ComputePipelineKey& rhs) const noexcep
     return std::memcmp(this, &rhs, sizeof *this) == 0;
 }
 
-ComputePipeline::ComputePipeline(TextureCache& texture_cache_, BufferCache& buffer_cache_,
-                                 Tegra::MemoryManager& gpu_memory_,
+ComputePipeline::ComputePipeline(const Device& device, TextureCache& texture_cache_,
+                                 BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
                                  Tegra::Engines::KeplerCompute& kepler_compute_,
                                  ProgramManager& program_manager_, const Shader::Info& info_,
                                  OGLProgram source_program_, OGLAssemblyProgram assembly_program_)
     : texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, gpu_memory{gpu_memory_},
       kepler_compute{kepler_compute_}, program_manager{program_manager_}, info{info_},
       source_program{std::move(source_program_)}, assembly_program{std::move(assembly_program_)} {
-    for (const auto& desc : info.texture_buffer_descriptors) {
-        num_texture_buffers += desc.count;
-    }
-    for (const auto& desc : info.image_buffer_descriptors) {
-        num_image_buffers += desc.count;
-    }
-    u32 num_textures = num_texture_buffers;
-    for (const auto& desc : info.texture_descriptors) {
-        num_textures += desc.count;
-    }
+
+    num_texture_buffers = AccumulateCount(info.texture_buffer_descriptors);
+    num_image_buffers = AccumulateCount(info.image_buffer_descriptors);
+
+    const u32 num_textures{num_texture_buffers + AccumulateCount(info.texture_descriptors)};
     ASSERT(num_textures <= MAX_TEXTURES);
 
-    u32 num_images = num_image_buffers;
-    for (const auto& desc : info.image_descriptors) {
-        num_images += desc.count;
-    }
+    const u32 num_images{num_image_buffers + AccumulateCount(info.image_descriptors)};
     ASSERT(num_images <= MAX_IMAGES);
+
+    const bool is_glasm{assembly_program.handle != 0};
+    const u32 num_storage_buffers{AccumulateCount(info.storage_buffers_descriptors)};
+    use_storage_buffers =
+        !is_glasm || num_storage_buffers < device.GetMaxGLASMStorageBufferBlocks();
+    writes_global_memory = !use_storage_buffers &&
+                           std::ranges::any_of(info.storage_buffers_descriptors,
+                                               [](const auto& desc) { return desc.is_written; });
 }
 
 void ComputePipeline::Configure() {
@@ -150,6 +159,7 @@ void ComputePipeline::Configure() {
 
     buffer_cache.UpdateComputeBuffers();
 
+    buffer_cache.runtime.SetEnableStorageBuffers(use_storage_buffers);
     buffer_cache.runtime.SetImagePointers(textures.data(), images.data());
     buffer_cache.BindHostComputeBuffers();
 

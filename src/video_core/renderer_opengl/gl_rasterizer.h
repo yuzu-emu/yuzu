@@ -209,7 +209,8 @@ private:
     std::array<GLuint, MAX_IMAGES> image_handles{};
 
     /// Number of commands queued to the OpenGL driver. Resetted on flush.
-    std::size_t num_queued_commands = 0;
+    size_t num_queued_commands = 0;
+    bool has_written_global_memory = false;
 
     u32 last_clip_distance_mask = 0;
 };

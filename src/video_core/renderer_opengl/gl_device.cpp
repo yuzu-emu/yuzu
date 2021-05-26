@@ -135,13 +135,13 @@ Device::Device() {
             "Beta driver 443.24 is known to have issues. There might be performance issues.");
         disable_fast_buffer_sub_data = true;
     }
-
     max_uniform_buffers = BuildMaxUniformBuffers();
     uniform_buffer_alignment = GetInteger<size_t>(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT);
     shader_storage_alignment = GetInteger<size_t>(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT);
     max_vertex_attributes = GetInteger<u32>(GL_MAX_VERTEX_ATTRIBS);
     max_varyings = GetInteger<u32>(GL_MAX_VARYING_VECTORS);
     max_compute_shared_memory_size = GetInteger<u32>(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE);
+    max_glasm_storage_buffer_blocks = GetInteger<u32>(GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS);
     has_warp_intrinsics = GLAD_GL_NV_gpu_shader5 && GLAD_GL_NV_shader_thread_group &&
                           GLAD_GL_NV_shader_thread_shuffle;
     has_shader_ballot = GLAD_GL_ARB_shader_ballot;
@@ -234,22 +234,6 @@ std::string Device::GetVendorName() const {
         return "TEGRA";
     }
     return vendor_name;
-}
-
-Device::Device(std::nullptr_t) {
-    max_uniform_buffers.fill(std::numeric_limits<u32>::max());
-    uniform_buffer_alignment = 4;
-    shader_storage_alignment = 4;
-    max_vertex_attributes = 16;
-    max_varyings = 15;
-    max_compute_shared_memory_size = 0x10000;
-    has_warp_intrinsics = true;
-    has_shader_ballot = true;
-    has_vertex_viewport_layer = true;
-    has_image_load_formatted = true;
-    has_texture_shadow_lod = true;
-    has_variable_aoffi = true;
-    has_depth_buffer_float = true;
 }
 
 bool Device::TestVariableAoffi() {
