@@ -19,8 +19,15 @@ static void NotImplemented() {
     throw NotImplementedException("GLSL instruction");
 }
 
-void EmitPhi(EmitContext& ctx, IR::Inst& inst) {
-    // NotImplemented();
+void EmitPhi(EmitContext& ctx, IR::Inst& phi) {
+    const size_t num_args{phi.NumArgs()};
+    for (size_t i = 0; i < num_args; ++i) {
+        ctx.reg_alloc.Consume(phi.Arg(i));
+    }
+    if (!phi.Definition<Id>().is_valid) {
+        // The phi node wasn't forward defined
+        ctx.Add("{};", ctx.reg_alloc.Define(phi, phi.Arg(0).Type()));
+    }
 }
 
 void EmitVoid(EmitContext& ctx) {
@@ -31,11 +38,18 @@ void EmitReference(EmitContext&) {
     // NotImplemented();
 }
 
-void EmitPhiMove(EmitContext& ctx, const IR::Value& phi, const IR::Value& value) {
-    if (phi == value) {
+void EmitPhiMove(EmitContext& ctx, const IR::Value& phi_value, const IR::Value& value) {
+    IR::Inst& phi{RegAlloc::AliasInst(*phi_value.Inst())};
+    if (!phi.Definition<Id>().is_valid) {
+        // The phi node wasn't forward defined
+        ctx.Add("{};", ctx.reg_alloc.Define(phi, phi.Arg(0).Type()));
+    }
+    const auto phi_reg{ctx.reg_alloc.Consume(IR::Value{&phi})};
+    const auto val_reg{ctx.reg_alloc.Consume(value)};
+    if (phi_reg == val_reg) {
         return;
     }
-    ctx.Add("{}={};", ctx.reg_alloc.Consume(phi), ctx.reg_alloc.Consume(value));
+    ctx.Add("{}={};", phi_reg, val_reg);
 }
 
 void EmitBranch(EmitContext& ctx, std::string_view label) {
