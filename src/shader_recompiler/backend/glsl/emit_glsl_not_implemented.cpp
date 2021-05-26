@@ -83,7 +83,7 @@ void EmitUnreachable(EmitContext& ctx) {
 }
 
 void EmitDemoteToHelperInvocation(EmitContext& ctx, std::string_view continue_label) {
-    NotImplemented();
+    ctx.Add("discard;");
 }
 
 void EmitBarrier(EmitContext& ctx) {
@@ -146,15 +146,6 @@ void EmitGetIndirectBranchVariable(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view vertex) {
-    NotImplemented();
-}
-
-void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view value,
-                      std::string_view vertex) {
-    NotImplemented();
-}
-
 void EmitGetAttributeIndexed(EmitContext& ctx, std::string_view offset, std::string_view vertex) {
     NotImplemented();
 }
@@ -169,10 +160,6 @@ void EmitGetPatch(EmitContext& ctx, IR::Patch patch) {
 }
 
 void EmitSetPatch(EmitContext& ctx, IR::Patch patch, std::string_view value) {
-    NotImplemented();
-}
-
-void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, std::string_view value) {
     NotImplemented();
 }
 
@@ -453,169 +440,6 @@ void EmitSharedAtomicExchange32(EmitContext& ctx, std::string_view pointer_offse
 
 void EmitSharedAtomicExchange64(EmitContext& ctx, std::string_view pointer_offset,
                                 std::string_view value) {
-    NotImplemented();
-}
-
-void EmitBindlessImageSampleImplicitLod(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBindlessImageSampleExplicitLod(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBindlessImageSampleDrefImplicitLod(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBindlessImageSampleDrefExplicitLod(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBindlessImageGather(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBindlessImageGatherDref(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBindlessImageFetch(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBindlessImageQueryDimensions(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBindlessImageQueryLod(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBindlessImageGradient(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBindlessImageRead(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBindlessImageWrite(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBoundImageSampleImplicitLod(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBoundImageSampleExplicitLod(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBoundImageSampleDrefImplicitLod(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBoundImageSampleDrefExplicitLod(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBoundImageGather(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBoundImageGatherDref(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBoundImageFetch(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBoundImageQueryDimensions(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBoundImageQueryLod(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBoundImageGradient(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBoundImageRead(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitBoundImageWrite(EmitContext&) {
-    NotImplemented();
-}
-
-void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                                std::string_view coords, std::string_view bias_lc,
-                                const IR::Value& offset) {
-    NotImplemented();
-}
-
-void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                                std::string_view coords, std::string_view lod_lc,
-                                const IR::Value& offset) {
-    NotImplemented();
-}
-
-void EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                                    std::string_view coords, std::string_view dref,
-                                    std::string_view bias_lc, const IR::Value& offset) {
-    NotImplemented();
-}
-
-void EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                                    std::string_view coords, std::string_view dref,
-                                    std::string_view lod_lc, const IR::Value& offset) {
-    NotImplemented();
-}
-
-void EmitImageGather(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                     std::string_view coords, const IR::Value& offset, const IR::Value& offset2) {
-    NotImplemented();
-}
-
-void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                         std::string_view coords, const IR::Value& offset, const IR::Value& offset2,
-                         std::string_view dref) {
-    NotImplemented();
-}
-
-void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                    std::string_view coords, std::string_view offset, std::string_view lod,
-                    std::string_view ms) {
-    NotImplemented();
-}
-
-void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                              std::string_view lod) {
-    NotImplemented();
-}
-
-void EmitImageQueryLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                       std::string_view coords) {
-    NotImplemented();
-}
-
-void EmitImageGradient(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                       std::string_view coords, std::string_view derivates, std::string_view offset,
-                       std::string_view lod_clamp) {
-    NotImplemented();
-}
-
-void EmitImageRead(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                   std::string_view coords) {
-    NotImplemented();
-}
-
-void EmitImageWrite(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                    std::string_view coords, std::string_view color) {
     NotImplemented();
 }
 

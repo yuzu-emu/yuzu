@@ -14,17 +14,63 @@ EmitContext::EmitContext(IR::Program& program, [[maybe_unused]] Bindings& bindin
     : info{program.info}, profile{profile_} {
     std::string header = "#version 450\n";
     SetupExtensions(header);
-    if (program.stage == Stage::Compute) {
+    stage = program.stage;
+    switch (program.stage) {
+    case Stage::VertexA:
+    case Stage::VertexB:
+        stage_name = "vertex";
+        attrib_name = "vertex";
+        // TODO: add only what's used by the shader
+        header +=
+            "out gl_PerVertex {vec4 gl_Position;float gl_PointSize;float gl_ClipDistance[];};";
+        break;
+    case Stage::TessellationControl:
+    case Stage::TessellationEval:
+        stage_name = "primitive";
+        attrib_name = "primitive";
+        break;
+    case Stage::Geometry:
+        stage_name = "primitive";
+        attrib_name = "vertex";
+        break;
+    case Stage::Fragment:
+        stage_name = "fragment";
+        attrib_name = "fragment";
+        break;
+    case Stage::Compute:
+        stage_name = "invocation";
         header += fmt::format("layout(local_size_x={},local_size_y={},local_size_z={}) in;\n",
                               program.workgroup_size[0], program.workgroup_size[1],
                               program.workgroup_size[2]);
+        break;
     }
     code += header;
-
+    const std::string_view attr_stage{stage == Stage::Fragment ? "fragment" : "vertex"};
+    for (size_t index = 0; index < info.input_generics.size(); ++index) {
+        const auto& generic{info.input_generics[index]};
+        if (generic.used) {
+            Add("layout(location={})in vec4 in_attr{};", index, index);
+        }
+    }
+    for (size_t index = 0; index < info.stores_frag_color.size(); ++index) {
+        if (!info.stores_frag_color[index]) {
+            continue;
+        }
+        Add("layout(location={})out vec4 frag_color{};", index, index);
+    }
+    for (size_t index = 0; index < info.stores_generics.size(); ++index) {
+        if (info.stores_generics[index]) {
+            Add("layout(location={}) out vec4 out_attr{};", index, index);
+        }
+    }
     DefineConstantBuffers();
     DefineStorageBuffers();
     DefineHelperFunctions();
-    code += "void main(){\n";
+    Add("void main(){{");
+
+    if (stage == Stage::VertexA || stage == Stage::VertexB) {
+        Add("gl_Position = vec4(0.0f, 0.0f, 0.0f, 1.0f);");
+    }
 }
 
 void EmitContext::SetupExtensions(std::string& header) {

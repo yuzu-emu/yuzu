@@ -55,6 +55,8 @@ std::string MakeImm(const IR::Value& value) {
         return fmt::format("{}ul", value.U64());
     case IR::Type::F64:
         return FormatFloat(fmt::format("{}", value.F64()), IR::Type::F64);
+    case IR::Type::Void:
+        return "";
     default:
         throw NotImplementedException("Immediate type {}", value.Type());
     }
@@ -131,6 +133,10 @@ std::string RegAlloc::GetType(Type type, u32 index) {
         return "uvec2 ";
     case Type::F32x2:
         return "vec2 ";
+    case Type::U32x4:
+        return "uvec4 ";
+    case Type::F32x4:
+        return "vec4 ";
     case Type::Void:
         return "";
     default:

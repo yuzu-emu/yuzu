@@ -155,16 +155,14 @@ void EmitCompositeExtractF32x2(EmitContext& ctx, IR::Inst& inst, std::string_vie
     ctx.AddF32("{}={}.{};", inst, composite, SWIZZLE[index]);
 }
 
-void EmitCompositeExtractF32x3([[maybe_unused]] EmitContext& ctx,
-                               [[maybe_unused]] std::string_view composite,
-                               [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitCompositeExtractF32x3(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
+                               u32 index) {
+    ctx.AddF32("{}={}.{};", inst, composite, SWIZZLE[index]);
 }
 
-void EmitCompositeExtractF32x4([[maybe_unused]] EmitContext& ctx,
-                               [[maybe_unused]] std::string_view composite,
-                               [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitCompositeExtractF32x4(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
+                               u32 index) {
+    ctx.AddF32("{}={}.{};", inst, composite, SWIZZLE[index]);
 }
 
 void EmitCompositeInsertF32x2([[maybe_unused]] EmitContext& ctx,

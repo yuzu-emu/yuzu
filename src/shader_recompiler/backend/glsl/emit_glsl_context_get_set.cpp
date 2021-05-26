@@ -51,4 +51,57 @@ void EmitGetCbufU32x2([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] const 
                       [[maybe_unused]] const IR::Value& offset) {
     throw NotImplementedException("GLSL");
 }
+
+void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
+                      [[maybe_unused]] std::string_view vertex) {
+    const u32 element{static_cast<u32>(attr) % 4};
+    const char swizzle{"xyzw"[element]};
+    if (IR::IsGeneric(attr)) {
+        const u32 index{IR::GenericAttributeIndex(attr)};
+        ctx.AddF32("{}=in_attr{}.{};", inst, index, swizzle);
+        return;
+    }
+    switch (attr) {
+    case IR::Attribute::PositionX:
+    case IR::Attribute::PositionY:
+    case IR::Attribute::PositionZ:
+    case IR::Attribute::PositionW:
+        ctx.AddF32("{}=gl_Position.{};", inst, swizzle);
+        break;
+    default:
+        fmt::print("Get attribute {}", attr);
+        throw NotImplementedException("Get attribute {}", attr);
+    }
+}
+
+void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view value,
+                      [[maybe_unused]] std::string_view vertex) {
+    const u32 element{static_cast<u32>(attr) % 4};
+    const char swizzle{"xyzw"[element]};
+    if (IR::IsGeneric(attr)) {
+        const u32 index{IR::GenericAttributeIndex(attr)};
+        ctx.Add("out_attr{}.{}={};", index, swizzle, value);
+        return;
+    }
+    switch (attr) {
+    case IR::Attribute::PointSize:
+        ctx.Add("gl_Pointsize={};", value);
+        break;
+    case IR::Attribute::PositionX:
+    case IR::Attribute::PositionY:
+    case IR::Attribute::PositionZ:
+    case IR::Attribute::PositionW:
+        ctx.Add("gl_Position.{}={};", swizzle, value);
+        break;
+    default:
+        fmt::print("Set attribute {}", attr);
+        throw NotImplementedException("Set attribute {}", attr);
+    }
+}
+
+void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, std::string_view value) {
+    const char swizzle{"xyzw"[component]};
+    ctx.Add("frag_color{}.{}={};", index, swizzle, value);
+}
+
 } // namespace Shader::Backend::GLSL
