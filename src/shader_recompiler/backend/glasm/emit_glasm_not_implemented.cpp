@@ -209,24 +209,24 @@ void EmitYDirection(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitUndefU1(EmitContext& ctx) {
-    NotImplemented();
+void EmitUndefU1(EmitContext& ctx, IR::Inst& inst) {
+    ctx.Add("MOV.S {}.x,0;", inst);
 }
 
-void EmitUndefU8(EmitContext& ctx) {
-    NotImplemented();
+void EmitUndefU8(EmitContext& ctx, IR::Inst& inst) {
+    ctx.Add("MOV.S {}.x,0;", inst);
 }
 
-void EmitUndefU16(EmitContext& ctx) {
-    NotImplemented();
+void EmitUndefU16(EmitContext& ctx, IR::Inst& inst) {
+    ctx.Add("MOV.S {}.x,0;", inst);
 }
 
-void EmitUndefU32(EmitContext& ctx) {
-    NotImplemented();
+void EmitUndefU32(EmitContext& ctx, IR::Inst& inst) {
+    ctx.Add("MOV.S {}.x,0;\n", inst);
 }
 
-void EmitUndefU64(EmitContext& ctx) {
-    NotImplemented();
+void EmitUndefU64(EmitContext& ctx, IR::Inst& inst) {
+    ctx.LongAdd("MOV.S64 {}.x,0;", inst);
 }
 
 void EmitGetZeroFromOp(EmitContext& ctx) {
