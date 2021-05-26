@@ -98,18 +98,33 @@ void EmitInst(EmitContext& ctx, IR::Inst* inst) {
     throw LogicError("Invalid opcode {}", inst->GetOpcode());
 }
 
-void Precolor(EmitContext& ctx, const IR::Program& program) {
+bool IsReference(IR::Inst& inst) {
+    return inst.GetOpcode() == IR::Opcode::Reference;
+}
+
+void PrecolorInst(IR::Inst& phi) {
+    // Insert phi moves before references to avoid overwritting other phis
+    const size_t num_args{phi.NumArgs()};
+    for (size_t i = 0; i < num_args; ++i) {
+        IR::Block& phi_block{*phi.PhiBlock(i)};
+        auto it{std::find_if_not(phi_block.rbegin(), phi_block.rend(), IsReference).base()};
+        IR::IREmitter ir{phi_block, it};
+        const IR::Value arg{phi.Arg(i)};
+        if (arg.IsImmediate()) {
+            ir.PhiMove(phi, arg);
+        } else {
+            ir.PhiMove(phi, IR::Value{&RegAlloc::AliasInst(*arg.Inst())});
+        }
+    }
+    for (size_t i = 0; i < num_args; ++i) {
+        IR::IREmitter{*phi.PhiBlock(i)}.Reference(IR::Value{&phi});
+    }
+}
+
+void Precolor(const IR::Program& program) {
     for (IR::Block* const block : program.blocks) {
         for (IR::Inst& phi : block->Instructions() | std::views::take_while(IR::IsPhi)) {
-            ctx.Add("{};", ctx.reg_alloc.Define(phi, phi.Arg(0).Type()));
-            const size_t num_args{phi.NumArgs()};
-            for (size_t i = 0; i < num_args; ++i) {
-                IR::IREmitter{*phi.PhiBlock(i)}.PhiMove(phi, phi.Arg(i));
-            }
-            // Add reference to the phi node on the phi predecessor to avoid overwritting it
-            for (size_t i = 0; i < num_args; ++i) {
-                IR::IREmitter{*phi.PhiBlock(i)}.Reference(IR::Value{&phi});
-            }
+            PrecolorInst(phi);
         }
     }
 }
@@ -158,7 +173,7 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
 std::string EmitGLSL(const Profile& profile, const RuntimeInfo&, IR::Program& program,
                      Bindings& bindings) {
     EmitContext ctx{program, bindings, profile};
-    Precolor(ctx, program);
+    Precolor(program);
     EmitCode(ctx, program);
     return ctx.code;
 }

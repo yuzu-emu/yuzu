@@ -146,10 +146,11 @@ Id RegAlloc::Alloc() {
             }
             register_use[reg] = true;
             Id ret{};
-            ret.index.Assign(static_cast<u32>(reg));
+            ret.is_valid.Assign(1);
             ret.is_long.Assign(0);
             ret.is_spill.Assign(0);
             ret.is_condition_code.Assign(0);
+            ret.index.Assign(static_cast<u32>(reg));
             return ret;
         }
     }
