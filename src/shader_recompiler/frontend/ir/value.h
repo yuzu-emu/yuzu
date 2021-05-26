@@ -395,4 +395,17 @@ inline f64 Value::F64() const {
     return inst.GetOpcode() == Opcode::Phi;
 }
 
+[[nodiscard]] inline bool IsUndef(const Inst& inst) {
+    switch (inst.GetOpcode()) {
+    case Opcode::UndefU1:
+    case Opcode::UndefU8:
+    case Opcode::UndefU16:
+    case Opcode::UndefU32:
+    case Opcode::UndefU64:
+        return true;
+    default:
+        return false;
+    }
+}
+
 } // namespace Shader::IR
