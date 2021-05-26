@@ -58,9 +58,7 @@ void EmitPhiMove(EmitContext& ctx, const IR::Value& phi_value, const IR::Value& 
     }
     const Register phi_reg{ctx.reg_alloc.Consume(IR::Value{&phi})};
     const Value eval_value{ctx.reg_alloc.Consume(value)};
-    if (!value.IsImmediate() && IR::IsUndef(RegAlloc::AliasInst(*value.Inst()))) {
-        return;
-    }
+
     if (phi_reg == eval_value) {
         return;
     }
