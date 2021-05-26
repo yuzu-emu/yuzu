@@ -207,8 +207,9 @@ void EmitIsHelperInvocation(EmitContext& ctx, IR::Inst& inst) {
     ctx.Add("MOV.S {}.x,fragment.helperthread.x;", inst);
 }
 
-void EmitYDirection(EmitContext& ctx) {
-    NotImplemented();
+void EmitYDirection(EmitContext& ctx, IR::Inst& inst) {
+    ctx.uses_y_direction = true;
+    ctx.Add("MOV.F {}.x,y_direction[0].w;", inst);
 }
 
 void EmitUndefU1(EmitContext& ctx, IR::Inst& inst) {
