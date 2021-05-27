@@ -7,6 +7,7 @@
 #include <ranges>
 #include <vector>
 
+#include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/post_order.h"
 #include "shader_recompiler/frontend/maxwell/program.h"

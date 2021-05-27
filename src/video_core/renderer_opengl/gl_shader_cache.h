@@ -65,15 +65,14 @@ private:
 
     std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline(
         ShaderPools& pools, const GraphicsPipelineKey& key,
-        std::span<Shader::Environment* const> envs, bool build_in_parallel);
+        std::span<Shader::Environment* const> envs);
 
     std::unique_ptr<ComputePipeline> CreateComputePipeline(const ComputePipelineKey& key,
                                                            const VideoCommon::ShaderInfo* shader);
 
     std::unique_ptr<ComputePipeline> CreateComputePipeline(ShaderPools& pools,
                                                            const ComputePipelineKey& key,
-                                                           Shader::Environment& env,
-                                                           bool build_in_parallel);
+                                                           Shader::Environment& env);
 
     Core::Frontend::EmuWindow& emu_window;
     const Device& device;

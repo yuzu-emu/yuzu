@@ -45,6 +45,7 @@ using VideoCommon::ComputeEnvironment;
 using VideoCommon::FileEnvironment;
 using VideoCommon::GenericEnvironment;
 using VideoCommon::GraphicsEnvironment;
+using VideoCommon::SerializePipeline;
 
 template <typename Container>
 auto MakeSpan(Container& container) {
@@ -327,10 +328,11 @@ void ShaderCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
         workers.QueueWork(
             [this, key, env = std::move(env), &state, &callback](Context* ctx) mutable {
                 ctx->pools.ReleaseContents();
-                auto pipeline{CreateComputePipeline(ctx->pools, key, env, false)};
-
+                auto pipeline{CreateComputePipeline(ctx->pools, key, env)};
                 std::lock_guard lock{state.mutex};
-                compute_cache.emplace(key, std::move(pipeline));
+                if (pipeline) {
+                    compute_cache.emplace(key, std::move(pipeline));
+                }
                 ++state.built;
                 if (state.has_loaded) {
                     callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
@@ -348,10 +350,11 @@ void ShaderCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
                     env_ptrs.push_back(&env);
                 }
                 ctx->pools.ReleaseContents();
-                auto pipeline{CreateGraphicsPipeline(ctx->pools, key, MakeSpan(env_ptrs), false)};
-
+                auto pipeline{CreateGraphicsPipeline(ctx->pools, key, MakeSpan(env_ptrs))};
                 std::lock_guard lock{state.mutex};
-                graphics_cache.emplace(key, std::move(pipeline));
+                if (pipeline) {
+                    graphics_cache.emplace(key, std::move(pipeline));
+                }
                 ++state.built;
                 if (state.has_loaded) {
                     callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
@@ -419,8 +422,8 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline() {
     GetGraphicsEnvironments(environments, graphics_key.unique_hashes);
 
     main_pools.ReleaseContents();
-    auto pipeline{CreateGraphicsPipeline(main_pools, graphics_key, environments.Span(), true)};
-    if (shader_cache_filename.empty()) {
+    auto pipeline{CreateGraphicsPipeline(main_pools, graphics_key, environments.Span())};
+    if (!pipeline || shader_cache_filename.empty()) {
         return pipeline;
     }
     boost::container::static_vector<const GenericEnvironment*, Maxwell::MaxShaderProgram> env_ptrs;
@@ -429,13 +432,13 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline() {
             env_ptrs.push_back(&environments.envs[index]);
         }
     }
-    VideoCommon::SerializePipeline(graphics_key, env_ptrs, shader_cache_filename);
+    SerializePipeline(graphics_key, env_ptrs, shader_cache_filename);
     return pipeline;
 }
 
 std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
-    ShaderPools& pools, const GraphicsPipelineKey& key, std::span<Shader::Environment* const> envs,
-    bool build_in_parallel) {
+    ShaderPools& pools, const GraphicsPipelineKey& key,
+    std::span<Shader::Environment* const> envs) try {
     LOG_INFO(Render_OpenGL, "0x{:016x}", key.Hash());
     size_t env_index{};
     u32 total_storage_buffers{};
@@ -492,6 +495,10 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
         device, texture_cache, buffer_cache, gpu_memory, maxwell3d, program_manager, state_tracker,
         std::move(source_program), std::move(assembly_programs), infos,
         key.xfb_enabled != 0 ? &key.xfb_state : nullptr);
+
+} catch (Shader::Exception& exception) {
+    LOG_ERROR(Render_OpenGL, "{}", exception.what());
+    return nullptr;
 }
 
 std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
@@ -502,18 +509,17 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
     env.SetCachedSize(shader->size_bytes);
 
     main_pools.ReleaseContents();
-    auto pipeline{CreateComputePipeline(main_pools, key, env, true)};
-    if (!shader_cache_filename.empty()) {
-        VideoCommon::SerializePipeline(key, std::array<const GenericEnvironment*, 1>{&env},
-                                       shader_cache_filename);
+    auto pipeline{CreateComputePipeline(main_pools, key, env)};
+    if (!pipeline || shader_cache_filename.empty()) {
+        return pipeline;
     }
+    SerializePipeline(key, std::array<const GenericEnvironment*, 1>{&env}, shader_cache_filename);
     return pipeline;
 }
 
 std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(ShaderPools& pools,
                                                                     const ComputePipelineKey& key,
-                                                                    Shader::Environment& env,
-                                                                    bool build_in_parallel) {
+                                                                    Shader::Environment& env) try {
     LOG_INFO(Render_OpenGL, "0x{:016x}", key.Hash());
 
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
@@ -540,6 +546,9 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(ShaderPools&
     return std::make_unique<ComputePipeline>(device, texture_cache, buffer_cache, gpu_memory,
                                              kepler_compute, program_manager, program.info,
                                              std::move(source_program), std::move(asm_program));
+} catch (Shader::Exception& exception) {
+    LOG_ERROR(Render_OpenGL, "{}", exception.what());
+    return nullptr;
 }
 
 } // namespace OpenGL

@@ -30,16 +30,21 @@ void Translate(Environment& env, IR::Block* block, u32 location_begin, u32 locat
     TranslatorVisitor visitor{env, *block};
     for (Location pc = location_begin; pc != location_end; ++pc) {
         const u64 insn{env.ReadInstruction(pc.Offset())};
-        const Opcode opcode{Decode(insn)};
-        switch (opcode) {
+        try {
+            const Opcode opcode{Decode(insn)};
+            switch (opcode) {
 #define INST(name, cute, mask)                                                                     \
     case Opcode::name:                                                                             \
         Invoke<&TranslatorVisitor::name>(visitor, pc, insn);                                       \
         break;
 #include "shader_recompiler/frontend/maxwell/maxwell.inc"
 #undef OPCODE
-        default:
-            throw LogicError("Invalid opcode {}", opcode);
+            default:
+                throw LogicError("Invalid opcode {}", opcode);
+            }
+        } catch (Exception& exception) {
+            exception.Prepend(fmt::format("Translate {}: ", Decode(insn)));
+            throw;
         }
     }
 }

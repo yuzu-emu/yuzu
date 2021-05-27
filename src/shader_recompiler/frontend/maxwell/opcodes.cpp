@@ -10,7 +10,7 @@
 namespace Shader::Maxwell {
 namespace {
 constexpr std::array NAME_TABLE{
-#define INST(name, cute, encode) #cute,
+#define INST(name, cute, encode) cute,
 #include "maxwell.inc"
 #undef INST
 };

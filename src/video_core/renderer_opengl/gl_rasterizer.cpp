@@ -221,7 +221,9 @@ void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
     SyncState();
 
     GraphicsPipeline* const pipeline{shader_cache.CurrentGraphicsPipeline()};
-
+    if (!pipeline) {
+        return;
+    }
     std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
     pipeline->Configure(is_indexed);
 
