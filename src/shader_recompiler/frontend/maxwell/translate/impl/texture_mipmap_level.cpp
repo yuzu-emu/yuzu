@@ -84,9 +84,6 @@ void Impl(TranslatorVisitor& v, u64 insn, bool is_bindless) {
     if ((tmml.mask & 0b1100) != 0) {
         throw NotImplementedException("TMML BA results are not implmented");
     }
-
-    IR::F32 transform_constant{v.ir.Imm32(256.0f)};
-
     const IR::Value coords{MakeCoords(v, tmml.coord_reg, tmml.type)};
 
     IR::U32 handle;
@@ -107,9 +104,16 @@ void Impl(TranslatorVisitor& v, u64 insn, bool is_bindless) {
         }
         IR::F32 value{v.ir.CompositeExtract(sample, element)};
         if (element < 2) {
-            value = v.ir.FPMul(value, transform_constant);
+            IR::U32 casted_value;
+            if (element == 0) {
+                casted_value = v.ir.ConvertFToU(32, value);
+            } else {
+                casted_value = v.ir.ConvertFToS(16, value);
+            }
+            v.X(dest_reg, v.ir.ShiftLeftLogical(casted_value, v.ir.Imm32(8)));
+        } else {
+            v.F(dest_reg, value);
         }
-        v.F(dest_reg, value);
         ++dest_reg;
     }
 }
