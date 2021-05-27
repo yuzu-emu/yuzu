@@ -303,6 +303,9 @@ GraphicsPipeline* PipelineCache::CurrentGraphicsPipeline() {
     if (is_new) {
         pipeline = CreateGraphicsPipeline();
     }
+    if (!pipeline) {
+        return nullptr;
+    }
     if (current_pipeline) {
         current_pipeline->AddTransition(pipeline.get());
     }
@@ -362,9 +365,10 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
         workers.QueueWork([this, key, env = std::move(env), &state, &callback]() mutable {
             ShaderPools pools;
             auto pipeline{CreateComputePipeline(pools, key, env, false)};
-
             std::lock_guard lock{state.mutex};
-            compute_cache.emplace(key, std::move(pipeline));
+            if (pipeline) {
+                compute_cache.emplace(key, std::move(pipeline));
+            }
             ++state.built;
             if (state.has_loaded) {
                 callback(VideoCore::LoadCallbackStage::Build, state.built, state.total);
@@ -405,7 +409,7 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
 
 std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
     ShaderPools& pools, const GraphicsPipelineCacheKey& key,
-    std::span<Shader::Environment* const> envs, bool build_in_parallel) {
+    std::span<Shader::Environment* const> envs, bool build_in_parallel) try {
     LOG_INFO(Render_Vulkan, "0x{:016x}", key.Hash());
     size_t env_index{0};
     std::array<Shader::IR::Program, Maxwell::MaxShaderProgram> programs;
@@ -458,6 +462,10 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
     return std::make_unique<GraphicsPipeline>(
         maxwell3d, gpu_memory, scheduler, buffer_cache, texture_cache, device, descriptor_pool,
         update_descriptor_queue, thread_worker, render_pass_cache, key, std::move(modules), infos);
+
+} catch (const Shader::Exception& exception) {
+    LOG_ERROR(Render_Vulkan, "{}", exception.what());
+    return nullptr;
 }
 
 std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline() {
@@ -466,7 +474,7 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline() {
 
     main_pools.ReleaseContents();
     auto pipeline{CreateGraphicsPipeline(main_pools, graphics_key, environments.Span(), true)};
-    if (pipeline_cache_filename.empty()) {
+    if (!pipeline || pipeline_cache_filename.empty()) {
         return pipeline;
     }
     serialization_thread.QueueWork([this, key = graphics_key, envs = std::move(environments.envs)] {
@@ -477,7 +485,7 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline() {
                 env_ptrs.push_back(&envs[index]);
             }
         }
-        VideoCommon::SerializePipeline(key, env_ptrs, pipeline_cache_filename);
+        SerializePipeline(key, env_ptrs, pipeline_cache_filename);
     });
     return pipeline;
 }
@@ -491,18 +499,19 @@ std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
 
     main_pools.ReleaseContents();
     auto pipeline{CreateComputePipeline(main_pools, key, env, true)};
-    if (!pipeline_cache_filename.empty()) {
-        serialization_thread.QueueWork([this, key, env = std::move(env)] {
-            VideoCommon::SerializePipeline(key, std::array<const GenericEnvironment*, 1>{&env},
-                                           pipeline_cache_filename);
-        });
+    if (!pipeline || pipeline_cache_filename.empty()) {
+        return pipeline;
     }
+    serialization_thread.QueueWork([this, key, env = std::move(env)] {
+        SerializePipeline(key, std::array<const GenericEnvironment*, 1>{&env},
+                          pipeline_cache_filename);
+    });
     return pipeline;
 }
 
 std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
     ShaderPools& pools, const ComputePipelineCacheKey& key, Shader::Environment& env,
-    bool build_in_parallel) {
+    bool build_in_parallel) try {
     LOG_INFO(Render_Vulkan, "0x{:016x}", key.Hash());
 
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
@@ -517,6 +526,10 @@ std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
     Common::ThreadWorker* const thread_worker{build_in_parallel ? &workers : nullptr};
     return std::make_unique<ComputePipeline>(device, descriptor_pool, update_descriptor_queue,
                                              thread_worker, program.info, std::move(spv_module));
+
+} catch (const Shader::Exception& exception) {
+    LOG_ERROR(Render_Vulkan, "{}", exception.what());
+    return nullptr;
 }
 
 } // namespace Vulkan
