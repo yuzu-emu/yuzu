@@ -38,14 +38,14 @@ void GlobalStorageOp(EmitContext& ctx, Register address, bool pointer_based, std
             continue;
         }
         const auto& ssbo{ctx.info.storage_buffers_descriptors[index]};
-        ctx.Add("LDC.U64 DC.x,c{}[{}];"   // ssbo_addr
-                "LDC.U32 RC.x,c{}[{}];"   // ssbo_size_u32
-                "CVT.U64.U32 DC.y,RC.x;"  // ssbo_size = ssbo_size_u32
-                "ADD.U64 DC.y,DC.y,DC.x;" // ssbo_end = ssbo_addr + ssbo_size
-                "SGE.U64 RC.x,{}.x,DC.x;" // a = input_addr >= ssbo_addr ? -1 : 1
-                "SLT.U64 RC.y,{}.x,DC.y;" // b = input_addr < ssbo_end   ? -1 : 1
-                "AND.U.CC RC.x,RC.x,RC.y;"
-                "IF NE.x;"                 // a && b
+        ctx.Add("LDC.U64 DC.x,c{}[{}];"    // ssbo_addr
+                "LDC.U32 RC.x,c{}[{}];"    // ssbo_size_u32
+                "CVT.U64.U32 DC.y,RC.x;"   // ssbo_size = ssbo_size_u32
+                "ADD.U64 DC.y,DC.y,DC.x;"  // ssbo_end = ssbo_addr + ssbo_size
+                "SGE.U64 RC.x,{}.x,DC.x;"  // a = input_addr >= ssbo_addr ? -1 : 0
+                "SLT.U64 RC.y,{}.x,DC.y;"  // b = input_addr < ssbo_end   ? -1 : 0
+                "AND.U.CC RC.x,RC.x,RC.y;" // cond = a && b
+                "IF NE.x;"                 // if cond
                 "SUB.U64 DC.x,{}.x,DC.x;", // offset = input_addr - ssbo_addr
                 ssbo.cbuf_index, ssbo.cbuf_offset, ssbo.cbuf_index, ssbo.cbuf_offset + 8, address,
                 address, address);
@@ -65,7 +65,8 @@ void GlobalStorageOp(EmitContext& ctx, Register address, bool pointer_based, std
     if (!else_expr.empty()) {
         ctx.Add("{}", else_expr);
     }
-    for (size_t index = 0; index < num_buffers; ++index) {
+    const size_t num_used_buffers{ctx.info.nvn_buffer_used.count()};
+    for (size_t index = 0; index < num_used_buffers; ++index) {
         ctx.Add("ENDIF;");
     }
 }
