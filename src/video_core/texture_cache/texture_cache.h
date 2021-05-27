@@ -550,13 +550,13 @@ void TextureCache<P>::FillComputeImageViews(std::span<const u32> indices,
 
 template <class P>
 typename P::Sampler* TextureCache<P>::GetGraphicsSampler(u32 index) {
-    [[unlikely]] if (index > graphics_sampler_table.Limit()) {
-        LOG_ERROR(HW_GPU, "Invalid sampler index={}", index);
+    if (index > graphics_sampler_table.Limit()) {
+        LOG_DEBUG(HW_GPU, "Invalid sampler index={}", index);
         return &slot_samplers[NULL_SAMPLER_ID];
     }
     const auto [descriptor, is_new] = graphics_sampler_table.Read(index);
     SamplerId& id = graphics_sampler_ids[index];
-    [[unlikely]] if (is_new) {
+    if (is_new) {
         id = FindSampler(descriptor);
     }
     return &slot_samplers[id];
@@ -564,13 +564,13 @@ typename P::Sampler* TextureCache<P>::GetGraphicsSampler(u32 index) {
 
 template <class P>
 typename P::Sampler* TextureCache<P>::GetComputeSampler(u32 index) {
-    [[unlikely]] if (index > compute_sampler_table.Limit()) {
-        LOG_ERROR(HW_GPU, "Invalid sampler index={}", index);
+    if (index > compute_sampler_table.Limit()) {
+        LOG_DEBUG(HW_GPU, "Invalid sampler index={}", index);
         return &slot_samplers[NULL_SAMPLER_ID];
     }
     const auto [descriptor, is_new] = compute_sampler_table.Read(index);
     SamplerId& id = compute_sampler_ids[index];
-    [[unlikely]] if (is_new) {
+    if (is_new) {
         id = FindSampler(descriptor);
     }
     return &slot_samplers[id];
@@ -665,7 +665,7 @@ ImageViewId TextureCache<P>::VisitImageView(DescriptorTable<TICEntry>& table,
                                             std::span<ImageViewId> cached_image_view_ids,
                                             u32 index) {
     if (index > table.Limit()) {
-        LOG_ERROR(HW_GPU, "Invalid image view index={}", index);
+        LOG_DEBUG(HW_GPU, "Invalid image view index={}", index);
         return NULL_IMAGE_VIEW_ID;
     }
     const auto [descriptor, is_new] = table.Read(index);
