@@ -362,13 +362,11 @@ void GraphicsPipeline::GenerateTransformFeedbackState(
     const VideoCommon::TransformFeedbackState& xfb_state) {
     // TODO(Rodrigo): Inject SKIP_COMPONENTS*_NV when required. An unimplemented message will signal
     // when this is required.
-    const auto& regs{maxwell3d.regs};
-
     GLint* cursor{xfb_attribs.data()};
     GLint* current_stream{xfb_streams.data()};
 
     for (size_t feedback = 0; feedback < Maxwell::NumTransformFeedbackBuffers; ++feedback) {
-        const auto& layout = regs.tfb_layouts[feedback];
+        const auto& layout = xfb_state.layouts[feedback];
         UNIMPLEMENTED_IF_MSG(layout.stride != layout.varying_count * 4, "Stride padding");
         if (layout.varying_count == 0) {
             continue;
@@ -383,7 +381,7 @@ void GraphicsPipeline::GenerateTransformFeedbackState(
         }
         ++current_stream;
 
-        const auto& locations = regs.tfb_varying_locs[feedback];
+        const auto& locations = xfb_state.varyings[feedback];
         std::optional<u8> current_index;
         for (u32 offset = 0; offset < layout.varying_count; ++offset) {
             const u8 location = locations[offset];
