@@ -113,7 +113,7 @@ void PrecolorInst(IR::Inst& phi) {
         if (arg.IsImmediate()) {
             ir.PhiMove(phi, arg);
         } else {
-            ir.PhiMove(phi, IR::Value{&RegAlloc::AliasInst(*arg.Inst())});
+            ir.PhiMove(phi, IR::Value{&*arg.InstRecursive()});
         }
     }
     for (size_t i = 0; i < num_args; ++i) {
@@ -157,7 +157,7 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
             break;
         case IR::AbstractSyntaxNode::Type::Return:
         case IR::AbstractSyntaxNode::Type::Unreachable:
-            ctx.Add("return;\n}}");
+            ctx.Add("return;");
             break;
         case IR::AbstractSyntaxNode::Type::Loop:
         case IR::AbstractSyntaxNode::Type::Repeat:
@@ -175,6 +175,8 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo&, IR::Program& pr
     EmitContext ctx{program, bindings, profile};
     Precolor(program);
     EmitCode(ctx, program);
+    ctx.code += "}";
+    fmt::print("\n{}\n", ctx.code);
     return ctx.code;
 }
 

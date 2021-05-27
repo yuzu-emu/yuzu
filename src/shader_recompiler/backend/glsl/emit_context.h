@@ -6,6 +6,8 @@
 
 #include <string>
 #include <utility>
+#include <vector>
+
 #include <fmt/format.h>
 
 #include "shader_recompiler/backend/glsl/reg_alloc.h"
@@ -109,11 +111,17 @@ public:
     std::string_view stage_name = "invalid";
     std::string_view attrib_name = "invalid";
 
+    std::vector<u32> texture_buffer_bindings;
+    std::vector<u32> image_buffer_bindings;
+    std::vector<u32> texture_bindings;
+    std::vector<u32> image_bindings;
+
 private:
     void SetupExtensions(std::string& header);
     void DefineConstantBuffers();
     void DefineStorageBuffers();
     void DefineHelperFunctions();
+    void SetupImages(Bindings& bindings);
 };
 
 } // namespace Shader::Backend::GLSL

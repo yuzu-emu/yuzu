@@ -59,20 +59,15 @@ public:
     std::string Define(IR::Inst& inst, IR::Type type);
 
     std::string Consume(const IR::Value& value);
-
-    /// Returns true if the instruction is expected to be aliased to another
-    static bool IsAliased(const IR::Inst& inst);
-
-    /// Returns the underlying value out of an alias sequence
-    static IR::Inst& AliasInst(IR::Inst& inst);
+    std::string GetGlslType(Type type);
+    std::string GetGlslType(IR::Type type);
 
 private:
     static constexpr size_t NUM_REGS = 4096;
     static constexpr size_t NUM_ELEMENTS = 4;
 
     std::string Consume(IR::Inst& inst);
-    std::string GetType(Type type, u32 index);
-
+    Type RegType(IR::Type type);
     Id Alloc();
     void Free(Id id);
 

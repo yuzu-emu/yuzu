@@ -15,7 +15,7 @@ static void Alias(IR::Inst& inst, const IR::Value& value) {
     if (value.IsImmediate()) {
         return;
     }
-    IR::Inst& value_inst{RegAlloc::AliasInst(*value.Inst())};
+    IR::Inst& value_inst{*value.InstRecursive()};
     value_inst.DestructiveAddUsage(inst.UseCount());
     value_inst.DestructiveRemoveUsage();
     inst.SetDefinition(value_inst.Definition<Id>());
