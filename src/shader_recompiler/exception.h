@@ -15,22 +15,22 @@ namespace Shader {
 
 class Exception : public std::exception {
 public:
-    explicit Exception(std::string message_) noexcept : message{std::move(message_)} {}
+    explicit Exception(std::string message) noexcept : err_message{std::move(message)} {}
 
-    const char* what() const override {
-        return message.c_str();
+    const char* what() const noexcept override {
+        return err_message.c_str();
     }
 
     void Prepend(std::string_view prepend) {
-        message.insert(0, prepend);
+        err_message.insert(0, prepend);
     }
 
     void Append(std::string_view append) {
-        message += append;
+        err_message += append;
     }
 
 private:
-    std::string message;
+    std::string err_message;
 };
 
 class LogicError : public Exception {
