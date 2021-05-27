@@ -440,13 +440,13 @@ void FoldFSwizzleAdd(IR::Block& block, IR::Inst& inst) {
         // DPdxFine
         if (index.U32() == 1) {
             IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
-            inst.ReplaceUsesWith(ir.DPdxFine(IR::F32{value_2}));
+            inst.ReplaceUsesWith(ir.DPdxFine(IR::F32{inst.Arg(1)}));
         }
     } else if (swizzle_value == 0xA5) {
         // DPdyFine
         if (index.U32() == 2) {
             IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
-            inst.ReplaceUsesWith(ir.DPdyFine(IR::F32{value_2}));
+            inst.ReplaceUsesWith(ir.DPdyFine(IR::F32{inst.Arg(1)}));
         }
     }
 }
