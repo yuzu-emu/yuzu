@@ -6,17 +6,39 @@
 
 #include "shader_recompiler/backend/glsl/emit_context.h"
 #include "shader_recompiler/backend/glsl/emit_glsl_instructions.h"
+#include "shader_recompiler/frontend/ir/modifiers.h"
 #include "shader_recompiler/frontend/ir/value.h"
 #include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::GLSL {
+namespace {
+std::string Texture(EmitContext& ctx, IR::TextureInstInfo info,
+                    [[maybe_unused]] const IR::Value& index) {
+    if (info.type == TextureType::Buffer) {
+        throw NotImplementedException("TextureType::Buffer");
+    } else {
+        return fmt::format("tex{}", ctx.texture_bindings.at(info.descriptor_index));
+    }
+}
+} // namespace
 
 void EmitImageSampleImplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                                 [[maybe_unused]] const IR::Value& index,
                                 [[maybe_unused]] std::string_view coords,
                                 [[maybe_unused]] std::string_view bias_lc,
                                 [[maybe_unused]] const IR::Value& offset) {
-    throw NotImplementedException("GLSL Instruction");
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    if (info.has_bias) {
+        throw NotImplementedException("Bias texture samples");
+    }
+    if (info.has_lod_clamp) {
+        throw NotImplementedException("Lod clamp samples");
+    }
+    if (!offset.IsEmpty()) {
+        throw NotImplementedException("Offset");
+    }
+    const auto texture{Texture(ctx, info, index)};
+    ctx.AddF32x4("{}=texture({},{});", inst, texture, coords);
 }
 
 void EmitImageSampleExplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,

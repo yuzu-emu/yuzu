@@ -8,9 +8,21 @@
 #include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::GLSL {
+namespace {
+std::string_view InterpDecorator(Interpolation interp) {
+    switch (interp) {
+    case Interpolation::Smooth:
+        return "";
+    case Interpolation::Flat:
+        return "flat";
+    case Interpolation::NoPerspective:
+        return "noperspective";
+    }
+    throw InvalidArgument("Invalid interpolation {}", interp);
+}
+} // namespace
 
-EmitContext::EmitContext(IR::Program& program, [[maybe_unused]] Bindings& bindings,
-                         const Profile& profile_)
+EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_)
     : info{program.info}, profile{profile_} {
     std::string header = "#version 450\n";
     SetupExtensions(header);
@@ -49,7 +61,8 @@ EmitContext::EmitContext(IR::Program& program, [[maybe_unused]] Bindings& bindin
     for (size_t index = 0; index < info.input_generics.size(); ++index) {
         const auto& generic{info.input_generics[index]};
         if (generic.used) {
-            Add("layout(location={})in vec4 in_attr{};", index, index);
+            Add("layout(location={}) {} in vec4 in_attr{};", index,
+                InterpDecorator(generic.interpolation), index);
         }
     }
     for (size_t index = 0; index < info.stores_frag_color.size(); ++index) {
@@ -66,6 +79,7 @@ EmitContext::EmitContext(IR::Program& program, [[maybe_unused]] Bindings& bindin
     DefineConstantBuffers();
     DefineStorageBuffers();
     DefineHelperFunctions();
+    SetupImages(bindings);
     Add("void main(){{");
 
     if (stage == Stage::VertexA || stage == Stage::VertexB) {
@@ -102,7 +116,7 @@ void EmitContext::DefineConstantBuffers() {
     }
     u32 binding{};
     for (const auto& desc : info.constant_buffer_descriptors) {
-        Add("layout(std140,binding={}) uniform cbuf_{}{{vec4 cbuf{}[{}];}};", binding, binding,
+        Add("layout(std140,binding={}) uniform cbuf_{}{{vec4 cbuf{}[{}];}};", binding, desc.index,
             desc.index, 4 * 1024);
         ++binding;
     }
@@ -161,6 +175,38 @@ void EmitContext::DefineHelperFunctions() {
     }
     if (info.uses_atomic_s32_max) {
         code += "uint CasMaxS32(uint op_a,uint op_b){return uint(max(int(op_a),int(op_b)));}";
+    }
+}
+
+void EmitContext::SetupImages(Bindings& bindings) {
+    image_buffer_bindings.reserve(info.image_buffer_descriptors.size());
+    for (const auto& desc : info.image_buffer_descriptors) {
+        throw NotImplementedException("image_buffer_descriptors");
+        image_buffer_bindings.push_back(bindings.image);
+        bindings.image += desc.count;
+    }
+    image_bindings.reserve(info.image_descriptors.size());
+    for (const auto& desc : info.image_descriptors) {
+        throw NotImplementedException("image_bindings");
+
+        image_bindings.push_back(bindings.image);
+        bindings.image += desc.count;
+    }
+    texture_buffer_bindings.reserve(info.texture_buffer_descriptors.size());
+    for (const auto& desc : info.texture_buffer_descriptors) {
+        throw NotImplementedException("TextureType::Buffer");
+
+        texture_buffer_bindings.push_back(bindings.texture);
+        bindings.texture += desc.count;
+    }
+    texture_bindings.reserve(info.texture_descriptors.size());
+    for (const auto& desc : info.texture_descriptors) {
+        texture_bindings.push_back(bindings.texture);
+        const auto indices{bindings.texture + desc.count};
+        for (u32 index = bindings.texture; index < indices; ++index) {
+            Add("layout(binding={}) uniform sampler2D tex{};", bindings.texture, index);
+        }
+        bindings.texture += desc.count;
     }
 }
 

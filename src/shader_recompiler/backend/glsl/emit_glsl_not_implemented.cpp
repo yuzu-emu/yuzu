@@ -39,17 +39,26 @@ void EmitReference(EmitContext&) {
 }
 
 void EmitPhiMove(EmitContext& ctx, const IR::Value& phi_value, const IR::Value& value) {
-    IR::Inst& phi{RegAlloc::AliasInst(*phi_value.Inst())};
+    IR::Inst& phi{*phi_value.InstRecursive()};
+    const auto phi_type{phi.Arg(0).Type()};
     if (!phi.Definition<Id>().is_valid) {
         // The phi node wasn't forward defined
-        ctx.Add("{};", ctx.reg_alloc.Define(phi, phi.Arg(0).Type()));
+        ctx.Add("{};", ctx.reg_alloc.Define(phi, phi_type));
     }
     const auto phi_reg{ctx.reg_alloc.Consume(IR::Value{&phi})};
     const auto val_reg{ctx.reg_alloc.Consume(value)};
     if (phi_reg == val_reg) {
         return;
     }
-    ctx.Add("{}={};", phi_reg, val_reg);
+    if (phi_type == value.Type()) {
+        ctx.Add("{}={}; // PHI MOVE", phi_reg, val_reg);
+    } else if (phi_type == IR::Type::U32 && value.Type() == IR::Type::F32) {
+        ctx.Add("{}=floatBitsToUint({}); // CAST PHI MOVE", phi_reg, val_reg);
+    } else {
+        throw NotImplementedException("{} to {} move", phi_type, value.Type());
+        const auto cast{ctx.reg_alloc.GetGlslType(phi_type)};
+        ctx.Add("{}={}({}); // CAST PHI MOVE", phi_reg, cast, val_reg);
+    }
 }
 
 void EmitBranch(EmitContext& ctx, std::string_view label) {
@@ -235,23 +244,23 @@ void EmitWriteLocal(EmitContext& ctx, std::string_view word_offset, std::string_
     NotImplemented();
 }
 
-void EmitUndefU1(EmitContext& ctx) {
+void EmitUndefU1(EmitContext& ctx, IR::Inst& inst) {
     NotImplemented();
 }
 
-void EmitUndefU8(EmitContext& ctx) {
+void EmitUndefU8(EmitContext& ctx, IR::Inst& inst) {
     NotImplemented();
 }
 
-void EmitUndefU16(EmitContext& ctx) {
+void EmitUndefU16(EmitContext& ctx, IR::Inst& inst) {
     NotImplemented();
 }
 
-void EmitUndefU32(EmitContext& ctx) {
-    NotImplemented();
+void EmitUndefU32(EmitContext& ctx, IR::Inst& inst) {
+    ctx.AddU32("{}=0u;", inst);
 }
 
-void EmitUndefU64(EmitContext& ctx) {
+void EmitUndefU64(EmitContext& ctx, IR::Inst& inst) {
     NotImplemented();
 }
 

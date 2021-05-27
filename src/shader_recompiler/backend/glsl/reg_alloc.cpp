@@ -71,26 +71,17 @@ std::string RegAlloc::Define(IR::Inst& inst) {
 
 std::string RegAlloc::Define(IR::Inst& inst, Type type) {
     const Id id{Alloc()};
-    const auto type_str{GetType(type, id.index)};
+    std::string type_str = "";
+    if (!register_defined[id.index]) {
+        register_defined[id.index] = true;
+        type_str = GetGlslType(type);
+    }
     inst.SetDefinition<Id>(id);
     return type_str + Representation(id);
 }
 
 std::string RegAlloc::Define(IR::Inst& inst, IR::Type type) {
-    switch (type) {
-    case IR::Type::U1:
-        return Define(inst, Type::U1);
-    case IR::Type::U32:
-        return Define(inst, Type::U32);
-    case IR::Type::F32:
-        return Define(inst, Type::F32);
-    case IR::Type::U64:
-        return Define(inst, Type::U64);
-    case IR::Type::F64:
-        return Define(inst, Type::F64);
-    default:
-        throw NotImplementedException("IR type {}", type);
-    }
+    return Define(inst, RegType(type));
 }
 
 std::string RegAlloc::Consume(const IR::Value& value) {
@@ -107,11 +98,24 @@ std::string RegAlloc::Consume(IR::Inst& inst) {
     return Representation(inst.Definition<Id>());
 }
 
-std::string RegAlloc::GetType(Type type, u32 index) {
-    if (register_defined[index]) {
-        return "";
+Type RegAlloc::RegType(IR::Type type) {
+    switch (type) {
+    case IR::Type::U1:
+        return Type::U1;
+    case IR::Type::U32:
+        return Type::U32;
+    case IR::Type::F32:
+        return Type::F32;
+    case IR::Type::U64:
+        return Type::U64;
+    case IR::Type::F64:
+        return Type::F64;
+    default:
+        throw NotImplementedException("IR type {}", type);
     }
-    register_defined[index] = true;
+}
+
+std::string RegAlloc::GetGlslType(Type type) {
     switch (type) {
     case Type::U1:
         return "bool ";
@@ -144,6 +148,10 @@ std::string RegAlloc::GetType(Type type, u32 index) {
     }
 }
 
+std::string RegAlloc::GetGlslType(IR::Type type) {
+    return GetGlslType(RegType(type));
+}
+
 Id RegAlloc::Alloc() {
     if (num_used_registers < NUM_REGS) {
         for (size_t reg = 0; reg < NUM_REGS; ++reg) {
@@ -170,30 +178,4 @@ void RegAlloc::Free(Id id) {
     register_use[id.index] = false;
 }
 
-/*static*/ bool RegAlloc::IsAliased(const IR::Inst& inst) {
-    switch (inst.GetOpcode()) {
-    case IR::Opcode::Identity:
-    case IR::Opcode::BitCastU16F16:
-    case IR::Opcode::BitCastU32F32:
-    case IR::Opcode::BitCastU64F64:
-    case IR::Opcode::BitCastF16U16:
-    case IR::Opcode::BitCastF32U32:
-    case IR::Opcode::BitCastF64U64:
-        return true;
-    default:
-        return false;
-    }
-}
-
-/*static*/ IR::Inst& RegAlloc::AliasInst(IR::Inst& inst) {
-    IR::Inst* it{&inst};
-    while (IsAliased(*it)) {
-        const IR::Value arg{it->Arg(0)};
-        if (arg.IsImmediate()) {
-            break;
-        }
-        it = arg.InstRecursive();
-    }
-    return *it;
-}
 } // namespace Shader::Backend::GLSL
