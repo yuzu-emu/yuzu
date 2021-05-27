@@ -91,6 +91,21 @@ public:
     }
 
     template <typename... Args>
+    void AddU32x3(const char* format_str, IR::Inst& inst, Args&&... args) {
+        Add<Type::U32x3>(format_str, inst, args...);
+    }
+
+    template <typename... Args>
+    void AddF32x3(const char* format_str, IR::Inst& inst, Args&&... args) {
+        Add<Type::F32x3>(format_str, inst, args...);
+    }
+
+    template <typename... Args>
+    void AddU32x4(const char* format_str, IR::Inst& inst, Args&&... args) {
+        Add<Type::U32x4>(format_str, inst, args...);
+    }
+
+    template <typename... Args>
     void AddF32x4(const char* format_str, IR::Inst& inst, Args&&... args) {
         Add<Type::F32x4>(format_str, inst, args...);
     }

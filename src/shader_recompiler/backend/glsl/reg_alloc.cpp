@@ -137,6 +137,10 @@ std::string RegAlloc::GetGlslType(Type type) {
         return "uvec2 ";
     case Type::F32x2:
         return "vec2 ";
+    case Type::U32x3:
+        return "uvec3 ";
+    case Type::F32x3:
+        return "vec3 ";
     case Type::U32x4:
         return "uvec4 ";
     case Type::F32x4:

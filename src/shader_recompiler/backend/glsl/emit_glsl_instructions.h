@@ -60,7 +60,8 @@ void EmitGetCbufU32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                     const IR::Value& offset);
 void EmitGetCbufF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                     const IR::Value& offset);
-void EmitGetCbufU32x2(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
+void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                      const IR::Value& offset);
 void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
                       std::string_view vertex);
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view value,
@@ -116,7 +117,8 @@ void EmitLoadStorage32(EmitContext& ctx, IR::Inst& inst, const IR::Value& bindin
                        const IR::Value& offset);
 void EmitLoadStorage64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                        const IR::Value& offset);
-void EmitLoadStorage128(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
+void EmitLoadStorage128(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                        const IR::Value& offset);
 void EmitWriteStorageU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
                         std::string_view value);
 void EmitWriteStorageS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
@@ -145,14 +147,16 @@ void EmitWriteSharedU64(EmitContext& ctx, std::string_view offset, std::string_v
 void EmitWriteSharedU128(EmitContext& ctx, std::string_view offset, std::string_view value);
 void EmitCompositeConstructU32x2(EmitContext& ctx, IR::Inst& inst, std::string_view e1,
                                  std::string_view e2);
-void EmitCompositeConstructU32x3(EmitContext& ctx, std::string_view e1, std::string_view e2,
-                                 std::string_view e3);
-void EmitCompositeConstructU32x4(EmitContext& ctx, std::string_view e1, std::string_view e2,
-                                 std::string_view e3, std::string_view e4);
+void EmitCompositeConstructU32x3(EmitContext& ctx, IR::Inst& inst, std::string_view e1,
+                                 std::string_view e2, std::string_view e3);
+void EmitCompositeConstructU32x4(EmitContext& ctx, IR::Inst& inst, std::string_view e1,
+                                 std::string_view e2, std::string_view e3, std::string_view e4);
 void EmitCompositeExtractU32x2(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
                                u32 index);
-void EmitCompositeExtractU32x3(EmitContext& ctx, std::string_view composite, u32 index);
-void EmitCompositeExtractU32x4(EmitContext& ctx, std::string_view composite, u32 index);
+void EmitCompositeExtractU32x3(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
+                               u32 index);
+void EmitCompositeExtractU32x4(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
+                               u32 index);
 void EmitCompositeInsertU32x2(EmitContext& ctx, std::string_view composite, std::string_view object,
                               u32 index);
 void EmitCompositeInsertU32x3(EmitContext& ctx, std::string_view composite, std::string_view object,
@@ -175,10 +179,10 @@ void EmitCompositeInsertF16x4(EmitContext& ctx, std::string_view composite, std:
                               u32 index);
 void EmitCompositeConstructF32x2(EmitContext& ctx, IR::Inst& inst, std::string_view e1,
                                  std::string_view e2);
-void EmitCompositeConstructF32x3(EmitContext& ctx, std::string_view e1, std::string_view e2,
-                                 std::string_view e3);
-void EmitCompositeConstructF32x4(EmitContext& ctx, std::string_view e1, std::string_view e2,
-                                 std::string_view e3, std::string_view e4);
+void EmitCompositeConstructF32x3(EmitContext& ctx, IR::Inst& inst, std::string_view e1,
+                                 std::string_view e2, std::string_view e3);
+void EmitCompositeConstructF32x4(EmitContext& ctx, IR::Inst& inst, std::string_view e1,
+                                 std::string_view e2, std::string_view e3, std::string_view e4);
 void EmitCompositeExtractF32x2(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
                                u32 index);
 void EmitCompositeExtractF32x3(EmitContext& ctx, IR::Inst& inst, std::string_view composite,

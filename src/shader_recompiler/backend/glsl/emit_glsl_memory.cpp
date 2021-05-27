@@ -34,19 +34,23 @@ void EmitLoadStorageS16([[maybe_unused]] EmitContext& ctx,
 
 void EmitLoadStorage32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                        const IR::Value& offset) {
-    ctx.AddU32("{}=ssbo{}[{}];", inst, binding.U32(), offset.U32());
+    const auto offset_var{ctx.reg_alloc.Consume(offset)};
+    ctx.AddU32("{}=ssbo{}[{}];", inst, binding.U32(), offset_var);
 }
 
 void EmitLoadStorage64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                        const IR::Value& offset) {
-    ctx.AddU32x2("{}=uvec2(ssbo{}[{}],ssbo{}[{}]);", inst, binding.U32(), offset.U32(),
-                 binding.U32(), offset.U32() + 1);
+    const auto offset_var{ctx.reg_alloc.Consume(offset)};
+    ctx.AddU32x2("{}=uvec2(ssbo{}[{}],ssbo{}[{}+1]);", inst, binding.U32(), offset_var,
+                 binding.U32(), offset_var);
 }
 
-void EmitLoadStorage128([[maybe_unused]] EmitContext& ctx,
-                        [[maybe_unused]] const IR::Value& binding,
-                        [[maybe_unused]] const IR::Value& offset) {
-    throw NotImplementedException("GLSL Instrucion");
+void EmitLoadStorage128(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                        const IR::Value& offset) {
+    const auto offset_var{ctx.reg_alloc.Consume(offset)};
+    ctx.AddU32x4("{}=uvec4(ssbo{}[{}],ssbo{}[{}+1],ssbo{}[{}+2],ssbo{}[{}+3]);", inst,
+                 binding.U32(), offset_var, binding.U32(), offset_var, binding.U32(), offset_var,
+                 binding.U32(), offset_var);
 }
 
 void EmitWriteStorageU8([[maybe_unused]] EmitContext& ctx,
