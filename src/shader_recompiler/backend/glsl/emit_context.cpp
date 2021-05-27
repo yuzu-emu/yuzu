@@ -88,6 +88,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
 }
 
 void EmitContext::SetupExtensions(std::string& header) {
+    header += "#extension GL_ARB_separate_shader_objects : enable\n";
     if (info.uses_int64) {
         header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
     }

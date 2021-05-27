@@ -160,8 +160,13 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
             ctx.Add("return;");
             break;
         case IR::AbstractSyntaxNode::Type::Loop:
+            ctx.Add("do{{");
+            break;
         case IR::AbstractSyntaxNode::Type::Repeat:
+            ctx.Add("}}while({});", ctx.reg_alloc.Consume(node.data.repeat.cond));
+            break;
         default:
+            fmt::print("{}", node.type);
             throw NotImplementedException("{}", node.type);
             break;
         }

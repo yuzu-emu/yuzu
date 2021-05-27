@@ -27,6 +27,8 @@ enum class Type : u32 {
     F64,
     U32x2,
     F32x2,
+    U32x3,
+    F32x3,
     U32x4,
     F32x4,
     Void,

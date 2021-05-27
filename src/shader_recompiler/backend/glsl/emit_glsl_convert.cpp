@@ -197,7 +197,7 @@ void EmitConvertF32U8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::In
 
 void EmitConvertF32U16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddF32("{}=float({});", inst, value);
 }
 
 void EmitConvertF32U32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,

@@ -50,15 +50,7 @@ void EmitPhiMove(EmitContext& ctx, const IR::Value& phi_value, const IR::Value& 
     if (phi_reg == val_reg) {
         return;
     }
-    if (phi_type == value.Type()) {
-        ctx.Add("{}={}; // PHI MOVE", phi_reg, val_reg);
-    } else if (phi_type == IR::Type::U32 && value.Type() == IR::Type::F32) {
-        ctx.Add("{}=floatBitsToUint({}); // CAST PHI MOVE", phi_reg, val_reg);
-    } else {
-        throw NotImplementedException("{} to {} move", phi_type, value.Type());
-        const auto cast{ctx.reg_alloc.GetGlslType(phi_type)};
-        ctx.Add("{}={}({}); // CAST PHI MOVE", phi_reg, cast, val_reg);
-    }
+    ctx.Add("{}={};", phi_reg, val_reg);
 }
 
 void EmitBranch(EmitContext& ctx, std::string_view label) {
@@ -245,7 +237,7 @@ void EmitWriteLocal(EmitContext& ctx, std::string_view word_offset, std::string_
 }
 
 void EmitUndefU1(EmitContext& ctx, IR::Inst& inst) {
-    NotImplemented();
+    ctx.AddU1("{}=false;", inst);
 }
 
 void EmitUndefU8(EmitContext& ctx, IR::Inst& inst) {
