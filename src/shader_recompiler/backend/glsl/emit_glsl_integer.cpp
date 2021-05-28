@@ -72,11 +72,11 @@ void EmitINeg64(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
 }
 
 void EmitIAbs32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
-    ctx.AddU32("{}=abs({});", inst, value);
+    ctx.AddU32("{}=abs(int({}));", inst, value);
 }
 
 void EmitIAbs64(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
-    ctx.AddU64("{}=abs({});", inst, value);
+    ctx.AddU64("{}=abs(int64_t({}));", inst, value);
 }
 
 void EmitShiftLeftLogical32(EmitContext& ctx, IR::Inst& inst, std::string_view base,
@@ -128,13 +128,16 @@ void EmitBitFieldInsert(EmitContext& ctx, IR::Inst& inst, std::string_view base,
 
 void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst& inst, std::string_view base,
                           std::string_view offset, std::string_view count) {
-    ctx.AddU32("{}=bitfieldExtract(int({}), int({}), int({}));", inst, base, offset, count);
+    const auto result{ctx.reg_alloc.Define(inst, Type::U32)};
+    ctx.Add("{}=uint(bitfieldExtract(int({}),int({}),int({})));", result, base, offset, count);
+    SetZeroFlag(ctx, inst, result);
+    SetSignFlag(ctx, inst, result);
 }
 
 void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst& inst, std::string_view base,
                           std::string_view offset, std::string_view count) {
     const auto result{ctx.reg_alloc.Define(inst, Type::U32)};
-    ctx.Add("{}=bitfieldExtract({},int({}),int({}));", result, base, offset, count);
+    ctx.Add("{}=uint(bitfieldExtract(uint({}),int({}),int({})));", result, base, offset, count);
     SetZeroFlag(ctx, inst, result);
     SetSignFlag(ctx, inst, result);
 }
@@ -179,12 +182,18 @@ void EmitUMax32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::strin
 
 void EmitSClamp32(EmitContext& ctx, IR::Inst& inst, std::string_view value, std::string_view min,
                   std::string_view max) {
-    ctx.AddU32("{}=clamp(int({}), int({}), int({}));", inst, value, min, max);
+    const auto result{ctx.reg_alloc.Define(inst, Type::U32)};
+    ctx.Add("{}=clamp(int({}), int({}), int({}));", result, value, min, max);
+    SetZeroFlag(ctx, inst, result);
+    SetSignFlag(ctx, inst, result);
 }
 
 void EmitUClamp32(EmitContext& ctx, IR::Inst& inst, std::string_view value, std::string_view min,
                   std::string_view max) {
-    ctx.AddU32("{}=clamp(uint({}), uint({}), uint({}));", inst, value, min, max);
+    const auto result{ctx.reg_alloc.Define(inst, Type::U32)};
+    ctx.Add("{}=clamp(uint({}), uint({}), uint({}));", result, value, min, max);
+    SetZeroFlag(ctx, inst, result);
+    SetSignFlag(ctx, inst, result);
 }
 
 void EmitSLessThan(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs) {
