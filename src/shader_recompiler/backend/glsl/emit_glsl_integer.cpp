@@ -29,9 +29,22 @@ void SetSignFlag(EmitContext& ctx, IR::Inst& inst, std::string_view result) {
 } // Anonymous namespace
 void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
     const auto result{ctx.reg_alloc.Define(inst, Type::U32)};
-    ctx.Add("{}={}+{};", result, a, b);
+    if (IR::Inst* const carry{inst.GetAssociatedPseudoOperation(IR::Opcode::GetCarryFromOp)}) {
+        ctx.Add("{}=uaddCarry({},{},carry);", result, a, b);
+        ctx.AddU1("{}=carry!=0;", *carry, result);
+        carry->Invalidate();
+    } else {
+        ctx.Add("{}={}+{};", result, a, b);
+    }
     SetZeroFlag(ctx, inst, result);
     SetSignFlag(ctx, inst, result);
+    if (IR::Inst * overflow{inst.GetAssociatedPseudoOperation(IR::Opcode::GetOverflowFromOp)}) {
+        // https://stackoverflow.com/questions/55468823/how-to-detect-integer-overflow-in-c
+        constexpr u32 s32_max{static_cast<u32>(std::numeric_limits<s32>::max())};
+        ctx.AddU1("{}=int({})>=0?int({})>int({}-{}):int({})<int({}-{});", *overflow, a, b, s32_max,
+                  a, b, s32_max, a);
+        overflow->Invalidate();
+    }
 }
 
 void EmitIAdd64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
@@ -179,7 +192,7 @@ void EmitSLessThan(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::
 }
 
 void EmitULessThan(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs) {
-    ctx.AddU1("{}=uint({})<uint({)};", inst, lhs, rhs);
+    ctx.AddU1("{}=uint({})<uint({});", inst, lhs, rhs);
 }
 
 void EmitIEqual(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string_view rhs) {
