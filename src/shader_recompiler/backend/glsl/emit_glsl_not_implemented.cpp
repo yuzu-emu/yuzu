@@ -224,8 +224,9 @@ void EmitIsHelperInvocation(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitYDirection(EmitContext& ctx) {
-    NotImplemented();
+void EmitYDirection(EmitContext& ctx, IR::Inst& inst) {
+    ctx.uses_y_direction = true;
+    ctx.AddF32("{}=gl_FrontMaterial.ambient.a;", inst);
 }
 
 void EmitLoadLocal(EmitContext& ctx, std::string_view word_offset) {
@@ -647,27 +648,6 @@ void EmitShuffleDown(EmitContext& ctx, IR::Inst& inst, std::string_view value,
 void EmitShuffleButterfly(EmitContext& ctx, IR::Inst& inst, std::string_view value,
                           std::string_view index, std::string_view clamp,
                           std::string_view segmentation_mask) {
-    NotImplemented();
-}
-
-void EmitFSwizzleAdd(EmitContext& ctx, std::string_view op_a, std::string_view op_b,
-                     std::string_view swizzle) {
-    NotImplemented();
-}
-
-void EmitDPdxFine(EmitContext& ctx, std::string_view op_a) {
-    NotImplemented();
-}
-
-void EmitDPdyFine(EmitContext& ctx, std::string_view op_a) {
-    NotImplemented();
-}
-
-void EmitDPdxCoarse(EmitContext& ctx, std::string_view op_a) {
-    NotImplemented();
-}
-
-void EmitDPdyCoarse(EmitContext& ctx, std::string_view op_a) {
     NotImplemented();
 }
 

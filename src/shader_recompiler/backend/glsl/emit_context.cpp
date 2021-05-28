@@ -22,9 +22,10 @@ std::string_view InterpDecorator(Interpolation interp) {
 }
 } // namespace
 
-EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_)
-    : info{program.info}, profile{profile_} {
-    std::string header = "#version 450\n";
+EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
+                         const RuntimeInfo& runtime_info_)
+    : info{program.info}, profile{profile_}, runtime_info{runtime_info_} {
+    std::string header = "";
     SetupExtensions(header);
     stage = program.stage;
     switch (program.stage) {

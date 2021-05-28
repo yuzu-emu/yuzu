@@ -42,25 +42,19 @@ void EmitCompositeExtractU32x4(EmitContext& ctx, IR::Inst& inst, std::string_vie
     ctx.AddU32("{}={}.{};", inst, composite, SWIZZLE[index]);
 }
 
-void EmitCompositeInsertU32x2([[maybe_unused]] EmitContext& ctx,
-                              [[maybe_unused]] std::string_view composite,
-                              [[maybe_unused]] std::string_view object,
-                              [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitCompositeInsertU32x2(EmitContext& ctx, std::string_view composite, std::string_view object,
+                              u32 index) {
+    ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
 }
 
-void EmitCompositeInsertU32x3([[maybe_unused]] EmitContext& ctx,
-                              [[maybe_unused]] std::string_view composite,
-                              [[maybe_unused]] std::string_view object,
-                              [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitCompositeInsertU32x3(EmitContext& ctx, std::string_view composite, std::string_view object,
+                              u32 index) {
+    ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
 }
 
-void EmitCompositeInsertU32x4([[maybe_unused]] EmitContext& ctx,
-                              [[maybe_unused]] std::string_view composite,
-                              [[maybe_unused]] std::string_view object,
-                              [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitCompositeInsertU32x4(EmitContext& ctx, std::string_view composite, std::string_view object,
+                              u32 index) {
+    ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
 }
 
 void EmitCompositeConstructF16x2([[maybe_unused]] EmitContext& ctx,
@@ -153,25 +147,19 @@ void EmitCompositeExtractF32x4(EmitContext& ctx, IR::Inst& inst, std::string_vie
     ctx.AddF32("{}={}.{};", inst, composite, SWIZZLE[index]);
 }
 
-void EmitCompositeInsertF32x2([[maybe_unused]] EmitContext& ctx,
-                              [[maybe_unused]] std::string_view composite,
-                              [[maybe_unused]] std::string_view object,
-                              [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitCompositeInsertF32x2(EmitContext& ctx, std::string_view composite, std::string_view object,
+                              u32 index) {
+    ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
 }
 
-void EmitCompositeInsertF32x3([[maybe_unused]] EmitContext& ctx,
-                              [[maybe_unused]] std::string_view composite,
-                              [[maybe_unused]] std::string_view object,
-                              [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitCompositeInsertF32x3(EmitContext& ctx, std::string_view composite, std::string_view object,
+                              u32 index) {
+    ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
 }
 
-void EmitCompositeInsertF32x4([[maybe_unused]] EmitContext& ctx,
-                              [[maybe_unused]] std::string_view composite,
-                              [[maybe_unused]] std::string_view object,
-                              [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitCompositeInsertF32x4(EmitContext& ctx, std::string_view composite, std::string_view object,
+                              u32 index) {
+    ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
 }
 
 void EmitCompositeConstructF64x2([[maybe_unused]] EmitContext& ctx) {
@@ -198,24 +186,18 @@ void EmitCompositeExtractF64x4([[maybe_unused]] EmitContext& ctx) {
     throw NotImplementedException("GLSL Instruction");
 }
 
-void EmitCompositeInsertF64x2([[maybe_unused]] EmitContext& ctx,
-                              [[maybe_unused]] std::string_view composite,
-                              [[maybe_unused]] std::string_view object,
-                              [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitCompositeInsertF64x2(EmitContext& ctx, std::string_view composite, std::string_view object,
+                              u32 index) {
+    ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
 }
 
-void EmitCompositeInsertF64x3([[maybe_unused]] EmitContext& ctx,
-                              [[maybe_unused]] std::string_view composite,
-                              [[maybe_unused]] std::string_view object,
-                              [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitCompositeInsertF64x3(EmitContext& ctx, std::string_view composite, std::string_view object,
+                              u32 index) {
+    ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
 }
 
-void EmitCompositeInsertF64x4([[maybe_unused]] EmitContext& ctx,
-                              [[maybe_unused]] std::string_view composite,
-                              [[maybe_unused]] std::string_view object,
-                              [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitCompositeInsertF64x4(EmitContext& ctx, std::string_view composite, std::string_view object,
+                              u32 index) {
+    ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
 }
 } // namespace Shader::Backend::GLSL

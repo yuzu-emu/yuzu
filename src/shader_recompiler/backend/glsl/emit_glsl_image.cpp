@@ -37,6 +37,9 @@ void EmitImageSampleImplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
     if (!offset.IsEmpty()) {
         throw NotImplementedException("Offset");
     }
+    if (info.type != TextureType::Color2D) {
+        throw NotImplementedException("Texture type: {}", info.type.Value());
+    }
     const auto texture{Texture(ctx, info, index)};
     ctx.AddF32x4("{}=texture({},{});", inst, texture, coords);
 }
