@@ -81,13 +81,15 @@ void EmitWriteStorageS16([[maybe_unused]] EmitContext& ctx,
 
 void EmitWriteStorage32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
                         std::string_view value) {
-    ctx.Add("ssbo{}[{}]={};", binding.U32(), offset.U32(), value);
+    const auto offset_var{ctx.reg_alloc.Consume(offset)};
+    ctx.Add("ssbo{}[{}]={};", binding.U32(), offset_var, value);
 }
 
 void EmitWriteStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
                         std::string_view value) {
-    ctx.Add("ssbo{}[{}]={}.x;", binding.U32(), offset.U32(), value);
-    ctx.Add("ssbo{}[{}]={}.y;", binding.U32(), offset.U32() + 1, value);
+    const auto offset_var{ctx.reg_alloc.Consume(offset)};
+    ctx.Add("ssbo{}[{}]={}.x;", binding.U32(), offset_var, value);
+    ctx.Add("ssbo{}[{}+1]={}.y;", binding.U32(), offset_var, value);
 }
 
 void EmitWriteStorage128([[maybe_unused]] EmitContext& ctx,

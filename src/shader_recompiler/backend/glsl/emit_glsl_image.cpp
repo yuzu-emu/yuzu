@@ -46,7 +46,20 @@ void EmitImageSampleExplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
                                 [[maybe_unused]] std::string_view coords,
                                 [[maybe_unused]] std::string_view lod_lc,
                                 [[maybe_unused]] const IR::Value& offset) {
-    throw NotImplementedException("GLSL Instruction");
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    if (info.has_bias) {
+        throw NotImplementedException("Bias texture samples");
+    }
+    if (info.has_lod_clamp) {
+        throw NotImplementedException("Lod clamp samples");
+    }
+    const auto texture{Texture(ctx, info, index)};
+    if (!offset.IsEmpty()) {
+        ctx.AddF32x4("{}=textureLodOffset({},{},{},ivec2({}));", inst, texture, coords, lod_lc,
+                     ctx.reg_alloc.Consume(offset));
+    } else {
+        ctx.AddF32x4("{}=textureLod({},{},{});", inst, texture, coords, lod_lc);
+    }
 }
 
 void EmitImageSampleDrefImplicitLod([[maybe_unused]] EmitContext& ctx,
