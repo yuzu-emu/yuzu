@@ -119,6 +119,7 @@ public:
         code += '\n';
     }
 
+    std::string header;
     std::string code;
     RegAlloc reg_alloc;
     const Info& info;
