@@ -83,6 +83,7 @@ void Invoke(EmitContext& ctx, IR::Inst* inst) {
 }
 
 void EmitInst(EmitContext& ctx, IR::Inst* inst) {
+    // ctx.Add("/* {} */", inst->GetOpcode());
     switch (inst->GetOpcode()) {
 #define OPCODE(name, result_type, ...)                                                             \
     case IR::Opcode::name:                                                                         \
@@ -108,11 +109,8 @@ void PrecolorInst(IR::Inst& phi) {
         if (arg.IsImmediate()) {
             ir.PhiMove(phi, arg);
         } else {
-            ir.PhiMove(phi, IR::Value{&*arg.InstRecursive()});
+            ir.PhiMove(phi, IR::Value{arg.InstRecursive()});
         }
-    }
-    for (size_t i = 0; i < num_args; ++i) {
-        IR::IREmitter{*phi.PhiBlock(i)}.Reference(IR::Value{&phi});
     }
 }
 
@@ -144,10 +142,7 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
                     ctx.Add("break;");
                 }
             } else {
-                // TODO: implement this
-                ctx.Add("MOV.S.CC RC,{};"
-                        "BRK (NE.x);",
-                        0);
+                ctx.Add("if({}){{break;}}", ctx.reg_alloc.Consume(node.data.break_node.cond));
             }
             break;
         case IR::AbstractSyntaxNode::Type::Return:
@@ -155,10 +150,12 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
             ctx.Add("return;");
             break;
         case IR::AbstractSyntaxNode::Type::Loop:
-            ctx.Add("do{{");
+            ctx.Add("for(;;){{");
             break;
         case IR::AbstractSyntaxNode::Type::Repeat:
-            ctx.Add("}}while({});", ctx.reg_alloc.Consume(node.data.repeat.cond));
+            ctx.Add("if({}){{", ctx.reg_alloc.Consume(node.data.repeat.cond));
+            ctx.Add("continue;\n}}else{{");
+            ctx.Add("break;\n}}\n}}");
             break;
         default:
             fmt::print("{}", node.type);
@@ -182,7 +179,11 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
     Precolor(program);
     EmitCode(ctx, program);
     const std::string version{fmt::format("#version 450{}\n", GlslVersionSpecifier(ctx))};
-    ctx.code.insert(0, version);
+    ctx.header.insert(0, version);
+    for (size_t index = 0; index < ctx.reg_alloc.num_used_registers; ++index) {
+        ctx.header += fmt::format("{} R{};", ctx.reg_alloc.reg_types[index], index);
+    }
+    ctx.code.insert(0, ctx.header);
     ctx.code += "}";
     fmt::print("\n{}\n", ctx.code);
     return ctx.code;

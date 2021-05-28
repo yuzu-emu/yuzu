@@ -74,7 +74,9 @@ std::string RegAlloc::Define(IR::Inst& inst, Type type) {
     std::string type_str = "";
     if (!register_defined[id.index]) {
         register_defined[id.index] = true;
-        type_str = GetGlslType(type);
+        // type_str = GetGlslType(type);
+        reg_types.push_back(GetGlslType(type));
+        ++num_used_registers;
     }
     inst.SetDefinition<Id>(id);
     return type_str + Representation(id);

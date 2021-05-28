@@ -28,8 +28,8 @@ void SetSignFlag(EmitContext& ctx, IR::Inst& inst, std::string_view result) {
 }
 } // Anonymous namespace
 void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    const auto result{ctx.reg_alloc.Define(inst)};
-    ctx.Add("uint {}={}+{};", result, a, b);
+    const auto result{ctx.reg_alloc.Define(inst, Type::U32)};
+    ctx.Add("{}={}+{};", result, a, b);
     SetZeroFlag(ctx, inst, result);
     SetSignFlag(ctx, inst, result);
 }
@@ -120,8 +120,8 @@ void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst& inst, std::string_view bas
 
 void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst& inst, std::string_view base,
                           std::string_view offset, std::string_view count) {
-    const auto result{ctx.reg_alloc.Define(inst)};
-    ctx.Add("uint {}=bitfieldExtract({},int({}),int({}));", result, base, offset, count);
+    const auto result{ctx.reg_alloc.Define(inst, Type::U32)};
+    ctx.Add("{}=bitfieldExtract({},int({}),int({}));", result, base, offset, count);
     SetZeroFlag(ctx, inst, result);
     SetSignFlag(ctx, inst, result);
 }

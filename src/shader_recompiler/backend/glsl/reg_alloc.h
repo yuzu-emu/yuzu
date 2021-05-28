@@ -61,19 +61,21 @@ public:
     std::string Define(IR::Inst& inst, IR::Type type);
 
     std::string Consume(const IR::Value& value);
+    std::string Consume(IR::Inst& inst);
+
     std::string GetGlslType(Type type);
     std::string GetGlslType(IR::Type type);
 
+    size_t num_used_registers{};
+    std::vector<std::string> reg_types;
+
 private:
     static constexpr size_t NUM_REGS = 4096;
-    static constexpr size_t NUM_ELEMENTS = 4;
 
-    std::string Consume(IR::Inst& inst);
     Type RegType(IR::Type type);
     Id Alloc();
     void Free(Id id);
 
-    size_t num_used_registers{};
     std::bitset<NUM_REGS> register_use{};
     std::bitset<NUM_REGS> register_defined{};
 };
