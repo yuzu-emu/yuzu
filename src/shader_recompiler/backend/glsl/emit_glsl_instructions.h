@@ -87,7 +87,7 @@ void EmitLocalInvocationId(EmitContext& ctx);
 void EmitInvocationId(EmitContext& ctx);
 void EmitSampleId(EmitContext& ctx);
 void EmitIsHelperInvocation(EmitContext& ctx);
-void EmitYDirection(EmitContext& ctx);
+void EmitYDirection(EmitContext& ctx, IR::Inst& inst);
 void EmitLoadLocal(EmitContext& ctx, std::string_view word_offset);
 void EmitWriteLocal(EmitContext& ctx, std::string_view word_offset, std::string_view value);
 void EmitUndefU1(EmitContext& ctx, IR::Inst& inst);
@@ -692,11 +692,11 @@ void EmitShuffleDown(EmitContext& ctx, IR::Inst& inst, std::string_view value,
 void EmitShuffleButterfly(EmitContext& ctx, IR::Inst& inst, std::string_view value,
                           std::string_view index, std::string_view clamp,
                           std::string_view segmentation_mask);
-void EmitFSwizzleAdd(EmitContext& ctx, std::string_view op_a, std::string_view op_b,
+void EmitFSwizzleAdd(EmitContext& ctx, IR::Inst& inst, std::string_view op_a, std::string_view op_b,
                      std::string_view swizzle);
-void EmitDPdxFine(EmitContext& ctx, std::string_view op_a);
-void EmitDPdyFine(EmitContext& ctx, std::string_view op_a);
-void EmitDPdxCoarse(EmitContext& ctx, std::string_view op_a);
-void EmitDPdyCoarse(EmitContext& ctx, std::string_view op_a);
+void EmitDPdxFine(EmitContext& ctx, IR::Inst& inst, std::string_view op_a);
+void EmitDPdyFine(EmitContext& ctx, IR::Inst& inst, std::string_view op_a);
+void EmitDPdxCoarse(EmitContext& ctx, IR::Inst& inst, std::string_view op_a);
+void EmitDPdyCoarse(EmitContext& ctx, IR::Inst& inst, std::string_view op_a);
 
 } // namespace Shader::Backend::GLSL
