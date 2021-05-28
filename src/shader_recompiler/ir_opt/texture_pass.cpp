@@ -283,8 +283,8 @@ TextureInst MakeInst(Environment& env, IR::Block* block, IR::Inst& inst) {
 }
 
 TextureType ReadTextureType(Environment& env, const ConstBufferAddr& cbuf) {
-    const u32 secondary_index{cbuf.has_secondary ? cbuf.secondary_index : cbuf.index };
-    const u32 secondary_offset{cbuf.has_secondary ? cbuf.secondary_offset : cbuf.offset };
+    const u32 secondary_index{cbuf.has_secondary ? cbuf.secondary_index : cbuf.index};
+    const u32 secondary_offset{cbuf.has_secondary ? cbuf.secondary_offset : cbuf.offset};
     const u32 lhs_raw{env.ReadCbufValue(cbuf.index, cbuf.offset)};
     const u32 rhs_raw{env.ReadCbufValue(secondary_index, secondary_offset)};
     return env.ReadTextureType(lhs_raw | rhs_raw);
