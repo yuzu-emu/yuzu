@@ -161,6 +161,7 @@ std::string GradOffset(const IR::Value& offset) {
 std::pair<std::string, ScopedRegister> Coord(EmitContext& ctx, const IR::Value& coord) {
     if (coord.IsImmediate()) {
         ScopedRegister scoped_reg(ctx.reg_alloc);
+        ctx.Add("MOV.U {}.x,{};", scoped_reg.reg, ScalarU32{ctx.reg_alloc.Consume(coord)});
         return {fmt::to_string(scoped_reg.reg), std::move(scoped_reg)};
     }
     std::string coord_vec{fmt::to_string(Register{ctx.reg_alloc.Consume(coord)})};
