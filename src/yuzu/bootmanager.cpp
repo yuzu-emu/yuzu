@@ -64,12 +64,13 @@ void EmuThread::run() {
 
     emit LoadProgress(VideoCore::LoadCallbackStage::Prepare, 0, 0);
 
-    system.Renderer().ReadRasterizer()->LoadDiskResources(
-        system.CurrentProcess()->GetTitleID(), stop_token,
-        [this](VideoCore::LoadCallbackStage stage, std::size_t value, std::size_t total) {
-            emit LoadProgress(stage, value, total);
-        });
-
+    if (Settings::values.use_disk_shader_cache.GetValue()) {
+        system.Renderer().ReadRasterizer()->LoadDiskResources(
+            system.CurrentProcess()->GetTitleID(), stop_token,
+            [this](VideoCore::LoadCallbackStage stage, std::size_t value, std::size_t total) {
+                emit LoadProgress(stage, value, total);
+            });
+    }
     emit LoadProgress(VideoCore::LoadCallbackStage::Complete, 0, 0);
 
     gpu.ReleaseContext();
