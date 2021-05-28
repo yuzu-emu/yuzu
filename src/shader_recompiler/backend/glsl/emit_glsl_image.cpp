@@ -32,14 +32,13 @@ void EmitImageSampleImplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
     if (info.has_lod_clamp) {
         throw NotImplementedException("Lod clamp samples");
     }
-    if (!offset.IsEmpty()) {
-        throw NotImplementedException("Offset");
-    }
-    if (info.type != TextureType::Color2D) {
-        throw NotImplementedException("Texture type: {}", info.type.Value());
-    }
     const auto texture{Texture(ctx, info, index)};
-    ctx.AddF32x4("{}=texture({},{});", inst, texture, coords);
+    if (!offset.IsEmpty()) {
+        ctx.AddF32x4("{}=textureOffset({},{},ivec2({}));", inst, texture, coords,
+                     ctx.reg_alloc.Consume(offset));
+    } else {
+        ctx.AddF32x4("{}=texture({},{});", inst, texture, coords);
+    }
 }
 
 void EmitImageSampleExplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,

@@ -29,7 +29,7 @@ void EmitPhi(EmitContext& ctx, IR::Inst& phi) {
 }
 
 void EmitVoid(EmitContext& ctx) {
-    NotImplemented();
+    // NotImplemented();
 }
 
 void EmitReference(EmitContext&) {

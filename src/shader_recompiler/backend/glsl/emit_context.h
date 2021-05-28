@@ -127,7 +127,6 @@ public:
 
     Stage stage{};
     std::string_view stage_name = "invalid";
-    std::string_view attrib_name = "invalid";
 
     std::vector<u32> texture_buffer_bindings;
     std::vector<u32> image_buffer_bindings;
@@ -138,8 +137,8 @@ public:
 
 private:
     void SetupExtensions(std::string& header);
-    void DefineConstantBuffers();
-    void DefineStorageBuffers();
+    void DefineConstantBuffers(Bindings& bindings);
+    void DefineStorageBuffers(Bindings& bindings);
     void DefineHelperFunctions();
     void SetupImages(Bindings& bindings);
 };

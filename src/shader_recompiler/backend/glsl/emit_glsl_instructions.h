@@ -207,8 +207,8 @@ void EmitCompositeInsertF64x3(EmitContext& ctx, std::string_view composite, std:
                               u32 index);
 void EmitCompositeInsertF64x4(EmitContext& ctx, std::string_view composite, std::string_view object,
                               u32 index);
-void EmitSelectU1(EmitContext& ctx, std::string_view cond, std::string_view true_value,
-                  std::string_view false_value);
+void EmitSelectU1(EmitContext& ctx, IR::Inst& inst, std::string_view cond,
+                  std::string_view true_value, std::string_view false_value);
 void EmitSelectU8(EmitContext& ctx, std::string_view cond, std::string_view true_value,
                   std::string_view false_value);
 void EmitSelectU16(EmitContext& ctx, std::string_view cond, std::string_view true_value,

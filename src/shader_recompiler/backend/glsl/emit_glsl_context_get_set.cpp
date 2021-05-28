@@ -43,23 +43,24 @@ void EmitGetCbufS16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] const IR
 void EmitGetCbufU32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                     const IR::Value& offset) {
     if (offset.IsImmediate()) {
-        ctx.AddU32("{}=floatBitsToUint(cbuf{}[{}].{});", inst, binding.U32(), offset.U32() / 16,
-                   OffsetSwizzle(offset.U32()));
+        ctx.AddU32("{}=floatBitsToUint({}_cbuf{}[{}].{});", inst, ctx.stage_name, binding.U32(),
+                   offset.U32() / 16, OffsetSwizzle(offset.U32()));
     } else {
         const auto offset_var{ctx.reg_alloc.Consume(offset)};
-        ctx.AddU32("{}=floatBitsToUint(cbuf{}[{}/16][({}/4)%4]);", inst, binding.U32(), offset_var,
-                   offset_var);
+        ctx.AddU32("{}=floatBitsToUint({}_cbuf{}[{}/16][({}/4)%4]);", inst, ctx.stage_name,
+                   binding.U32(), offset_var, offset_var);
     }
 }
 
 void EmitGetCbufF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                     const IR::Value& offset) {
     if (offset.IsImmediate()) {
-        ctx.AddF32("{}=cbuf{}[{}].{};", inst, binding.U32(), offset.U32() / 16,
+        ctx.AddF32("{}={}_cbuf{}[{}].{};", inst, ctx.stage_name, binding.U32(), offset.U32() / 16,
                    OffsetSwizzle(offset.U32()));
     } else {
         const auto offset_var{ctx.reg_alloc.Consume(offset)};
-        ctx.AddF32("{}=cbuf{}[{}/16][({}/4)%4];", inst, binding.U32(), offset_var, offset_var);
+        ctx.AddF32("{}={}_cbuf{}[{}/16][({}/4)%4];", inst, ctx.stage_name, binding.U32(),
+                   offset_var, offset_var);
     }
 }
 
@@ -68,15 +69,17 @@ void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding
     if (offset.IsImmediate()) {
         const auto u32_offset{offset.U32()};
         const auto index{(u32_offset / 4) % 4};
-        ctx.AddU32x2("{}=uvec2(floatBitsToUint(cbuf{}[{}].{}),floatBitsToUint(cbuf{}[{}].{}));",
-                     inst, binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
-                     binding.U32(), (offset.U32() + 1) / 16, OffsetSwizzle(offset.U32() + 1));
+        ctx.AddU32x2(
+            "{}=uvec2(floatBitsToUint({}_cbuf{}[{}].{}),floatBitsToUint({}_cbuf{}[{}].{}));", inst,
+            ctx.stage_name, binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
+            ctx.stage_name, binding.U32(), (offset.U32() + 1) / 16,
+            OffsetSwizzle(offset.U32() + 1));
     } else {
         const auto offset_var{ctx.reg_alloc.Consume(offset)};
-        ctx.AddU32x2("{}=uvec2(floatBitsToUint(cbuf{}[{}/16][({}/"
-                     "4)%4]),floatBitsToUint(cbuf{}[({}+1)/16][(({}+1/4))%4]));",
-                     inst, binding.U32(), offset_var, offset_var, binding.U32(), offset_var,
-                     offset_var);
+        ctx.AddU32x2("{}=uvec2(floatBitsToUint({}_cbuf{}[{}/16][({}/"
+                     "4)%4]),floatBitsToUint({}_cbuf{}[({}+1)/16][(({}+1/4))%4]));",
+                     inst, ctx.stage_name, binding.U32(), offset_var, offset_var, ctx.stage_name,
+                     binding.U32(), offset_var, offset_var);
     }
 }
 
@@ -107,10 +110,10 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
         }
         break;
     case IR::Attribute::InstanceId:
-        ctx.AddS32("{}=gl_InstanceID;", inst, ctx.attrib_name);
+        ctx.AddS32("{}=gl_InstanceID;", inst);
         break;
     case IR::Attribute::VertexId:
-        ctx.AddS32("{}=gl_VertexID;", inst, ctx.attrib_name);
+        ctx.AddS32("{}=gl_VertexID;", inst);
         break;
     default:
         fmt::print("Get attribute {}", attr);
