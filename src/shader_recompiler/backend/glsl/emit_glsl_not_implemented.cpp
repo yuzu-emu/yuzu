@@ -5,8 +5,6 @@
 #include <string_view>
 
 #include "shader_recompiler/backend/glsl/emit_context.h"
-#include "shader_recompiler/backend/glsl/emit_glsl_instructions.h"
-#include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/frontend/ir/value.h"
 
 #ifdef _MSC_VER

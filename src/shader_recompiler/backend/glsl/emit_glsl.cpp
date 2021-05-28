@@ -4,17 +4,12 @@
 
 #include <ranges>
 #include <string>
-#include <tuple>
 
-#include "shader_recompiler/backend/bindings.h"
 #include "shader_recompiler/backend/glsl/emit_context.h"
 #include "shader_recompiler/backend/glsl/emit_glsl.h"
 #include "shader_recompiler/backend/glsl/emit_glsl_instructions.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
-#include "shader_recompiler/frontend/ir/program.h"
-#include "shader_recompiler/profile.h"
 
-#pragma optimize("", off)
 namespace Shader::Backend::GLSL {
 namespace {
 template <class Func>
@@ -173,13 +168,21 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
     }
 }
 
+std::string GlslVersionSpecifier(const EmitContext& ctx) {
+    if (ctx.uses_y_direction) {
+        return " compatibility";
+    }
+    return "";
+}
 } // Anonymous namespace
 
-std::string EmitGLSL(const Profile& profile, const RuntimeInfo&, IR::Program& program,
+std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR::Program& program,
                      Bindings& bindings) {
-    EmitContext ctx{program, bindings, profile};
+    EmitContext ctx{program, bindings, profile, runtime_info};
     Precolor(program);
     EmitCode(ctx, program);
+    const std::string version{fmt::format("#version 450{}\n", GlslVersionSpecifier(ctx))};
+    ctx.code.insert(0, version);
     ctx.code += "}";
     fmt::print("\n{}\n", ctx.code);
     return ctx.code;

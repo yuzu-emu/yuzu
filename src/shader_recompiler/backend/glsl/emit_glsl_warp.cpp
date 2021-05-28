@@ -5,10 +5,7 @@
 #include <string_view>
 
 #include "shader_recompiler/backend/glsl/emit_context.h"
-#include "shader_recompiler/backend/glsl/emit_glsl_instructions.h"
-#include "shader_recompiler/frontend/ir/modifiers.h"
 #include "shader_recompiler/frontend/ir/value.h"
-#include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::GLSL {
 void EmitFSwizzleAdd([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,

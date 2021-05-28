@@ -5,7 +5,6 @@
 #pragma once
 
 #include <string>
-#include <utility>
 #include <fmt/format.h>
 
 #include "shader_recompiler/backend/glsl/reg_alloc.h"
