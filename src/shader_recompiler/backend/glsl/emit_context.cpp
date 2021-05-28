@@ -20,6 +20,20 @@ std::string_view InterpDecorator(Interpolation interp) {
     }
     throw InvalidArgument("Invalid interpolation {}", interp);
 }
+
+std::string_view SamplerType(TextureType type) {
+    switch (type) {
+    case TextureType::Color2D:
+        return "sampler2D";
+    case TextureType::ColorArray2D:
+        return "sampler2DArray";
+    case TextureType::Color3D:
+        return "sampler3D";
+    default:
+        throw NotImplementedException("Texture type: {}", type);
+    }
+}
+
 } // namespace
 
 EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
@@ -31,27 +45,23 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     switch (program.stage) {
     case Stage::VertexA:
     case Stage::VertexB:
-        stage_name = "vertex";
-        attrib_name = "vertex";
+        stage_name = "vs";
         // TODO: add only what's used by the shader
         header +=
             "out gl_PerVertex {vec4 gl_Position;float gl_PointSize;float gl_ClipDistance[];};";
         break;
     case Stage::TessellationControl:
     case Stage::TessellationEval:
-        stage_name = "primitive";
-        attrib_name = "primitive";
+        stage_name = "ts";
         break;
     case Stage::Geometry:
-        stage_name = "primitive";
-        attrib_name = "vertex";
+        stage_name = "gs";
         break;
     case Stage::Fragment:
-        stage_name = "fragment";
-        attrib_name = "fragment";
+        stage_name = "fs";
         break;
     case Stage::Compute:
-        stage_name = "invocation";
+        stage_name = "cs";
         header += fmt::format("layout(local_size_x={},local_size_y={},local_size_z={}) in;\n",
                               program.workgroup_size[0], program.workgroup_size[1],
                               program.workgroup_size[2]);
@@ -77,12 +87,12 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
             Add("layout(location={}) out vec4 out_attr{};", index, index);
         }
     }
-    DefineConstantBuffers();
-    DefineStorageBuffers();
-    DefineHelperFunctions();
+    DefineConstantBuffers(bindings);
+    DefineStorageBuffers(bindings);
     SetupImages(bindings);
-    Add("void main(){{");
+    DefineHelperFunctions();
 
+    Add("void main(){{");
     if (stage == Stage::VertexA || stage == Stage::VertexB) {
         Add("gl_Position = vec4(0.0f, 0.0f, 0.0f, 1.0f);");
     }
@@ -112,27 +122,25 @@ void EmitContext::SetupExtensions(std::string& header) {
     }
 }
 
-void EmitContext::DefineConstantBuffers() {
+void EmitContext::DefineConstantBuffers(Bindings& bindings) {
     if (info.constant_buffer_descriptors.empty()) {
         return;
     }
-    u32 binding{};
     for (const auto& desc : info.constant_buffer_descriptors) {
-        Add("layout(std140,binding={}) uniform cbuf_{}{{vec4 cbuf{}[{}];}};", binding, desc.index,
-            desc.index, 4 * 1024);
-        ++binding;
+        Add("layout(std140,binding={}) uniform {}_cbuf_{}{{vec4 {}_cbuf{}[{}];}};",
+            bindings.uniform_buffer, stage_name, desc.index, stage_name, desc.index, 4 * 1024);
+        bindings.uniform_buffer += desc.count;
     }
 }
 
-void EmitContext::DefineStorageBuffers() {
+void EmitContext::DefineStorageBuffers(Bindings& bindings) {
     if (info.storage_buffers_descriptors.empty()) {
         return;
     }
-    u32 binding{};
     for (const auto& desc : info.storage_buffers_descriptors) {
-        Add("layout(std430,binding={}) buffer ssbo_{}{{uint ssbo{}[];}};", binding, binding,
-            desc.cbuf_index, desc.count);
-        ++binding;
+        Add("layout(std430,binding={}) buffer ssbo_{}{{uint ssbo{}[];}};", bindings.storage_buffer,
+            bindings.storage_buffer, desc.cbuf_index);
+        bindings.storage_buffer += desc.count;
     }
 }
 
@@ -203,10 +211,11 @@ void EmitContext::SetupImages(Bindings& bindings) {
     }
     texture_bindings.reserve(info.texture_descriptors.size());
     for (const auto& desc : info.texture_descriptors) {
+        const auto sampler_type{SamplerType(desc.type)};
         texture_bindings.push_back(bindings.texture);
         const auto indices{bindings.texture + desc.count};
         for (u32 index = bindings.texture; index < indices; ++index) {
-            Add("layout(binding={}) uniform sampler2D tex{};", bindings.texture, index);
+            Add("layout(binding={}) uniform {} tex{};", bindings.texture, sampler_type, index);
         }
         bindings.texture += desc.count;
     }

@@ -8,10 +8,9 @@
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLSL {
-void EmitSelectU1([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view cond,
-                  [[maybe_unused]] std::string_view true_value,
-                  [[maybe_unused]] std::string_view false_value) {
-    throw NotImplementedException("GLSL Instruction");
+void EmitSelectU1(EmitContext& ctx, IR::Inst& inst, std::string_view cond,
+                  std::string_view true_value, std::string_view false_value) {
+    ctx.AddU1("{}={}?{}:{};", inst, cond, true_value, false_value);
 }
 
 void EmitSelectU8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view cond,

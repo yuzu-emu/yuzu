@@ -8,8 +8,30 @@
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLSL {
+namespace {
+void SetZeroFlag(EmitContext& ctx, IR::Inst& inst, std::string_view result) {
+    IR::Inst* const zero{inst.GetAssociatedPseudoOperation(IR::Opcode::GetZeroFromOp)};
+    if (!zero) {
+        return;
+    }
+    ctx.AddU1("{}={}==0;", *zero, result);
+    zero->Invalidate();
+}
+
+void SetSignFlag(EmitContext& ctx, IR::Inst& inst, std::string_view result) {
+    IR::Inst* const sign{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSignFromOp)};
+    if (!sign) {
+        return;
+    }
+    ctx.AddU1("{}=int({})<0;", *sign, result);
+    sign->Invalidate();
+}
+} // Anonymous namespace
 void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    ctx.AddU32("{}={}+{};", inst, a, b);
+    const auto result{ctx.reg_alloc.Define(inst)};
+    ctx.Add("uint {}={}+{};", result, a, b);
+    SetZeroFlag(ctx, inst, result);
+    SetSignFlag(ctx, inst, result);
 }
 
 void EmitIAdd64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
@@ -98,7 +120,10 @@ void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst& inst, std::string_view bas
 
 void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst& inst, std::string_view base,
                           std::string_view offset, std::string_view count) {
-    ctx.AddU32("{}=bitfieldExtract({}, int({}), int({}));", inst, base, offset, count);
+    const auto result{ctx.reg_alloc.Define(inst)};
+    ctx.Add("uint {}=bitfieldExtract({},int({}),int({}));", result, base, offset, count);
+    SetZeroFlag(ctx, inst, result);
+    SetSignFlag(ctx, inst, result);
 }
 
 void EmitBitReverse32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
