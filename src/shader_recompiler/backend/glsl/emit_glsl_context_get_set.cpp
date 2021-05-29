@@ -24,25 +24,61 @@ char OffsetSwizzle(u32 offset) {
 void EmitGetCbufU8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                    [[maybe_unused]] const IR::Value& binding,
                    [[maybe_unused]] const IR::Value& offset) {
-    throw NotImplementedException("GLSL");
+    if (offset.IsImmediate()) {
+        ctx.AddU32("{}=bitfieldExtract(floatBitsToUint({}_cbuf{}[{}].{}),int({}),8);", inst,
+                   ctx.stage_name, binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
+                   (offset.U32() % 4) * 8);
+    } else {
+        const auto offset_var{ctx.reg_alloc.Consume(offset)};
+        ctx.AddU32(
+            "{}=bitfieldExtract(floatBitsToUint({}_cbuf{}[{}/16][({}/4)%4]),int(({}%4)*8),8);",
+            inst, ctx.stage_name, binding.U32(), offset_var, offset_var, offset_var);
+    }
 }
 
 void EmitGetCbufS8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                    [[maybe_unused]] const IR::Value& binding,
                    [[maybe_unused]] const IR::Value& offset) {
-    throw NotImplementedException("GLSL");
+    if (offset.IsImmediate()) {
+        ctx.AddU32("{}=bitfieldExtract(floatBitsToInt({}_cbuf{}[{}].{}),int({}),8);", inst,
+                   ctx.stage_name, binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
+                   (offset.U32() % 4) * 8);
+    } else {
+        const auto offset_var{ctx.reg_alloc.Consume(offset)};
+        ctx.AddU32(
+            "{}=bitfieldExtract(floatBitsToInt({}_cbuf{}[{}/16][({}/4)%4]),int(({}%4)*8),8);", inst,
+            ctx.stage_name, binding.U32(), offset_var, offset_var, offset_var);
+    }
 }
 
 void EmitGetCbufU16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                     [[maybe_unused]] const IR::Value& binding,
                     [[maybe_unused]] const IR::Value& offset) {
-    throw NotImplementedException("GLSL");
+    if (offset.IsImmediate()) {
+        ctx.AddU32("{}=bitfieldExtract(floatBitsToUint({}_cbuf{}[{}].{}),int({}),16);", inst,
+                   ctx.stage_name, binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
+                   ((offset.U32() / 2) % 2) * 16);
+    } else {
+        const auto offset_var{ctx.reg_alloc.Consume(offset)};
+        ctx.AddU32("{}=bitfieldExtract(floatBitsToUint({}_cbuf{}[{}/16][({}/4)%4]),int((({}/"
+                   "2)%2)*16),16);",
+                   inst, ctx.stage_name, binding.U32(), offset_var, offset_var, offset_var);
+    }
 }
 
 void EmitGetCbufS16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                     [[maybe_unused]] const IR::Value& binding,
                     [[maybe_unused]] const IR::Value& offset) {
-    throw NotImplementedException("GLSL");
+    if (offset.IsImmediate()) {
+        ctx.AddU32("{}=bitfieldExtract(floatBitsToInt({}_cbuf{}[{}].{}),int({}),16);", inst,
+                   ctx.stage_name, binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
+                   ((offset.U32() / 2) % 2) * 16);
+    } else {
+        const auto offset_var{ctx.reg_alloc.Consume(offset)};
+        ctx.AddU32(
+            "{}=bitfieldExtract(floatBitsToInt({}_cbuf{}[{}/16][({}/4)%4]),int((({}/2)%2)*16),16);",
+            inst, ctx.stage_name, binding.U32(), offset_var, offset_var, offset_var);
+    }
 }
 
 void EmitGetCbufU32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -75,12 +111,12 @@ void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding
         ctx.AddU32x2(
             "{}=uvec2(floatBitsToUint({}_cbuf{}[{}].{}),floatBitsToUint({}_cbuf{}[{}].{}));", inst,
             ctx.stage_name, binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
-            ctx.stage_name, binding.U32(), (offset.U32() + 1) / 16,
-            OffsetSwizzle(offset.U32() + 1));
+            ctx.stage_name, binding.U32(), (offset.U32() + 4) / 16,
+            OffsetSwizzle(offset.U32() + 4));
     } else {
         const auto offset_var{ctx.reg_alloc.Consume(offset)};
         ctx.AddU32x2("{}=uvec2(floatBitsToUint({}_cbuf{}[{}/16][({}/"
-                     "4)%4]),floatBitsToUint({}_cbuf{}[({}+1)/16][(({}+1/4))%4]));",
+                     "4)%4]),floatBitsToUint({}_cbuf{}[({}+4)/16][(({}+4)/4)%4]));",
                      inst, ctx.stage_name, binding.U32(), offset_var, offset_var, ctx.stage_name,
                      binding.U32(), offset_var, offset_var);
     }
