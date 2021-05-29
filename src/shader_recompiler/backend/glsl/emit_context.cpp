@@ -21,7 +21,26 @@ std::string_view InterpDecorator(Interpolation interp) {
     throw InvalidArgument("Invalid interpolation {}", interp);
 }
 
-std::string_view SamplerType(TextureType type) {
+std::string_view SamplerType(TextureType type, bool is_depth) {
+    if (is_depth) {
+        switch (type) {
+        case TextureType::Color1D:
+            return "sampler1DShadow";
+        case TextureType::ColorArray1D:
+            return "sampler1DArrayShadow";
+        case TextureType::Color2D:
+            return "sampler2DShadow";
+        case TextureType::ColorArray2D:
+            return "sampler2DArrayShadow";
+        case TextureType::ColorCube:
+            return "samplerCubeShadow";
+        case TextureType::ColorArrayCube:
+            return "samplerCubeArrayShadow";
+        default:
+            fmt::print("Texture type: {}", type);
+            throw NotImplementedException("Texture type: {}", type);
+        }
+    }
     switch (type) {
     case TextureType::Color1D:
         return "sampler1D";
@@ -110,6 +129,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
 void EmitContext::SetupExtensions(std::string&) {
     header += "#extension GL_ARB_separate_shader_objects : enable\n";
     header += "#extension GL_ARB_sparse_texture2 : enable\n";
+    header += "#extension GL_EXT_texture_shadow_lod : enable\n";
     // header += "#extension GL_ARB_texture_cube_map_array : enable\n";
     if (info.uses_int64) {
         header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
@@ -227,7 +247,7 @@ void EmitContext::SetupImages(Bindings& bindings) {
     }
     texture_bindings.reserve(info.texture_descriptors.size());
     for (const auto& desc : info.texture_descriptors) {
-        const auto sampler_type{SamplerType(desc.type)};
+        const auto sampler_type{SamplerType(desc.type, desc.is_depth)};
         texture_bindings.push_back(bindings.texture);
         const auto indices{bindings.texture + desc.count};
         for (u32 index = bindings.texture; index < indices; ++index) {
