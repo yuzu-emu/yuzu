@@ -67,6 +67,23 @@ std::string ShadowSamplerVecCast(TextureType type) {
     }
 }
 
+std::string PtpOffsets(const IR::Value& offset, const IR::Value& offset2) {
+    const std::array values{offset.InstRecursive(), offset2.InstRecursive()};
+    if (!values[0]->AreAllArgsImmediates() || !values[1]->AreAllArgsImmediates()) {
+        // LOG_WARNING("Not all arguments in PTP are immediate, STUBBING");
+        return "";
+    }
+    const IR::Opcode opcode{values[0]->GetOpcode()};
+    if (opcode != values[1]->GetOpcode() || opcode != IR::Opcode::CompositeConstructU32x4) {
+        throw LogicError("Invalid PTP arguments");
+    }
+    auto read{[&](unsigned int a, unsigned int b) { return values[a]->Arg(b).U32(); }};
+
+    return fmt::format("ivec2[](ivec2({},{}),ivec2({},{}),ivec2({},{}),ivec2({},{}))", read(0, 0),
+                       read(0, 1), read(0, 2), read(0, 3), read(1, 0), read(1, 1), read(1, 2),
+                       read(1, 3));
+}
+
 IR::Inst* PrepareSparse(IR::Inst& inst) {
     const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
     if (sparse_inst) {
@@ -213,7 +230,45 @@ void EmitImageGather([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Ins
                      [[maybe_unused]] std::string_view coords,
                      [[maybe_unused]] const IR::Value& offset,
                      [[maybe_unused]] const IR::Value& offset2) {
-    throw NotImplementedException("GLSL Instruction");
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto texture{Texture(ctx, info, index)};
+    const auto texel{ctx.reg_alloc.Define(inst, Type::F32x4)};
+    const auto sparse_inst{PrepareSparse(inst)};
+    if (!offset2.IsEmpty()) {
+        ctx.Add("/*OFFSET 2 IS {}*/", ctx.reg_alloc.Consume(offset2));
+    }
+    if (!sparse_inst) {
+        if (offset.IsEmpty()) {
+            ctx.Add("{}=textureGather({},{},int({}));", texel, texture, coords,
+                    info.gather_component);
+            return;
+        }
+        if (offset2.IsEmpty()) {
+            ctx.Add("{}=textureGatherOffset({},{},{},int({}));", texel, texture, coords,
+                    CastToIntVec(ctx.reg_alloc.Consume(offset), info), info.gather_component);
+            return;
+        }
+        // PTP
+        const auto offsets{PtpOffsets(offset, offset2)};
+        ctx.Add("{}=textureGatherOffsets({},{},{},int({}));", texel, texture, coords, offsets,
+                info.gather_component);
+        return;
+    }
+    // TODO: Query sparseTexels extension support
+    if (offset.IsEmpty()) {
+        ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureGatherARB({},{},{},int({})));",
+                  *sparse_inst, texture, coords, texel, info.gather_component);
+    }
+    if (offset2.IsEmpty()) {
+        ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureGatherOffsetARB({},{},{},{},int({})));",
+                  *sparse_inst, texture, CastToIntVec(coords, info),
+                  CastToIntVec(ctx.reg_alloc.Consume(offset), info), texel, info.gather_component);
+    }
+    // PTP
+    const auto offsets{PtpOffsets(offset, offset2)};
+    ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureGatherOffsetARB({},{},{},{},int({})));",
+              *sparse_inst, texture, CastToIntVec(coords, info), offsets, texel,
+              info.gather_component);
 }
 
 void EmitImageGatherDref([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -222,7 +277,39 @@ void EmitImageGatherDref([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR:
                          [[maybe_unused]] const IR::Value& offset,
                          [[maybe_unused]] const IR::Value& offset2,
                          [[maybe_unused]] std::string_view dref) {
-    throw NotImplementedException("GLSL Instruction");
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto texture{Texture(ctx, info, index)};
+    const auto texel{ctx.reg_alloc.Define(inst, Type::F32x4)};
+    const auto sparse_inst{PrepareSparse(inst)};
+    if (!sparse_inst) {
+        if (offset.IsEmpty()) {
+            ctx.Add("{}=textureGather({},{},{});", texel, texture, coords, dref);
+            return;
+        }
+        if (offset2.IsEmpty()) {
+            ctx.Add("{}=textureGatherOffset({},{},{},{});", texel, texture, coords, dref,
+                    CastToIntVec(ctx.reg_alloc.Consume(offset), info));
+            return;
+        }
+        // PTP
+        const auto offsets{PtpOffsets(offset, offset2)};
+        ctx.Add("{}=textureGatherOffsets({},{},{},{});", texel, texture, coords, dref, offsets);
+        return;
+    }
+    // TODO: Query sparseTexels extension support
+    if (offset.IsEmpty()) {
+        ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureGatherARB({},{},{},{}));", *sparse_inst,
+                  texture, coords, dref, texel);
+    }
+    if (offset2.IsEmpty()) {
+        ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureGatherOffsetARB({},{},{},,{},{}));",
+                  *sparse_inst, texture, CastToIntVec(coords, info), dref,
+                  CastToIntVec(ctx.reg_alloc.Consume(offset), info), texel);
+    }
+    // PTP
+    const auto offsets{PtpOffsets(offset, offset2)};
+    ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureGatherOffsetARB({},{},{},,{},{}));",
+              *sparse_inst, texture, CastToIntVec(coords, info), dref, offsets, texel);
 }
 
 void EmitImageFetch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
