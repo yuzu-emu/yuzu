@@ -145,7 +145,7 @@ IR::Value MakeCoords(TranslatorVisitor& v, IR::Reg reg, Type type) {
     case Type::ARRAY_2D:
         return v.ir.CompositeConstruct(v.X(reg), v.X(reg + 1), array(2));
     case Type::_3D:
-        return v.ir.CompositeConstruct(v.X(reg), v.X(reg + 1), v.X(reg + 3));
+        return v.ir.CompositeConstruct(v.X(reg), v.X(reg + 1), v.X(reg + 2));
     }
     throw NotImplementedException("Invalid type {}", type);
 }
