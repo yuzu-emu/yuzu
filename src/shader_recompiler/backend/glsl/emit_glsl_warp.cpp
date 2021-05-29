@@ -8,6 +8,59 @@
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLSL {
+namespace {
+void SetInBoundsFlag(EmitContext& ctx, IR::Inst& inst) {
+    IR::Inst* const in_bounds{inst.GetAssociatedPseudoOperation(IR::Opcode::GetInBoundsFromOp)};
+    if (!in_bounds) {
+        return;
+    }
+
+    ctx.AddU1("{}=shfl_in_bounds;", *in_bounds);
+    in_bounds->Invalidate();
+}
+} // namespace
+
+void EmitShuffleIndex(EmitContext& ctx, IR::Inst& inst, std::string_view value,
+                      std::string_view index, std::string_view clamp,
+                      std::string_view segmentation_mask) {
+    ctx.Add("shfl_in_bounds=int(gl_SubGroupInvocationARB-{})>=int((gl_SubGroupInvocationARB&{})|({}"
+            "&~{}));",
+            index, segmentation_mask, clamp, segmentation_mask);
+    SetInBoundsFlag(ctx, inst);
+    ctx.AddU32("{}=shfl_in_bounds?{}:gl_SubGroupInvocationARB-{};", inst, value, index);
+}
+
+void EmitShuffleUp(EmitContext& ctx, IR::Inst& inst, std::string_view value, std::string_view index,
+                   std::string_view clamp, std::string_view segmentation_mask) {
+    ctx.Add("shfl_in_bounds=int(gl_SubGroupInvocationARB-{})>=int((gl_SubGroupInvocationARB&{})|({}"
+            "&~{}));",
+            index, segmentation_mask, clamp, segmentation_mask);
+    SetInBoundsFlag(ctx, inst);
+    ctx.AddU32("{}=shfl_in_bounds?readInvocationARB({},gl_SubGroupInvocationARB-{}):"
+               "{};",
+               inst, value, index, value);
+}
+
+void EmitShuffleDown(EmitContext& ctx, IR::Inst& inst, std::string_view value,
+                     std::string_view index, std::string_view clamp,
+                     std::string_view segmentation_mask) {
+    ctx.Add("shfl_in_bounds=int(gl_SubGroupInvocationARB-{})>=int((gl_SubGroupInvocationARB&{})|({}"
+            "&~{}));",
+            index, segmentation_mask, clamp, segmentation_mask);
+    SetInBoundsFlag(ctx, inst);
+    ctx.AddU32("{}=shfl_in_bounds?{}:gl_SubGroupInvocationARB-{};", inst, value, index);
+}
+
+void EmitShuffleButterfly(EmitContext& ctx, IR::Inst& inst, std::string_view value,
+                          std::string_view index, std::string_view clamp,
+                          std::string_view segmentation_mask) {
+    ctx.Add("shfl_in_bounds=int(gl_SubGroupInvocationARB-{})>=int((gl_SubGroupInvocationARB&{})|({}"
+            "&~{}));",
+            index, segmentation_mask, clamp, segmentation_mask);
+    SetInBoundsFlag(ctx, inst);
+    ctx.AddU32("{}=shfl_in_bounds?{}:gl_SubGroupInvocationARB-{};", inst, value, index);
+}
+
 void EmitFSwizzleAdd([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                      [[maybe_unused]] std::string_view op_a, [[maybe_unused]] std::string_view op_b,
                      [[maybe_unused]] std::string_view swizzle) {

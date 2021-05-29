@@ -20,22 +20,26 @@ char OffsetSwizzle(u32 offset) {
 }
 } // namespace
 
-void EmitGetCbufU8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] const IR::Value& binding,
+void EmitGetCbufU8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                   [[maybe_unused]] const IR::Value& binding,
                    [[maybe_unused]] const IR::Value& offset) {
     throw NotImplementedException("GLSL");
 }
 
-void EmitGetCbufS8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] const IR::Value& binding,
+void EmitGetCbufS8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                   [[maybe_unused]] const IR::Value& binding,
                    [[maybe_unused]] const IR::Value& offset) {
     throw NotImplementedException("GLSL");
 }
 
-void EmitGetCbufU16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] const IR::Value& binding,
+void EmitGetCbufU16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                    [[maybe_unused]] const IR::Value& binding,
                     [[maybe_unused]] const IR::Value& offset) {
     throw NotImplementedException("GLSL");
 }
 
-void EmitGetCbufS16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] const IR::Value& binding,
+void EmitGetCbufS16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
+                    [[maybe_unused]] const IR::Value& binding,
                     [[maybe_unused]] const IR::Value& offset) {
     throw NotImplementedException("GLSL");
 }
@@ -149,6 +153,10 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
 void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, std::string_view value) {
     const char swizzle{"xyzw"[component]};
     ctx.Add("frag_color{}.{}={};", index, swizzle, value);
+}
+
+void EmitLocalInvocationId(EmitContext& ctx, IR::Inst& inst) {
+    ctx.AddU32x3("{}=gl_LocalInvocationID;", inst);
 }
 
 } // namespace Shader::Backend::GLSL
