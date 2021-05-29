@@ -5,6 +5,7 @@
 #include <string_view>
 
 #include "shader_recompiler/backend/glsl/emit_context.h"
+#include "shader_recompiler/backend/glsl/emit_glsl_instructions.h"
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLSL {
@@ -71,8 +72,6 @@ void EmitGetCbufF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
 void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                       const IR::Value& offset) {
     if (offset.IsImmediate()) {
-        const auto u32_offset{offset.U32()};
-        const auto index{(u32_offset / 4) % 4};
         ctx.AddU32x2(
             "{}=uvec2(floatBitsToUint({}_cbuf{}[{}].{}),floatBitsToUint({}_cbuf{}[{}].{}));", inst,
             ctx.stage_name, binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),

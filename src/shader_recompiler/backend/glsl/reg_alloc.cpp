@@ -91,7 +91,6 @@ std::string RegAlloc::Consume(const IR::Value& value) {
 }
 
 std::string RegAlloc::Consume(IR::Inst& inst) {
-    const Id id{inst.Definition<Id>()};
     inst.DestructiveRemoveUsage();
     // TODO: reuse variables of same type if possible
     // if (!inst.HasUses()) {
