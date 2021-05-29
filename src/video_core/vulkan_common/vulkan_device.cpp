@@ -251,8 +251,8 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             .shaderStorageImageArrayDynamicIndexing = false,
             .shaderClipDistance = true,
             .shaderCullDistance = true,
-            .shaderFloat64 = true,
-            .shaderInt64 = true,
+            .shaderFloat64 = is_shader_float64_supported,
+            .shaderInt64 = is_shader_int64_supported,
             .shaderInt16 = true,
             .shaderResourceResidency = false,
             .shaderResourceMinLod = false,
@@ -909,6 +909,8 @@ void Device::SetupFamilies(VkSurfaceKHR surface) {
 void Device::SetupFeatures() {
     const VkPhysicalDeviceFeatures features{physical.GetFeatures()};
     is_formatless_image_load_supported = features.shaderStorageImageReadWithoutFormat;
+    is_shader_float64_supported = features.shaderFloat64;
+    is_shader_int64_supported = features.shaderInt64;
     is_shader_storage_image_multisample = features.shaderStorageImageMultisample;
     is_blit_depth_stencil_supported = TestDepthStencilBlits();
     is_optimal_astc_supported = IsOptimalAstcSupported(features);
