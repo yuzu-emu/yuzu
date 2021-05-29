@@ -314,6 +314,8 @@ private:
     bool is_float16_supported{};                ///< Support for float16 arithmetics.
     bool is_warp_potentially_bigger{};          ///< Host warp size can be bigger than guest.
     bool is_formatless_image_load_supported{};  ///< Support for shader image read without format.
+    bool is_shader_float64_supported{};         ///< Support for float64.
+    bool is_shader_int64_supported{};           ///< Support for int64.
     bool is_shader_storage_image_multisample{}; ///< Support for image operations on MSAA images.
     bool is_blit_depth_stencil_supported{};     ///< Support for blitting from and to depth stencil.
     bool nv_viewport_swizzle{};                 ///< Support for VK_NV_viewport_swizzle.
