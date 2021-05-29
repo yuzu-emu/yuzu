@@ -23,6 +23,10 @@ std::string_view InterpDecorator(Interpolation interp) {
 
 std::string_view SamplerType(TextureType type) {
     switch (type) {
+    case TextureType::Color1D:
+        return "sampler1D";
+    case TextureType::ColorArray1D:
+        return "sampler1DArray";
     case TextureType::Color2D:
         return "sampler2D";
     case TextureType::ColorArray2D:
@@ -31,6 +35,10 @@ std::string_view SamplerType(TextureType type) {
         return "sampler3D";
     case TextureType::ColorCube:
         return "samplerCube";
+    case TextureType::ColorArrayCube:
+        return "samplerCubeArray";
+    case TextureType::Buffer:
+        return "samplerBuffer";
     default:
         fmt::print("Texture type: {}", type);
         throw NotImplementedException("Texture type: {}", type);
@@ -101,6 +109,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
 
 void EmitContext::SetupExtensions(std::string&) {
     header += "#extension GL_ARB_separate_shader_objects : enable\n";
+    header += "#extension GL_ARB_sparse_texture2 : enable\n";
     // header += "#extension GL_ARB_texture_cube_map_array : enable\n";
     if (info.uses_int64) {
         header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
