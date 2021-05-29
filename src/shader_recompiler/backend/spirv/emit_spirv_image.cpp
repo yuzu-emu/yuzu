@@ -162,8 +162,10 @@ Id Texture(EmitContext& ctx, IR::TextureInstInfo info, [[maybe_unused]] const IR
     }
 }
 
-Id TextureImage(EmitContext& ctx, IR::TextureInstInfo info,
-                [[maybe_unused]] const IR::Value& index) {
+Id TextureImage(EmitContext& ctx, IR::TextureInstInfo info, const IR::Value& index) {
+    if (!index.IsImmediate() || index.U32() != 0) {
+        throw NotImplementedException("Indirect image indexing");
+    }
     if (info.type == TextureType::Buffer) {
         const TextureBufferDefinition& def{ctx.texture_buffers.at(info.descriptor_index)};
         if (def.count > 1) {
@@ -182,14 +184,14 @@ Id TextureImage(EmitContext& ctx, IR::TextureInstInfo info,
 }
 
 Id Image(EmitContext& ctx, const IR::Value& index, IR::TextureInstInfo info) {
-    if (!index.IsImmediate()) {
+    if (!index.IsImmediate() || index.U32() != 0) {
         throw NotImplementedException("Indirect image indexing");
     }
     if (info.type == TextureType::Buffer) {
-        const ImageBufferDefinition def{ctx.image_buffers.at(index.U32())};
+        const ImageBufferDefinition def{ctx.image_buffers.at(info.descriptor_index)};
         return ctx.OpLoad(def.image_type, def.id);
     } else {
-        const ImageDefinition def{ctx.images.at(index.U32())};
+        const ImageDefinition def{ctx.images.at(info.descriptor_index)};
         return ctx.OpLoad(def.image_type, def.id);
     }
 }
