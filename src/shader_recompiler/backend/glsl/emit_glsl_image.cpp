@@ -38,6 +38,24 @@ std::string CastToIntVec(std::string_view value, const IR::TextureInstInfo& info
     }
 }
 
+std::string TexelFetchCastToInt(std::string_view value, const IR::TextureInstInfo& info) {
+    switch (info.type) {
+    case TextureType::Color1D:
+        return fmt::format("int({})", value);
+    case TextureType::ColorArray1D:
+    case TextureType::Color2D:
+        return fmt::format("ivec2({})", value);
+    case TextureType::ColorArray2D:
+    case TextureType::Color3D:
+    case TextureType::ColorCube:
+        return fmt::format("ivec3({})", value);
+    case TextureType::ColorArrayCube:
+        return fmt::format("ivec4({})", value);
+    default:
+        throw NotImplementedException("Offset type {}", info.type.Value());
+    }
+}
+
 std::string ShadowSamplerVecCast(TextureType type) {
     switch (type) {
     case TextureType::ColorArray2D:
@@ -138,6 +156,10 @@ void EmitImageSampleDrefImplicitLod([[maybe_unused]] EmitContext& ctx,
                                     [[maybe_unused]] std::string_view bias_lc,
                                     [[maybe_unused]] const IR::Value& offset) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto sparse_inst{PrepareSparse(inst)};
+    if (sparse_inst) {
+        throw NotImplementedException("Sparse texture samples");
+    }
     if (info.has_bias) {
         throw NotImplementedException("Bias texture samples");
     }
@@ -165,6 +187,10 @@ void EmitImageSampleDrefExplicitLod([[maybe_unused]] EmitContext& ctx,
                                     [[maybe_unused]] std::string_view lod_lc,
                                     [[maybe_unused]] const IR::Value& offset) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto sparse_inst{PrepareSparse(inst)};
+    if (sparse_inst) {
+        throw NotImplementedException("Sparse texture samples");
+    }
     if (info.has_bias) {
         throw NotImplementedException("Bias texture samples");
     }
@@ -204,7 +230,35 @@ void EmitImageFetch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
                     [[maybe_unused]] std::string_view coords,
                     [[maybe_unused]] std::string_view offset, [[maybe_unused]] std::string_view lod,
                     [[maybe_unused]] std::string_view ms) {
-    throw NotImplementedException("GLSL Instruction");
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    if (info.has_bias) {
+        throw NotImplementedException("Bias texture samples");
+    }
+    if (info.has_lod_clamp) {
+        throw NotImplementedException("Lod clamp samples");
+    }
+    const auto texture{Texture(ctx, info, index)};
+    const auto sparse_inst{PrepareSparse(inst)};
+    const auto texel{ctx.reg_alloc.Define(inst, Type::F32x4)};
+    if (!sparse_inst) {
+        if (!offset.empty()) {
+            ctx.Add("{}=texelFetchOffset({},{},int({}),{});", texel, texture,
+                    TexelFetchCastToInt(coords, info), lod, TexelFetchCastToInt(offset, info));
+        } else {
+            ctx.Add("{}=texelFetch({},{},int({}));", texel, texture,
+                    TexelFetchCastToInt(coords, info), lod);
+        }
+        return;
+    }
+    // TODO: Query sparseTexels extension support
+    if (!offset.empty()) {
+        ctx.AddU1("{}=sparseTexelsResidentARB(sparseTexelFetchOffsetARB({},{},int({}),{},{}));",
+                  *sparse_inst, texture, CastToIntVec(coords, info), lod,
+                  CastToIntVec(offset, info), texel);
+    } else {
+        ctx.AddU1("{}=sparseTexelsResidentARB(sparseTexelFetchARB({},{},{},{}));", *sparse_inst,
+                  texture, CastToIntVec(coords, info), lod, texel);
+    }
 }
 
 void EmitImageQueryDimensions([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
