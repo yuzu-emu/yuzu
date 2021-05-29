@@ -118,6 +118,9 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
     case IR::Attribute::VertexId:
         ctx.AddS32("{}=gl_VertexID;", inst);
         break;
+    case IR::Attribute::FrontFace:
+        ctx.AddS32("{}=gl_FrontFacing?-1:0;", inst);
+        break;
     default:
         fmt::print("Get attribute {}", attr);
         throw NotImplementedException("Get attribute {}", attr);
