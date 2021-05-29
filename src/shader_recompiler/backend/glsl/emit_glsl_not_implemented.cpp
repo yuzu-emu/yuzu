@@ -168,7 +168,7 @@ void EmitSetSampleMask(EmitContext& ctx, std::string_view value) {
 }
 
 void EmitSetFragDepth(EmitContext& ctx, std::string_view value) {
-    NotImplemented();
+    ctx.Add("gl_FragDepth={};", value);
 }
 
 void EmitGetZFlag(EmitContext& ctx) {

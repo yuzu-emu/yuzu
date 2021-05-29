@@ -190,7 +190,7 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
     }
     ctx.code.insert(0, ctx.header);
     ctx.code += "}";
-    fmt::print("\n{}\n", ctx.code);
+    // fmt::print("\n{}\n", ctx.code);
     return ctx.code;
 }
 

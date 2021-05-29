@@ -351,7 +351,29 @@ void EmitImageFetch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
 void EmitImageQueryDimensions([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                               [[maybe_unused]] const IR::Value& index,
                               [[maybe_unused]] std::string_view lod) {
-    throw NotImplementedException("GLSL Instruction");
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto texture{Texture(ctx, info, index)};
+    switch (info.type) {
+    case TextureType::Color1D:
+        return ctx.AddU32x4(
+            "{}=uvec4(uint(textureSize({},int({}))),0u,0u,uint(textureQueryLevels({})));", inst,
+            texture, lod, texture);
+    case TextureType::ColorArray1D:
+    case TextureType::Color2D:
+    case TextureType::ColorCube:
+        return ctx.AddU32x4(
+            "{}=uvec4(uvec2(textureSize({},int({}))),0u,uint(textureQueryLevels({})));", inst,
+            texture, lod, texture);
+    case TextureType::ColorArray2D:
+    case TextureType::Color3D:
+    case TextureType::ColorArrayCube:
+        return ctx.AddU32x4(
+            "{}=uvec4(uvec3(textureSize({},int({}))),uint(textureQueryLevels({})));", inst, texture,
+            lod, texture);
+    case TextureType::Buffer:
+        throw NotImplementedException("Texture buffers");
+    }
+    throw LogicError("Unspecified image type {}", info.type.Value());
 }
 
 void EmitImageQueryLod([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,

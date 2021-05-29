@@ -37,9 +37,14 @@ std::string FormatFloat(std::string_view value, IR::Type type) {
             return "uintBitsToFloat(0xff800000)";
         }
     }
-    const bool needs_dot = value.find_first_of('.') == std::string_view::npos;
-    const bool needs_suffix = !value.ends_with('f');
-    const auto suffix = type == IR::Type::F32 ? "f" : "lf";
+    if (value.find_first_of('e') != std::string_view::npos) {
+        // scientific notation
+        const auto cast{type == IR::Type::F32 ? "float" : "double"};
+        return fmt::format("{}({})", cast, value);
+    }
+    const bool needs_dot{value.find_first_of('.') == std::string_view::npos};
+    const bool needs_suffix{!value.ends_with('f')};
+    const auto suffix{type == IR::Type::F32 ? "f" : "lf"};
     return fmt::format("{}{}{}", value, needs_dot ? "." : "", needs_suffix ? suffix : "");
 }
 
