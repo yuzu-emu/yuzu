@@ -120,7 +120,17 @@ void EmitImageSampleDrefImplicitLod([[maybe_unused]] EmitContext& ctx,
                                     [[maybe_unused]] std::string_view dref,
                                     [[maybe_unused]] std::string_view bias_lc,
                                     [[maybe_unused]] const IR::Value& offset) {
-    throw NotImplementedException("GLSL Instruction");
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    if (info.has_bias) {
+        throw NotImplementedException("Bias texture samples");
+    }
+    if (info.has_lod_clamp) {
+        throw NotImplementedException("Lod clamp samples");
+    }
+    const auto bias{info.has_bias ? fmt::format(",{}", bias_lc) : ""};
+    const auto texture{Texture(ctx, info, index)};
+    const auto vec_cast{info.type == TextureType::ColorArrayCube ? "vec4" : "vec3"};
+    ctx.AddF32("{}=texture({},{}({},{}){});", inst, texture, vec_cast, dref, coords, bias);
 }
 
 void EmitImageSampleDrefExplicitLod([[maybe_unused]] EmitContext& ctx,
@@ -130,7 +140,19 @@ void EmitImageSampleDrefExplicitLod([[maybe_unused]] EmitContext& ctx,
                                     [[maybe_unused]] std::string_view dref,
                                     [[maybe_unused]] std::string_view lod_lc,
                                     [[maybe_unused]] const IR::Value& offset) {
-    throw NotImplementedException("GLSL Instruction");
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    if (info.has_bias) {
+        throw NotImplementedException("Bias texture samples");
+    }
+    if (info.has_lod_clamp) {
+        throw NotImplementedException("Lod clamp samples");
+    }
+    const auto texture{Texture(ctx, info, index)};
+    if (info.type == TextureType::ColorArrayCube) {
+        ctx.AddF32("{}=textureLod({},{},{},{});", inst, texture, coords, dref, lod_lc);
+    } else {
+        ctx.AddF32("{}=textureLod({},vec3({},{}),{});", inst, texture, coords, dref, lod_lc);
+    }
 }
 
 void EmitImageGather([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
