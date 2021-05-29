@@ -52,10 +52,14 @@ void EmitSetGotoVariable(EmitContext& ctx);
 void EmitGetGotoVariable(EmitContext& ctx);
 void EmitSetIndirectBranchVariable(EmitContext& ctx);
 void EmitGetIndirectBranchVariable(EmitContext& ctx);
-void EmitGetCbufU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
-void EmitGetCbufS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
-void EmitGetCbufU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
-void EmitGetCbufS16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
+void EmitGetCbufU8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                   const IR::Value& offset);
+void EmitGetCbufS8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                   const IR::Value& offset);
+void EmitGetCbufU16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                    const IR::Value& offset);
+void EmitGetCbufS16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                    const IR::Value& offset);
 void EmitGetCbufU32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                     const IR::Value& offset);
 void EmitGetCbufF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -83,7 +87,7 @@ void EmitSetSFlag(EmitContext& ctx);
 void EmitSetCFlag(EmitContext& ctx);
 void EmitSetOFlag(EmitContext& ctx);
 void EmitWorkgroupId(EmitContext& ctx);
-void EmitLocalInvocationId(EmitContext& ctx);
+void EmitLocalInvocationId(EmitContext& ctx, IR::Inst& inst);
 void EmitInvocationId(EmitContext& ctx);
 void EmitSampleId(EmitContext& ctx);
 void EmitIsHelperInvocation(EmitContext& ctx);
@@ -109,10 +113,14 @@ void EmitWriteGlobalS16(EmitContext& ctx);
 void EmitWriteGlobal32(EmitContext& ctx, std::string_view address, std::string_view value);
 void EmitWriteGlobal64(EmitContext& ctx, std::string_view address, std::string_view value);
 void EmitWriteGlobal128(EmitContext& ctx, std::string_view address, std::string_view value);
-void EmitLoadStorageU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
-void EmitLoadStorageS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
-void EmitLoadStorageU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
-void EmitLoadStorageS16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
+void EmitLoadStorageU8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                       const IR::Value& offset);
+void EmitLoadStorageS8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                       const IR::Value& offset);
+void EmitLoadStorageU16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                        const IR::Value& offset);
+void EmitLoadStorageS16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                        const IR::Value& offset);
 void EmitLoadStorage32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                        const IR::Value& offset);
 void EmitLoadStorage64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,

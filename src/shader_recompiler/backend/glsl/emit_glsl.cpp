@@ -183,8 +183,11 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
     for (size_t index = 0; index < ctx.reg_alloc.num_used_registers; ++index) {
         ctx.header += fmt::format("{} R{};", ctx.reg_alloc.reg_types[index], index);
     }
-    // TODO: track CC usage
+    // TODO: track usage
     ctx.header += "uint carry;";
+    if (program.info.uses_subgroup_shuffles) {
+        ctx.header += "bool shfl_in_bounds;\n";
+    }
     ctx.code.insert(0, ctx.header);
     ctx.code += "}";
     fmt::print("\n{}\n", ctx.code);

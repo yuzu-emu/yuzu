@@ -206,10 +206,6 @@ void EmitWorkgroupId(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitLocalInvocationId(EmitContext& ctx) {
-    NotImplemented();
-}
-
 void EmitInvocationId(EmitContext& ctx) {
     NotImplemented();
 }
@@ -623,29 +619,6 @@ void EmitSubgroupGtMask(EmitContext& ctx) {
 }
 
 void EmitSubgroupGeMask(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitShuffleIndex(EmitContext& ctx, IR::Inst& inst, std::string_view value,
-                      std::string_view index, std::string_view clamp,
-                      std::string_view segmentation_mask) {
-    NotImplemented();
-}
-
-void EmitShuffleUp(EmitContext& ctx, IR::Inst& inst, std::string_view value, std::string_view index,
-                   std::string_view clamp, std::string_view segmentation_mask) {
-    NotImplemented();
-}
-
-void EmitShuffleDown(EmitContext& ctx, IR::Inst& inst, std::string_view value,
-                     std::string_view index, std::string_view clamp,
-                     std::string_view segmentation_mask) {
-    NotImplemented();
-}
-
-void EmitShuffleButterfly(EmitContext& ctx, IR::Inst& inst, std::string_view value,
-                          std::string_view index, std::string_view clamp,
-                          std::string_view segmentation_mask) {
     NotImplemented();
 }
 

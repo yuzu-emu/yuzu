@@ -122,6 +122,10 @@ void EmitContext::SetupExtensions(std::string&) {
             header += "#extension GL_AMD_gpu_shader_half_float : enable\n";
         }
     }
+    if (info.uses_subgroup_invocation_id || info.uses_subgroup_mask || info.uses_subgroup_vote ||
+        info.uses_subgroup_shuffles || info.uses_fswzadd) {
+        header += "#extension GL_ARB_shader_ballot : enable\n";
+    }
 }
 
 void EmitContext::DefineConstantBuffers(Bindings& bindings) {
