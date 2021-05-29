@@ -14,51 +14,72 @@ void SetInBoundsFlag(EmitContext& ctx, IR::Inst& inst) {
     if (!in_bounds) {
         return;
     }
-
     ctx.AddU1("{}=shfl_in_bounds;", *in_bounds);
     in_bounds->Invalidate();
+}
+
+std::string ComputeMinThreadId(std::string_view thread_id, std::string_view segmentation_mask) {
+    return fmt::format("({}&{})", thread_id, segmentation_mask);
+}
+
+std::string ComputeMaxThreadId(std::string_view min_thread_id, std::string_view clamp,
+                               std::string_view not_seg_mask) {
+    return fmt::format("({})|({}&{})", min_thread_id, clamp, not_seg_mask);
+}
+
+std::string GetMaxThreadId(std::string_view thread_id, std::string_view clamp,
+                           std::string_view segmentation_mask) {
+    const auto not_seg_mask{fmt::format("(~{})", segmentation_mask)};
+    const auto min_thread_id{ComputeMinThreadId(thread_id, segmentation_mask)};
+    return ComputeMaxThreadId(min_thread_id, clamp, not_seg_mask);
 }
 } // namespace
 
 void EmitShuffleIndex(EmitContext& ctx, IR::Inst& inst, std::string_view value,
                       std::string_view index, std::string_view clamp,
                       std::string_view segmentation_mask) {
-    ctx.Add("shfl_in_bounds=int(gl_SubGroupInvocationARB-{})>=int((gl_SubGroupInvocationARB&{})|({}"
-            "&~{}));",
-            index, segmentation_mask, clamp, segmentation_mask);
+    const auto not_seg_mask{fmt::format("(~{})", segmentation_mask)};
+    const auto thread_id{"gl_SubGroupInvocationARB"};
+    const auto min_thread_id{ComputeMinThreadId(thread_id, segmentation_mask)};
+    const auto max_thread_id{ComputeMaxThreadId(min_thread_id, clamp, not_seg_mask)};
+
+    const auto lhs{fmt::format("({}&{})", index, not_seg_mask)};
+    const auto src_thread_id{fmt::format("({})|({})", lhs, min_thread_id)};
+    ctx.Add("shfl_in_bounds=int({})<=int({});", src_thread_id, max_thread_id);
     SetInBoundsFlag(ctx, inst);
-    ctx.AddU32("{}=shfl_in_bounds?{}:gl_SubGroupInvocationARB-{};", inst, value, index);
+    ctx.AddU32("{}=shfl_in_bounds?{}:{};", inst, value, src_thread_id);
 }
 
 void EmitShuffleUp(EmitContext& ctx, IR::Inst& inst, std::string_view value, std::string_view index,
                    std::string_view clamp, std::string_view segmentation_mask) {
-    ctx.Add("shfl_in_bounds=int(gl_SubGroupInvocationARB-{})>=int((gl_SubGroupInvocationARB&{})|({}"
-            "&~{}));",
-            index, segmentation_mask, clamp, segmentation_mask);
+    const auto thread_id{"gl_SubGroupInvocationARB"};
+    const auto max_thread_id{GetMaxThreadId(thread_id, clamp, segmentation_mask)};
+    const auto src_thread_id{fmt::format("({}-{})", thread_id, index)};
+    ctx.Add("shfl_in_bounds=int({})>=int({});", src_thread_id, max_thread_id);
     SetInBoundsFlag(ctx, inst);
-    ctx.AddU32("{}=shfl_in_bounds?readInvocationARB({},gl_SubGroupInvocationARB-{}):"
-               "{};",
-               inst, value, index, value);
+    ctx.AddU32("{}=shfl_in_bounds?{}:{};", inst, value, src_thread_id);
 }
 
 void EmitShuffleDown(EmitContext& ctx, IR::Inst& inst, std::string_view value,
                      std::string_view index, std::string_view clamp,
                      std::string_view segmentation_mask) {
-    ctx.Add("shfl_in_bounds=int(gl_SubGroupInvocationARB-{})>=int((gl_SubGroupInvocationARB&{})|({}"
-            "&~{}));",
-            index, segmentation_mask, clamp, segmentation_mask);
+    const auto thread_id{"gl_SubGroupInvocationARB"};
+    const auto max_thread_id{GetMaxThreadId(thread_id, clamp, segmentation_mask)};
+    const auto src_thread_id{fmt::format("({}+{})", thread_id, index)};
+    ctx.Add("shfl_in_bounds=int({})<=int({});", src_thread_id, max_thread_id);
     SetInBoundsFlag(ctx, inst);
-    ctx.AddU32("{}=shfl_in_bounds?{}:gl_SubGroupInvocationARB-{};", inst, value, index);
+    ctx.AddU32("{}=shfl_in_bounds?{}:{};", inst, value, src_thread_id);
 }
 
 void EmitShuffleButterfly(EmitContext& ctx, IR::Inst& inst, std::string_view value,
                           std::string_view index, std::string_view clamp,
                           std::string_view segmentation_mask) {
-    ctx.Add("shfl_in_bounds=int(gl_SubGroupInvocationARB-{})>=int((gl_SubGroupInvocationARB&{})|({}"
-            "&~{}));",
-            index, segmentation_mask, clamp, segmentation_mask);
+    const auto thread_id{"gl_SubGroupInvocationARB"};
+    const auto max_thread_id{GetMaxThreadId(thread_id, clamp, segmentation_mask)};
+    const auto src_thread_id{fmt::format("({}^{})", thread_id, index)};
+    ctx.Add("shfl_in_bounds=int({})<=int({});", src_thread_id, max_thread_id);
     SetInBoundsFlag(ctx, inst);
-    ctx.AddU32("{}=shfl_in_bounds?{}:gl_SubGroupInvocationARB-{};", inst, value, index);
+    ctx.AddU32("{}=shfl_in_bounds?{}:{};", inst, value, src_thread_id);
 }
 
 void EmitFSwizzleAdd([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
