@@ -38,6 +38,17 @@ std::string CastToIntVec(std::string_view value, const IR::TextureInstInfo& info
     }
 }
 
+std::string ShadowSamplerVecCast(TextureType type) {
+    switch (type) {
+    case TextureType::ColorArray2D:
+    case TextureType::ColorCube:
+    case TextureType::ColorArrayCube:
+        return "vec4";
+    default:
+        return "vec3";
+    }
+}
+
 IR::Inst* PrepareSparse(IR::Inst& inst) {
     const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
     if (sparse_inst) {
@@ -126,7 +137,24 @@ void EmitImageSampleDrefImplicitLod([[maybe_unused]] EmitContext& ctx,
                                     [[maybe_unused]] std::string_view dref,
                                     [[maybe_unused]] std::string_view bias_lc,
                                     [[maybe_unused]] const IR::Value& offset) {
-    throw NotImplementedException("GLSL Instruction");
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    if (info.has_bias) {
+        throw NotImplementedException("Bias texture samples");
+    }
+    if (info.has_lod_clamp) {
+        throw NotImplementedException("Lod clamp samples");
+    }
+    if (!offset.IsEmpty()) {
+        throw NotImplementedException("textureLodOffset");
+    }
+    const auto texture{Texture(ctx, info, index)};
+    const auto bias{info.has_bias ? fmt::format(",{}", bias_lc) : ""};
+    const auto cast{ShadowSamplerVecCast(info.type)};
+    if (ctx.stage == Stage::Fragment) {
+        ctx.AddF32("{}=texture({},{}({},{}){});", inst, texture, cast, coords, dref, bias);
+    } else {
+        ctx.AddF32("{}=textureLod({},{}({},{}),0.0);", inst, texture, cast, coords, dref);
+    }
 }
 
 void EmitImageSampleDrefExplicitLod([[maybe_unused]] EmitContext& ctx,
