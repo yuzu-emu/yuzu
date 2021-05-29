@@ -26,8 +26,8 @@ std::string CastToIntVec(std::string_view value, const IR::TextureInstInfo& info
         return fmt::format("int({})", value);
     case TextureType::ColorArray1D:
     case TextureType::Color2D:
-        return fmt::format("ivec2({})", value);
     case TextureType::ColorArray2D:
+        return fmt::format("ivec2({})", value);
     case TextureType::Color3D:
     case TextureType::ColorCube:
         return fmt::format("ivec3({})", value);
@@ -65,7 +65,11 @@ void EmitImageSampleImplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
             ctx.Add("{}=textureOffset({},{},{}{});", texel, texture, coords,
                     CastToIntVec(ctx.reg_alloc.Consume(offset), info), bias);
         } else {
-            ctx.Add("{}=texture({},{}{});", texel, texture, coords, bias);
+            if (ctx.stage == Stage::Fragment) {
+                ctx.Add("{}=texture({},{}{});", texel, texture, coords, bias);
+            } else {
+                ctx.Add("{}=textureLod({},{},0.0);", texel, texture, coords);
+            }
         }
         return;
     }
@@ -104,6 +108,7 @@ void EmitImageSampleExplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
         }
         return;
     }
+    // TODO: Query sparseTexels extension support
     if (!offset.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTexelFetchOffsetARB({},{},int({}),{},{}));",
                   *sparse_inst, texture, CastToIntVec(coords, info), lod_lc,
@@ -121,17 +126,7 @@ void EmitImageSampleDrefImplicitLod([[maybe_unused]] EmitContext& ctx,
                                     [[maybe_unused]] std::string_view dref,
                                     [[maybe_unused]] std::string_view bias_lc,
                                     [[maybe_unused]] const IR::Value& offset) {
-    const auto info{inst.Flags<IR::TextureInstInfo>()};
-    if (info.has_bias) {
-        throw NotImplementedException("Bias texture samples");
-    }
-    if (info.has_lod_clamp) {
-        throw NotImplementedException("Lod clamp samples");
-    }
-    const auto bias{info.has_bias ? fmt::format(",{}", bias_lc) : ""};
-    const auto texture{Texture(ctx, info, index)};
-    const auto vec_cast{info.type == TextureType::ColorArrayCube ? "vec4" : "vec3"};
-    ctx.AddF32("{}=texture({},{}({},{}){});", inst, texture, vec_cast, dref, coords, bias);
+    throw NotImplementedException("GLSL Instruction");
 }
 
 void EmitImageSampleDrefExplicitLod([[maybe_unused]] EmitContext& ctx,
@@ -147,6 +142,9 @@ void EmitImageSampleDrefExplicitLod([[maybe_unused]] EmitContext& ctx,
     }
     if (info.has_lod_clamp) {
         throw NotImplementedException("Lod clamp samples");
+    }
+    if (!offset.IsEmpty()) {
+        throw NotImplementedException("textureLodOffset");
     }
     const auto texture{Texture(ctx, info, index)};
     if (info.type == TextureType::ColorArrayCube) {
