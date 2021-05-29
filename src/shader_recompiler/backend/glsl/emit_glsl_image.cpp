@@ -10,13 +10,39 @@
 
 namespace Shader::Backend::GLSL {
 namespace {
-std::string Texture(EmitContext& ctx, IR::TextureInstInfo info,
+std::string Texture(EmitContext& ctx, const IR::TextureInstInfo& info,
                     [[maybe_unused]] const IR::Value& index) {
     if (info.type == TextureType::Buffer) {
         throw NotImplementedException("TextureType::Buffer");
     } else {
         return fmt::format("tex{}", ctx.texture_bindings.at(info.descriptor_index));
     }
+}
+
+std::string CastToIntVec(std::string_view value, const IR::TextureInstInfo& info) {
+    switch (info.type) {
+    case TextureType::Color1D:
+        return fmt::format("int({})", value);
+    case TextureType::ColorArray1D:
+    case TextureType::Color2D:
+        return fmt::format("ivec2({})", value);
+    case TextureType::ColorArray2D:
+    case TextureType::Color3D:
+    case TextureType::ColorCube:
+        return fmt::format("ivec3({})", value);
+    case TextureType::ColorArrayCube:
+        return fmt::format("ivec4({})", value);
+    default:
+        throw NotImplementedException("Offset type {}", info.type.Value());
+    }
+}
+
+IR::Inst* PrepareSparse(IR::Inst& inst) {
+    const auto sparse_inst{inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp)};
+    if (sparse_inst) {
+        sparse_inst->Invalidate();
+    }
+    return sparse_inst;
 }
 } // namespace
 
@@ -26,18 +52,30 @@ void EmitImageSampleImplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
                                 [[maybe_unused]] std::string_view bias_lc,
                                 [[maybe_unused]] const IR::Value& offset) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    if (info.has_bias) {
-        throw NotImplementedException("Bias texture samples");
-    }
     if (info.has_lod_clamp) {
         throw NotImplementedException("Lod clamp samples");
     }
     const auto texture{Texture(ctx, info, index)};
+    const auto bias{info.has_bias ? fmt::format(",{}", bias_lc) : ""};
+    const auto texel{ctx.reg_alloc.Define(inst, Type::F32x4)};
+    const auto sparse_inst{PrepareSparse(inst)};
+    if (!sparse_inst) {
+        if (!offset.IsEmpty()) {
+            ctx.Add("{}=textureOffset({},{},{}{});", texel, texture, coords,
+                    CastToIntVec(ctx.reg_alloc.Consume(offset), info), bias);
+        } else {
+            ctx.Add("{}=texture({},{}{});", texel, texture, coords, bias);
+        }
+        return;
+    }
+    // TODO: Query sparseTexels extension support
     if (!offset.IsEmpty()) {
-        ctx.AddF32x4("{}=textureOffset({},{},ivec2({}));", inst, texture, coords,
-                     ctx.reg_alloc.Consume(offset));
+        ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureOffsetARB({},{},{},{}{}));",
+                  *sparse_inst, texture, coords, CastToIntVec(ctx.reg_alloc.Consume(offset), info),
+                  texel, bias);
     } else {
-        ctx.AddF32x4("{}=texture({},{});", inst, texture, coords);
+        ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureARB({},{},{}{}));", *sparse_inst,
+                  texture, coords, texel, bias);
     }
 }
 
@@ -54,11 +92,24 @@ void EmitImageSampleExplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
         throw NotImplementedException("Lod clamp samples");
     }
     const auto texture{Texture(ctx, info, index)};
+    const auto texel{ctx.reg_alloc.Define(inst, Type::F32x4)};
+    const auto sparse_inst{PrepareSparse(inst)};
+    if (!sparse_inst) {
+        if (!offset.IsEmpty()) {
+            ctx.Add("{}=textureLodOffset({},{},{},{});", texel, texture, coords, lod_lc,
+                    CastToIntVec(ctx.reg_alloc.Consume(offset), info));
+        } else {
+            ctx.Add("{}=textureLod({},{},{});", texel, texture, coords, lod_lc);
+        }
+        return;
+    }
     if (!offset.IsEmpty()) {
-        ctx.AddF32x4("{}=textureLodOffset({},{},{},ivec2({}));", inst, texture, coords, lod_lc,
-                     ctx.reg_alloc.Consume(offset));
+        ctx.AddU1("{}=sparseTexelsResidentARB(sparseTexelFetchOffsetARB({},{},int({}),{},{}));",
+                  *sparse_inst, texture, CastToIntVec(coords, info), lod_lc,
+                  CastToIntVec(ctx.reg_alloc.Consume(offset), info), texel);
     } else {
-        ctx.AddF32x4("{}=textureLod({},{},{});", inst, texture, coords, lod_lc);
+        ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureLodARB({},{},{},{}));", *sparse_inst,
+                  texture, coords, lod_lc, texel);
     }
 }
 
