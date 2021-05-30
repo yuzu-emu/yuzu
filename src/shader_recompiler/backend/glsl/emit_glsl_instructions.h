@@ -679,16 +679,16 @@ void EmitImageAtomicXor32(EmitContext& ctx, IR::Inst& inst, const IR::Value& ind
                           std::string_view coords, std::string_view value);
 void EmitImageAtomicExchange32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                std::string_view coords, std::string_view value);
-void EmitLaneId(EmitContext& ctx);
-void EmitVoteAll(EmitContext& ctx, std::string_view pred);
-void EmitVoteAny(EmitContext& ctx, std::string_view pred);
-void EmitVoteEqual(EmitContext& ctx, std::string_view pred);
-void EmitSubgroupBallot(EmitContext& ctx, std::string_view pred);
-void EmitSubgroupEqMask(EmitContext& ctx);
-void EmitSubgroupLtMask(EmitContext& ctx);
-void EmitSubgroupLeMask(EmitContext& ctx);
-void EmitSubgroupGtMask(EmitContext& ctx);
-void EmitSubgroupGeMask(EmitContext& ctx);
+void EmitLaneId(EmitContext& ctx, IR::Inst& inst);
+void EmitVoteAll(EmitContext& ctx, IR::Inst& inst, std::string_view pred);
+void EmitVoteAny(EmitContext& ctx, IR::Inst& inst, std::string_view pred);
+void EmitVoteEqual(EmitContext& ctx, IR::Inst& inst, std::string_view pred);
+void EmitSubgroupBallot(EmitContext& ctx, IR::Inst& inst, std::string_view pred);
+void EmitSubgroupEqMask(EmitContext& ctx, IR::Inst& inst);
+void EmitSubgroupLtMask(EmitContext& ctx, IR::Inst& inst);
+void EmitSubgroupLeMask(EmitContext& ctx, IR::Inst& inst);
+void EmitSubgroupGtMask(EmitContext& ctx, IR::Inst& inst);
+void EmitSubgroupGeMask(EmitContext& ctx, IR::Inst& inst);
 void EmitShuffleIndex(EmitContext& ctx, IR::Inst& inst, std::string_view value,
                       std::string_view index, std::string_view clamp,
                       std::string_view segmentation_mask);

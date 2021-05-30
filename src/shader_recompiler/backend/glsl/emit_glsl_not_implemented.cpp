@@ -527,44 +527,4 @@ void EmitImageAtomicExchange32(EmitContext& ctx, IR::Inst& inst, const IR::Value
     NotImplemented();
 }
 
-void EmitLaneId(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitVoteAll(EmitContext& ctx, std::string_view pred) {
-    NotImplemented();
-}
-
-void EmitVoteAny(EmitContext& ctx, std::string_view pred) {
-    NotImplemented();
-}
-
-void EmitVoteEqual(EmitContext& ctx, std::string_view pred) {
-    NotImplemented();
-}
-
-void EmitSubgroupBallot(EmitContext& ctx, std::string_view pred) {
-    NotImplemented();
-}
-
-void EmitSubgroupEqMask(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitSubgroupLtMask(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitSubgroupLeMask(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitSubgroupGtMask(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitSubgroupGeMask(EmitContext& ctx) {
-    NotImplemented();
-}
-
 } // namespace Shader::Backend::GLSL
