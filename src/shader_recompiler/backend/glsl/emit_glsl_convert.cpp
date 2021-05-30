@@ -16,7 +16,7 @@ void EmitConvertS16F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 
 void EmitConvertS16F32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    ctx.AddS32("{}=int(float({}))&0xffff;", inst, value);
 }
 
 void EmitConvertS16F64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,

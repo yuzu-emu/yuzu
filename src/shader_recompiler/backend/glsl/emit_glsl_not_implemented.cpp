@@ -203,15 +203,15 @@ void EmitSetOFlag(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitWorkgroupId(EmitContext& ctx) {
+void EmitWorkgroupId(EmitContext& ctx, IR::Inst& inst) {
+    ctx.AddU32x3("{}=gl_WorkGroupID;", inst);
+}
+
+void EmitInvocationId(EmitContext& ctx, IR::Inst& inst) {
     NotImplemented();
 }
 
-void EmitInvocationId(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitSampleId(EmitContext& ctx) {
+void EmitSampleId(EmitContext& ctx, IR::Inst& inst) {
     NotImplemented();
 }
 

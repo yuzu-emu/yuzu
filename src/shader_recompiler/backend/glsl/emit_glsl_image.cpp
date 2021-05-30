@@ -376,7 +376,9 @@ void EmitImageQueryDimensions([[maybe_unused]] EmitContext& ctx, [[maybe_unused]
 void EmitImageQueryLod([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] const IR::Value& index,
                        [[maybe_unused]] std::string_view coords) {
-    throw NotImplementedException("GLSL Instruction");
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto texture{Texture(ctx, info, index)};
+    return ctx.AddF32x4("{}=vec4(textureQueryLod({},{}),0.0,0.0);", inst, texture, coords);
 }
 
 void EmitImageGradient([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
