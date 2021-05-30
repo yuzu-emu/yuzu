@@ -703,6 +703,12 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::WriteStorage128:
         info.used_storage_buffer_types |= IR::Type::U32x4;
         break;
+    case IR::Opcode::SharedAtomicSMin32:
+        info.uses_atomic_s32_min = true;
+        break;
+    case IR::Opcode::SharedAtomicSMax32:
+        info.uses_atomic_s32_max = true;
+        break;
     case IR::Opcode::SharedAtomicInc32:
         info.uses_shared_increment = true;
         break;

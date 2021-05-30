@@ -324,66 +324,6 @@ void EmitGetInBoundsFromOp(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitSharedAtomicIAdd32(EmitContext& ctx, std::string_view pointer_offset,
-                            std::string_view value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicSMin32(EmitContext& ctx, std::string_view pointer_offset,
-                            std::string_view value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicUMin32(EmitContext& ctx, std::string_view pointer_offset,
-                            std::string_view value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicSMax32(EmitContext& ctx, std::string_view pointer_offset,
-                            std::string_view value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicUMax32(EmitContext& ctx, std::string_view pointer_offset,
-                            std::string_view value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicInc32(EmitContext& ctx, std::string_view pointer_offset,
-                           std::string_view value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicDec32(EmitContext& ctx, std::string_view pointer_offset,
-                           std::string_view value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicAnd32(EmitContext& ctx, std::string_view pointer_offset,
-                           std::string_view value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicOr32(EmitContext& ctx, std::string_view pointer_offset,
-                          std::string_view value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicXor32(EmitContext& ctx, std::string_view pointer_offset,
-                           std::string_view value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicExchange32(EmitContext& ctx, std::string_view pointer_offset,
-                                std::string_view value) {
-    NotImplemented();
-}
-
-void EmitSharedAtomicExchange64(EmitContext& ctx, std::string_view pointer_offset,
-                                std::string_view value) {
-    NotImplemented();
-}
-
 void EmitBindlessImageAtomicIAdd32(EmitContext&) {
     NotImplemented();
 }
