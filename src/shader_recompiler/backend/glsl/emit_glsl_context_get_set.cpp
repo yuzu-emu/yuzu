@@ -186,6 +186,18 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     case IR::Attribute::PositionW:
         ctx.Add("gl_Position.{}={};", swizzle, value);
         break;
+    case IR::Attribute::ClipDistance0:
+    case IR::Attribute::ClipDistance1:
+    case IR::Attribute::ClipDistance2:
+    case IR::Attribute::ClipDistance3:
+    case IR::Attribute::ClipDistance4:
+    case IR::Attribute::ClipDistance5:
+    case IR::Attribute::ClipDistance6:
+    case IR::Attribute::ClipDistance7: {
+        const u32 index{static_cast<u32>(attr) - static_cast<u32>(IR::Attribute::ClipDistance0)};
+        ctx.Add("gl_ClipDistance[{}]={};", index, value);
+        break;
+    }
     default:
         fmt::print("Set attribute {}", attr);
         throw NotImplementedException("Set attribute {}", attr);

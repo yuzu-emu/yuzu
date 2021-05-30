@@ -112,6 +112,9 @@ void PrecolorInst(IR::Inst& phi) {
             ir.PhiMove(phi, IR::Value{arg.InstRecursive()});
         }
     }
+    for (size_t i = 0; i < num_args; ++i) {
+        IR::IREmitter{*phi.PhiBlock(i)}.Reference(IR::Value{&phi});
+    }
 }
 
 void Precolor(const IR::Program& program) {
