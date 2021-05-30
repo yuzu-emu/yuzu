@@ -234,9 +234,6 @@ void EmitImageGather([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Ins
     const auto texture{Texture(ctx, info, index)};
     const auto texel{ctx.reg_alloc.Define(inst, Type::F32x4)};
     const auto sparse_inst{PrepareSparse(inst)};
-    if (!offset2.IsEmpty()) {
-        ctx.Add("/*OFFSET 2 IS {}*/", ctx.reg_alloc.Consume(offset2));
-    }
     if (!sparse_inst) {
         if (offset.IsEmpty()) {
             ctx.Add("{}=textureGather({},{},int({}));", texel, texture, coords,

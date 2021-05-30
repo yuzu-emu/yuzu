@@ -31,6 +31,7 @@ void SetSignFlag(EmitContext& ctx, IR::Inst& inst, std::string_view result) {
 void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
     const auto result{ctx.reg_alloc.Define(inst, Type::U32)};
     if (IR::Inst* const carry{inst.GetAssociatedPseudoOperation(IR::Opcode::GetCarryFromOp)}) {
+        ctx.uses_cc_carry = true;
         ctx.Add("{}=uaddCarry({},{},carry);", result, a, b);
         ctx.AddU1("{}=carry!=0;", *carry, result);
         carry->Invalidate();
@@ -61,11 +62,11 @@ void EmitISub64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::strin
 }
 
 void EmitIMul32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    ctx.AddU32("{}={}*{};", inst, a, b);
+    ctx.AddU32("{}=uint({}*{});", inst, a, b);
 }
 
 void EmitINeg32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
-    ctx.AddU32("{}=-({});", inst, value);
+    ctx.AddU32("{}=uint(-({}));", inst, value);
 }
 
 void EmitINeg64(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
@@ -124,7 +125,7 @@ void EmitBitwiseXor32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std:
 
 void EmitBitFieldInsert(EmitContext& ctx, IR::Inst& inst, std::string_view base,
                         std::string_view insert, std::string_view offset, std::string_view count) {
-    ctx.AddU32("{}=bitfieldInsert({}, {}, int({}), int({}));", inst, base, insert, offset, count);
+    ctx.AddU32("{}=bitfieldInsert({},{},int({}),int({}));", inst, base, insert, offset, count);
 }
 
 void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst& inst, std::string_view base,
@@ -166,25 +167,25 @@ void EmitFindUMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
 }
 
 void EmitSMin32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    ctx.AddU32("{}=min(int({}), int({}));", inst, a, b);
+    ctx.AddU32("{}=min(int({}),int({}));", inst, a, b);
 }
 
 void EmitUMin32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    ctx.AddU32("{}=min(uint({}), uint({}));", inst, a, b);
+    ctx.AddU32("{}=min(uint({}),uint({}));", inst, a, b);
 }
 
 void EmitSMax32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    ctx.AddU32("{}=max(int({}), int({}));", inst, a, b);
+    ctx.AddU32("{}=max(int({}),int({}));", inst, a, b);
 }
 
 void EmitUMax32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    ctx.AddU32("{}=max(uint({}), uint({}));", inst, a, b);
+    ctx.AddU32("{}=max(uint({}),uint({}));", inst, a, b);
 }
 
 void EmitSClamp32(EmitContext& ctx, IR::Inst& inst, std::string_view value, std::string_view min,
                   std::string_view max) {
     const auto result{ctx.reg_alloc.Define(inst, Type::U32)};
-    ctx.Add("{}=clamp(int({}), int({}), int({}));", result, value, min, max);
+    ctx.Add("{}=clamp(int({}),int({}),int({}));", result, value, min, max);
     SetZeroFlag(ctx, inst, result);
     SetSignFlag(ctx, inst, result);
 }
@@ -192,7 +193,7 @@ void EmitSClamp32(EmitContext& ctx, IR::Inst& inst, std::string_view value, std:
 void EmitUClamp32(EmitContext& ctx, IR::Inst& inst, std::string_view value, std::string_view min,
                   std::string_view max) {
     const auto result{ctx.reg_alloc.Define(inst, Type::U32)};
-    ctx.Add("{}=clamp(uint({}), uint({}), uint({}));", result, value, min, max);
+    ctx.Add("{}=clamp(uint({}),uint({}),uint({}));", result, value, min, max);
     SetZeroFlag(ctx, inst, result);
     SetSignFlag(ctx, inst, result);
 }
