@@ -142,7 +142,7 @@ public:
 
     void BindHostComputeBuffers();
 
-    void SetEnabledUniformBuffers(size_t stage, u32 enabled);
+    void SetEnabledUniformBuffers(const std::array<u32, NUM_STAGES>& mask);
 
     void SetEnabledComputeUniformBuffers(u32 enabled);
 
@@ -630,13 +630,13 @@ void BufferCache<P>::BindHostComputeBuffers() {
 }
 
 template <class P>
-void BufferCache<P>::SetEnabledUniformBuffers(size_t stage, u32 enabled) {
+void BufferCache<P>::SetEnabledUniformBuffers(const std::array<u32, NUM_STAGES>& mask) {
     if constexpr (HAS_PERSISTENT_UNIFORM_BUFFER_BINDINGS) {
-        if (enabled_uniform_buffers[stage] != enabled) {
-            dirty_uniform_buffers[stage] = ~u32{0};
+        if (enabled_uniform_buffers != mask) {
+            dirty_uniform_buffers.fill(~u32{0});
         }
     }
-    enabled_uniform_buffers[stage] = enabled;
+    enabled_uniform_buffers = mask;
 }
 
 template <class P>
