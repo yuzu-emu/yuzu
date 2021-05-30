@@ -201,4 +201,12 @@ void EmitLocalInvocationId(EmitContext& ctx, IR::Inst& inst) {
     ctx.AddU32x3("{}=gl_LocalInvocationID;", inst);
 }
 
+void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, std::string_view word_offset) {
+    ctx.AddU32("{}=lmem[{}];", inst, word_offset);
+}
+
+void EmitWriteLocal(EmitContext& ctx, std::string_view word_offset, std::string_view value) {
+    ctx.Add("lmem[{}]={};", word_offset, value);
+}
+
 } // namespace Shader::Backend::GLSL

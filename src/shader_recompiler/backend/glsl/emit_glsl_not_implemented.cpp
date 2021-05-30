@@ -224,14 +224,6 @@ void EmitYDirection(EmitContext& ctx, IR::Inst& inst) {
     ctx.AddF32("{}=gl_FrontMaterial.ambient.a;", inst);
 }
 
-void EmitLoadLocal(EmitContext& ctx, std::string_view word_offset) {
-    NotImplemented();
-}
-
-void EmitWriteLocal(EmitContext& ctx, std::string_view word_offset, std::string_view value) {
-    NotImplemented();
-}
-
 void EmitUndefU1(EmitContext& ctx, IR::Inst& inst) {
     ctx.AddU1("{}=false;", inst);
 }
@@ -305,54 +297,6 @@ void EmitWriteGlobal64(EmitContext& ctx, std::string_view address, std::string_v
 }
 
 void EmitWriteGlobal128(EmitContext& ctx, std::string_view address, std::string_view value) {
-    NotImplemented();
-}
-
-void EmitLoadSharedU8(EmitContext& ctx, std::string_view offset) {
-    NotImplemented();
-}
-
-void EmitLoadSharedS8(EmitContext& ctx, std::string_view offset) {
-    NotImplemented();
-}
-
-void EmitLoadSharedU16(EmitContext& ctx, std::string_view offset) {
-    NotImplemented();
-}
-
-void EmitLoadSharedS16(EmitContext& ctx, std::string_view offset) {
-    NotImplemented();
-}
-
-void EmitLoadSharedU32(EmitContext& ctx, std::string_view offset) {
-    NotImplemented();
-}
-
-void EmitLoadSharedU64(EmitContext& ctx, std::string_view offset) {
-    NotImplemented();
-}
-
-void EmitLoadSharedU128(EmitContext& ctx, std::string_view offset) {
-    NotImplemented();
-}
-
-void EmitWriteSharedU8(EmitContext& ctx, std::string_view offset, std::string_view value) {
-    NotImplemented();
-}
-
-void EmitWriteSharedU16(EmitContext& ctx, std::string_view offset, std::string_view value) {
-    NotImplemented();
-}
-
-void EmitWriteSharedU32(EmitContext& ctx, std::string_view offset, std::string_view value) {
-    NotImplemented();
-}
-
-void EmitWriteSharedU64(EmitContext& ctx, std::string_view offset, std::string_view value) {
-    NotImplemented();
-}
-
-void EmitWriteSharedU128(EmitContext& ctx, std::string_view offset, std::string_view value) {
     NotImplemented();
 }
 
