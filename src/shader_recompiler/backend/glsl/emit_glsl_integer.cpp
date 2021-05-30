@@ -29,7 +29,7 @@ void SetSignFlag(EmitContext& ctx, IR::Inst& inst, std::string_view result) {
 }
 } // Anonymous namespace
 void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    const auto result{ctx.reg_alloc.Define(inst, Type::U32)};
+    const auto result{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     if (IR::Inst* const carry{inst.GetAssociatedPseudoOperation(IR::Opcode::GetCarryFromOp)}) {
         ctx.uses_cc_carry = true;
         ctx.Add("{}=uaddCarry({},{},carry);", result, a, b);
@@ -130,7 +130,7 @@ void EmitBitFieldInsert(EmitContext& ctx, IR::Inst& inst, std::string_view base,
 
 void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst& inst, std::string_view base,
                           std::string_view offset, std::string_view count) {
-    const auto result{ctx.reg_alloc.Define(inst, Type::U32)};
+    const auto result{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     ctx.Add("{}=uint(bitfieldExtract(int({}),int({}),int({})));", result, base, offset, count);
     SetZeroFlag(ctx, inst, result);
     SetSignFlag(ctx, inst, result);
@@ -138,7 +138,7 @@ void EmitBitFieldSExtract(EmitContext& ctx, IR::Inst& inst, std::string_view bas
 
 void EmitBitFieldUExtract(EmitContext& ctx, IR::Inst& inst, std::string_view base,
                           std::string_view offset, std::string_view count) {
-    const auto result{ctx.reg_alloc.Define(inst, Type::U32)};
+    const auto result{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     ctx.Add("{}=uint(bitfieldExtract(uint({}),int({}),int({})));", result, base, offset, count);
     SetZeroFlag(ctx, inst, result);
     SetSignFlag(ctx, inst, result);
@@ -184,7 +184,7 @@ void EmitUMax32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::strin
 
 void EmitSClamp32(EmitContext& ctx, IR::Inst& inst, std::string_view value, std::string_view min,
                   std::string_view max) {
-    const auto result{ctx.reg_alloc.Define(inst, Type::U32)};
+    const auto result{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     ctx.Add("{}=clamp(int({}),int({}),int({}));", result, value, min, max);
     SetZeroFlag(ctx, inst, result);
     SetSignFlag(ctx, inst, result);
@@ -192,7 +192,7 @@ void EmitSClamp32(EmitContext& ctx, IR::Inst& inst, std::string_view value, std:
 
 void EmitUClamp32(EmitContext& ctx, IR::Inst& inst, std::string_view value, std::string_view min,
                   std::string_view max) {
-    const auto result{ctx.reg_alloc.Define(inst, Type::U32)};
+    const auto result{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     ctx.Add("{}=clamp(uint({}),uint({}),uint({}));", result, value, min, max);
     SetZeroFlag(ctx, inst, result);
     SetSignFlag(ctx, inst, result);

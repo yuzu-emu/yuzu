@@ -104,12 +104,12 @@ void EmitImageSampleImplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
     }
     const auto texture{Texture(ctx, info, index)};
     const auto bias{info.has_bias ? fmt::format(",{}", bias_lc) : ""};
-    const auto texel{ctx.reg_alloc.Define(inst, Type::F32x4)};
+    const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
     const auto sparse_inst{PrepareSparse(inst)};
     if (!sparse_inst) {
         if (!offset.IsEmpty()) {
             ctx.Add("{}=textureOffset({},{},{}{});", texel, texture, coords,
-                    CastToIntVec(ctx.reg_alloc.Consume(offset), info), bias);
+                    CastToIntVec(ctx.var_alloc.Consume(offset), info), bias);
         } else {
             if (ctx.stage == Stage::Fragment) {
                 ctx.Add("{}=texture({},{}{});", texel, texture, coords, bias);
@@ -122,7 +122,7 @@ void EmitImageSampleImplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
     // TODO: Query sparseTexels extension support
     if (!offset.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureOffsetARB({},{},{},{}{}));",
-                  *sparse_inst, texture, coords, CastToIntVec(ctx.reg_alloc.Consume(offset), info),
+                  *sparse_inst, texture, coords, CastToIntVec(ctx.var_alloc.Consume(offset), info),
                   texel, bias);
     } else {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureARB({},{},{}{}));", *sparse_inst,
@@ -143,12 +143,12 @@ void EmitImageSampleExplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
         throw NotImplementedException("Lod clamp samples");
     }
     const auto texture{Texture(ctx, info, index)};
-    const auto texel{ctx.reg_alloc.Define(inst, Type::F32x4)};
+    const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
     const auto sparse_inst{PrepareSparse(inst)};
     if (!sparse_inst) {
         if (!offset.IsEmpty()) {
             ctx.Add("{}=textureLodOffset({},{},{},{});", texel, texture, coords, lod_lc,
-                    CastToIntVec(ctx.reg_alloc.Consume(offset), info));
+                    CastToIntVec(ctx.var_alloc.Consume(offset), info));
         } else {
             ctx.Add("{}=textureLod({},{},{});", texel, texture, coords, lod_lc);
         }
@@ -158,7 +158,7 @@ void EmitImageSampleExplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
     if (!offset.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTexelFetchOffsetARB({},{},int({}),{},{}));",
                   *sparse_inst, texture, CastToIntVec(coords, info), lod_lc,
-                  CastToIntVec(ctx.reg_alloc.Consume(offset), info), texel);
+                  CastToIntVec(ctx.var_alloc.Consume(offset), info), texel);
     } else {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureLodARB({},{},{},{}));", *sparse_inst,
                   texture, coords, lod_lc, texel);
@@ -232,7 +232,7 @@ void EmitImageGather([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Ins
                      [[maybe_unused]] const IR::Value& offset2) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto texture{Texture(ctx, info, index)};
-    const auto texel{ctx.reg_alloc.Define(inst, Type::F32x4)};
+    const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
     const auto sparse_inst{PrepareSparse(inst)};
     if (!sparse_inst) {
         if (offset.IsEmpty()) {
@@ -242,7 +242,7 @@ void EmitImageGather([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Ins
         }
         if (offset2.IsEmpty()) {
             ctx.Add("{}=textureGatherOffset({},{},{},int({}));", texel, texture, coords,
-                    CastToIntVec(ctx.reg_alloc.Consume(offset), info), info.gather_component);
+                    CastToIntVec(ctx.var_alloc.Consume(offset), info), info.gather_component);
             return;
         }
         // PTP
@@ -259,7 +259,7 @@ void EmitImageGather([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Ins
     if (offset2.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureGatherOffsetARB({},{},{},{},int({})));",
                   *sparse_inst, texture, CastToIntVec(coords, info),
-                  CastToIntVec(ctx.reg_alloc.Consume(offset), info), texel, info.gather_component);
+                  CastToIntVec(ctx.var_alloc.Consume(offset), info), texel, info.gather_component);
     }
     // PTP
     const auto offsets{PtpOffsets(offset, offset2)};
@@ -276,7 +276,7 @@ void EmitImageGatherDref([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR:
                          [[maybe_unused]] std::string_view dref) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto texture{Texture(ctx, info, index)};
-    const auto texel{ctx.reg_alloc.Define(inst, Type::F32x4)};
+    const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
     const auto sparse_inst{PrepareSparse(inst)};
     if (!sparse_inst) {
         if (offset.IsEmpty()) {
@@ -285,7 +285,7 @@ void EmitImageGatherDref([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR:
         }
         if (offset2.IsEmpty()) {
             ctx.Add("{}=textureGatherOffset({},{},{},{});", texel, texture, coords, dref,
-                    CastToIntVec(ctx.reg_alloc.Consume(offset), info));
+                    CastToIntVec(ctx.var_alloc.Consume(offset), info));
             return;
         }
         // PTP
@@ -301,7 +301,7 @@ void EmitImageGatherDref([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR:
     if (offset2.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureGatherOffsetARB({},{},{},,{},{}));",
                   *sparse_inst, texture, CastToIntVec(coords, info), dref,
-                  CastToIntVec(ctx.reg_alloc.Consume(offset), info), texel);
+                  CastToIntVec(ctx.var_alloc.Consume(offset), info), texel);
     }
     // PTP
     const auto offsets{PtpOffsets(offset, offset2)};
@@ -323,7 +323,7 @@ void EmitImageFetch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
     }
     const auto texture{Texture(ctx, info, index)};
     const auto sparse_inst{PrepareSparse(inst)};
-    const auto texel{ctx.reg_alloc.Define(inst, Type::F32x4)};
+    const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
     if (!sparse_inst) {
         if (!offset.empty()) {
             ctx.Add("{}=texelFetchOffset({},{},int({}),{});", texel, texture,

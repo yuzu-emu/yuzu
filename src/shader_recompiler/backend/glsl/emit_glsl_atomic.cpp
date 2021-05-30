@@ -20,14 +20,14 @@ for (;;){{
 
 void SharedCasFunction(EmitContext& ctx, IR::Inst& inst, std::string_view offset,
                        std::string_view value, std::string_view function) {
-    const auto ret{ctx.reg_alloc.Define(inst, Type::U32)};
+    const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     const std::string smem{fmt::format("smem[{}/4]", offset)};
     ctx.Add(cas_loop.data(), ret, smem, ret, smem, function, smem, value, ret);
 }
 
 void SsboCasFunction(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                      const IR::Value& offset, std::string_view value, std::string_view function) {
-    const auto ret{ctx.reg_alloc.Define(inst, Type::U32)};
+    const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     const std::string ssbo{fmt::format("ssbo{}[{}]", binding.U32(), offset.U32())};
     ctx.Add(cas_loop.data(), ret, ssbo, ret, ssbo, function, ssbo, value, ret);
 }
@@ -36,7 +36,7 @@ void SsboCasFunctionF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& bindi
                         const IR::Value& offset, std::string_view value,
                         std::string_view function) {
     const std::string ssbo{fmt::format("ssbo{}[{}]", binding.U32(), offset.U32())};
-    const auto ret{ctx.reg_alloc.Define(inst, Type::U32)};
+    const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     ctx.Add(cas_loop.data(), ret, ssbo, ret, ssbo, function, ssbo, value, ret);
     ctx.AddF32("{}=uintBitsToFloat({});", inst, ret);
 }
@@ -102,9 +102,8 @@ void EmitSharedAtomicExchange32(EmitContext& ctx, IR::Inst& inst, std::string_vi
 void EmitSharedAtomicExchange64(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                                 std::string_view value) {
     // LOG_WARNING("Int64 Atomics not supported, fallback to non-atomic");
-    const auto ret{ctx.reg_alloc.Define(inst, Type::U64)};
-    ctx.Add("{}=packUint2x32(uvec2(smem[{}/4],smem[({}+4)/4]));", ret, pointer_offset,
-            pointer_offset);
+    ctx.AddU64("{}=packUint2x32(uvec2(smem[{}/4],smem[({}+4)/4]));", inst, pointer_offset,
+               pointer_offset);
     ctx.Add("smem[{}/4]=unpackUint2x32({}).x;smem[({}+4)/4]=unpackUint2x32({}).y;", pointer_offset,
             value, pointer_offset, value);
 }
