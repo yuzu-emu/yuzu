@@ -110,7 +110,6 @@ std::string VarAlloc::Define(IR::Inst& inst, GlslVarType type) {
     } else {
         Id id{};
         id.type.Assign(type);
-        // id.is_null.Assign(1);
         GetUseTracker(type).uses_temp = true;
         inst.SetDefinition<Id>(id);
     }
@@ -119,6 +118,20 @@ std::string VarAlloc::Define(IR::Inst& inst, GlslVarType type) {
 
 std::string VarAlloc::Define(IR::Inst& inst, IR::Type type) {
     return Define(inst, RegType(type));
+}
+
+std::string VarAlloc::PhiDefine(IR::Inst& inst, IR::Type type) {
+    return AddDefine(inst, RegType(type));
+}
+
+std::string VarAlloc::AddDefine(IR::Inst& inst, GlslVarType type) {
+    if (inst.HasUses()) {
+        inst.SetDefinition<Id>(Alloc(type));
+        return Representation(inst.Definition<Id>());
+    } else {
+        return "";
+    }
+    return Representation(inst.Definition<Id>());
 }
 
 std::string VarAlloc::Consume(const IR::Value& value) {
@@ -223,6 +236,8 @@ VarAlloc::UseTracker& VarAlloc::GetUseTracker(GlslVarType type) {
     switch (type) {
     case GlslVarType::U1:
         return var_bool;
+    case GlslVarType::F16x2:
+        return var_f16x2;
     case GlslVarType::U32:
         return var_u32;
     case GlslVarType::S32:
