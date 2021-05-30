@@ -226,7 +226,7 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             .depthClamp = true,
             .depthBiasClamp = true,
             .fillModeNonSolid = true,
-            .depthBounds = false,
+            .depthBounds = is_depth_bounds_supported,
             .wideLines = false,
             .largePoints = true,
             .alphaToOne = false,
@@ -908,6 +908,7 @@ void Device::SetupFamilies(VkSurfaceKHR surface) {
 
 void Device::SetupFeatures() {
     const VkPhysicalDeviceFeatures features{physical.GetFeatures()};
+    is_depth_bounds_supported = features.depthBounds;
     is_formatless_image_load_supported = features.shaderStorageImageReadWithoutFormat;
     is_shader_float64_supported = features.shaderFloat64;
     is_shader_int64_supported = features.shaderInt64;
