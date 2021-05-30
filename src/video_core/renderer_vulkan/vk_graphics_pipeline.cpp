@@ -598,13 +598,16 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .depthCompareOp = dynamic.depth_test_enable
                               ? MaxwellToVK::ComparisonOp(dynamic.DepthTestFunc())
                               : VK_COMPARE_OP_ALWAYS,
-        .depthBoundsTestEnable = dynamic.depth_bounds_enable,
+        .depthBoundsTestEnable = dynamic.depth_bounds_enable && device.IsDepthBoundsSupported(),
         .stencilTestEnable = dynamic.stencil_enable,
         .front = GetStencilFaceState(dynamic.front),
         .back = GetStencilFaceState(dynamic.back),
         .minDepthBounds = 0.0f,
         .maxDepthBounds = 0.0f,
     };
+    if (dynamic.depth_bounds_enable && !device.IsDepthBoundsSupported()) {
+        LOG_WARNING(Render_Vulkan, "Depth bounds is enabled but not supported");
+    }
     static_vector<VkPipelineColorBlendAttachmentState, Maxwell::NumRenderTargets> cb_attachments;
     const size_t num_attachments{NumAttachments(key.state)};
     for (size_t index = 0; index < num_attachments; ++index) {

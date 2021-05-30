@@ -159,6 +159,11 @@ public:
         return is_formatless_image_load_supported;
     }
 
+    // Returns true if depth bounds is supported.
+    bool IsDepthBoundsSupported() const {
+        return is_depth_bounds_supported;
+    }
+
     /// Returns true when blitting from and to depth stencil images is supported.
     bool IsBlitDepthStencilSupported() const {
         return is_blit_depth_stencil_supported;
@@ -314,6 +319,7 @@ private:
     bool is_float16_supported{};                ///< Support for float16 arithmetics.
     bool is_warp_potentially_bigger{};          ///< Host warp size can be bigger than guest.
     bool is_formatless_image_load_supported{};  ///< Support for shader image read without format.
+    bool is_depth_bounds_supported{};           ///< Support for depth bounds.
     bool is_shader_float64_supported{};         ///< Support for float64.
     bool is_shader_int64_supported{};           ///< Support for int64.
     bool is_shader_storage_image_multisample{}; ///< Support for image operations on MSAA images.

@@ -677,6 +677,11 @@ void RasterizerVulkan::UpdateDepthBoundsTestEnable(Tegra::Engines::Maxwell3D::Re
     if (!state_tracker.TouchDepthBoundsTestEnable()) {
         return;
     }
+    bool enabled = regs.depth_bounds_enable;
+    if (enabled && !device.IsDepthBoundsSupported()) {
+        LOG_WARNING(Render_Vulkan, "Depth bounds is enabled but not supported");
+        enabled = false;
+    }
     scheduler.Record([enable = regs.depth_bounds_enable](vk::CommandBuffer cmdbuf) {
         cmdbuf.SetDepthBoundsTestEnableEXT(enable);
     });
