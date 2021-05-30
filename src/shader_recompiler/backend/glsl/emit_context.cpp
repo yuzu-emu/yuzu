@@ -182,10 +182,10 @@ void EmitContext::DefineStorageBuffers(Bindings& bindings) {
 }
 
 void EmitContext::DefineHelperFunctions() {
-    if (info.uses_global_increment) {
+    if (info.uses_global_increment || info.uses_shared_increment) {
         header += "uint CasIncrement(uint op_a,uint op_b){return(op_a>=op_b)?0u:(op_a+1u);}\n";
     }
-    if (info.uses_global_decrement) {
+    if (info.uses_global_decrement || info.uses_shared_decrement) {
         header +=
             "uint CasDecrement(uint op_a,uint op_b){return(op_a==0||op_a>op_b)?op_b:(op_a-1u);}\n";
     }

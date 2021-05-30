@@ -11,31 +11,103 @@
 
 namespace Shader::Backend::GLSL {
 namespace {
-static constexpr std::string_view cas_loop{R"(uint {};
+static constexpr std::string_view cas_loop{R"({};
 for (;;){{
     uint old_value={};
     {}=atomicCompSwap({},old_value,{}({},{}));
     if ({}==old_value){{break;}}
 }})"};
 
-void CasFunction(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
-                 const IR::Value& offset, std::string_view value, std::string_view function) {
-    const auto ret{ctx.reg_alloc.Define(inst)};
+void SharedCasFunction(EmitContext& ctx, IR::Inst& inst, std::string_view offset,
+                       std::string_view value, std::string_view function) {
+    const auto ret{ctx.reg_alloc.Define(inst, Type::U32)};
+    const std::string smem{fmt::format("smem[{}/4]", offset)};
+    ctx.Add(cas_loop.data(), ret, smem, ret, smem, function, smem, value, ret);
+}
+
+void SsboCasFunction(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                     const IR::Value& offset, std::string_view value, std::string_view function) {
+    const auto ret{ctx.reg_alloc.Define(inst, Type::U32)};
     const std::string ssbo{fmt::format("ssbo{}[{}]", binding.U32(), offset.U32())};
     ctx.Add(cas_loop.data(), ret, ssbo, ret, ssbo, function, ssbo, value, ret);
 }
 
-void CasFunctionF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
-                    const IR::Value& offset, std::string_view value, std::string_view function) {
+void SsboCasFunctionF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                        const IR::Value& offset, std::string_view value,
+                        std::string_view function) {
     const std::string ssbo{fmt::format("ssbo{}[{}]", binding.U32(), offset.U32())};
-    const std::string u32_value{fmt::format("floatBitsToUint({})", value)};
-    const auto ret{ctx.reg_alloc.Define(inst)};
-    const auto ret_32{ret + "_u32"};
-    ctx.Add(cas_loop.data(), ret_32, ssbo, ret_32, ssbo, function, ssbo, value, ret_32);
-    ctx.Add("float {}=uintBitsToFloat({});", ret, ret_32);
+    const auto ret{ctx.reg_alloc.Define(inst, Type::U32)};
+    ctx.Add(cas_loop.data(), ret, ssbo, ret, ssbo, function, ssbo, value, ret);
+    ctx.AddF32("{}=uintBitsToFloat({});", inst, ret);
+}
+} // namespace
+
+void EmitSharedAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
+                            std::string_view value) {
+    ctx.AddU32("{}=atomicAdd(smem[{}/4],{});", inst, pointer_offset, value);
 }
 
-} // namespace
+void EmitSharedAtomicSMin32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
+                            std::string_view value) {
+    const std::string u32_value{fmt::format("uint({})", value)};
+    SharedCasFunction(ctx, inst, pointer_offset, u32_value, "CasMinS32");
+}
+
+void EmitSharedAtomicUMin32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
+                            std::string_view value) {
+    ctx.AddU32("{}=atomicMin(smem[{}/4],{});", inst, pointer_offset, value);
+}
+
+void EmitSharedAtomicSMax32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
+                            std::string_view value) {
+    const std::string u32_value{fmt::format("uint({})", value)};
+    SharedCasFunction(ctx, inst, pointer_offset, u32_value, "CasMaxS32");
+}
+
+void EmitSharedAtomicUMax32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
+                            std::string_view value) {
+    ctx.AddU32("{}=atomicMax(smem[{}/4],{});", inst, pointer_offset, value);
+}
+
+void EmitSharedAtomicInc32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
+                           std::string_view value) {
+    SharedCasFunction(ctx, inst, pointer_offset, value, "CasIncrement");
+}
+
+void EmitSharedAtomicDec32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
+                           std::string_view value) {
+    SharedCasFunction(ctx, inst, pointer_offset, value, "CasDecrement");
+}
+
+void EmitSharedAtomicAnd32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
+                           std::string_view value) {
+    ctx.AddU32("{}=atomicAnd(smem[{}/4],{});", inst, pointer_offset, value);
+}
+
+void EmitSharedAtomicOr32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
+                          std::string_view value) {
+    ctx.AddU32("{}=atomicOr(smem[{}/4],{});", inst, pointer_offset, value);
+}
+
+void EmitSharedAtomicXor32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
+                           std::string_view value) {
+    ctx.AddU32("{}=atomicXor(smem[{}/4],{});", inst, pointer_offset, value);
+}
+
+void EmitSharedAtomicExchange32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
+                                std::string_view value) {
+    ctx.AddU32("{}=atomicExchange(smem[{}/4],{});", inst, pointer_offset, value);
+}
+
+void EmitSharedAtomicExchange64(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
+                                std::string_view value) {
+    // LOG_WARNING("Int64 Atomics not supported, fallback to non-atomic");
+    const auto ret{ctx.reg_alloc.Define(inst, Type::U64)};
+    ctx.Add("{}=packUint2x32(uvec2(smem[{}/4],smem[({}+4)/4]));", ret, pointer_offset,
+            pointer_offset);
+    ctx.Add("smem[{}/4]=unpackUint2x32({}).x;smem[({}+4)/4]=unpackUint2x32({}).y;", pointer_offset,
+            value, pointer_offset, value);
+}
 
 void EmitStorageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
@@ -45,7 +117,7 @@ void EmitStorageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 void EmitStorageAtomicSMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
     const std::string u32_value{fmt::format("uint({})", value)};
-    CasFunction(ctx, inst, binding, offset, u32_value, "CasMinS32");
+    SsboCasFunction(ctx, inst, binding, offset, u32_value, "CasMinS32");
 }
 
 void EmitStorageAtomicUMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -56,7 +128,7 @@ void EmitStorageAtomicUMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 void EmitStorageAtomicSMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
     const std::string u32_value{fmt::format("uint({})", value)};
-    CasFunction(ctx, inst, binding, offset, u32_value, "CasMaxS32");
+    SsboCasFunction(ctx, inst, binding, offset, u32_value, "CasMaxS32");
 }
 
 void EmitStorageAtomicUMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -66,12 +138,12 @@ void EmitStorageAtomicUMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 
 void EmitStorageAtomicInc32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                             const IR::Value& offset, std::string_view value) {
-    CasFunction(ctx, inst, binding, offset, value, "CasIncrement");
+    SsboCasFunction(ctx, inst, binding, offset, value, "CasIncrement");
 }
 
 void EmitStorageAtomicDec32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                             const IR::Value& offset, std::string_view value) {
-    CasFunction(ctx, inst, binding, offset, value, "CasDecrement");
+    SsboCasFunction(ctx, inst, binding, offset, value, "CasDecrement");
 }
 
 void EmitStorageAtomicAnd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -97,7 +169,7 @@ void EmitStorageAtomicExchange32(EmitContext& ctx, IR::Inst& inst, const IR::Val
 void EmitStorageAtomicIAdd64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
     // LOG_WARNING(..., "Op falling to non-atomic");
-    ctx.AddU64("{}=uint64_t(uvec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
+    ctx.AddU64("{}=packUint2x32(uvec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
                binding.U32(), offset.U32() + 1);
     ctx.Add("ssbo{}[{}]+=unpackUint2x32({}).x;ssbo{}[{}]+=unpackUint2x32({}).y;", binding.U32(),
             offset.U32(), value, binding.U32(), offset.U32() + 1, value);
@@ -106,7 +178,7 @@ void EmitStorageAtomicIAdd64(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 void EmitStorageAtomicSMin64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
     // LOG_WARNING(..., "Op falling to non-atomic");
-    ctx.AddS64("{}=int64_t(ivec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
+    ctx.AddS64("{}=packInt2x32(ivec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
                binding.U32(), offset.U32() + 1);
     ctx.Add("for(int i=0;i<2;++i){{ "
             "ssbo{}[{}+i]=uint(min(int(ssbo{}[{}+i]),unpackInt2x32(int64_t({}))[i]));}}",
@@ -116,7 +188,7 @@ void EmitStorageAtomicSMin64(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 void EmitStorageAtomicUMin64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
     // LOG_WARNING(..., "Op falling to non-atomic");
-    ctx.AddU64("{}=uint64_t(uvec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
+    ctx.AddU64("{}=packUint2x32(uvec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
                binding.U32(), offset.U32() + 1);
     ctx.Add(
         "for(int i=0;i<2;++i){{ ssbo{}[{}+i]=min(ssbo{}[{}+i],unpackUint2x32(uint64_t({}))[i]);}}",
@@ -126,7 +198,7 @@ void EmitStorageAtomicUMin64(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 void EmitStorageAtomicSMax64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
     // LOG_WARNING(..., "Op falling to non-atomic");
-    ctx.AddS64("{}=int64_t(ivec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
+    ctx.AddS64("{}=packInt2x32(ivec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
                binding.U32(), offset.U32() + 1);
     ctx.Add("for(int i=0;i<2;++i){{ "
             "ssbo{}[{}+i]=uint(max(int(ssbo{}[{}+i]),unpackInt2x32(int64_t({}))[i]));}}",
@@ -136,7 +208,7 @@ void EmitStorageAtomicSMax64(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 void EmitStorageAtomicUMax64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
     // LOG_WARNING(..., "Op falling to non-atomic");
-    ctx.AddU64("{}=uint64_t(uvec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
+    ctx.AddU64("{}=packUint2x32(uvec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
                binding.U32(), offset.U32() + 1);
     ctx.Add(
         "for(int i=0;i<2;++i){{ssbo{}[{}+i]=max(ssbo{}[{}+i],unpackUint2x32(uint64_t({}))[i]);}}",
@@ -145,65 +217,69 @@ void EmitStorageAtomicUMax64(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 
 void EmitStorageAtomicAnd64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                             const IR::Value& offset, std::string_view value) {
-    ctx.AddU64("{}=uint64_t(uvec2(atomicAnd(ssbo{}[{}],unpackUint2x32({}).x),atomicAnd(ssbo{}[{}],"
-               "unpackUint2x32({}).y)));",
-               inst, binding.U32(), offset.U32(), value, binding.U32(), offset.U32() + 1, value);
+    ctx.AddU64(
+        "{}=packUint2x32(uvec2(atomicAnd(ssbo{}[{}],unpackUint2x32({}).x),atomicAnd(ssbo{}[{}],"
+        "unpackUint2x32({}).y)));",
+        inst, binding.U32(), offset.U32(), value, binding.U32(), offset.U32() + 1, value);
 }
 
 void EmitStorageAtomicOr64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                            const IR::Value& offset, std::string_view value) {
-    ctx.AddU64("{}=uint64_t(uvec2(atomicOr(ssbo{}[{}],unpackUint2x32({}).x),atomicOr(ssbo{}[{}],"
-               "unpackUint2x32({}).y)));",
-               inst, binding.U32(), offset.U32(), value, binding.U32(), offset.U32() + 1, value);
+    ctx.AddU64(
+        "{}=packUint2x32(uvec2(atomicOr(ssbo{}[{}],unpackUint2x32({}).x),atomicOr(ssbo{}[{}],"
+        "unpackUint2x32({}).y)));",
+        inst, binding.U32(), offset.U32(), value, binding.U32(), offset.U32() + 1, value);
 }
 
 void EmitStorageAtomicXor64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                             const IR::Value& offset, std::string_view value) {
-    ctx.AddU64("{}=uint64_t(uvec2(atomicXor(ssbo{}[{}],unpackUint2x32({}).x),atomicXor(ssbo{}[{}],"
-               "unpackUint2x32({}).y)));",
-               inst, binding.U32(), offset.U32(), value, binding.U32(), offset.U32() + 1, value);
+    ctx.AddU64(
+        "{}=packUint2x32(uvec2(atomicXor(ssbo{}[{}],unpackUint2x32({}).x),atomicXor(ssbo{}[{}],"
+        "unpackUint2x32({}).y)));",
+        inst, binding.U32(), offset.U32(), value, binding.U32(), offset.U32() + 1, value);
 }
 
 void EmitStorageAtomicExchange64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                  const IR::Value& offset, std::string_view value) {
-    ctx.AddU64("{}=uint64_t(uvec2(atomicExchange(ssbo{}[{}],unpackUint2x32({}).x),atomicExchange("
-               "ssbo{}[{}],unpackUint2x32({}).y)));",
-               inst, binding.U32(), offset.U32(), value, binding.U32(), offset.U32() + 1, value);
+    ctx.AddU64(
+        "{}=packUint2x32(uvec2(atomicExchange(ssbo{}[{}],unpackUint2x32({}).x),atomicExchange("
+        "ssbo{}[{}],unpackUint2x32({}).y)));",
+        inst, binding.U32(), offset.U32(), value, binding.U32(), offset.U32() + 1, value);
 }
 
 void EmitStorageAtomicAddF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
-    CasFunctionF32(ctx, inst, binding, offset, value, "CasFloatAdd");
+    SsboCasFunctionF32(ctx, inst, binding, offset, value, "CasFloatAdd");
 }
 
 void EmitStorageAtomicAddF16x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                const IR::Value& offset, std::string_view value) {
-    CasFunction(ctx, inst, binding, offset, value, "CasFloatAdd16x2");
+    SsboCasFunction(ctx, inst, binding, offset, value, "CasFloatAdd16x2");
 }
 
 void EmitStorageAtomicAddF32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                const IR::Value& offset, std::string_view value) {
-    CasFunction(ctx, inst, binding, offset, value, "CasFloatAdd32x2");
+    SsboCasFunction(ctx, inst, binding, offset, value, "CasFloatAdd32x2");
 }
 
 void EmitStorageAtomicMinF16x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                const IR::Value& offset, std::string_view value) {
-    CasFunction(ctx, inst, binding, offset, value, "CasFloatMin16x2");
+    SsboCasFunction(ctx, inst, binding, offset, value, "CasFloatMin16x2");
 }
 
 void EmitStorageAtomicMinF32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                const IR::Value& offset, std::string_view value) {
-    CasFunction(ctx, inst, binding, offset, value, "CasFloatMin32x2");
+    SsboCasFunction(ctx, inst, binding, offset, value, "CasFloatMin32x2");
 }
 
 void EmitStorageAtomicMaxF16x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                const IR::Value& offset, std::string_view value) {
-    CasFunction(ctx, inst, binding, offset, value, "CasFloatMax16x2");
+    SsboCasFunction(ctx, inst, binding, offset, value, "CasFloatMax16x2");
 }
 
 void EmitStorageAtomicMaxF32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                const IR::Value& offset, std::string_view value) {
-    CasFunction(ctx, inst, binding, offset, value, "CasFloatMax32x2");
+    SsboCasFunction(ctx, inst, binding, offset, value, "CasFloatMax32x2");
 }
 
 void EmitGlobalAtomicIAdd32(EmitContext&) {

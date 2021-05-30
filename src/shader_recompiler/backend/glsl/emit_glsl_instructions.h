@@ -418,29 +418,29 @@ void EmitSGreaterThanEqual(EmitContext& ctx, IR::Inst& inst, std::string_view lh
                            std::string_view rhs);
 void EmitUGreaterThanEqual(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
                            std::string_view rhs);
-void EmitSharedAtomicIAdd32(EmitContext& ctx, std::string_view pointer_offset,
+void EmitSharedAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                             std::string_view value);
-void EmitSharedAtomicSMin32(EmitContext& ctx, std::string_view pointer_offset,
+void EmitSharedAtomicSMin32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                             std::string_view value);
-void EmitSharedAtomicUMin32(EmitContext& ctx, std::string_view pointer_offset,
+void EmitSharedAtomicUMin32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                             std::string_view value);
-void EmitSharedAtomicSMax32(EmitContext& ctx, std::string_view pointer_offset,
+void EmitSharedAtomicSMax32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                             std::string_view value);
-void EmitSharedAtomicUMax32(EmitContext& ctx, std::string_view pointer_offset,
+void EmitSharedAtomicUMax32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                             std::string_view value);
-void EmitSharedAtomicInc32(EmitContext& ctx, std::string_view pointer_offset,
+void EmitSharedAtomicInc32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                            std::string_view value);
-void EmitSharedAtomicDec32(EmitContext& ctx, std::string_view pointer_offset,
+void EmitSharedAtomicDec32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                            std::string_view value);
-void EmitSharedAtomicAnd32(EmitContext& ctx, std::string_view pointer_offset,
+void EmitSharedAtomicAnd32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                            std::string_view value);
-void EmitSharedAtomicOr32(EmitContext& ctx, std::string_view pointer_offset,
+void EmitSharedAtomicOr32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                           std::string_view value);
-void EmitSharedAtomicXor32(EmitContext& ctx, std::string_view pointer_offset,
+void EmitSharedAtomicXor32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                            std::string_view value);
-void EmitSharedAtomicExchange32(EmitContext& ctx, std::string_view pointer_offset,
+void EmitSharedAtomicExchange32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                                 std::string_view value);
-void EmitSharedAtomicExchange64(EmitContext& ctx, std::string_view pointer_offset,
+void EmitSharedAtomicExchange64(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                                 std::string_view value);
 void EmitStorageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value);
