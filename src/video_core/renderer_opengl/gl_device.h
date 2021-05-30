@@ -128,6 +128,10 @@ public:
         return has_amd_shader_half_float;
     }
 
+    bool IsWarpSizePotentiallyLargerThanGuest() const {
+        return warp_size_potentially_larger_than_guest;
+    }
+
 private:
     static bool TestVariableAoffi();
     static bool TestPreciseBug();
@@ -161,6 +165,7 @@ private:
     bool has_depth_buffer_float{};
     bool has_nv_gpu_shader_5{};
     bool has_amd_shader_half_float{};
+    bool warp_size_potentially_larger_than_guest{};
 };
 
 } // namespace OpenGL

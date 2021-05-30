@@ -220,7 +220,7 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
           .support_gl_nv_gpu_shader_5 = device.HasNvGpuShader5(),
           .support_gl_amd_gpu_shader_half_float = device.HasAmdShaderHalfFloat(),
 
-          .warp_size_potentially_larger_than_guest = true,
+          .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyLargerThanGuest(),
 
           .lower_left_origin_mode = true,
           .need_declared_frag_colors = true,
