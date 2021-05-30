@@ -7,6 +7,7 @@
 #include "shader_recompiler/backend/glsl/emit_context.h"
 #include "shader_recompiler/backend/glsl/emit_glsl_instructions.h"
 #include "shader_recompiler/frontend/ir/value.h"
+#include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::GLSL {
 namespace {
@@ -35,6 +36,58 @@ std::string GetMaxThreadId(std::string_view thread_id, std::string_view clamp,
     return ComputeMaxThreadId(min_thread_id, clamp, not_seg_mask);
 }
 } // namespace
+
+void EmitLaneId([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst) {
+    throw NotImplementedException("GLSL Instruction");
+}
+
+void EmitVoteAll(EmitContext& ctx, IR::Inst& inst, std::string_view pred) {
+    ctx.AddU1("{}=allInvocationsEqualARB({});", inst, pred);
+    // TODO:
+    // if (ctx.profile.warp_size_potentially_larger_than_guest) {
+    // }
+}
+
+void EmitVoteAny(EmitContext& ctx, IR::Inst& inst, std::string_view pred) {
+    ctx.AddU1("{}=anyInvocationARB({});", inst, pred);
+    // TODO:
+    // if (ctx.profile.warp_size_potentially_larger_than_guest) {
+    // }
+}
+
+void EmitVoteEqual(EmitContext& ctx, IR::Inst& inst, std::string_view pred) {
+    ctx.AddU1("{}=allInvocationsEqualARB({});", inst, pred);
+    // TODO:
+    // if (ctx.profile.warp_size_potentially_larger_than_guest) {
+    // }
+}
+
+void EmitSubgroupBallot(EmitContext& ctx, IR::Inst& inst, std::string_view pred) {
+    ctx.AddU32("{}=uvec2(ballotARB({})).x;", inst, pred);
+    // TODO:
+    // if (ctx.profile.warp_size_potentially_larger_than_guest) {
+    // }
+}
+
+void EmitSubgroupEqMask(EmitContext& ctx, IR::Inst& inst) {
+    ctx.AddU32("{}=uvec2(gl_SubGroupEqMaskARB).x;", inst);
+}
+
+void EmitSubgroupLtMask(EmitContext& ctx, IR::Inst& inst) {
+    ctx.AddU32("{}=uvec2(gl_SubGroupLtMaskARB).x;", inst);
+}
+
+void EmitSubgroupLeMask(EmitContext& ctx, IR::Inst& inst) {
+    ctx.AddU32("{}=uvec2(gl_SubGroupLeMaskARB).x;", inst);
+}
+
+void EmitSubgroupGtMask(EmitContext& ctx, IR::Inst& inst) {
+    ctx.AddU32("{}=uvec2(gl_SubGroupGtMaskARB).x;", inst);
+}
+
+void EmitSubgroupGeMask(EmitContext& ctx, IR::Inst& inst) {
+    ctx.AddU32("{}=uvec2(gl_SubGroupGeMaskARB).x;", inst);
+}
 
 void EmitShuffleIndex(EmitContext& ctx, IR::Inst& inst, std::string_view value,
                       std::string_view index, std::string_view clamp,

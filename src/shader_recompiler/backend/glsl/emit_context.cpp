@@ -148,6 +148,7 @@ void EmitContext::SetupExtensions(std::string&) {
     if (info.uses_subgroup_invocation_id || info.uses_subgroup_mask || info.uses_subgroup_vote ||
         info.uses_subgroup_shuffles || info.uses_fswzadd) {
         header += "#extension GL_ARB_shader_ballot : enable\n";
+        header += "#extension GL_ARB_shader_group_vote : enable\n";
     }
 }
 
