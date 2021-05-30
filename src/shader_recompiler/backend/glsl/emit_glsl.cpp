@@ -180,6 +180,16 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
     EmitCode(ctx, program);
     const std::string version{fmt::format("#version 450{}\n", GlslVersionSpecifier(ctx))};
     ctx.header.insert(0, version);
+    if (program.local_memory_size > 0) {
+        ctx.header += fmt::format("uint lmem[{}];", program.local_memory_size / 4);
+    }
+    if (program.shared_memory_size > 0) {
+        ctx.header += fmt::format("shared uint smem[{}];", program.shared_memory_size / 4);
+    }
+    ctx.header += "void main(){\n";
+    if (program.stage == Stage::VertexA || program.stage == Stage::VertexB) {
+        ctx.header += "gl_Position = vec4(0.0f, 0.0f, 0.0f, 1.0f);";
+    }
     for (size_t index = 0; index < ctx.reg_alloc.num_used_registers; ++index) {
         ctx.header += fmt::format("{} R{};", ctx.reg_alloc.reg_types[index], index);
     }

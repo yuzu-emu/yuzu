@@ -118,11 +118,6 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     DefineStorageBuffers(bindings);
     SetupImages(bindings);
     DefineHelperFunctions();
-
-    header += "void main(){\n";
-    if (stage == Stage::VertexA || stage == Stage::VertexB) {
-        Add("gl_Position = vec4(0.0f, 0.0f, 0.0f, 1.0f);");
-    }
 }
 
 void EmitContext::SetupExtensions(std::string&) {
