@@ -276,7 +276,9 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
         .support_int64_atomics = false,
 
         .warp_size_potentially_larger_than_guest = true,
+
         .lower_left_origin_mode = true,
+        .need_declared_frag_colors = true,
 
         .has_broken_spirv_clamp = true,
         .has_broken_unsigned_image_offsets = true,

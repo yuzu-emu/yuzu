@@ -117,13 +117,9 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
                 index, index);
         }
     }
-    for (size_t index = 0; index < info.stores_frag_color.size(); ++index) {
-        if (!info.stores_frag_color[index]) {
-            continue;
-        }
-        if (index == 0) {
-            Add("OUTPUT frag_color0=result.color;");
-        } else {
+    if (stage == Stage::Fragment) {
+        Add("OUTPUT frag_color0=result.color;");
+        for (size_t index = 1; index < info.stores_frag_color.size(); ++index) {
             Add("OUTPUT frag_color{}=result.color[{}];", index, index);
         }
     }

@@ -1320,7 +1320,7 @@ void EmitContext::DefineOutputs(const IR::Program& program) {
         break;
     case Stage::Fragment:
         for (u32 index = 0; index < 8; ++index) {
-            if (!info.stores_frag_color[index]) {
+            if (!info.stores_frag_color[index] && !profile.need_declared_frag_colors) {
                 continue;
             }
             frag_color[index] = DefineOutput(*this, F32[4], std::nullopt);
