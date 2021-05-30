@@ -96,7 +96,6 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
                               program.workgroup_size[2]);
         break;
     }
-    const std::string_view attr_stage{stage == Stage::Fragment ? "fragment" : "vertex"};
     for (size_t index = 0; index < info.input_generics.size(); ++index) {
         const auto& generic{info.input_generics[index]};
         if (generic.used) {
@@ -174,8 +173,9 @@ void EmitContext::DefineStorageBuffers(Bindings& bindings) {
         return;
     }
     for (const auto& desc : info.storage_buffers_descriptors) {
-        header += fmt::format("layout(std430,binding={}) buffer ssbo_{}{{uint ssbo{}[];}};",
-                              bindings.storage_buffer, bindings.storage_buffer, desc.cbuf_index);
+        header +=
+            fmt::format("layout(std430,binding={}) buffer ssbo_{}{{uint ssbo{}[];}};",
+                        bindings.storage_buffer, bindings.storage_buffer, bindings.storage_buffer);
         bindings.storage_buffer += desc.count;
     }
 }
