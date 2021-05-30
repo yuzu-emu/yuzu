@@ -50,16 +50,16 @@ void EmitLoadStorage32(EmitContext& ctx, IR::Inst& inst, const IR::Value& bindin
 void EmitLoadStorage64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                        const IR::Value& offset) {
     const auto offset_var{ctx.reg_alloc.Consume(offset)};
-    ctx.AddU32x2("{}=uvec2(ssbo{}[{}/4],ssbo{}[{}/4+1]);", inst, binding.U32(), offset_var,
+    ctx.AddU32x2("{}=uvec2(ssbo{}[{}/4],ssbo{}[({}+4)/4]);", inst, binding.U32(), offset_var,
                  binding.U32(), offset_var);
 }
 
 void EmitLoadStorage128(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                         const IR::Value& offset) {
     const auto offset_var{ctx.reg_alloc.Consume(offset)};
-    ctx.AddU32x4("{}=uvec4(ssbo{}[{}/4],ssbo{}[{}/4+1],ssbo{}[{}/4+2],ssbo{}[{}/4+3]);", inst,
-                 binding.U32(), offset_var, binding.U32(), offset_var, binding.U32(), offset_var,
-                 binding.U32(), offset_var);
+    ctx.AddU32x4("{}=uvec4(ssbo{}[{}/4],ssbo{}[({}+4)/4],ssbo{}[({}+8)/4],ssbo{}[({}+12)/4]);",
+                 inst, binding.U32(), offset_var, binding.U32(), offset_var, binding.U32(),
+                 offset_var, binding.U32(), offset_var);
 }
 
 void EmitWriteStorageU8([[maybe_unused]] EmitContext& ctx,
@@ -108,7 +108,7 @@ void EmitWriteStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Va
                         std::string_view value) {
     const auto offset_var{ctx.reg_alloc.Consume(offset)};
     ctx.Add("ssbo{}[{}/4]={}.x;", binding.U32(), offset_var, value);
-    ctx.Add("ssbo{}[({}/4)+1]={}.y;", binding.U32(), offset_var, value);
+    ctx.Add("ssbo{}[({}+4)/4]={}.y;", binding.U32(), offset_var, value);
 }
 
 void EmitWriteStorage128([[maybe_unused]] EmitContext& ctx,
@@ -117,8 +117,8 @@ void EmitWriteStorage128([[maybe_unused]] EmitContext& ctx,
                          [[maybe_unused]] std::string_view value) {
     const auto offset_var{ctx.reg_alloc.Consume(offset)};
     ctx.Add("ssbo{}[{}/4]={}.x;", binding.U32(), offset_var, value);
-    ctx.Add("ssbo{}[({}/4)+1]={}.y;", binding.U32(), offset_var, value);
-    ctx.Add("ssbo{}[({}/4)+2]={}.z;", binding.U32(), offset_var, value);
-    ctx.Add("ssbo{}[({}/4)+3]={}.w;", binding.U32(), offset_var, value);
+    ctx.Add("ssbo{}[({}+4)/4]={}.y;", binding.U32(), offset_var, value);
+    ctx.Add("ssbo{}[({}+8)/4]={}.z;", binding.U32(), offset_var, value);
+    ctx.Add("ssbo{}[({}+12)/4]={}.w;", binding.U32(), offset_var, value);
 }
 } // namespace Shader::Backend::GLSL

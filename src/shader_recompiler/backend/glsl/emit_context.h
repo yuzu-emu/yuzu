@@ -135,6 +135,7 @@ public:
     std::vector<u32> image_bindings;
 
     bool uses_y_direction{};
+    bool uses_cc_carry{};
 
 private:
     void SetupExtensions(std::string& header);
