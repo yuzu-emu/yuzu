@@ -84,7 +84,11 @@ struct Profile {
     bool support_int64_atomics{};
 
     bool warp_size_potentially_larger_than_guest{};
+
     bool lower_left_origin_mode{};
+    /// Fragment outputs have to be declared even if they are not written to avoid undefined values.
+    /// See Ori and the Blind Forest's main menu for reference.
+    bool need_declared_frag_colors{};
 
     /// OpFClamp is broken and OpFMax + OpFMin should be used instead
     bool has_broken_spirv_clamp{};

@@ -298,8 +298,7 @@ void SetupOptions(const IR::Program& program, const Profile& profile,
     if (stage == Stage::Fragment && runtime_info.force_early_z != 0) {
         header += "OPTION NV_early_fragment_tests;";
     }
-    const auto non_zero_frag_colors{info.stores_frag_color | std::views::drop(1)};
-    if (std::ranges::find(non_zero_frag_colors, true) != non_zero_frag_colors.end()) {
+    if (stage == Stage::Fragment) {
         header += "OPTION ARB_draw_buffers;";
     }
 }

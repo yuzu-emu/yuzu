@@ -274,9 +274,16 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxw
         .support_typeless_image_loads = device.IsFormatlessImageLoadSupported(),
         .support_demote_to_helper_invocation = true,
         .support_int64_atomics = device.IsExtShaderAtomicInt64Supported(),
+
         .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyBiggerThanGuest(),
+
+        .lower_left_origin_mode = false,
+        .need_declared_frag_colors = false,
+
         .has_broken_spirv_clamp = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS_KHR,
         .has_broken_unsigned_image_offsets = false,
+        .has_broken_signed_operations = false,
+        .ignore_nan_fp_comparisons = false,
     };
 }
 
