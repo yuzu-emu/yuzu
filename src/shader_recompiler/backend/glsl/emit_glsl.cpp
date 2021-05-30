@@ -33,7 +33,7 @@ void SetDefinition(EmitContext& ctx, IR::Inst* inst, Args... args) {
 template <typename ArgType>
 auto Arg(EmitContext& ctx, const IR::Value& arg) {
     if constexpr (std::is_same_v<ArgType, std::string_view>) {
-        return ctx.reg_alloc.Consume(arg);
+        return ctx.var_alloc.Consume(arg);
     } else if constexpr (std::is_same_v<ArgType, const IR::Value&>) {
         return arg;
     } else if constexpr (std::is_same_v<ArgType, u32>) {
@@ -131,7 +131,7 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
             }
             break;
         case IR::AbstractSyntaxNode::Type::If:
-            ctx.Add("if ({}){{", ctx.reg_alloc.Consume(node.data.if_node.cond));
+            ctx.Add("if ({}){{", ctx.var_alloc.Consume(node.data.if_node.cond));
             break;
         case IR::AbstractSyntaxNode::Type::EndIf:
             ctx.Add("}}");
@@ -142,7 +142,7 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
                     ctx.Add("break;");
                 }
             } else {
-                ctx.Add("if({}){{break;}}", ctx.reg_alloc.Consume(node.data.break_node.cond));
+                ctx.Add("if({}){{break;}}", ctx.var_alloc.Consume(node.data.break_node.cond));
             }
             break;
         case IR::AbstractSyntaxNode::Type::Return:
@@ -153,7 +153,7 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
             ctx.Add("for(;;){{");
             break;
         case IR::AbstractSyntaxNode::Type::Repeat:
-            ctx.Add("if({}){{", ctx.reg_alloc.Consume(node.data.repeat.cond));
+            ctx.Add("if({}){{", ctx.var_alloc.Consume(node.data.repeat.cond));
             ctx.Add("continue;\n}}else{{");
             ctx.Add("break;\n}}\n}}");
             break;
@@ -170,6 +170,23 @@ std::string GlslVersionSpecifier(const EmitContext& ctx) {
         return " compatibility";
     }
     return "";
+}
+
+void DefineVariables(const EmitContext& ctx, std::string& header) {
+    for (u32 i = 0; i < static_cast<u32>(GlslVarType::Void); ++i) {
+        const auto type{static_cast<GlslVarType>(i)};
+        const auto& tracker{ctx.var_alloc.GetUseTracker(type)};
+        const auto type_name{ctx.var_alloc.GetGlslType(type)};
+        // Temps/return types that are never used are stored at index 0
+        if (tracker.uses_temp) {
+            header += fmt::format("{}{}={}(0);", type_name, ctx.var_alloc.Representation(0, type),
+                                  type_name);
+        }
+        for (u32 index = 1; index <= tracker.num_used; ++index) {
+            header += fmt::format("{}{}={}(0);", type_name,
+                                  ctx.var_alloc.Representation(index, type), type_name);
+        }
+    }
 }
 } // Anonymous namespace
 
@@ -190,9 +207,7 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
     if (program.stage == Stage::VertexA || program.stage == Stage::VertexB) {
         ctx.header += "gl_Position = vec4(0.0f, 0.0f, 0.0f, 1.0f);";
     }
-    for (size_t index = 0; index < ctx.reg_alloc.num_used_registers; ++index) {
-        ctx.header += fmt::format("{} R{};", ctx.reg_alloc.reg_types[index], index);
-    }
+    DefineVariables(ctx, ctx.header);
     if (ctx.uses_cc_carry) {
         ctx.header += "uint carry;";
     }

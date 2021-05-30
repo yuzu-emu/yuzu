@@ -48,8 +48,8 @@ add_library(shader_recompiler STATIC
     backend/glsl/emit_glsl_special.cpp
     backend/glsl/emit_glsl_undefined.cpp
     backend/glsl/emit_glsl_warp.cpp
-    backend/glsl/reg_alloc.cpp
-    backend/glsl/reg_alloc.h
+    backend/glsl/var_alloc.cpp
+    backend/glsl/var_alloc.h
     backend/spirv/emit_context.cpp
     backend/spirv/emit_context.h
     backend/spirv/emit_spirv.cpp

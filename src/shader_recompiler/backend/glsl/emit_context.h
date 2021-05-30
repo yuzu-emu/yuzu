@@ -7,7 +7,7 @@
 #include <string>
 #include <fmt/format.h>
 
-#include "shader_recompiler/backend/glsl/reg_alloc.h"
+#include "shader_recompiler/backend/glsl/var_alloc.h"
 #include "shader_recompiler/stage.h"
 
 namespace Shader {
@@ -32,81 +32,81 @@ public:
     explicit EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
                          const RuntimeInfo& runtime_info_);
 
-    template <Type type, typename... Args>
+    template <GlslVarType type, typename... Args>
     void Add(const char* format_str, IR::Inst& inst, Args&&... args) {
-        code += fmt::format(format_str, reg_alloc.Define(inst, type), std::forward<Args>(args)...);
+        code += fmt::format(format_str, var_alloc.Define(inst, type), std::forward<Args>(args)...);
         // TODO: Remove this
         code += '\n';
     }
 
     template <typename... Args>
     void AddU1(const char* format_str, IR::Inst& inst, Args&&... args) {
-        Add<Type::U1>(format_str, inst, args...);
+        Add<GlslVarType::U1>(format_str, inst, args...);
     }
 
     template <typename... Args>
     void AddF16x2(const char* format_str, IR::Inst& inst, Args&&... args) {
-        Add<Type::F16x2>(format_str, inst, args...);
+        Add<GlslVarType::F16x2>(format_str, inst, args...);
     }
 
     template <typename... Args>
     void AddU32(const char* format_str, IR::Inst& inst, Args&&... args) {
-        Add<Type::U32>(format_str, inst, args...);
+        Add<GlslVarType::U32>(format_str, inst, args...);
     }
 
     template <typename... Args>
     void AddS32(const char* format_str, IR::Inst& inst, Args&&... args) {
-        Add<Type::S32>(format_str, inst, args...);
+        Add<GlslVarType::S32>(format_str, inst, args...);
     }
 
     template <typename... Args>
     void AddF32(const char* format_str, IR::Inst& inst, Args&&... args) {
-        Add<Type::F32>(format_str, inst, args...);
+        Add<GlslVarType::F32>(format_str, inst, args...);
     }
 
     template <typename... Args>
     void AddS64(const char* format_str, IR::Inst& inst, Args&&... args) {
-        Add<Type::S64>(format_str, inst, args...);
+        Add<GlslVarType::S64>(format_str, inst, args...);
     }
 
     template <typename... Args>
     void AddU64(const char* format_str, IR::Inst& inst, Args&&... args) {
-        Add<Type::U64>(format_str, inst, args...);
+        Add<GlslVarType::U64>(format_str, inst, args...);
     }
 
     template <typename... Args>
     void AddF64(const char* format_str, IR::Inst& inst, Args&&... args) {
-        Add<Type::F64>(format_str, inst, args...);
+        Add<GlslVarType::F64>(format_str, inst, args...);
     }
 
     template <typename... Args>
     void AddU32x2(const char* format_str, IR::Inst& inst, Args&&... args) {
-        Add<Type::U32x2>(format_str, inst, args...);
+        Add<GlslVarType::U32x2>(format_str, inst, args...);
     }
 
     template <typename... Args>
     void AddF32x2(const char* format_str, IR::Inst& inst, Args&&... args) {
-        Add<Type::F32x2>(format_str, inst, args...);
+        Add<GlslVarType::F32x2>(format_str, inst, args...);
     }
 
     template <typename... Args>
     void AddU32x3(const char* format_str, IR::Inst& inst, Args&&... args) {
-        Add<Type::U32x3>(format_str, inst, args...);
+        Add<GlslVarType::U32x3>(format_str, inst, args...);
     }
 
     template <typename... Args>
     void AddF32x3(const char* format_str, IR::Inst& inst, Args&&... args) {
-        Add<Type::F32x3>(format_str, inst, args...);
+        Add<GlslVarType::F32x3>(format_str, inst, args...);
     }
 
     template <typename... Args>
     void AddU32x4(const char* format_str, IR::Inst& inst, Args&&... args) {
-        Add<Type::U32x4>(format_str, inst, args...);
+        Add<GlslVarType::U32x4>(format_str, inst, args...);
     }
 
     template <typename... Args>
     void AddF32x4(const char* format_str, IR::Inst& inst, Args&&... args) {
-        Add<Type::F32x4>(format_str, inst, args...);
+        Add<GlslVarType::F32x4>(format_str, inst, args...);
     }
 
     template <typename... Args>
@@ -118,7 +118,7 @@ public:
 
     std::string header;
     std::string code;
-    RegAlloc reg_alloc;
+    VarAlloc var_alloc;
     const Info& info;
     const Profile& profile;
     const RuntimeInfo& runtime_info;

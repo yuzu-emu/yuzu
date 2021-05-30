@@ -21,11 +21,11 @@ static void NotImplemented() {
 void EmitPhi(EmitContext& ctx, IR::Inst& phi) {
     const size_t num_args{phi.NumArgs()};
     for (size_t i = 0; i < num_args; ++i) {
-        ctx.reg_alloc.Consume(phi.Arg(i));
+        ctx.var_alloc.Consume(phi.Arg(i));
     }
     if (!phi.Definition<Id>().is_valid) {
         // The phi node wasn't forward defined
-        ctx.Add("{};", ctx.reg_alloc.Define(phi, phi.Arg(0).Type()));
+        ctx.Add("{};", ctx.var_alloc.Define(phi, phi.Arg(0).Type()));
     }
 }
 
@@ -42,10 +42,10 @@ void EmitPhiMove(EmitContext& ctx, const IR::Value& phi_value, const IR::Value& 
     const auto phi_type{phi.Arg(0).Type()};
     if (!phi.Definition<Id>().is_valid) {
         // The phi node wasn't forward defined
-        ctx.Add("{};", ctx.reg_alloc.Define(phi, phi_type));
+        ctx.Add("{};", ctx.var_alloc.Define(phi, phi_type));
     }
-    const auto phi_reg{ctx.reg_alloc.Consume(IR::Value{&phi})};
-    const auto val_reg{ctx.reg_alloc.Consume(value)};
+    const auto phi_reg{ctx.var_alloc.Consume(IR::Value{&phi})};
+    const auto val_reg{ctx.var_alloc.Consume(value)};
     if (phi_reg == val_reg) {
         return;
     }

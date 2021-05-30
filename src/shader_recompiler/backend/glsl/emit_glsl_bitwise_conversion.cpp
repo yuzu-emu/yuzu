@@ -26,7 +26,7 @@ void EmitIdentity(EmitContext&, IR::Inst& inst, const IR::Value& value) {
 }
 
 void EmitConditionRef(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) {
-    ctx.AddU1("{}={};", inst, ctx.reg_alloc.Consume(value));
+    ctx.AddU1("{}={};", inst, ctx.var_alloc.Consume(value));
 }
 
 void EmitBitCastU16F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst) {
