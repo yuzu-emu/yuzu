@@ -128,7 +128,10 @@ private:
     std::vector<GraphicsPipeline*> transitions;
 
     std::array<vk::ShaderModule, NUM_STAGES> spv_modules;
+
     std::array<Shader::Info, NUM_STAGES> stage_infos;
+    std::array<u32, 5> enabled_uniform_buffers{};
+
     vk::DescriptorSetLayout descriptor_set_layout;
     DescriptorAllocator descriptor_allocator;
     vk::PipelineLayout pipeline_layout;

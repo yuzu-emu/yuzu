@@ -218,6 +218,9 @@ GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
       update_descriptor_queue{update_descriptor_queue_}, spv_modules{std::move(stages)} {
     std::ranges::transform(infos, stage_infos.begin(),
                            [](const Shader::Info* info) { return info ? *info : Shader::Info{}; });
+    std::ranges::transform(infos, enabled_uniform_buffers.begin(), [](const Shader::Info* info) {
+        return info ? info->constant_buffer_mask : 0;
+    });
 
     auto func{[this, &render_pass_cache, &descriptor_pool] {
         DescriptorLayoutBuilder builder{MakeBuilder(device, stage_infos)};
@@ -259,11 +262,12 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
 
     texture_cache.SynchronizeGraphicsDescriptors();
 
+    buffer_cache.SetEnabledUniformBuffers(enabled_uniform_buffers);
+
     const auto& regs{maxwell3d.regs};
     const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};
     const auto config_stage{[&](size_t stage) LAMBDA_FORCEINLINE {
         const Shader::Info& info{stage_infos[stage]};
-        buffer_cache.SetEnabledUniformBuffers(stage, info.constant_buffer_mask);
         buffer_cache.UnbindGraphicsStorageBuffers(stage);
         if constexpr (Spec::has_storage_buffers) {
             size_t ssbo_index{};

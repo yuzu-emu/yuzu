@@ -100,6 +100,8 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_c
             base_uniform_bindings[stage + 1] += AccumulateCount(info.constant_buffer_descriptors);
             base_storage_bindings[stage + 1] += AccumulateCount(info.storage_buffers_descriptors);
         }
+        enabled_uniform_buffers[stage] = info.constant_buffer_mask;
+
         const u32 num_tex_buffer_bindings{AccumulateCount(info.texture_buffer_descriptors)};
         num_texture_buffers[stage] += num_tex_buffer_bindings;
         num_textures += num_tex_buffer_bindings;
@@ -145,6 +147,7 @@ void GraphicsPipeline::Configure(bool is_indexed) {
 
     texture_cache.SynchronizeGraphicsDescriptors();
 
+    buffer_cache.SetEnabledUniformBuffers(enabled_uniform_buffers);
     buffer_cache.runtime.SetBaseUniformBindings(base_uniform_bindings);
     buffer_cache.runtime.SetBaseStorageBindings(base_storage_bindings);
     buffer_cache.runtime.SetEnableStorageBuffers(use_storage_buffers);
@@ -153,7 +156,6 @@ void GraphicsPipeline::Configure(bool is_indexed) {
     const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};
     const auto config_stage{[&](size_t stage) {
         const Shader::Info& info{stage_infos[stage]};
-        buffer_cache.SetEnabledUniformBuffers(stage, info.constant_buffer_mask);
         buffer_cache.UnbindGraphicsStorageBuffers(stage);
         if constexpr (Spec::has_storage_buffers) {
             size_t ssbo_index{};

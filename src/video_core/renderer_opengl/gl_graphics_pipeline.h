@@ -99,6 +99,7 @@ private:
     u32 enabled_stages_mask{};
 
     std::array<Shader::Info, 5> stage_infos{};
+    std::array<u32, 5> enabled_uniform_buffers{};
     std::array<u32, 5> base_uniform_bindings{};
     std::array<u32, 5> base_storage_bindings{};
     std::array<u32, 5> num_texture_buffers{};
