@@ -148,6 +148,10 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
             throw NotImplementedException("Get Position for stage {}", ctx.stage);
         }
         break;
+    case IR::Attribute::PointSpriteS:
+    case IR::Attribute::PointSpriteT:
+        ctx.AddF32("{}=gl_PointCoord.{};", inst, swizzle);
+        break;
     case IR::Attribute::InstanceId:
         ctx.AddF32("{}=intBitsToFloat(gl_InstanceID);", inst);
         break;
@@ -174,7 +178,7 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     }
     switch (attr) {
     case IR::Attribute::PointSize:
-        ctx.Add("gl_Pointsize={};", value);
+        ctx.Add("gl_PointSize={};", value);
         break;
     case IR::Attribute::PositionX:
     case IR::Attribute::PositionY:
