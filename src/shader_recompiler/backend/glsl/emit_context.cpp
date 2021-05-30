@@ -151,7 +151,6 @@ void EmitContext::SetupExtensions(std::string&) {
         info.uses_subgroup_shuffles || info.uses_fswzadd) {
         header += "#extension GL_ARB_shader_ballot : enable\n";
         header += "#extension GL_ARB_shader_group_vote : enable\n";
-        header += "#extension GL_KHR_shader_subgroup_basic : enable\n";
         if (!info.uses_int64) {
             header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
         }
