@@ -11,8 +11,7 @@
 
 namespace Shader::Backend::GLSL {
 namespace {
-static constexpr std::string_view cas_loop{R"({};
-for (;;){{
+static constexpr std::string_view cas_loop{R"(for (;;){{
     uint old_value={};
     {}=atomicCompSwap({},old_value,{}({},{}));
     if ({}==old_value){{break;}}
@@ -22,14 +21,14 @@ void SharedCasFunction(EmitContext& ctx, IR::Inst& inst, std::string_view offset
                        std::string_view value, std::string_view function) {
     const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     const std::string smem{fmt::format("smem[{}/4]", offset)};
-    ctx.Add(cas_loop.data(), ret, smem, ret, smem, function, smem, value, ret);
+    ctx.Add(cas_loop.data(), smem, ret, smem, function, smem, value, ret);
 }
 
 void SsboCasFunction(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                      const IR::Value& offset, std::string_view value, std::string_view function) {
     const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     const std::string ssbo{fmt::format("ssbo{}[{}]", binding.U32(), offset.U32())};
-    ctx.Add(cas_loop.data(), ret, ssbo, ret, ssbo, function, ssbo, value, ret);
+    ctx.Add(cas_loop.data(), ssbo, ret, ssbo, function, ssbo, value, ret);
 }
 
 void SsboCasFunctionF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -37,7 +36,7 @@ void SsboCasFunctionF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& bindi
                         std::string_view function) {
     const std::string ssbo{fmt::format("ssbo{}[{}]", binding.U32(), offset.U32())};
     const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
-    ctx.Add(cas_loop.data(), ret, ssbo, ret, ssbo, function, ssbo, value, ret);
+    ctx.Add(cas_loop.data(), ssbo, ret, ssbo, function, ssbo, value, ret);
     ctx.AddF32("{}=uintBitsToFloat({});", inst, ret);
 }
 } // namespace

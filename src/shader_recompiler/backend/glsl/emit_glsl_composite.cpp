@@ -9,8 +9,14 @@
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLSL {
+namespace {
 static constexpr std::string_view SWIZZLE{"xyzw"};
-
+void CompositeInsert(EmitContext& ctx, std::string_view result, std::string_view composite,
+                     std::string_view object, u32 index) {
+    ctx.Add("{}={};", result, composite);
+    ctx.Add("{}.{}={};", result, SWIZZLE[index], object);
+}
+} // namespace
 void EmitCompositeConstructU32x2(EmitContext& ctx, IR::Inst& inst, std::string_view e1,
                                  std::string_view e2) {
     ctx.AddU32x2("{}=uvec2({},{});", inst, e1, e2);
@@ -41,19 +47,22 @@ void EmitCompositeExtractU32x4(EmitContext& ctx, IR::Inst& inst, std::string_vie
     ctx.AddU32("{}={}.{};", inst, composite, SWIZZLE[index]);
 }
 
-void EmitCompositeInsertU32x2(EmitContext& ctx, std::string_view composite, std::string_view object,
-                              u32 index) {
-    ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
+void EmitCompositeInsertU32x2(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
+                              std::string_view object, u32 index) {
+    const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32x2)};
+    CompositeInsert(ctx, ret, composite, object, index);
 }
 
-void EmitCompositeInsertU32x3(EmitContext& ctx, std::string_view composite, std::string_view object,
-                              u32 index) {
-    ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
+void EmitCompositeInsertU32x3(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
+                              std::string_view object, u32 index) {
+    const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32x3)};
+    CompositeInsert(ctx, ret, composite, object, index);
 }
 
-void EmitCompositeInsertU32x4(EmitContext& ctx, std::string_view composite, std::string_view object,
-                              u32 index) {
-    ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
+void EmitCompositeInsertU32x4(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
+                              std::string_view object, u32 index) {
+    const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32x4)};
+    CompositeInsert(ctx, ret, composite, object, index);
 }
 
 void EmitCompositeConstructF16x2([[maybe_unused]] EmitContext& ctx,
@@ -146,19 +155,22 @@ void EmitCompositeExtractF32x4(EmitContext& ctx, IR::Inst& inst, std::string_vie
     ctx.AddF32("{}={}.{};", inst, composite, SWIZZLE[index]);
 }
 
-void EmitCompositeInsertF32x2(EmitContext& ctx, std::string_view composite, std::string_view object,
-                              u32 index) {
-    ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
+void EmitCompositeInsertF32x2(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
+                              std::string_view object, u32 index) {
+    const auto ret{ctx.var_alloc.Define(inst, GlslVarType::F32x2)};
+    CompositeInsert(ctx, ret, composite, object, index);
 }
 
-void EmitCompositeInsertF32x3(EmitContext& ctx, std::string_view composite, std::string_view object,
-                              u32 index) {
-    ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
+void EmitCompositeInsertF32x3(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
+                              std::string_view object, u32 index) {
+    const auto ret{ctx.var_alloc.Define(inst, GlslVarType::F32x3)};
+    CompositeInsert(ctx, ret, composite, object, index);
 }
 
-void EmitCompositeInsertF32x4(EmitContext& ctx, std::string_view composite, std::string_view object,
-                              u32 index) {
-    ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
+void EmitCompositeInsertF32x4(EmitContext& ctx, IR::Inst& inst, std::string_view composite,
+                              std::string_view object, u32 index) {
+    const auto ret{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
+    CompositeInsert(ctx, ret, composite, object, index);
 }
 
 void EmitCompositeConstructF64x2([[maybe_unused]] EmitContext& ctx) {

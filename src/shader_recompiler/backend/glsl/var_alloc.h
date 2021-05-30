@@ -62,8 +62,14 @@ public:
         bool uses_temp{};
     };
 
+    /// Used for explicit usages of variables, may revert to temporaries
     std::string Define(IR::Inst& inst, GlslVarType type);
     std::string Define(IR::Inst& inst, IR::Type type);
+
+    /// Used to assign variables used by the IR. May return a blank string if
+    /// the instruction's result is unused in the IR.
+    std::string AddDefine(IR::Inst& inst, GlslVarType type);
+    std::string PhiDefine(IR::Inst& inst, IR::Type type);
 
     std::string Consume(const IR::Value& value);
     std::string ConsumeInst(IR::Inst& inst);

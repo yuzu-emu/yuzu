@@ -122,11 +122,9 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
 
 void EmitContext::SetupExtensions(std::string&) {
     header += "#extension GL_ARB_separate_shader_objects : enable\n";
-    if (stage != Stage::Compute) {
-        // TODO: track this usage
-        header += "#extension GL_ARB_sparse_texture2 : enable\n";
-        header += "#extension GL_EXT_texture_shadow_lod : enable\n";
-    }
+    // TODO: track this usage
+    header += "#extension GL_ARB_sparse_texture2 : enable\n";
+    header += "#extension GL_EXT_texture_shadow_lod : enable\n";
     if (info.uses_int64) {
         header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
     }

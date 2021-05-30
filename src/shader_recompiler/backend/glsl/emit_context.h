@@ -37,7 +37,13 @@ public:
 
     template <GlslVarType type, typename... Args>
     void Add(const char* format_str, IR::Inst& inst, Args&&... args) {
-        code += fmt::format(format_str, var_alloc.Define(inst, type), std::forward<Args>(args)...);
+        const auto var_def{var_alloc.AddDefine(inst, type)};
+        if (var_def.empty()) {
+            // skip assigment.
+            code += fmt::format(&format_str[3], std::forward<Args>(args)...);
+        } else {
+            code += fmt::format(format_str, var_def, std::forward<Args>(args)...);
+        }
         // TODO: Remove this
         code += '\n';
     }

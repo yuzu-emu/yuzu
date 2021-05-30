@@ -25,7 +25,7 @@ void EmitPhi(EmitContext& ctx, IR::Inst& phi) {
     }
     if (!phi.Definition<Id>().is_valid) {
         // The phi node wasn't forward defined
-        ctx.Add("{};", ctx.var_alloc.Define(phi, phi.Arg(0).Type()));
+        ctx.var_alloc.PhiDefine(phi, phi.Arg(0).Type());
     }
 }
 
@@ -33,8 +33,8 @@ void EmitVoid(EmitContext& ctx) {
     // NotImplemented();
 }
 
-void EmitReference(EmitContext&) {
-    // NotImplemented();
+void EmitReference(EmitContext& ctx, const IR::Value& value) {
+    ctx.var_alloc.Consume(value);
 }
 
 void EmitPhiMove(EmitContext& ctx, const IR::Value& phi_value, const IR::Value& value) {
@@ -42,7 +42,7 @@ void EmitPhiMove(EmitContext& ctx, const IR::Value& phi_value, const IR::Value& 
     const auto phi_type{phi.Arg(0).Type()};
     if (!phi.Definition<Id>().is_valid) {
         // The phi node wasn't forward defined
-        ctx.Add("{};", ctx.var_alloc.Define(phi, phi_type));
+        ctx.var_alloc.PhiDefine(phi, phi_type);
     }
     const auto phi_reg{ctx.var_alloc.Consume(IR::Value{&phi})};
     const auto val_reg{ctx.var_alloc.Consume(value)};
