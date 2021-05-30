@@ -188,7 +188,7 @@ void DefineGenericOutput(EmitContext& ctx, size_t index, std::optional<u32> invo
             .first_element = element,
             .num_components = num_components,
         };
-        std::fill_n(ctx.output_generics[index].begin(), num_components, info);
+        std::fill_n(ctx.output_generics[index].begin() + element, num_components, info);
         element += num_components;
     }
 }
