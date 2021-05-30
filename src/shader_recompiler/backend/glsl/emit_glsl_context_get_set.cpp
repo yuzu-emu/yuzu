@@ -149,13 +149,13 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
         }
         break;
     case IR::Attribute::InstanceId:
-        ctx.AddS32("{}=gl_InstanceID;", inst);
+        ctx.AddF32("{}=intBitsToFloat(gl_InstanceID);", inst);
         break;
     case IR::Attribute::VertexId:
-        ctx.AddS32("{}=gl_VertexID;", inst);
+        ctx.AddF32("{}=intBitsToFloat(gl_VertexID);", inst);
         break;
     case IR::Attribute::FrontFace:
-        ctx.AddS32("{}=gl_FrontFacing?-1:0;", inst);
+        ctx.AddF32("{}=intBitsToFloat(gl_FrontFacing?-1:0);", inst);
         break;
     default:
         fmt::print("Get attribute {}", attr);

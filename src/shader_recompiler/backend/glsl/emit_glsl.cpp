@@ -83,7 +83,7 @@ void Invoke(EmitContext& ctx, IR::Inst* inst) {
 }
 
 void EmitInst(EmitContext& ctx, IR::Inst* inst) {
-    // ctx.Add("/* {} */", inst->GetOpcode());
+    // ctx.Add("/* $ {} $ */", inst->GetOpcode());
     switch (inst->GetOpcode()) {
 #define OPCODE(name, result_type, ...)                                                             \
     case IR::Opcode::name:                                                                         \
@@ -183,11 +183,13 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
     for (size_t index = 0; index < ctx.reg_alloc.num_used_registers; ++index) {
         ctx.header += fmt::format("{} R{};", ctx.reg_alloc.reg_types[index], index);
     }
-    // TODO: track usage
-    ctx.header += "uint carry;";
-    if (program.info.uses_subgroup_shuffles) {
-        ctx.header += "bool shfl_in_bounds;\n";
+    if (ctx.uses_cc_carry) {
+        ctx.header += "uint carry;";
     }
+    if (program.info.uses_subgroup_shuffles) {
+        ctx.header += "bool shfl_in_bounds;";
+    }
+    ctx.header += "\n";
     ctx.code.insert(0, ctx.header);
     ctx.code += "}";
     // fmt::print("\n{}\n", ctx.code);
