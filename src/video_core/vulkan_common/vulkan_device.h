@@ -159,6 +159,11 @@ public:
         return is_formatless_image_load_supported;
     }
 
+    /// Returns true if shader int16 is supported.
+    bool IsShaderInt16Supported() const {
+        return is_shader_int16_supported;
+    }
+
     // Returns true if depth bounds is supported.
     bool IsDepthBoundsSupported() const {
         return is_depth_bounds_supported;
@@ -322,6 +327,7 @@ private:
     bool is_depth_bounds_supported{};           ///< Support for depth bounds.
     bool is_shader_float64_supported{};         ///< Support for float64.
     bool is_shader_int64_supported{};           ///< Support for int64.
+    bool is_shader_int16_supported{};           ///< Support for int16.
     bool is_shader_storage_image_multisample{}; ///< Support for image operations on MSAA images.
     bool is_blit_depth_stencil_supported{};     ///< Support for blitting from and to depth stencil.
     bool nv_viewport_swizzle{};                 ///< Support for VK_NV_viewport_swizzle.
