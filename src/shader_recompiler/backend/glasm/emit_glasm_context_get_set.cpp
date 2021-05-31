@@ -37,6 +37,10 @@ bool IsInputArray(Stage stage) {
 std::string VertexIndex(EmitContext& ctx, ScalarU32 vertex) {
     return IsInputArray(ctx.stage) ? fmt::format("[{}]", vertex) : "";
 }
+
+u32 TexCoordIndex(IR::Attribute attr) {
+    return (static_cast<u32>(attr) - static_cast<u32>(IR::Attribute::FixedFncTexture0S)) / 4;
+}
 } // Anonymous namespace
 
 void EmitGetCbufU8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU32 offset) {
@@ -74,6 +78,11 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr, Scal
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
         ctx.Add("MOV.F {}.x,in_attr{}{}[0].{};", inst, index, VertexIndex(ctx, vertex), swizzle);
+        return;
+    }
+    if (attr >= IR::Attribute::FixedFncTexture0S && attr <= IR::Attribute::FixedFncTexture9Q) {
+        const u32 index{TexCoordIndex(attr)};
+        ctx.Add("MOV.F {}.x,{}.texcoord[{}].{};", inst, ctx.attrib_name, index, swizzle);
         return;
     }
     switch (attr) {
@@ -128,8 +137,7 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, ScalarF32 value,
         return;
     }
     if (attr >= IR::Attribute::FixedFncTexture0S && attr <= IR::Attribute::FixedFncTexture9R) {
-        const u32 index{
-            (static_cast<u32>(attr) - static_cast<u32>(IR::Attribute::FixedFncTexture0S)) / 4};
+        const u32 index{TexCoordIndex(attr)};
         ctx.Add("MOV.F result.texcoord[{}].{},{};", index, swizzle, value);
         return;
     }
