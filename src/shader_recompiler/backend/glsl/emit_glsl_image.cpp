@@ -387,116 +387,116 @@ void EmitImageGradient([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
                        [[maybe_unused]] std::string_view derivates,
                        [[maybe_unused]] std::string_view offset,
                        [[maybe_unused]] std::string_view lod_clamp) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitImageRead([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                    [[maybe_unused]] const IR::Value& index,
                    [[maybe_unused]] std::string_view coords) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitImageWrite([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                     [[maybe_unused]] const IR::Value& index,
                     [[maybe_unused]] std::string_view coords,
                     [[maybe_unused]] std::string_view color) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBindlessImageSampleImplicitLod(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBindlessImageSampleExplicitLod(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBindlessImageSampleDrefImplicitLod(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBindlessImageSampleDrefExplicitLod(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBindlessImageGather(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBindlessImageGatherDref(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBindlessImageFetch(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBindlessImageQueryDimensions(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBindlessImageQueryLod(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBindlessImageGradient(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBindlessImageRead(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBindlessImageWrite(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBoundImageSampleImplicitLod(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBoundImageSampleExplicitLod(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBoundImageSampleDrefImplicitLod(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBoundImageSampleDrefExplicitLod(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBoundImageGather(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBoundImageGatherDref(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBoundImageFetch(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBoundImageQueryDimensions(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBoundImageQueryLod(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBoundImageGradient(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBoundImageRead(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBoundImageWrite(EmitContext&) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 } // namespace Shader::Backend::GLSL

@@ -14,10 +14,6 @@
 
 namespace Shader::Backend::GLSL {
 
-static void NotImplemented() {
-    throw NotImplementedException("GLSL instruction");
-}
-
 void EmitPhi(EmitContext& ctx, IR::Inst& phi) {
     const size_t num_args{phi.NumArgs()};
     for (size_t i = 0; i < num_args; ++i) {

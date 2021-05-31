@@ -29,7 +29,7 @@ bool Precise(IR::Inst& inst) {
 
 void EmitFPAbs16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                  [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitFPAbs32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
@@ -42,7 +42,7 @@ void EmitFPAbs64(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
 
 void EmitFPAdd16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                  [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitFPAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
@@ -64,7 +64,7 @@ void EmitFPAdd64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::stri
 void EmitFPFma16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                  [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b,
                  [[maybe_unused]] std::string_view c) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitFPFma32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b,
@@ -103,7 +103,7 @@ void EmitFPMin64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::stri
 
 void EmitFPMul16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                  [[maybe_unused]] std::string_view a, [[maybe_unused]] std::string_view b) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitFPMul32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
@@ -124,7 +124,7 @@ void EmitFPMul64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::stri
 
 void EmitFPNeg16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                  [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitFPNeg32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
@@ -166,7 +166,7 @@ void EmitFPRecipSqrt32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 
 void EmitFPRecipSqrt64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitFPSqrt(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
@@ -175,7 +175,7 @@ void EmitFPSqrt(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
 
 void EmitFPSaturate16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitFPSaturate32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
@@ -190,7 +190,7 @@ void EmitFPClamp16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst&
                    [[maybe_unused]] std::string_view value,
                    [[maybe_unused]] std::string_view min_value,
                    [[maybe_unused]] std::string_view max_value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitFPClamp32(EmitContext& ctx, IR::Inst& inst, std::string_view value,
@@ -207,7 +207,7 @@ void EmitFPClamp64(EmitContext& ctx, IR::Inst& inst, std::string_view value,
 
 void EmitFPRoundEven16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitFPRoundEven32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
@@ -220,7 +220,7 @@ void EmitFPRoundEven64(EmitContext& ctx, IR::Inst& inst, std::string_view value)
 
 void EmitFPFloor16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                    [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitFPFloor32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
@@ -233,7 +233,7 @@ void EmitFPFloor64(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
 
 void EmitFPCeil16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                   [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitFPCeil32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
@@ -246,7 +246,7 @@ void EmitFPCeil64(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
 
 void EmitFPTrunc16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                    [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitFPTrunc32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
@@ -259,7 +259,7 @@ void EmitFPTrunc64(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
 
 void EmitFPOrdEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
                       [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL instruction");
+    NotImplemented();
 }
 
 void EmitFPOrdEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
@@ -274,7 +274,7 @@ void EmitFPOrdEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
 
 void EmitFPUnordEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
                         [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL instruction");
+    NotImplemented();
 }
 
 void EmitFPUnordEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
@@ -289,7 +289,7 @@ void EmitFPUnordEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
 
 void EmitFPOrdNotEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
                          [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL instruction");
+    NotImplemented();
 }
 
 void EmitFPOrdNotEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
@@ -304,7 +304,7 @@ void EmitFPOrdNotEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
 
 void EmitFPUnordNotEqual16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
                            [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL instruction");
+    NotImplemented();
 }
 
 void EmitFPUnordNotEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
@@ -319,7 +319,7 @@ void EmitFPUnordNotEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view lh
 
 void EmitFPOrdLessThan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
                          [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL instruction");
+    NotImplemented();
 }
 
 void EmitFPOrdLessThan32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
@@ -334,7 +334,7 @@ void EmitFPOrdLessThan64(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
 
 void EmitFPUnordLessThan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view lhs,
                            [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL instruction");
+    NotImplemented();
 }
 
 void EmitFPUnordLessThan32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
@@ -350,7 +350,7 @@ void EmitFPUnordLessThan64(EmitContext& ctx, IR::Inst& inst, std::string_view lh
 void EmitFPOrdGreaterThan16([[maybe_unused]] EmitContext& ctx,
                             [[maybe_unused]] std::string_view lhs,
                             [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL instruction");
+    NotImplemented();
 }
 
 void EmitFPOrdGreaterThan32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
@@ -366,7 +366,7 @@ void EmitFPOrdGreaterThan64(EmitContext& ctx, IR::Inst& inst, std::string_view l
 void EmitFPUnordGreaterThan16([[maybe_unused]] EmitContext& ctx,
                               [[maybe_unused]] std::string_view lhs,
                               [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL instruction");
+    NotImplemented();
 }
 
 void EmitFPUnordGreaterThan32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
@@ -382,7 +382,7 @@ void EmitFPUnordGreaterThan64(EmitContext& ctx, IR::Inst& inst, std::string_view
 void EmitFPOrdLessThanEqual16([[maybe_unused]] EmitContext& ctx,
                               [[maybe_unused]] std::string_view lhs,
                               [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL instruction");
+    NotImplemented();
 }
 
 void EmitFPOrdLessThanEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
@@ -398,7 +398,7 @@ void EmitFPOrdLessThanEqual64(EmitContext& ctx, IR::Inst& inst, std::string_view
 void EmitFPUnordLessThanEqual16([[maybe_unused]] EmitContext& ctx,
                                 [[maybe_unused]] std::string_view lhs,
                                 [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL instruction");
+    NotImplemented();
 }
 
 void EmitFPUnordLessThanEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
@@ -414,7 +414,7 @@ void EmitFPUnordLessThanEqual64(EmitContext& ctx, IR::Inst& inst, std::string_vi
 void EmitFPOrdGreaterThanEqual16([[maybe_unused]] EmitContext& ctx,
                                  [[maybe_unused]] std::string_view lhs,
                                  [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL instruction");
+    NotImplemented();
 }
 
 void EmitFPOrdGreaterThanEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
@@ -430,7 +430,7 @@ void EmitFPOrdGreaterThanEqual64(EmitContext& ctx, IR::Inst& inst, std::string_v
 void EmitFPUnordGreaterThanEqual16([[maybe_unused]] EmitContext& ctx,
                                    [[maybe_unused]] std::string_view lhs,
                                    [[maybe_unused]] std::string_view rhs) {
-    throw NotImplementedException("GLSL instruction");
+    NotImplemented();
 }
 
 void EmitFPUnordGreaterThanEqual32(EmitContext& ctx, IR::Inst& inst, std::string_view lhs,
@@ -445,7 +445,7 @@ void EmitFPUnordGreaterThanEqual64(EmitContext& ctx, IR::Inst& inst, std::string
 
 void EmitFPIsNan16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                    [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL instruction");
+    NotImplemented();
 }
 
 void EmitFPIsNan32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {

@@ -68,14 +68,14 @@ void EmitCompositeInsertU32x4(EmitContext& ctx, IR::Inst& inst, std::string_view
 void EmitCompositeConstructF16x2([[maybe_unused]] EmitContext& ctx,
                                  [[maybe_unused]] std::string_view e1,
                                  [[maybe_unused]] std::string_view e2) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitCompositeConstructF16x3([[maybe_unused]] EmitContext& ctx,
                                  [[maybe_unused]] std::string_view e1,
                                  [[maybe_unused]] std::string_view e2,
                                  [[maybe_unused]] std::string_view e3) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitCompositeConstructF16x4([[maybe_unused]] EmitContext& ctx,
@@ -83,46 +83,46 @@ void EmitCompositeConstructF16x4([[maybe_unused]] EmitContext& ctx,
                                  [[maybe_unused]] std::string_view e2,
                                  [[maybe_unused]] std::string_view e3,
                                  [[maybe_unused]] std::string_view e4) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitCompositeExtractF16x2([[maybe_unused]] EmitContext& ctx,
                                [[maybe_unused]] std::string_view composite,
                                [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitCompositeExtractF16x3([[maybe_unused]] EmitContext& ctx,
                                [[maybe_unused]] std::string_view composite,
                                [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitCompositeExtractF16x4([[maybe_unused]] EmitContext& ctx,
                                [[maybe_unused]] std::string_view composite,
                                [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitCompositeInsertF16x2([[maybe_unused]] EmitContext& ctx,
                               [[maybe_unused]] std::string_view composite,
                               [[maybe_unused]] std::string_view object,
                               [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitCompositeInsertF16x3([[maybe_unused]] EmitContext& ctx,
                               [[maybe_unused]] std::string_view composite,
                               [[maybe_unused]] std::string_view object,
                               [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitCompositeInsertF16x4([[maybe_unused]] EmitContext& ctx,
                               [[maybe_unused]] std::string_view composite,
                               [[maybe_unused]] std::string_view object,
                               [[maybe_unused]] u32 index) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitCompositeConstructF32x2(EmitContext& ctx, IR::Inst& inst, std::string_view e1,
@@ -174,27 +174,27 @@ void EmitCompositeInsertF32x4(EmitContext& ctx, IR::Inst& inst, std::string_view
 }
 
 void EmitCompositeConstructF64x2([[maybe_unused]] EmitContext& ctx) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitCompositeConstructF64x3([[maybe_unused]] EmitContext& ctx) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitCompositeConstructF64x4([[maybe_unused]] EmitContext& ctx) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitCompositeExtractF64x2([[maybe_unused]] EmitContext& ctx) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitCompositeExtractF64x3([[maybe_unused]] EmitContext& ctx) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitCompositeExtractF64x4([[maybe_unused]] EmitContext& ctx) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitCompositeInsertF64x2(EmitContext& ctx, std::string_view composite, std::string_view object,

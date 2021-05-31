@@ -139,6 +139,7 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
         switch (ctx.stage) {
         case Stage::VertexA:
         case Stage::VertexB:
+        case Stage::Geometry:
             ctx.AddF32("{}=gl_Position.{};", inst, swizzle);
             break;
         case Stage::Fragment:

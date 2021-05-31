@@ -38,7 +38,7 @@ std::string GetMaxThreadId(std::string_view thread_id, std::string_view clamp,
 } // namespace
 
 void EmitLaneId([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitVoteAll(EmitContext& ctx, IR::Inst& inst, std::string_view pred) {
@@ -150,7 +150,7 @@ void EmitShuffleButterfly(EmitContext& ctx, IR::Inst& inst, std::string_view val
 void EmitFSwizzleAdd([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                      [[maybe_unused]] std::string_view op_a, [[maybe_unused]] std::string_view op_b,
                      [[maybe_unused]] std::string_view swizzle) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitDPdxFine(EmitContext& ctx, IR::Inst& inst, std::string_view op_a) {

@@ -21,6 +21,8 @@ class EmitContext;
 inline void EmitSetLoopSafetyVariable(EmitContext&) {}
 inline void EmitGetLoopSafetyVariable(EmitContext&) {}
 
+#define NotImplemented() throw NotImplementedException("GLSL instruction {}", __func__)
+
 // Microinstruction emitters
 void EmitPhi(EmitContext& ctx, IR::Inst& inst);
 void EmitVoid(EmitContext& ctx);
