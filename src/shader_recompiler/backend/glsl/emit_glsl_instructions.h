@@ -631,8 +631,8 @@ void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst, const IR::Value&
 void EmitImageQueryLod(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                        std::string_view coords);
 void EmitImageGradient(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                       std::string_view coords, std::string_view derivates, std::string_view offset,
-                       std::string_view lod_clamp);
+                       std::string_view coords, const IR::Value& derivatives,
+                       const IR::Value& offset, const IR::Value& lod_clamp);
 void EmitImageRead(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                    std::string_view coords);
 void EmitImageWrite(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
