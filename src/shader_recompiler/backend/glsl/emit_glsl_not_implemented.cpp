@@ -103,11 +103,11 @@ void EmitEpilogue(EmitContext& ctx) {
 }
 
 void EmitEmitVertex(EmitContext& ctx, const IR::Value& stream) {
-    NotImplemented();
+    ctx.Add("EmitStreamVertex(int({}));", ctx.var_alloc.Consume(stream));
 }
 
 void EmitEndPrimitive(EmitContext& ctx, const IR::Value& stream) {
-    NotImplemented();
+    ctx.Add("EndStreamPrimitive(int({}));", ctx.var_alloc.Consume(stream));
 }
 
 void EmitGetRegister(EmitContext& ctx) {

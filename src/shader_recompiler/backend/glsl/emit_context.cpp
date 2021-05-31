@@ -21,6 +21,15 @@ std::string_view InterpDecorator(Interpolation interp) {
     throw InvalidArgument("Invalid interpolation {}", interp);
 }
 
+std::string_view ArrayDecorator(Stage stage) {
+    switch (stage) {
+    case Stage::Geometry:
+        return "[1]";
+    default:
+        return "";
+    }
+}
+
 std::string_view SamplerType(TextureType type, bool is_depth) {
     if (is_depth) {
         switch (type) {
@@ -64,6 +73,33 @@ std::string_view SamplerType(TextureType type, bool is_depth) {
     }
 }
 
+std::string_view InputPrimitive(InputTopology topology) {
+    switch (topology) {
+    case InputTopology::Points:
+        return "points";
+    case InputTopology::Lines:
+        return "lines";
+    case InputTopology::LinesAdjacency:
+        return "lines_adjacency";
+    case InputTopology::Triangles:
+        return "triangles";
+    case InputTopology::TrianglesAdjacency:
+        return "triangles_adjacency";
+    }
+    throw InvalidArgument("Invalid input topology {}", topology);
+}
+
+std::string_view OutputPrimitive(OutputTopology topology) {
+    switch (topology) {
+    case OutputTopology::PointList:
+        return "points";
+    case OutputTopology::LineStrip:
+        return "line_strip";
+    case OutputTopology::TriangleStrip:
+        return "triangle_strip";
+    }
+    throw InvalidArgument("Invalid output topology {}", topology);
+}
 } // namespace
 
 EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
@@ -85,6 +121,9 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         break;
     case Stage::Geometry:
         stage_name = "gs";
+        header += fmt::format("layout({})in;layout({}, max_vertices={})out;\n",
+                              InputPrimitive(runtime_info.input_topology),
+                              OutputPrimitive(program.output_topology), program.output_vertices);
         break;
     case Stage::Fragment:
         stage_name = "fs";
@@ -99,8 +138,9 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     for (size_t index = 0; index < info.input_generics.size(); ++index) {
         const auto& generic{info.input_generics[index]};
         if (generic.used) {
-            header += fmt::format("layout(location={}) {} in vec4 in_attr{};", index,
-                                  InterpDecorator(generic.interpolation), index);
+            header +=
+                fmt::format("layout(location={}){} in vec4 in_attr{}{};", index,
+                            InterpDecorator(generic.interpolation), index, ArrayDecorator(stage));
         }
     }
     for (size_t index = 0; index < info.stores_frag_color.size(); ++index) {
@@ -126,8 +166,6 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
 void EmitContext::SetupExtensions(std::string&) {
     // TODO: track this usage
     header += "#extension GL_ARB_sparse_texture2 : enable\n";
-    header += "#extension GL_ARB_shader_viewport_layer_array : enable\n";
-    header += "#extension GL_NV_viewport_array2 : enable\n";
     header += "#extension GL_EXT_texture_shadow_lod : enable\n";
     if (info.uses_int64) {
         header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
@@ -156,6 +194,10 @@ void EmitContext::SetupExtensions(std::string&) {
         if (!info.uses_int64) {
             header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
         }
+    }
+    if (info.stores_viewport_index) {
+        header += "#extension GL_ARB_shader_viewport_layer_array : enable\n";
+        header += "#extension GL_NV_viewport_array2 : enable\n";
     }
 }
 
