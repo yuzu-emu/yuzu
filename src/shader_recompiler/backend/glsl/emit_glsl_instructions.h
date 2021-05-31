@@ -89,7 +89,7 @@ void EmitWorkgroupId(EmitContext& ctx, IR::Inst& inst);
 void EmitLocalInvocationId(EmitContext& ctx, IR::Inst& inst);
 void EmitInvocationId(EmitContext& ctx, IR::Inst& inst);
 void EmitSampleId(EmitContext& ctx, IR::Inst& inst);
-void EmitIsHelperInvocation(EmitContext& ctx);
+void EmitIsHelperInvocation(EmitContext& ctx, IR::Inst& inst);
 void EmitYDirection(EmitContext& ctx, IR::Inst& inst);
 void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, std::string_view word_offset);
 void EmitWriteLocal(EmitContext& ctx, std::string_view word_offset, std::string_view value);

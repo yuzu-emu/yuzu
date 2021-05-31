@@ -38,7 +38,7 @@ std::string GetMaxThreadId(std::string_view thread_id, std::string_view clamp,
 } // namespace
 
 void EmitLaneId([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst) {
-    NotImplemented();
+    ctx.AddU32("{}=gl_SubGroupInvocationARB&31u;", inst);
 }
 
 void EmitVoteAll(EmitContext& ctx, IR::Inst& inst, std::string_view pred) {
