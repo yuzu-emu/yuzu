@@ -6,6 +6,7 @@
 
 #include "shader_recompiler/backend/glsl/emit_context.h"
 #include "shader_recompiler/backend/glsl/emit_glsl_instructions.h"
+#include "shader_recompiler/frontend/ir/modifiers.h"
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLSL {
@@ -19,6 +20,10 @@ void Compare(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string
         ctx.code += fmt::format("||isnan({})||isnan({})", lhs, rhs);
     }
     ctx.code += ";";
+}
+
+bool Precise(IR::Inst& inst) {
+    return {inst.Flags<IR::FpControl>().no_contraction};
 }
 } // namespace
 
@@ -41,11 +46,19 @@ void EmitFPAdd16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& i
 }
 
 void EmitFPAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    ctx.AddF32("{}=float({})+float({});", inst, a, b);
+    if (Precise(inst)) {
+        ctx.AddPrecF32("{}=float({})+float({});", inst, a, b);
+    } else {
+        ctx.AddF32("{}=float({})+float({});", inst, a, b);
+    }
 }
 
 void EmitFPAdd64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    ctx.AddF64("{}=double({})+double({});", inst, a, b);
+    if (Precise(inst)) {
+        ctx.AddPrecF64("{}=double({})+double({});", inst, a, b);
+    } else {
+        ctx.AddF64("{}=double({})+double({});", inst, a, b);
+    }
 }
 
 void EmitFPFma16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -56,12 +69,20 @@ void EmitFPFma16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& i
 
 void EmitFPFma32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b,
                  std::string_view c) {
-    ctx.AddF32("{}=fma({},{},{});", inst, a, b, c);
+    if (Precise(inst)) {
+        ctx.AddPrecF32("{}=fma({},{},{});", inst, a, b, c);
+    } else {
+        ctx.AddF32("{}=fma({},{},{});", inst, a, b, c);
+    }
 }
 
 void EmitFPFma64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b,
                  std::string_view c) {
-    ctx.AddF64("{}=fma({},{},{});", inst, a, b, c);
+    if (Precise(inst)) {
+        ctx.AddPrecF64("{}=fma({},{},{});", inst, a, b, c);
+    } else {
+        ctx.AddF64("{}=fma({},{},{});", inst, a, b, c);
+    }
 }
 
 void EmitFPMax32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
@@ -86,11 +107,19 @@ void EmitFPMul16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& i
 }
 
 void EmitFPMul32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    ctx.AddF32("{}={}*{};", inst, a, b);
+    if (Precise(inst)) {
+        ctx.AddPrecF32("{}={}*{};", inst, a, b);
+    } else {
+        ctx.AddF32("{}={}*{};", inst, a, b);
+    }
 }
 
 void EmitFPMul64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    ctx.AddF64("{}={}*{};", inst, a, b);
+    if (Precise(inst)) {
+        ctx.AddPrecF64("{}={}*{};", inst, a, b);
+    } else {
+        ctx.AddF64("{}={}*{};", inst, a, b);
+    }
 }
 
 void EmitFPNeg16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,

@@ -43,6 +43,10 @@ std::string TypePrefix(GlslVarType type) {
         return "u4_";
     case GlslVarType::F32x4:
         return "f4_";
+    case GlslVarType::PrecF32:
+        return "pf_";
+    case GlslVarType::PrecF64:
+        return "pd_";
     case GlslVarType::Void:
         return "";
     default:
@@ -225,6 +229,10 @@ std::string VarAlloc::GetGlslType(GlslVarType type) const {
         return "uvec4 ";
     case GlslVarType::F32x4:
         return "vec4 ";
+    case GlslVarType::PrecF32:
+        return "precise float ";
+    case GlslVarType::PrecF64:
+        return "precise double ";
     case GlslVarType::Void:
         return "";
     default:
@@ -262,6 +270,10 @@ VarAlloc::UseTracker& VarAlloc::GetUseTracker(GlslVarType type) {
         return var_u32x4;
     case GlslVarType::F32x4:
         return var_f32x4;
+    case GlslVarType::PrecF32:
+        return var_precf32;
+    case GlslVarType::PrecF64:
+        return var_precf64;
     default:
         throw NotImplementedException("Type {}", type);
     }
@@ -297,6 +309,10 @@ const VarAlloc::UseTracker& VarAlloc::GetUseTracker(GlslVarType type) const {
         return var_u32x4;
     case GlslVarType::F32x4:
         return var_f32x4;
+    case GlslVarType::PrecF32:
+        return var_precf32;
+    case GlslVarType::PrecF64:
+        return var_precf64;
     default:
         throw NotImplementedException("Type {}", type);
     }
