@@ -162,7 +162,7 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
             break;
         default:
             fmt::print("{}", node.type);
-            throw NotImplementedException("{}", node.type);
+            throw NotImplementedException("AbstractSyntaxNode::Type {}", node.type);
             break;
         }
     }

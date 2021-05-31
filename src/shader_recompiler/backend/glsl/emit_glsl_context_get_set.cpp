@@ -19,6 +19,15 @@ u32 CbufIndex(u32 offset) {
 char OffsetSwizzle(u32 offset) {
     return SWIZZLE[CbufIndex(offset)];
 }
+
+bool IsInputArray(Stage stage) {
+    return stage == Stage::Geometry || stage == Stage::TessellationControl ||
+           stage == Stage::TessellationEval;
+}
+
+std::string VertexIndex(EmitContext& ctx, std::string_view vertex) {
+    return IsInputArray(ctx.stage) ? fmt::format("[{}]", vertex) : "";
+}
 } // namespace
 
 void EmitGetCbufU8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -128,7 +137,7 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
     const char swizzle{"xyzw"[element]};
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
-        ctx.AddF32("{}=in_attr{}.{};", inst, index, swizzle);
+        ctx.AddF32("{}=in_attr{}{}.{};", inst, index, VertexIndex(ctx, vertex), swizzle);
         return;
     }
     switch (attr) {
@@ -139,8 +148,10 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
         switch (ctx.stage) {
         case Stage::VertexA:
         case Stage::VertexB:
-        case Stage::Geometry:
             ctx.AddF32("{}=gl_Position.{};", inst, swizzle);
+            break;
+        case Stage::Geometry:
+            ctx.AddF32("{}=gl_in[{}].gl_Position.{};", inst, vertex, swizzle);
             break;
         case Stage::Fragment:
             ctx.AddF32("{}=gl_FragCoord.{};", inst, swizzle);
