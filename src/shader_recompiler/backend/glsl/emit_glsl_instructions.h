@@ -18,6 +18,8 @@ class Value;
 namespace Shader::Backend::GLSL {
 class EmitContext;
 
+#define NotImplemented() throw NotImplementedException("GLSL instruction {}", __func__)
+
 // Microinstruction emitters
 void EmitPhi(EmitContext& ctx, IR::Inst& inst);
 void EmitVoid(EmitContext& ctx);

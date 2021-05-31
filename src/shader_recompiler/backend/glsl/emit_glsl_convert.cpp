@@ -11,7 +11,7 @@
 namespace Shader::Backend::GLSL {
 void EmitConvertS16F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertS16F32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -21,12 +21,12 @@ void EmitConvertS16F32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 
 void EmitConvertS16F64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertS32F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertS32F32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -41,7 +41,7 @@ void EmitConvertS32F64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 
 void EmitConvertS64F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertS64F32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -56,22 +56,22 @@ void EmitConvertS64F64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 
 void EmitConvertU16F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertU16F32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertU16F64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertU32F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertU32F32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -86,7 +86,7 @@ void EmitConvertU32F64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 
 void EmitConvertU64F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertU64F32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -111,12 +111,12 @@ void EmitConvertU32U64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 
 void EmitConvertF16F32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF32F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF32F64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -131,52 +131,52 @@ void EmitConvertF64F32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 
 void EmitConvertF16S8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF16S16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF16S32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF16S64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF16U8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF16U16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF16U32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF16U64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF32S8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF32S16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF32S32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -191,7 +191,7 @@ void EmitConvertF32S64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 
 void EmitConvertF32U8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF32U16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -211,12 +211,12 @@ void EmitConvertF32U64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 
 void EmitConvertF64S8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF64S16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF64S32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -231,12 +231,12 @@ void EmitConvertF64S64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 
 void EmitConvertF64U8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                       [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF64U16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitConvertF64U32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,

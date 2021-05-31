@@ -36,7 +36,7 @@ void EmitConditionRef(EmitContext& ctx, IR::Inst& inst, const IR::Value& value) 
 }
 
 void EmitBitCastU16F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBitCastU32F32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
@@ -48,7 +48,7 @@ void EmitBitCastU64F64(EmitContext& ctx, IR::Inst& inst, std::string_view value)
 }
 
 void EmitBitCastF16U16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst) {
-    throw NotImplementedException("GLSL Instruction");
+    NotImplemented();
 }
 
 void EmitBitCastF32U32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
