@@ -90,13 +90,19 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr, Scal
             ctx.Add("MOV.F {}.x,{}.position.{};", inst, ctx.attrib_name, swizzle);
         }
         break;
-    case IR::Attribute::TessellationEvaluationPointU:
-    case IR::Attribute::TessellationEvaluationPointV:
-        ctx.Add("MOV.F {}.x,vertex.tesscoord.{};", inst, swizzle);
+    case IR::Attribute::ColorFrontDiffuseR:
+    case IR::Attribute::ColorFrontDiffuseG:
+    case IR::Attribute::ColorFrontDiffuseB:
+    case IR::Attribute::ColorFrontDiffuseA:
+        ctx.Add("MOV.F {}.x,{}.color.{};", inst, ctx.attrib_name, swizzle);
         break;
     case IR::Attribute::PointSpriteS:
     case IR::Attribute::PointSpriteT:
         ctx.Add("MOV.F {}.x,{}.pointcoord.{};", inst, ctx.attrib_name, swizzle);
+        break;
+    case IR::Attribute::TessellationEvaluationPointU:
+    case IR::Attribute::TessellationEvaluationPointV:
+        ctx.Add("MOV.F {}.x,vertex.tesscoord.{};", inst, swizzle);
         break;
     case IR::Attribute::InstanceId:
         ctx.Add("MOV.S {}.x,{}.instance;", inst, ctx.attrib_name);
@@ -121,28 +127,13 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, ScalarF32 value,
         ctx.Add("MOV.F out_attr{}[0].{},{};", index, swizzle, value);
         return;
     }
-    switch (attr) {
-    case IR::Attribute::PointSize:
-        ctx.Add("MOV.F result.pointsize.x,{};", value);
-        break;
-    case IR::Attribute::PositionX:
-    case IR::Attribute::PositionY:
-    case IR::Attribute::PositionZ:
-    case IR::Attribute::PositionW:
-        ctx.Add("MOV.F result.position.{},{};", swizzle, value);
-        break;
-    case IR::Attribute::ClipDistance0:
-    case IR::Attribute::ClipDistance1:
-    case IR::Attribute::ClipDistance2:
-    case IR::Attribute::ClipDistance3:
-    case IR::Attribute::ClipDistance4:
-    case IR::Attribute::ClipDistance5:
-    case IR::Attribute::ClipDistance6:
-    case IR::Attribute::ClipDistance7: {
-        const u32 index{static_cast<u32>(attr) - static_cast<u32>(IR::Attribute::ClipDistance0)};
-        ctx.Add("MOV.F result.clip[{}].x,{};", index, value);
-        break;
+    if (attr >= IR::Attribute::FixedFncTexture0S && attr <= IR::Attribute::FixedFncTexture9R) {
+        const u32 index{
+            (static_cast<u32>(attr) - static_cast<u32>(IR::Attribute::FixedFncTexture0S)) / 4};
+        ctx.Add("MOV.F result.texcoord[{}].{},{};", index, swizzle, value);
+        return;
     }
+    switch (attr) {
     case IR::Attribute::Layer:
         if (ctx.stage == Stage::Geometry || ctx.profile.support_viewport_index_layer_non_geometry) {
             ctx.Add("MOV.F result.layer.x,{};", value);
@@ -157,6 +148,54 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, ScalarF32 value,
             // LOG_WARNING
         }
         break;
+    case IR::Attribute::PointSize:
+        ctx.Add("MOV.F result.pointsize.x,{};", value);
+        break;
+    case IR::Attribute::PositionX:
+    case IR::Attribute::PositionY:
+    case IR::Attribute::PositionZ:
+    case IR::Attribute::PositionW:
+        ctx.Add("MOV.F result.position.{},{};", swizzle, value);
+        break;
+    case IR::Attribute::ColorFrontDiffuseR:
+    case IR::Attribute::ColorFrontDiffuseG:
+    case IR::Attribute::ColorFrontDiffuseB:
+    case IR::Attribute::ColorFrontDiffuseA:
+        ctx.Add("MOV.F result.color.{},{};", swizzle, value);
+        break;
+    case IR::Attribute::ColorFrontSpecularR:
+    case IR::Attribute::ColorFrontSpecularG:
+    case IR::Attribute::ColorFrontSpecularB:
+    case IR::Attribute::ColorFrontSpecularA:
+        ctx.Add("MOV.F result.color.secondary.{},{};", swizzle, value);
+        break;
+    case IR::Attribute::ColorBackDiffuseR:
+    case IR::Attribute::ColorBackDiffuseG:
+    case IR::Attribute::ColorBackDiffuseB:
+    case IR::Attribute::ColorBackDiffuseA:
+        ctx.Add("MOV.F result.color.back.{},{};", swizzle, value);
+        break;
+    case IR::Attribute::ColorBackSpecularR:
+    case IR::Attribute::ColorBackSpecularG:
+    case IR::Attribute::ColorBackSpecularB:
+    case IR::Attribute::ColorBackSpecularA:
+        ctx.Add("MOV.F result.color.back.secondary.{},{};", swizzle, value);
+        break;
+    case IR::Attribute::FogCoordinate:
+        ctx.Add("MOV.F result.fogcoord.x,{};", value);
+        break;
+    case IR::Attribute::ClipDistance0:
+    case IR::Attribute::ClipDistance1:
+    case IR::Attribute::ClipDistance2:
+    case IR::Attribute::ClipDistance3:
+    case IR::Attribute::ClipDistance4:
+    case IR::Attribute::ClipDistance5:
+    case IR::Attribute::ClipDistance6:
+    case IR::Attribute::ClipDistance7: {
+        const u32 index{static_cast<u32>(attr) - static_cast<u32>(IR::Attribute::ClipDistance0)};
+        ctx.Add("MOV.F result.clip[{}].x,{};", index, value);
+        break;
+    }
     default:
         throw NotImplementedException("Set attribute {}", attr);
     }
