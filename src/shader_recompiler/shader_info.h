@@ -122,26 +122,39 @@ struct Info {
     std::array<InputVarying, 32> input_generics{};
     bool loads_primitive_id{};
     bool loads_position{};
+    bool loads_color_front_diffuse{};
+    bool loads_point_coord{};
     bool loads_instance_id{};
     bool loads_vertex_id{};
     bool loads_front_face{};
-    bool loads_point_coord{};
+
     bool loads_tess_coord{};
+
     bool loads_indexed_attributes{};
 
     std::array<bool, 8> stores_frag_color{};
     bool stores_sample_mask{};
     bool stores_frag_depth{};
+
     std::array<bool, 32> stores_generics{};
-    bool stores_position{};
-    bool stores_point_size{};
-    bool stores_clip_distance{};
     bool stores_layer{};
     bool stores_viewport_index{};
+    bool stores_point_size{};
+    bool stores_position{};
+    bool stores_color_front_diffuse{};
+    bool stores_color_front_specular{};
+    bool stores_color_back_diffuse{};
+    bool stores_color_back_specular{};
+    bool stores_fixed_fnc_textures{};
+    bool stores_clip_distance{};
+    bool stores_fog_coordinate{};
     bool stores_viewport_mask{};
+
     bool stores_tess_level_outer{};
     bool stores_tess_level_inner{};
+
     bool stores_indexed_attributes{};
+
     bool stores_global_memory{};
 
     bool uses_fp16{};

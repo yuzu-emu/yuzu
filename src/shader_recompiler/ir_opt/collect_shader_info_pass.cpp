@@ -43,14 +43,11 @@ void GetAttribute(Info& info, IR::Attribute attribute) {
     case IR::Attribute::PositionW:
         info.loads_position = true;
         break;
-    case IR::Attribute::InstanceId:
-        info.loads_instance_id = true;
-        break;
-    case IR::Attribute::VertexId:
-        info.loads_vertex_id = true;
-        break;
-    case IR::Attribute::FrontFace:
-        info.loads_front_face = true;
+    case IR::Attribute::ColorFrontDiffuseR:
+    case IR::Attribute::ColorFrontDiffuseG:
+    case IR::Attribute::ColorFrontDiffuseB:
+    case IR::Attribute::ColorFrontDiffuseA:
+        info.loads_color_front_diffuse = true;
         break;
     case IR::Attribute::PointSpriteS:
     case IR::Attribute::PointSpriteT:
@@ -59,6 +56,15 @@ void GetAttribute(Info& info, IR::Attribute attribute) {
     case IR::Attribute::TessellationEvaluationPointU:
     case IR::Attribute::TessellationEvaluationPointV:
         info.loads_tess_coord = true;
+        break;
+    case IR::Attribute::InstanceId:
+        info.loads_instance_id = true;
+        break;
+    case IR::Attribute::VertexId:
+        info.loads_vertex_id = true;
+        break;
+    case IR::Attribute::FrontFace:
+        info.loads_front_face = true;
         break;
     default:
         throw NotImplementedException("Get attribute {}", attribute);
@@ -71,6 +77,12 @@ void SetAttribute(Info& info, IR::Attribute attribute) {
         return;
     }
     switch (attribute) {
+    case IR::Attribute::Layer:
+        info.stores_layer = true;
+        break;
+    case IR::Attribute::ViewportIndex:
+        info.stores_viewport_index = true;
+        break;
     case IR::Attribute::PointSize:
         info.stores_point_size = true;
         break;
@@ -79,6 +91,72 @@ void SetAttribute(Info& info, IR::Attribute attribute) {
     case IR::Attribute::PositionZ:
     case IR::Attribute::PositionW:
         info.stores_position = true;
+        break;
+    case IR::Attribute::ColorFrontDiffuseR:
+    case IR::Attribute::ColorFrontDiffuseG:
+    case IR::Attribute::ColorFrontDiffuseB:
+    case IR::Attribute::ColorFrontDiffuseA:
+        info.stores_color_front_diffuse = true;
+        break;
+    case IR::Attribute::ColorFrontSpecularR:
+    case IR::Attribute::ColorFrontSpecularG:
+    case IR::Attribute::ColorFrontSpecularB:
+    case IR::Attribute::ColorFrontSpecularA:
+        info.stores_color_front_specular = true;
+        break;
+    case IR::Attribute::ColorBackDiffuseR:
+    case IR::Attribute::ColorBackDiffuseG:
+    case IR::Attribute::ColorBackDiffuseB:
+    case IR::Attribute::ColorBackDiffuseA:
+        info.stores_color_back_diffuse = true;
+        break;
+    case IR::Attribute::ColorBackSpecularR:
+    case IR::Attribute::ColorBackSpecularG:
+    case IR::Attribute::ColorBackSpecularB:
+    case IR::Attribute::ColorBackSpecularA:
+        info.stores_color_front_specular = true;
+        break;
+    case IR::Attribute::FixedFncTexture0S:
+    case IR::Attribute::FixedFncTexture0T:
+    case IR::Attribute::FixedFncTexture0R:
+    case IR::Attribute::FixedFncTexture0Q:
+    case IR::Attribute::FixedFncTexture1S:
+    case IR::Attribute::FixedFncTexture1T:
+    case IR::Attribute::FixedFncTexture1R:
+    case IR::Attribute::FixedFncTexture1Q:
+    case IR::Attribute::FixedFncTexture2S:
+    case IR::Attribute::FixedFncTexture2T:
+    case IR::Attribute::FixedFncTexture2R:
+    case IR::Attribute::FixedFncTexture2Q:
+    case IR::Attribute::FixedFncTexture3S:
+    case IR::Attribute::FixedFncTexture3T:
+    case IR::Attribute::FixedFncTexture3R:
+    case IR::Attribute::FixedFncTexture3Q:
+    case IR::Attribute::FixedFncTexture4S:
+    case IR::Attribute::FixedFncTexture4T:
+    case IR::Attribute::FixedFncTexture4R:
+    case IR::Attribute::FixedFncTexture4Q:
+    case IR::Attribute::FixedFncTexture5S:
+    case IR::Attribute::FixedFncTexture5T:
+    case IR::Attribute::FixedFncTexture5R:
+    case IR::Attribute::FixedFncTexture5Q:
+    case IR::Attribute::FixedFncTexture6S:
+    case IR::Attribute::FixedFncTexture6T:
+    case IR::Attribute::FixedFncTexture6R:
+    case IR::Attribute::FixedFncTexture6Q:
+    case IR::Attribute::FixedFncTexture7S:
+    case IR::Attribute::FixedFncTexture7T:
+    case IR::Attribute::FixedFncTexture7R:
+    case IR::Attribute::FixedFncTexture7Q:
+    case IR::Attribute::FixedFncTexture8S:
+    case IR::Attribute::FixedFncTexture8T:
+    case IR::Attribute::FixedFncTexture8R:
+    case IR::Attribute::FixedFncTexture8Q:
+    case IR::Attribute::FixedFncTexture9S:
+    case IR::Attribute::FixedFncTexture9T:
+    case IR::Attribute::FixedFncTexture9R:
+    case IR::Attribute::FixedFncTexture9Q:
+        info.stores_fixed_fnc_textures = true;
         break;
     case IR::Attribute::ClipDistance0:
     case IR::Attribute::ClipDistance1:
@@ -90,11 +168,8 @@ void SetAttribute(Info& info, IR::Attribute attribute) {
     case IR::Attribute::ClipDistance7:
         info.stores_clip_distance = true;
         break;
-    case IR::Attribute::Layer:
-        info.stores_layer = true;
-        break;
-    case IR::Attribute::ViewportIndex:
-        info.stores_viewport_index = true;
+    case IR::Attribute::FogCoordinate:
+        info.stores_fog_coordinate = true;
         break;
     case IR::Attribute::ViewportMask:
         info.stores_viewport_mask = true;
