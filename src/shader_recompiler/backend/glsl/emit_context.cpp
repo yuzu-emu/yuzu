@@ -126,6 +126,8 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
 void EmitContext::SetupExtensions(std::string&) {
     // TODO: track this usage
     header += "#extension GL_ARB_sparse_texture2 : enable\n";
+    header += "#extension GL_ARB_shader_viewport_layer_array : enable\n";
+    header += "#extension GL_NV_viewport_array2 : enable\n";
     header += "#extension GL_EXT_texture_shadow_lod : enable\n";
     if (info.uses_int64) {
         header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
@@ -243,9 +245,13 @@ void EmitContext::SetupImages(Bindings& bindings) {
     }
     texture_buffer_bindings.reserve(info.texture_buffer_descriptors.size());
     for (const auto& desc : info.texture_buffer_descriptors) {
-        throw NotImplementedException("TextureType::Buffer");
-
         texture_buffer_bindings.push_back(bindings.texture);
+        const auto sampler_type{SamplerType(TextureType::Buffer, false)};
+        const auto indices{bindings.texture + desc.count};
+        for (u32 index = bindings.texture; index < indices; ++index) {
+            header += fmt::format("layout(binding={}) uniform {} tex{};", bindings.texture,
+                                  sampler_type, index);
+        }
         bindings.texture += desc.count;
     }
     texture_bindings.reserve(info.texture_descriptors.size());

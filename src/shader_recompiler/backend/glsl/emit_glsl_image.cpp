@@ -71,7 +71,7 @@ std::string PtpOffsets(const IR::Value& offset, const IR::Value& offset2) {
     const std::array values{offset.InstRecursive(), offset2.InstRecursive()};
     if (!values[0]->AreAllArgsImmediates() || !values[1]->AreAllArgsImmediates()) {
         // LOG_WARNING("Not all arguments in PTP are immediate, STUBBING");
-        return "";
+        return "ivec2[](ivec2(0), ivec2(1), ivec2(2), ivec2(3))";
     }
     const IR::Opcode opcode{values[0]->GetOpcode()};
     if (opcode != values[1]->GetOpcode() || opcode != IR::Opcode::CompositeConstructU32x4) {
@@ -340,8 +340,8 @@ void EmitImageFetch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
                   *sparse_inst, texture, CastToIntVec(coords, info), lod,
                   CastToIntVec(offset, info), texel);
     } else {
-        ctx.AddU1("{}=sparseTexelsResidentARB(sparseTexelFetchARB({},{},{},{}));", *sparse_inst,
-                  texture, CastToIntVec(coords, info), lod, texel);
+        ctx.AddU1("{}=sparseTexelsResidentARB(sparseTexelFetchARB({},{},int({}),{}));",
+                  *sparse_inst, texture, CastToIntVec(coords, info), lod, texel);
     }
 }
 

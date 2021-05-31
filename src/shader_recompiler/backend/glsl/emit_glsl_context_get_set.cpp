@@ -186,6 +186,9 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     case IR::Attribute::PositionW:
         ctx.Add("gl_Position.{}={};", swizzle, value);
         break;
+    case IR::Attribute::ViewportIndex:
+        ctx.Add("gl_ViewportIndex=floatBitsToInt({});", value);
+        break;
     case IR::Attribute::ClipDistance0:
     case IR::Attribute::ClipDistance1:
     case IR::Attribute::ClipDistance2:
