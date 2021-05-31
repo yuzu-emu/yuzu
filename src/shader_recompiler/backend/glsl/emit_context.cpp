@@ -110,8 +110,11 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         header += fmt::format("layout(location={})out vec4 frag_color{};", index, index);
     }
     for (size_t index = 0; index < info.stores_generics.size(); ++index) {
-        if (info.stores_generics[index]) {
-            header += fmt::format("layout(location={}) out vec4 out_attr{};", index, index);
+        // TODO: Properly resolve attribute issues
+        const auto declaration{
+            fmt::format("layout(location={}) out vec4 out_attr{};", index, index)};
+        if (info.stores_generics[index] || stage == Stage::VertexA || stage == Stage::VertexB) {
+            header += declaration;
         }
     }
     DefineConstantBuffers(bindings);
