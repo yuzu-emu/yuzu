@@ -20,7 +20,7 @@ static constexpr std::string_view cas_loop{R"(for (;;){{
 void SharedCasFunction(EmitContext& ctx, IR::Inst& inst, std::string_view offset,
                        std::string_view value, std::string_view function) {
     const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
-    const std::string smem{fmt::format("smem[{}/4]", offset)};
+    const std::string smem{fmt::format("smem[{}>>2]", offset)};
     ctx.Add(cas_loop.data(), smem, ret, smem, function, smem, value, ret);
 }
 
@@ -45,7 +45,7 @@ void SsboCasFunctionF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& bindi
 
 void EmitSharedAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                             std::string_view value) {
-    ctx.AddU32("{}=atomicAdd(smem[{}/4],{});", inst, pointer_offset, value);
+    ctx.AddU32("{}=atomicAdd(smem[{}>>2],{});", inst, pointer_offset, value);
 }
 
 void EmitSharedAtomicSMin32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
@@ -56,7 +56,7 @@ void EmitSharedAtomicSMin32(EmitContext& ctx, IR::Inst& inst, std::string_view p
 
 void EmitSharedAtomicUMin32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                             std::string_view value) {
-    ctx.AddU32("{}=atomicMin(smem[{}/4],{});", inst, pointer_offset, value);
+    ctx.AddU32("{}=atomicMin(smem[{}>>2],{});", inst, pointer_offset, value);
 }
 
 void EmitSharedAtomicSMax32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
@@ -67,7 +67,7 @@ void EmitSharedAtomicSMax32(EmitContext& ctx, IR::Inst& inst, std::string_view p
 
 void EmitSharedAtomicUMax32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                             std::string_view value) {
-    ctx.AddU32("{}=atomicMax(smem[{}/4],{});", inst, pointer_offset, value);
+    ctx.AddU32("{}=atomicMax(smem[{}>>2],{});", inst, pointer_offset, value);
 }
 
 void EmitSharedAtomicInc32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
@@ -82,31 +82,31 @@ void EmitSharedAtomicDec32(EmitContext& ctx, IR::Inst& inst, std::string_view po
 
 void EmitSharedAtomicAnd32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                            std::string_view value) {
-    ctx.AddU32("{}=atomicAnd(smem[{}/4],{});", inst, pointer_offset, value);
+    ctx.AddU32("{}=atomicAnd(smem[{}>>2],{});", inst, pointer_offset, value);
 }
 
 void EmitSharedAtomicOr32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                           std::string_view value) {
-    ctx.AddU32("{}=atomicOr(smem[{}/4],{});", inst, pointer_offset, value);
+    ctx.AddU32("{}=atomicOr(smem[{}>>2],{});", inst, pointer_offset, value);
 }
 
 void EmitSharedAtomicXor32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                            std::string_view value) {
-    ctx.AddU32("{}=atomicXor(smem[{}/4],{});", inst, pointer_offset, value);
+    ctx.AddU32("{}=atomicXor(smem[{}>>2],{});", inst, pointer_offset, value);
 }
 
 void EmitSharedAtomicExchange32(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                                 std::string_view value) {
-    ctx.AddU32("{}=atomicExchange(smem[{}/4],{});", inst, pointer_offset, value);
+    ctx.AddU32("{}=atomicExchange(smem[{}>>2],{});", inst, pointer_offset, value);
 }
 
 void EmitSharedAtomicExchange64(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                                 std::string_view value) {
     // LOG_WARNING("Int64 Atomics not supported, fallback to non-atomic");
-    ctx.AddU64("{}=packUint2x32(uvec2(smem[{}/4],smem[({}+4)/4]));", inst, pointer_offset,
+    ctx.AddU64("{}=packUint2x32(uvec2(smem[{}>>2],smem[({}+4)>>2]));", inst, pointer_offset,
                pointer_offset);
-    ctx.Add("smem[{}/4]=unpackUint2x32({}).x;smem[({}+4)/4]=unpackUint2x32({}).y;", pointer_offset,
-            value, pointer_offset, value);
+    ctx.Add("smem[{}>>2]=unpackUint2x32({}).x;smem[({}+4)>>2]=unpackUint2x32({}).y;",
+            pointer_offset, value, pointer_offset, value);
 }
 
 void EmitStorageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
