@@ -122,7 +122,7 @@ std::optional<OutAttr> OutputAttrPointer(EmitContext& ctx, IR::Attribute attr) {
 }
 
 Id GetCbuf(EmitContext& ctx, Id result_type, Id UniformDefinitions::*member_ptr, u32 element_size,
-           const IR::Value& binding, const IR::Value& offset, bool check_alignment = true) {
+           const IR::Value& binding, const IR::Value& offset) {
     if (!binding.IsImmediate()) {
         throw NotImplementedException("Constant buffer indexing");
     }
@@ -138,17 +138,14 @@ Id GetCbuf(EmitContext& ctx, Id result_type, Id UniformDefinitions::*member_ptr,
         const Id access_chain{ctx.OpAccessChain(uniform_type, cbuf, ctx.u32_zero_value, index)};
         return ctx.OpLoad(result_type, access_chain);
     }
-    if (check_alignment && offset.U32() % element_size != 0) {
-        throw NotImplementedException("Unaligned immediate constant buffer load");
-    }
+    // Hardware been proved to read the aligned offset (e.g. LDC.U32 at 6 will read offset 4)
     const Id imm_offset{ctx.Const(offset.U32() / element_size)};
     const Id access_chain{ctx.OpAccessChain(uniform_type, cbuf, ctx.u32_zero_value, imm_offset)};
     return ctx.OpLoad(result_type, access_chain);
 }
 
 Id GetCbufU32x4(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    return GetCbuf(ctx, ctx.U32[4], &UniformDefinitions::U32x4, sizeof(u32[4]), binding, offset,
-                   false);
+    return GetCbuf(ctx, ctx.U32[4], &UniformDefinitions::U32x4, sizeof(u32[4]), binding, offset);
 }
 
 Id GetCbufElement(EmitContext& ctx, Id vector, const IR::Value& offset, u32 index_offset) {
