@@ -100,7 +100,7 @@ void EmitImageSampleImplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
                                 [[maybe_unused]] const IR::Value& offset) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     if (info.has_lod_clamp) {
-        throw NotImplementedException("Lod clamp samples");
+        throw NotImplementedException("EmitImageSampleImplicitLod Lod clamp samples");
     }
     const auto texture{Texture(ctx, info, index)};
     const auto bias{info.has_bias ? fmt::format(",{}", bias_lc) : ""};
@@ -108,8 +108,12 @@ void EmitImageSampleImplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
     const auto sparse_inst{PrepareSparse(inst)};
     if (!sparse_inst) {
         if (!offset.IsEmpty()) {
-            ctx.Add("{}=textureOffset({},{},{}{});", texel, texture, coords,
-                    CastToIntVec(ctx.var_alloc.Consume(offset), info), bias);
+            const auto offset_str{CastToIntVec(ctx.var_alloc.Consume(offset), info)};
+            if (ctx.stage == Stage::Fragment) {
+                ctx.Add("{}=textureOffset({},{},{}{});", texel, texture, coords, offset_str, bias);
+            } else {
+                ctx.Add("{}=textureLodOffset({},{},0.0,{});", texel, texture, coords, offset_str);
+            }
         } else {
             if (ctx.stage == Stage::Fragment) {
                 ctx.Add("{}=texture({},{}{});", texel, texture, coords, bias);
@@ -137,10 +141,10 @@ void EmitImageSampleExplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
                                 [[maybe_unused]] const IR::Value& offset) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     if (info.has_bias) {
-        throw NotImplementedException("Bias texture samples");
+        throw NotImplementedException("EmitImageSampleExplicitLod Bias texture samples");
     }
     if (info.has_lod_clamp) {
-        throw NotImplementedException("Lod clamp samples");
+        throw NotImplementedException("EmitImageSampleExplicitLod Lod clamp samples");
     }
     const auto texture{Texture(ctx, info, index)};
     const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
@@ -175,24 +179,32 @@ void EmitImageSampleDrefImplicitLod([[maybe_unused]] EmitContext& ctx,
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto sparse_inst{PrepareSparse(inst)};
     if (sparse_inst) {
-        throw NotImplementedException("Sparse texture samples");
+        throw NotImplementedException("EmitImageSampleDrefImplicitLod Sparse texture samples");
     }
     if (info.has_bias) {
-        throw NotImplementedException("Bias texture samples");
+        throw NotImplementedException("EmitImageSampleDrefImplicitLod Bias texture samples");
     }
     if (info.has_lod_clamp) {
-        throw NotImplementedException("Lod clamp samples");
-    }
-    if (!offset.IsEmpty()) {
-        throw NotImplementedException("textureLodOffset");
+        throw NotImplementedException("EmitImageSampleDrefImplicitLod Lod clamp samples");
     }
     const auto texture{Texture(ctx, info, index)};
     const auto bias{info.has_bias ? fmt::format(",{}", bias_lc) : ""};
     const auto cast{ShadowSamplerVecCast(info.type)};
-    if (ctx.stage == Stage::Fragment) {
-        ctx.AddF32("{}=texture({},{}({},{}){});", inst, texture, cast, coords, dref, bias);
+    if (!offset.IsEmpty()) {
+        const auto offset_str{CastToIntVec(ctx.var_alloc.Consume(offset), info)};
+        if (ctx.stage == Stage::Fragment) {
+            ctx.AddF32("{}=textureOffset({},{}({},{}),{}{});", inst, texture, cast, coords, dref,
+                       offset_str, bias);
+        } else {
+            ctx.AddF32("{}=textureLodOffset({},{}({},{}),0.0,{});", inst, texture, cast, coords,
+                       dref, offset_str);
+        }
     } else {
-        ctx.AddF32("{}=textureLod({},{}({},{}),0.0);", inst, texture, cast, coords, dref);
+        if (ctx.stage == Stage::Fragment) {
+            ctx.AddF32("{}=texture({},{}({},{}){});", inst, texture, cast, coords, dref, bias);
+        } else {
+            ctx.AddF32("{}=textureLod({},{}({},{}),0.0);", inst, texture, cast, coords, dref);
+        }
     }
 }
 
@@ -206,22 +218,30 @@ void EmitImageSampleDrefExplicitLod([[maybe_unused]] EmitContext& ctx,
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto sparse_inst{PrepareSparse(inst)};
     if (sparse_inst) {
-        throw NotImplementedException("Sparse texture samples");
+        throw NotImplementedException("EmitImageSampleDrefExplicitLod Sparse texture samples");
     }
     if (info.has_bias) {
-        throw NotImplementedException("Bias texture samples");
+        throw NotImplementedException("EmitImageSampleDrefExplicitLod Bias texture samples");
     }
     if (info.has_lod_clamp) {
-        throw NotImplementedException("Lod clamp samples");
-    }
-    if (!offset.IsEmpty()) {
-        throw NotImplementedException("textureLodOffset");
+        throw NotImplementedException("EmitImageSampleDrefExplicitLod Lod clamp samples");
     }
     const auto texture{Texture(ctx, info, index)};
-    if (info.type == TextureType::ColorArrayCube) {
-        ctx.AddF32("{}=textureLod({},{},{},{});", inst, texture, coords, dref, lod_lc);
+    if (!offset.IsEmpty()) {
+        const auto offset_str{CastToIntVec(ctx.var_alloc.Consume(offset), info)};
+        if (info.type == TextureType::ColorArrayCube) {
+            ctx.AddF32("{}=textureLodOffset({},{},{},{},{});", inst, texture, coords, dref, lod_lc,
+                       offset_str);
+        } else {
+            ctx.AddF32("{}=textureLodOffset({},vec3({},{}),{},{});", inst, texture, coords, dref,
+                       lod_lc, offset_str);
+        }
     } else {
-        ctx.AddF32("{}=textureLod({},vec3({},{}),{});", inst, texture, coords, dref, lod_lc);
+        if (info.type == TextureType::ColorArrayCube) {
+            ctx.AddF32("{}=textureLod({},{},{},{});", inst, texture, coords, dref, lod_lc);
+        } else {
+            ctx.AddF32("{}=textureLod({},vec3({},{}),{});", inst, texture, coords, dref, lod_lc);
+        }
     }
 }
 
@@ -316,10 +336,10 @@ void EmitImageFetch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
                     [[maybe_unused]] std::string_view ms) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     if (info.has_bias) {
-        throw NotImplementedException("Bias texture samples");
+        throw NotImplementedException("EmitImageFetch Bias texture samples");
     }
     if (info.has_lod_clamp) {
-        throw NotImplementedException("Lod clamp samples");
+        throw NotImplementedException("EmitImageFetch Lod clamp samples");
     }
     const auto texture{Texture(ctx, info, index)};
     const auto sparse_inst{PrepareSparse(inst)};
@@ -368,7 +388,7 @@ void EmitImageQueryDimensions([[maybe_unused]] EmitContext& ctx, [[maybe_unused]
             "{}=uvec4(uvec3(textureSize({},int({}))),uint(textureQueryLevels({})));", inst, texture,
             lod, texture);
     case TextureType::Buffer:
-        throw NotImplementedException("Texture buffers");
+        throw NotImplementedException("EmitImageQueryDimensions Texture buffers");
     }
     throw LogicError("Unspecified image type {}", info.type.Value());
 }
@@ -384,10 +404,31 @@ void EmitImageQueryLod([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 void EmitImageGradient([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] const IR::Value& index,
                        [[maybe_unused]] std::string_view coords,
-                       [[maybe_unused]] std::string_view derivates,
-                       [[maybe_unused]] std::string_view offset,
-                       [[maybe_unused]] std::string_view lod_clamp) {
-    NotImplemented();
+                       [[maybe_unused]] const IR::Value& derivatives,
+                       [[maybe_unused]] const IR::Value& offset,
+                       [[maybe_unused]] const IR::Value& lod_clamp) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    if (info.has_lod_clamp) {
+        throw NotImplementedException("EmitImageGradient Lod clamp samples");
+    }
+    const auto sparse_inst{PrepareSparse(inst)};
+    if (sparse_inst) {
+        throw NotImplementedException("EmitImageGradient Sparse");
+    }
+    if (!offset.IsEmpty()) {
+        throw NotImplementedException("EmitImageGradient offset");
+    }
+    const auto texture{Texture(ctx, info, index)};
+    const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
+    const bool multi_component{info.num_derivates > 1 || info.has_lod_clamp};
+    const auto derivatives_vec{ctx.var_alloc.Consume(derivatives)};
+    if (multi_component) {
+        ctx.Add("{}=textureGrad({},{},vec2({}.xz),vec2({}.yz));", texel, texture, coords,
+                derivatives_vec, derivatives_vec);
+    } else {
+        ctx.Add("{}=textureGrad({},{},float({}.x),float({}.y));", texel, texture, coords,
+                derivatives_vec, derivatives_vec);
+    }
 }
 
 void EmitImageRead([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
