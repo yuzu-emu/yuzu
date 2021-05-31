@@ -123,6 +123,7 @@ struct Info {
     bool loads_primitive_id{};
     bool loads_position{};
     bool loads_color_front_diffuse{};
+    bool loads_fixed_fnc_textures{};
     bool loads_point_coord{};
     bool loads_instance_id{};
     bool loads_vertex_id{};

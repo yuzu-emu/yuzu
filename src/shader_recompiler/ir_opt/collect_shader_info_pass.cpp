@@ -28,12 +28,16 @@ void AddConstantBufferDescriptor(Info& info, u32 index, u32 count) {
                  });
 }
 
-void GetAttribute(Info& info, IR::Attribute attribute) {
-    if (IR::IsGeneric(attribute)) {
-        info.input_generics.at(IR::GenericAttributeIndex(attribute)).used = true;
+void GetAttribute(Info& info, IR::Attribute attr) {
+    if (IR::IsGeneric(attr)) {
+        info.input_generics.at(IR::GenericAttributeIndex(attr)).used = true;
         return;
     }
-    switch (attribute) {
+    if (attr >= IR::Attribute::FixedFncTexture0S && attr <= IR::Attribute::FixedFncTexture9Q) {
+        info.loads_fixed_fnc_textures = true;
+        return;
+    }
+    switch (attr) {
     case IR::Attribute::PrimitiveId:
         info.loads_primitive_id = true;
         break;
@@ -67,16 +71,20 @@ void GetAttribute(Info& info, IR::Attribute attribute) {
         info.loads_front_face = true;
         break;
     default:
-        throw NotImplementedException("Get attribute {}", attribute);
+        throw NotImplementedException("Get attribute {}", attr);
     }
 }
 
-void SetAttribute(Info& info, IR::Attribute attribute) {
-    if (IR::IsGeneric(attribute)) {
-        info.stores_generics.at(IR::GenericAttributeIndex(attribute)) = true;
+void SetAttribute(Info& info, IR::Attribute attr) {
+    if (IR::IsGeneric(attr)) {
+        info.stores_generics.at(IR::GenericAttributeIndex(attr)) = true;
         return;
     }
-    switch (attribute) {
+    if (attr >= IR::Attribute::FixedFncTexture0S && attr <= IR::Attribute::FixedFncTexture9Q) {
+        info.stores_fixed_fnc_textures = true;
+        return;
+    }
+    switch (attr) {
     case IR::Attribute::Layer:
         info.stores_layer = true;
         break;
@@ -116,48 +124,6 @@ void SetAttribute(Info& info, IR::Attribute attribute) {
     case IR::Attribute::ColorBackSpecularA:
         info.stores_color_front_specular = true;
         break;
-    case IR::Attribute::FixedFncTexture0S:
-    case IR::Attribute::FixedFncTexture0T:
-    case IR::Attribute::FixedFncTexture0R:
-    case IR::Attribute::FixedFncTexture0Q:
-    case IR::Attribute::FixedFncTexture1S:
-    case IR::Attribute::FixedFncTexture1T:
-    case IR::Attribute::FixedFncTexture1R:
-    case IR::Attribute::FixedFncTexture1Q:
-    case IR::Attribute::FixedFncTexture2S:
-    case IR::Attribute::FixedFncTexture2T:
-    case IR::Attribute::FixedFncTexture2R:
-    case IR::Attribute::FixedFncTexture2Q:
-    case IR::Attribute::FixedFncTexture3S:
-    case IR::Attribute::FixedFncTexture3T:
-    case IR::Attribute::FixedFncTexture3R:
-    case IR::Attribute::FixedFncTexture3Q:
-    case IR::Attribute::FixedFncTexture4S:
-    case IR::Attribute::FixedFncTexture4T:
-    case IR::Attribute::FixedFncTexture4R:
-    case IR::Attribute::FixedFncTexture4Q:
-    case IR::Attribute::FixedFncTexture5S:
-    case IR::Attribute::FixedFncTexture5T:
-    case IR::Attribute::FixedFncTexture5R:
-    case IR::Attribute::FixedFncTexture5Q:
-    case IR::Attribute::FixedFncTexture6S:
-    case IR::Attribute::FixedFncTexture6T:
-    case IR::Attribute::FixedFncTexture6R:
-    case IR::Attribute::FixedFncTexture6Q:
-    case IR::Attribute::FixedFncTexture7S:
-    case IR::Attribute::FixedFncTexture7T:
-    case IR::Attribute::FixedFncTexture7R:
-    case IR::Attribute::FixedFncTexture7Q:
-    case IR::Attribute::FixedFncTexture8S:
-    case IR::Attribute::FixedFncTexture8T:
-    case IR::Attribute::FixedFncTexture8R:
-    case IR::Attribute::FixedFncTexture8Q:
-    case IR::Attribute::FixedFncTexture9S:
-    case IR::Attribute::FixedFncTexture9T:
-    case IR::Attribute::FixedFncTexture9R:
-    case IR::Attribute::FixedFncTexture9Q:
-        info.stores_fixed_fnc_textures = true;
-        break;
     case IR::Attribute::ClipDistance0:
     case IR::Attribute::ClipDistance1:
     case IR::Attribute::ClipDistance2:
@@ -175,7 +141,7 @@ void SetAttribute(Info& info, IR::Attribute attribute) {
         info.stores_viewport_mask = true;
         break;
     default:
-        throw NotImplementedException("Set attribute {}", attribute);
+        throw NotImplementedException("Set attribute {}", attr);
     }
 }
 
