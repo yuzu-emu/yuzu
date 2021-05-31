@@ -211,8 +211,8 @@ void EmitSampleId(EmitContext& ctx, IR::Inst& inst) {
     NotImplemented();
 }
 
-void EmitIsHelperInvocation(EmitContext& ctx) {
-    NotImplemented();
+void EmitIsHelperInvocation(EmitContext& ctx, IR::Inst& inst) {
+    ctx.AddU1("{}=gl_HelperInvocation;", inst);
 }
 
 void EmitYDirection(EmitContext& ctx, IR::Inst& inst) {
