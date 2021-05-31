@@ -122,14 +122,14 @@ IR::F64 TranslatorVisitor::GetDoubleReg39(u64 insn) {
 static std::pair<IR::U32, IR::U32> CbufAddr(u64 insn) {
     union {
         u64 raw;
-        BitField<20, 14, s64> offset;
+        BitField<20, 14, u64> offset;
         BitField<34, 5, u64> binding;
     } const cbuf{insn};
 
     if (cbuf.binding >= 18) {
         throw NotImplementedException("Out of bounds constant buffer binding {}", cbuf.binding);
     }
-    if (cbuf.offset >= 0x10'000 || cbuf.offset < 0) {
+    if (cbuf.offset >= 0x10'000) {
         throw NotImplementedException("Out of bounds constant buffer offset {}", cbuf.offset);
     }
     const IR::Value binding{static_cast<u32>(cbuf.binding)};

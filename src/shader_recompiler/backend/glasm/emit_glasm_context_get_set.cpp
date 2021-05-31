@@ -18,6 +18,14 @@ void GetCbuf(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, ScalarU
         throw NotImplementedException("Indirect constant buffer loading");
     }
     const Register ret{ctx.reg_alloc.Define(inst)};
+    if (offset.type == Type::U32) {
+        // Avoid reading arrays out of bounds, matching hardware's behavior
+        const u32 imm_offset{offset.imm_u32};
+        if (offset.imm_u32 >= 0x10'000) {
+            ctx.Add("MOV.S {},0;", ret);
+            return;
+        }
+    }
     ctx.Add("LDC.{} {},c{}[{}];", size, ret, binding.U32(), offset);
 }
 
