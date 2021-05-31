@@ -121,7 +121,6 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
 }
 
 void EmitContext::SetupExtensions(std::string&) {
-    header += "#extension GL_ARB_separate_shader_objects : enable\n";
     // TODO: track this usage
     header += "#extension GL_ARB_sparse_texture2 : enable\n";
     header += "#extension GL_EXT_texture_shadow_lod : enable\n";
@@ -171,11 +170,13 @@ void EmitContext::DefineStorageBuffers(Bindings& bindings) {
     if (info.storage_buffers_descriptors.empty()) {
         return;
     }
+    u32 index{};
     for (const auto& desc : info.storage_buffers_descriptors) {
-        header +=
-            fmt::format("layout(std430,binding={}) buffer ssbo_{}{{uint ssbo{}[];}};",
-                        bindings.storage_buffer, bindings.storage_buffer, bindings.storage_buffer);
+        header += fmt::format("layout(std430,binding={}) buffer {}_ssbo_{}{{uint {}_ssbo{}[];}};",
+                              bindings.storage_buffer, stage_name, bindings.storage_buffer,
+                              stage_name, index);
         bindings.storage_buffer += desc.count;
+        index += desc.count;
     }
 }
 

@@ -27,14 +27,16 @@ void SharedCasFunction(EmitContext& ctx, IR::Inst& inst, std::string_view offset
 void SsboCasFunction(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                      const IR::Value& offset, std::string_view value, std::string_view function) {
     const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
-    const std::string ssbo{fmt::format("ssbo{}[{}]", binding.U32(), offset.U32())};
+    const std::string ssbo{
+        fmt::format("{}_ssbo{}[{}]", ctx.stage_name, binding.U32(), offset.U32())};
     ctx.Add(cas_loop.data(), ssbo, ret, ssbo, function, ssbo, value, ret);
 }
 
 void SsboCasFunctionF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                         const IR::Value& offset, std::string_view value,
                         std::string_view function) {
-    const std::string ssbo{fmt::format("ssbo{}[{}]", binding.U32(), offset.U32())};
+    const std::string ssbo{
+        fmt::format("{}_ssbo{}[{}]", ctx.stage_name, binding.U32(), offset.U32())};
     const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     ctx.Add(cas_loop.data(), ssbo, ret, ssbo, function, ssbo, value, ret);
     ctx.AddF32("{}=uintBitsToFloat({});", inst, ret);
@@ -109,7 +111,8 @@ void EmitSharedAtomicExchange64(EmitContext& ctx, IR::Inst& inst, std::string_vi
 
 void EmitStorageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
-    ctx.AddU32("{}=atomicAdd(ssbo{}[{}],{});", inst, binding.U32(), offset.U32(), value);
+    ctx.AddU32("{}=atomicAdd({}_ssbo{}[{}],{});", inst, ctx.stage_name, binding.U32(), offset.U32(),
+               value);
 }
 
 void EmitStorageAtomicSMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -120,7 +123,8 @@ void EmitStorageAtomicSMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 
 void EmitStorageAtomicUMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
-    ctx.AddU32("{}=atomicMin(ssbo{}[{}],{});", inst, binding.U32(), offset.U32(), value);
+    ctx.AddU32("{}=atomicMin({}_ssbo{}[{}],{});", inst, ctx.stage_name, binding.U32(), offset.U32(),
+               value);
 }
 
 void EmitStorageAtomicSMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -131,7 +135,8 @@ void EmitStorageAtomicSMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 
 void EmitStorageAtomicUMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
-    ctx.AddU32("{}=atomicMax(ssbo{}[{}],{});", inst, binding.U32(), offset.U32(), value);
+    ctx.AddU32("{}=atomicMax({}_ssbo{}[{}],{});", inst, ctx.stage_name, binding.U32(), offset.U32(),
+               value);
 }
 
 void EmitStorageAtomicInc32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -146,103 +151,116 @@ void EmitStorageAtomicDec32(EmitContext& ctx, IR::Inst& inst, const IR::Value& b
 
 void EmitStorageAtomicAnd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                             const IR::Value& offset, std::string_view value) {
-    ctx.AddU32("{}=atomicAnd(ssbo{}[{}],{});", inst, binding.U32(), offset.U32(), value);
+    ctx.AddU32("{}=atomicAnd({}_ssbo{}[{}],{});", inst, ctx.stage_name, binding.U32(), offset.U32(),
+               value);
 }
 
 void EmitStorageAtomicOr32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                            const IR::Value& offset, std::string_view value) {
-    ctx.AddU32("{}=atomicOr(ssbo{}[{}],{});", inst, binding.U32(), offset.U32(), value);
+    ctx.AddU32("{}=atomicOr({}_ssbo{}[{}],{});", inst, ctx.stage_name, binding.U32(), offset.U32(),
+               value);
 }
 
 void EmitStorageAtomicXor32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                             const IR::Value& offset, std::string_view value) {
-    ctx.AddU32("{}=atomicXor(ssbo{}[{}],{});", inst, binding.U32(), offset.U32(), value);
+    ctx.AddU32("{}=atomicXor({}_ssbo{}[{}],{});", inst, ctx.stage_name, binding.U32(), offset.U32(),
+               value);
 }
 
 void EmitStorageAtomicExchange32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                  const IR::Value& offset, std::string_view value) {
-    ctx.AddU32("{}=atomicExchange(ssbo{}[{}],{});", inst, binding.U32(), offset.U32(), value);
+    ctx.AddU32("{}=atomicExchange({}_ssbo{}[{}],{});", inst, ctx.stage_name, binding.U32(),
+               offset.U32(), value);
 }
 
 void EmitStorageAtomicIAdd64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
     // LOG_WARNING(..., "Op falling to non-atomic");
-    ctx.AddU64("{}=packUint2x32(uvec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
-               binding.U32(), offset.U32() + 1);
-    ctx.Add("ssbo{}[{}]+=unpackUint2x32({}).x;ssbo{}[{}]+=unpackUint2x32({}).y;", binding.U32(),
-            offset.U32(), value, binding.U32(), offset.U32() + 1, value);
+    ctx.AddU64("{}=packUint2x32(uvec2({}_ssbo{}[{}],{}_ssbo{}[{}]));", inst, ctx.stage_name,
+               binding.U32(), offset.U32(), ctx.stage_name, binding.U32(), offset.U32() + 1);
+    ctx.Add("{}_ssbo{}[{}]+=unpackUint2x32({}).x;{}_ssbo{}[{}]+=unpackUint2x32({}).y;",
+            ctx.stage_name, binding.U32(), offset.U32(), value, ctx.stage_name, binding.U32(),
+            offset.U32() + 1, value);
 }
 
 void EmitStorageAtomicSMin64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
     // LOG_WARNING(..., "Op falling to non-atomic");
-    ctx.AddS64("{}=packInt2x32(ivec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
-               binding.U32(), offset.U32() + 1);
+    ctx.AddS64("{}=packInt2x32(ivec2({}_ssbo{}[{}],{}_ssbo{}[{}]));", inst, ctx.stage_name,
+               binding.U32(), offset.U32(), ctx.stage_name, binding.U32(), offset.U32() + 1);
     ctx.Add("for(int i=0;i<2;++i){{ "
-            "ssbo{}[{}+i]=uint(min(int(ssbo{}[{}+i]),unpackInt2x32(int64_t({}))[i]));}}",
-            binding.U32(), offset.U32(), binding.U32(), offset.U32(), value);
+            "{}_ssbo{}[{}+i]=uint(min(int({}_ssbo{}[{}+i]),unpackInt2x32(int64_t({}))[i]));}}",
+            ctx.stage_name, binding.U32(), offset.U32(), ctx.stage_name, binding.U32(),
+            offset.U32(), value);
 }
 
 void EmitStorageAtomicUMin64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
     // LOG_WARNING(..., "Op falling to non-atomic");
-    ctx.AddU64("{}=packUint2x32(uvec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
-               binding.U32(), offset.U32() + 1);
-    ctx.Add(
-        "for(int i=0;i<2;++i){{ ssbo{}[{}+i]=min(ssbo{}[{}+i],unpackUint2x32(uint64_t({}))[i]);}}",
-        binding.U32(), offset.U32(), binding.U32(), offset.U32(), value);
+    ctx.AddU64("{}=packUint2x32(uvec2({}_ssbo{}[{}],{}_ssbo{}[{}]));", inst, ctx.stage_name,
+               binding.U32(), offset.U32(), ctx.stage_name, binding.U32(), offset.U32() + 1);
+    ctx.Add("for(int i=0;i<2;++i){{ "
+            "{}_ssbo{}[{}+i]=min({}_ssbo{}[{}+i],unpackUint2x32(uint64_t({}))[i]);}}",
+            ctx.stage_name, binding.U32(), offset.U32(), ctx.stage_name, binding.U32(),
+            offset.U32(), value);
 }
 
 void EmitStorageAtomicSMax64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
     // LOG_WARNING(..., "Op falling to non-atomic");
-    ctx.AddS64("{}=packInt2x32(ivec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
-               binding.U32(), offset.U32() + 1);
+    ctx.AddS64("{}=packInt2x32(ivec2({}_ssbo{}[{}],{}_ssbo{}[{}]));", inst, ctx.stage_name,
+               binding.U32(), offset.U32(), ctx.stage_name, binding.U32(), offset.U32() + 1);
     ctx.Add("for(int i=0;i<2;++i){{ "
-            "ssbo{}[{}+i]=uint(max(int(ssbo{}[{}+i]),unpackInt2x32(int64_t({}))[i]));}}",
-            binding.U32(), offset.U32(), binding.U32(), offset.U32(), value);
+            "{}_ssbo{}[{}+i]=uint(max(int({}_ssbo{}[{}+i]),unpackInt2x32(int64_t({}))[i]));}}",
+            ctx.stage_name, binding.U32(), offset.U32(), ctx.stage_name, binding.U32(),
+            offset.U32(), value);
 }
 
 void EmitStorageAtomicUMax64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
     // LOG_WARNING(..., "Op falling to non-atomic");
-    ctx.AddU64("{}=packUint2x32(uvec2(ssbo{}[{}],ssbo{}[{}]));", inst, binding.U32(), offset.U32(),
-               binding.U32(), offset.U32() + 1);
-    ctx.Add(
-        "for(int i=0;i<2;++i){{ssbo{}[{}+i]=max(ssbo{}[{}+i],unpackUint2x32(uint64_t({}))[i]);}}",
-        binding.U32(), offset.U32(), binding.U32(), offset.U32(), value);
+    ctx.AddU64("{}=packUint2x32(uvec2({}_ssbo{}[{}],{}_ssbo{}[{}]));", inst, ctx.stage_name,
+               binding.U32(), offset.U32(), ctx.stage_name, binding.U32(), offset.U32() + 1);
+    ctx.Add("for(int "
+            "i=0;i<2;++i){{{}_ssbo{}[{}+i]=max({}_ssbo{}[{}+i],unpackUint2x32(uint64_t({}))[i]);}}",
+            ctx.stage_name, binding.U32(), offset.U32(), ctx.stage_name, binding.U32(),
+            offset.U32(), value);
 }
 
 void EmitStorageAtomicAnd64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                             const IR::Value& offset, std::string_view value) {
-    ctx.AddU64(
-        "{}=packUint2x32(uvec2(atomicAnd(ssbo{}[{}],unpackUint2x32({}).x),atomicAnd(ssbo{}[{}],"
-        "unpackUint2x32({}).y)));",
-        inst, binding.U32(), offset.U32(), value, binding.U32(), offset.U32() + 1, value);
+    ctx.AddU64("{}=packUint2x32(uvec2(atomicAnd({}_ssbo{}[{}],unpackUint2x32({}).x),atomicAnd({}_"
+               "ssbo{}[{}],"
+               "unpackUint2x32({}).y)));",
+               inst, ctx.stage_name, binding.U32(), offset.U32(), value, ctx.stage_name,
+               binding.U32(), offset.U32() + 1, value);
 }
 
 void EmitStorageAtomicOr64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                            const IR::Value& offset, std::string_view value) {
     ctx.AddU64(
-        "{}=packUint2x32(uvec2(atomicOr(ssbo{}[{}],unpackUint2x32({}).x),atomicOr(ssbo{}[{}],"
+        "{}=packUint2x32(uvec2(atomicOr({}_ssbo{}[{}],unpackUint2x32({}).x),atomicOr({}_ssbo{}[{}],"
         "unpackUint2x32({}).y)));",
-        inst, binding.U32(), offset.U32(), value, binding.U32(), offset.U32() + 1, value);
+        inst, ctx.stage_name, binding.U32(), offset.U32(), value, ctx.stage_name, binding.U32(),
+        offset.U32() + 1, value);
 }
 
 void EmitStorageAtomicXor64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                             const IR::Value& offset, std::string_view value) {
-    ctx.AddU64(
-        "{}=packUint2x32(uvec2(atomicXor(ssbo{}[{}],unpackUint2x32({}).x),atomicXor(ssbo{}[{}],"
-        "unpackUint2x32({}).y)));",
-        inst, binding.U32(), offset.U32(), value, binding.U32(), offset.U32() + 1, value);
+    ctx.AddU64("{}=packUint2x32(uvec2(atomicXor({}_ssbo{}[{}],unpackUint2x32({}).x),atomicXor({}_"
+               "ssbo{}[{}],"
+               "unpackUint2x32({}).y)));",
+               inst, ctx.stage_name, binding.U32(), offset.U32(), value, ctx.stage_name,
+               binding.U32(), offset.U32() + 1, value);
 }
 
 void EmitStorageAtomicExchange64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                                  const IR::Value& offset, std::string_view value) {
     ctx.AddU64(
-        "{}=packUint2x32(uvec2(atomicExchange(ssbo{}[{}],unpackUint2x32({}).x),atomicExchange("
-        "ssbo{}[{}],unpackUint2x32({}).y)));",
-        inst, binding.U32(), offset.U32(), value, binding.U32(), offset.U32() + 1, value);
+        "{}=packUint2x32(uvec2(atomicExchange({}_ssbo{}[{}],unpackUint2x32({}).x),atomicExchange("
+        "{}_ssbo{}[{}],unpackUint2x32({}).y)));",
+        inst, ctx.stage_name, binding.U32(), offset.U32(), value, ctx.stage_name, binding.U32(),
+        offset.U32() + 1, value);
 }
 
 void EmitStorageAtomicAddF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
