@@ -33,6 +33,8 @@ enum class GlslVarType : u32 {
     F32x3,
     U32x4,
     F32x4,
+    PrecF32,
+    PrecF64,
     Void,
 };
 
@@ -40,8 +42,8 @@ struct Id {
     union {
         u32 raw;
         BitField<0, 1, u32> is_valid;
-        BitField<1, 4, GlslVarType> type;
-        BitField<5, 27, u32> index;
+        BitField<1, 5, GlslVarType> type;
+        BitField<6, 26, u32> index;
     };
 
     bool operator==(Id rhs) const noexcept {
@@ -101,6 +103,8 @@ private:
     UseTracker var_u64{};
     UseTracker var_s64{};
     UseTracker var_f64{};
+    UseTracker var_precf32{};
+    UseTracker var_precf64{};
 };
 
 } // namespace Shader::Backend::GLSL

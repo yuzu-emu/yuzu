@@ -116,6 +116,16 @@ public:
     }
 
     template <typename... Args>
+    void AddPrecF32(const char* format_str, IR::Inst& inst, Args&&... args) {
+        Add<GlslVarType::PrecF32>(format_str, inst, args...);
+    }
+
+    template <typename... Args>
+    void AddPrecF64(const char* format_str, IR::Inst& inst, Args&&... args) {
+        Add<GlslVarType::PrecF64>(format_str, inst, args...);
+    }
+
+    template <typename... Args>
     void Add(const char* format_str, Args&&... args) {
         code += fmt::format(format_str, std::forward<Args>(args)...);
         // TODO: Remove this
