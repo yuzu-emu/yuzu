@@ -33,9 +33,9 @@ public:
     /// Presents the rendered image to the swapchain.
     void Present(VkSemaphore render_semaphore);
 
-    /// Returns true when the framebuffer layout has changed.
-    bool HasDifferentLayout(u32 width, u32 height, bool is_srgb) const {
-        return extent.width != width || extent.height != height || current_srgb != is_srgb;
+    /// Returns true when the color space has changed.
+    bool HasColorSpaceChanged(bool is_srgb) const {
+        return current_srgb != is_srgb;
     }
 
     /// Returns true when the image has to be recreated.
