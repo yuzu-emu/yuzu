@@ -21,10 +21,21 @@ std::string_view InterpDecorator(Interpolation interp) {
     throw InvalidArgument("Invalid interpolation {}", interp);
 }
 
-std::string_view ArrayDecorator(Stage stage) {
+std::string_view InputArrayDecorator(Stage stage) {
     switch (stage) {
     case Stage::Geometry:
-        return "[1]";
+    case Stage::TessellationControl:
+    case Stage::TessellationEval:
+        return "[]";
+    default:
+        return "";
+    }
+}
+
+std::string OutputDecorator(Stage stage, u32 size) {
+    switch (stage) {
+    case Stage::TessellationControl:
+        return fmt::format("[{}]", size);
     default:
         return "";
     }
@@ -73,6 +84,30 @@ std::string_view SamplerType(TextureType type, bool is_depth) {
     }
 }
 
+std::string_view GetTessMode(TessPrimitive primitive) {
+    switch (primitive) {
+    case TessPrimitive::Triangles:
+        return "triangles";
+    case TessPrimitive::Quads:
+        return "quads";
+    case TessPrimitive::Isolines:
+        return "isolines";
+    }
+    throw InvalidArgument("Invalid tessellation primitive {}", primitive);
+}
+
+std::string_view GetTessSpacing(TessSpacing spacing) {
+    switch (spacing) {
+    case TessSpacing::Equal:
+        return "equal_spacing";
+    case TessSpacing::FractionalOdd:
+        return "fractional_odd_spacing";
+    case TessSpacing::FractionalEven:
+        return "fractional_even_spacing";
+    }
+    throw InvalidArgument("Invalid tessellation spacing {}", spacing);
+}
+
 std::string_view InputPrimitive(InputTopology topology) {
     switch (topology) {
     case InputTopology::Points:
@@ -100,6 +135,23 @@ std::string_view OutputPrimitive(OutputTopology topology) {
     }
     throw InvalidArgument("Invalid output topology {}", topology);
 }
+
+void SetupOutPerVertex(Stage stage, const Info& info, std::string& header) {
+    if (stage != Stage::VertexA && stage != Stage::VertexB && stage != Stage::Geometry) {
+        return;
+    }
+    header += "out gl_PerVertex{";
+    if (info.stores_position) {
+        header += "vec4 gl_Position;";
+    }
+    if (info.stores_point_size) {
+        header += "float gl_PointSize;";
+    }
+    if (info.stores_clip_distance) {
+        header += "float gl_ClipDistance[];";
+    }
+    header += "};";
+}
 } // namespace
 
 EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
@@ -111,17 +163,20 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     case Stage::VertexA:
     case Stage::VertexB:
         stage_name = "vs";
-        // TODO: add only what's used by the shader
-        header +=
-            "out gl_PerVertex {vec4 gl_Position;float gl_PointSize;float gl_ClipDistance[];};";
         break;
     case Stage::TessellationControl:
+        stage_name = "tsc";
+        header += fmt::format("layout(vertices={})out;\n", program.invocations);
+        break;
     case Stage::TessellationEval:
-        stage_name = "ts";
+        stage_name = "tse";
+        header += fmt::format("layout({},{},{})in;\n", GetTessMode(runtime_info.tess_primitive),
+                              GetTessSpacing(runtime_info.tess_spacing),
+                              runtime_info.tess_clockwise ? "cw" : "ccw");
         break;
     case Stage::Geometry:
         stage_name = "gs";
-        header += fmt::format("layout({})in;layout({}, max_vertices={})out;\n",
+        header += fmt::format("layout({})in;layout({},max_vertices={})out;\n",
                               InputPrimitive(runtime_info.input_topology),
                               OutputPrimitive(program.output_topology), program.output_vertices);
         break;
@@ -135,12 +190,23 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
                               program.workgroup_size[2]);
         break;
     }
+    SetupOutPerVertex(stage, info, header);
     for (size_t index = 0; index < info.input_generics.size(); ++index) {
         const auto& generic{info.input_generics[index]};
         if (generic.used) {
-            header +=
-                fmt::format("layout(location={}){} in vec4 in_attr{}{};", index,
-                            InterpDecorator(generic.interpolation), index, ArrayDecorator(stage));
+            header += fmt::format("layout(location={}){} in vec4 in_attr{}{};", index,
+                                  InterpDecorator(generic.interpolation), index,
+                                  InputArrayDecorator(stage));
+        }
+    }
+    for (size_t index = 0; index < info.uses_patches.size(); ++index) {
+        if (!info.uses_patches[index]) {
+            continue;
+        }
+        if (stage == Stage::TessellationControl) {
+            header += fmt::format("layout(location={})patch out vec4 patch{};", index, index);
+        } else {
+            header += fmt::format("layout(location={})patch in vec4 patch{};", index, index);
         }
     }
     for (size_t index = 0; index < info.stores_frag_color.size(); ++index) {
@@ -151,8 +217,8 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     }
     for (size_t index = 0; index < info.stores_generics.size(); ++index) {
         // TODO: Properly resolve attribute issues
-        const auto declaration{
-            fmt::format("layout(location={}) out vec4 out_attr{};", index, index)};
+        const auto declaration{fmt::format("layout(location={}) out vec4 out_attr{}{};", index,
+                                           index, OutputDecorator(stage, program.invocations))};
         if (info.stores_generics[index] || stage == Stage::VertexA || stage == Stage::VertexB) {
             header += declaration;
         }

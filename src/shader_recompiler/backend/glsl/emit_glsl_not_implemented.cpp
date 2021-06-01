@@ -151,14 +151,6 @@ void EmitSetAttributeIndexed(EmitContext& ctx, std::string_view offset, std::str
     NotImplemented();
 }
 
-void EmitGetPatch(EmitContext& ctx, IR::Patch patch) {
-    NotImplemented();
-}
-
-void EmitSetPatch(EmitContext& ctx, IR::Patch patch, std::string_view value) {
-    NotImplemented();
-}
-
 void EmitSetSampleMask(EmitContext& ctx, std::string_view value) {
     NotImplemented();
 }
@@ -204,7 +196,7 @@ void EmitWorkgroupId(EmitContext& ctx, IR::Inst& inst) {
 }
 
 void EmitInvocationId(EmitContext& ctx, IR::Inst& inst) {
-    NotImplemented();
+    ctx.AddU32("{}=uint(gl_InvocationID);", inst);
 }
 
 void EmitSampleId(EmitContext& ctx, IR::Inst& inst) {

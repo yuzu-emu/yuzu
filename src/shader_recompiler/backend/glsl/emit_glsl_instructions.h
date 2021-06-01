@@ -72,7 +72,7 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
 void EmitGetAttributeIndexed(EmitContext& ctx, std::string_view offset, std::string_view vertex);
 void EmitSetAttributeIndexed(EmitContext& ctx, std::string_view offset, std::string_view value,
                              std::string_view vertex);
-void EmitGetPatch(EmitContext& ctx, IR::Patch patch);
+void EmitGetPatch(EmitContext& ctx, IR::Inst& inst, IR::Patch patch);
 void EmitSetPatch(EmitContext& ctx, IR::Patch patch, std::string_view value);
 void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, std::string_view value);
 void EmitSetSampleMask(EmitContext& ctx, std::string_view value);

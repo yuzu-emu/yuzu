@@ -25,8 +25,23 @@ bool IsInputArray(Stage stage) {
            stage == Stage::TessellationEval;
 }
 
-std::string VertexIndex(EmitContext& ctx, std::string_view vertex) {
+std::string InputVertexIndex(EmitContext& ctx, std::string_view vertex) {
     return IsInputArray(ctx.stage) ? fmt::format("[{}]", vertex) : "";
+}
+
+bool IsOutputArray(Stage stage) {
+    return stage == Stage::Geometry || stage == Stage::TessellationControl;
+}
+
+std::string OutputVertexIndex(EmitContext& ctx, std::string_view vertex) {
+    switch (ctx.stage) {
+    case Stage::Geometry:
+        return fmt::format("[{}]", vertex);
+    case Stage::TessellationControl:
+        return "[gl_InvocationID]";
+    default:
+        return "";
+    }
 }
 } // namespace
 
@@ -132,12 +147,12 @@ void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding
 }
 
 void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
-                      [[maybe_unused]] std::string_view vertex) {
+                      std::string_view vertex) {
     const u32 element{static_cast<u32>(attr) % 4};
     const char swizzle{"xyzw"[element]};
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
-        ctx.AddF32("{}=in_attr{}{}.{};", inst, index, VertexIndex(ctx, vertex), swizzle);
+        ctx.AddF32("{}=in_attr{}{}.{};", inst, index, InputVertexIndex(ctx, vertex), swizzle);
         return;
     }
     switch (attr) {
@@ -150,6 +165,10 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
         case Stage::VertexB:
             ctx.AddF32("{}=gl_Position.{};", inst, swizzle);
             break;
+        case Stage::TessellationEval:
+            ctx.AddF32("{}=gl_TessCoord.{};", inst, swizzle);
+            break;
+        case Stage::TessellationControl:
         case Stage::Geometry:
             ctx.AddF32("{}=gl_in[{}].gl_Position.{};", inst, vertex, swizzle);
             break;
@@ -173,6 +192,10 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
     case IR::Attribute::FrontFace:
         ctx.AddF32("{}=intBitsToFloat(gl_FrontFacing?-1:0);", inst);
         break;
+    case IR::Attribute::TessellationEvaluationPointU:
+    case IR::Attribute::TessellationEvaluationPointV:
+        ctx.AddF32("{}=gl_TessCoord.{};", inst, swizzle);
+        break;
     default:
         fmt::print("Get attribute {}", attr);
         throw NotImplementedException("Get attribute {}", attr);
@@ -185,7 +208,7 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     const char swizzle{"xyzw"[element]};
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
-        ctx.Add("out_attr{}.{}={};", index, swizzle, value);
+        ctx.Add("out_attr{}{}.{}={};", index, OutputVertexIndex(ctx, vertex), swizzle, value);
         return;
     }
     switch (attr) {
@@ -216,6 +239,44 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     default:
         fmt::print("Set attribute {}", attr);
         throw NotImplementedException("Set attribute {}", attr);
+    }
+}
+
+void EmitGetPatch([[maybe_unused]] EmitContext& ctx, IR::Inst& inst,
+                  [[maybe_unused]] IR::Patch patch) {
+    if (!IR::IsGeneric(patch)) {
+        throw NotImplementedException("Non-generic patch load");
+    }
+    const u32 index{IR::GenericPatchIndex(patch)};
+    const u32 element{IR::GenericPatchElement(patch)};
+    const char swizzle{"xyzw"[element]};
+    ctx.AddF32("{}=patch{}.{};", inst, index, swizzle);
+}
+
+void EmitSetPatch(EmitContext& ctx, IR::Patch patch, std::string_view value) {
+    if (IR::IsGeneric(patch)) {
+        const u32 index{IR::GenericPatchIndex(patch)};
+        const u32 element{IR::GenericPatchElement(patch)};
+        ctx.Add("patch{}.{}={};", index, "xyzw"[element], value);
+        return;
+    }
+    switch (patch) {
+    case IR::Patch::TessellationLodLeft:
+    case IR::Patch::TessellationLodRight:
+    case IR::Patch::TessellationLodTop:
+    case IR::Patch::TessellationLodBottom: {
+        const u32 index{static_cast<u32>(patch) - u32(IR::Patch::TessellationLodLeft)};
+        ctx.Add("gl_TessLevelOuter[{}]={};", index, value);
+        break;
+    }
+    case IR::Patch::TessellationLodInteriorU:
+        ctx.Add("gl_TessLevelInner[0]={};", value);
+        break;
+    case IR::Patch::TessellationLodInteriorV:
+        ctx.Add("gl_TessLevelInner[1]={};", value);
+        break;
+    default:
+        throw NotImplementedException("Patch {}", patch);
     }
 }
 
