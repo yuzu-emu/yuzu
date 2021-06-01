@@ -151,6 +151,9 @@ void SetupOutPerVertex(Stage stage, const Info& info, std::string& header) {
         header += "float gl_ClipDistance[];";
     }
     header += "};\n";
+    if (info.stores_viewport_index) {
+        header += "out int gl_ViewportIndex;";
+    }
 }
 } // namespace
 
@@ -264,7 +267,6 @@ void EmitContext::SetupExtensions(std::string&) {
     }
     if (info.stores_viewport_index) {
         header += "#extension GL_ARB_shader_viewport_layer_array : enable\n";
-        header += "#extension GL_NV_viewport_array2 : enable\n";
     }
 }
 
