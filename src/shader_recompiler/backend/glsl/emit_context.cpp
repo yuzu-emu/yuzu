@@ -32,6 +32,19 @@ std::string_view InputArrayDecorator(Stage stage) {
     }
 }
 
+bool StoresPerVertexAttributes(Stage stage) {
+    switch (stage) {
+    case Stage::VertexA:
+    case Stage::VertexB:
+    case Stage::Geometry:
+    case Stage::TessellationControl:
+    case Stage::TessellationEval:
+        return true;
+    default:
+        return false;
+    }
+}
+
 std::string OutputDecorator(Stage stage, u32 size) {
     switch (stage) {
     case Stage::TessellationControl:
@@ -137,7 +150,7 @@ std::string_view OutputPrimitive(OutputTopology topology) {
 }
 
 void SetupOutPerVertex(Stage stage, const Info& info, std::string& header) {
-    if (stage != Stage::VertexA && stage != Stage::VertexB && stage != Stage::Geometry) {
+    if (!StoresPerVertexAttributes(stage)) {
         return;
     }
     header += "out gl_PerVertex{";
@@ -150,8 +163,11 @@ void SetupOutPerVertex(Stage stage, const Info& info, std::string& header) {
     if (info.stores_clip_distance) {
         header += "float gl_ClipDistance[];";
     }
+    if (info.stores_viewport_index && stage != Stage::Geometry) {
+        header += "int gl_ViewportIndex;";
+    }
     header += "};\n";
-    if (info.stores_viewport_index) {
+    if (info.stores_viewport_index && stage == Stage::Geometry) {
         header += "out int gl_ViewportIndex;";
     }
 }
@@ -265,7 +281,7 @@ void EmitContext::SetupExtensions(std::string&) {
             header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
         }
     }
-    if (info.stores_viewport_index) {
+    if (info.stores_viewport_index && stage != Stage::Geometry) {
         header += "#extension GL_ARB_shader_viewport_layer_array : enable\n";
     }
 }
