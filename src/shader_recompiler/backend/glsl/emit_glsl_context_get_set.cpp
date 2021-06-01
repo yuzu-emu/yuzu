@@ -29,10 +29,6 @@ std::string InputVertexIndex(EmitContext& ctx, std::string_view vertex) {
     return IsInputArray(ctx.stage) ? fmt::format("[{}]", vertex) : "";
 }
 
-bool IsOutputArray(Stage stage) {
-    return stage == Stage::Geometry || stage == Stage::TessellationControl;
-}
-
 std::string OutputVertexIndex(EmitContext& ctx, std::string_view vertex) {
     switch (ctx.stage) {
     case Stage::Geometry:
