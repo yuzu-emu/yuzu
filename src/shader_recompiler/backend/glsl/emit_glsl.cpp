@@ -180,13 +180,15 @@ void DefineVariables(const EmitContext& ctx, std::string& header) {
         const auto type{static_cast<GlslVarType>(i)};
         const auto& tracker{ctx.var_alloc.GetUseTracker(type)};
         const auto type_name{ctx.var_alloc.GetGlslType(type)};
+        const auto precise{
+            (type == GlslVarType::PrecF32 || type == GlslVarType::PrecF64) ? "precise " : ""};
         // Temps/return types that are never used are stored at index 0
         if (tracker.uses_temp) {
-            header += fmt::format("{}{}={}(0);", type_name, ctx.var_alloc.Representation(0, type),
-                                  type_name);
+            header += fmt::format("{}{} {}={}(0);", precise, type_name,
+                                  ctx.var_alloc.Representation(0, type), type_name);
         }
         for (u32 index = 1; index <= tracker.num_used; ++index) {
-            header += fmt::format("{}{}={}(0);", type_name,
+            header += fmt::format("{}{} {}={}(0);", precise, type_name,
                                   ctx.var_alloc.Representation(index, type), type_name);
         }
     }
@@ -198,7 +200,7 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
     EmitContext ctx{program, bindings, profile, runtime_info};
     Precolor(program);
     EmitCode(ctx, program);
-    const std::string version{fmt::format("#version 450{}\n", GlslVersionSpecifier(ctx))};
+    const std::string version{fmt::format("#version 460{}\n", GlslVersionSpecifier(ctx))};
     ctx.header.insert(0, version);
     if (program.local_memory_size > 0) {
         ctx.header += fmt::format("uint lmem[{}];", program.local_memory_size / 4);
@@ -206,7 +208,7 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
     if (program.shared_memory_size > 0) {
         ctx.header += fmt::format("shared uint smem[{}];", program.shared_memory_size / 4);
     }
-    ctx.header += "void main(){\n";
+    ctx.header += "\nvoid main(){\n";
     if (program.stage == Stage::VertexA || program.stage == Stage::VertexB) {
         ctx.header += "gl_Position = vec4(0.0f, 0.0f, 0.0f, 1.0f);";
         // TODO: Properly resolve attribute issues

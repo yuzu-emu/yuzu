@@ -202,37 +202,35 @@ GlslVarType VarAlloc::RegType(IR::Type type) const {
 std::string VarAlloc::GetGlslType(GlslVarType type) const {
     switch (type) {
     case GlslVarType::U1:
-        return "bool ";
+        return "bool";
     case GlslVarType::F16x2:
-        return "f16vec2 ";
+        return "f16vec2";
     case GlslVarType::U32:
-        return "uint ";
+        return "uint";
     case GlslVarType::S32:
-        return "int ";
+        return "int";
     case GlslVarType::F32:
-        return "float ";
-    case GlslVarType::S64:
-        return "int64_t ";
-    case GlslVarType::U64:
-        return "uint64_t ";
-    case GlslVarType::F64:
-        return "double ";
-    case GlslVarType::U32x2:
-        return "uvec2 ";
-    case GlslVarType::F32x2:
-        return "vec2 ";
-    case GlslVarType::U32x3:
-        return "uvec3 ";
-    case GlslVarType::F32x3:
-        return "vec3 ";
-    case GlslVarType::U32x4:
-        return "uvec4 ";
-    case GlslVarType::F32x4:
-        return "vec4 ";
     case GlslVarType::PrecF32:
-        return "precise float ";
+        return "float";
+    case GlslVarType::S64:
+        return "int64_t";
+    case GlslVarType::U64:
+        return "uint64_t";
+    case GlslVarType::F64:
     case GlslVarType::PrecF64:
-        return "precise double ";
+        return "double";
+    case GlslVarType::U32x2:
+        return "uvec2";
+    case GlslVarType::F32x2:
+        return "vec2";
+    case GlslVarType::U32x3:
+        return "uvec3";
+    case GlslVarType::F32x3:
+        return "vec3";
+    case GlslVarType::U32x4:
+        return "uvec4";
+    case GlslVarType::F32x4:
+        return "vec4";
     case GlslVarType::Void:
         return "";
     default:

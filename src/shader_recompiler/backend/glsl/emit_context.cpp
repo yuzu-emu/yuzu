@@ -150,7 +150,7 @@ void SetupOutPerVertex(Stage stage, const Info& info, std::string& header) {
     if (info.stores_clip_distance) {
         header += "float gl_ClipDistance[];";
     }
-    header += "};";
+    header += "};\n";
 }
 } // namespace
 
@@ -223,6 +223,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
             header += declaration;
         }
     }
+    header += "\n";
     DefineConstantBuffers(bindings);
     DefineStorageBuffers(bindings);
     SetupImages(bindings);
