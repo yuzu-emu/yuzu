@@ -97,19 +97,14 @@ RendererVulkan::RendererVulkan(Core::TelemetrySession& telemetry_session_,
                                Core::Frontend::EmuWindow& emu_window,
                                Core::Memory::Memory& cpu_memory_, Tegra::GPU& gpu_,
                                std::unique_ptr<Core::Frontend::GraphicsContext> context_) try
-    : RendererBase(emu_window, std::move(context_)),
-      telemetry_session(telemetry_session_),
-      cpu_memory(cpu_memory_),
-      gpu(gpu_),
-      library(OpenLibrary()),
+    : RendererBase(emu_window, std::move(context_)), telemetry_session(telemetry_session_),
+      cpu_memory(cpu_memory_), gpu(gpu_), library(OpenLibrary()),
       instance(CreateInstance(library, dld, VK_API_VERSION_1_1, render_window.GetWindowInfo().type,
                               true, Settings::values.renderer_debug.GetValue())),
       debug_callback(Settings::values.renderer_debug ? CreateDebugCallback(instance) : nullptr),
       surface(CreateSurface(instance, render_window)),
-      device(CreateDevice(instance, dld, *surface)),
-      memory_allocator(device, false),
-      state_tracker(gpu),
-      scheduler(device, state_tracker),
+      device(CreateDevice(instance, dld, *surface)), memory_allocator(device, false),
+      state_tracker(gpu), scheduler(device, state_tracker),
       swapchain(*surface, device, scheduler, render_window.GetFramebufferLayout().width,
                 render_window.GetFramebufferLayout().height, false),
       blit_screen(cpu_memory, render_window, device, memory_allocator, swapchain, scheduler,
@@ -139,17 +134,16 @@ void RendererVulkan::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
         rasterizer.AccelerateDisplay(*framebuffer, framebuffer_addr, framebuffer->stride);
     const bool is_srgb = use_accelerated && screen_info.is_srgb;
 
-    const Layout::FramebufferLayout layout = render_window.GetFramebufferLayout();
     bool has_been_recreated = false;
     const auto recreate_swapchain = [&] {
         if (!has_been_recreated) {
             has_been_recreated = true;
             scheduler.WaitWorker();
         }
+        const Layout::FramebufferLayout layout = render_window.GetFramebufferLayout();
         swapchain.Create(layout.width, layout.height, is_srgb);
     };
-    if (swapchain.NeedsRecreate() ||
-        swapchain.HasDifferentLayout(layout.width, layout.height, is_srgb)) {
+    if (swapchain.NeedsRecreate() || swapchain.HasColorSpaceChanged(is_srgb)) {
         recreate_swapchain();
     }
     bool needs_recreate;
