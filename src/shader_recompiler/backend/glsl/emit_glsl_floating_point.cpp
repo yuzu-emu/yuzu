@@ -161,7 +161,7 @@ void EmitFPRecip64(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
 
 void EmitFPRecipSqrt32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                        [[maybe_unused]] std::string_view value) {
-    ctx.AddF32("{}=(1.0f)/sqrt({});", inst, value);
+    ctx.AddF32("{}=inversesqrt({});", inst, value);
 }
 
 void EmitFPRecipSqrt64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
