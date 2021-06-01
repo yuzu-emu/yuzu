@@ -609,6 +609,12 @@ void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
     using namespace VideoCommon::Dirty;
     auto& flags = maxwell3d.dirty.flags;
     if (!flags[Dirty::RenderTargets]) {
+        for (size_t index = 0; index < NUM_RT; ++index) {
+            ImageViewId& color_buffer_id = render_targets.color_buffer_ids[index];
+            PrepareImageView(color_buffer_id, true, is_clear && IsFullClear(color_buffer_id));
+        }
+        const ImageViewId depth_buffer_id = render_targets.depth_buffer_id;
+        PrepareImageView(depth_buffer_id, true, is_clear && IsFullClear(depth_buffer_id));
         return;
     }
     flags[Dirty::RenderTargets] = false;
