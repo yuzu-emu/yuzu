@@ -274,6 +274,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxw
         .support_typeless_image_loads = device.IsFormatlessImageLoadSupported(),
         .support_demote_to_helper_invocation = true,
         .support_int64_atomics = device.IsExtShaderAtomicInt64Supported(),
+        .support_derivative_control = true,
 
         .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyBiggerThanGuest(),
 
