@@ -97,6 +97,10 @@ Buffer::Buffer(BufferCacheRuntime& runtime, VideoCore::RasterizerInterface& rast
 }
 
 VkBufferView Buffer::View(u32 offset, u32 size, VideoCore::Surface::PixelFormat format) {
+    if (!device) {
+        // Null buffer, return a null descriptor
+        return VK_NULL_HANDLE;
+    }
     const auto it{std::ranges::find_if(views, [offset, size, format](const BufferView& view) {
         return offset == view.offset && size == view.size && format == view.format;
     })};
