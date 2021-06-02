@@ -76,6 +76,10 @@ IR::Value MakeCoords(TranslatorVisitor& v, IR::Reg reg, Type type) {
     case Type::_1D:
     case Type::BUFFER_1D:
         return v.X(reg);
+    case Type::_2D:
+        return v.ir.CompositeConstruct(v.X(reg), v.X(reg + 1));
+    case Type::_3D:
+        return v.ir.CompositeConstruct(v.X(reg), v.X(reg + 1), v.X(reg + 2));
     default:
         break;
     }
