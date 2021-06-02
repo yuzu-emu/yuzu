@@ -60,6 +60,14 @@ std::pair<GLint, GLint> TransformFeedbackEnum(u8 location) {
     UNIMPLEMENTED_MSG("index={}", index);
     return {GL_POSITION, 0};
 }
+
+struct Spec {
+    static constexpr std::array<bool, 5> enabled_stages{true, true, true, true, true};
+    static constexpr bool has_storage_buffers = true;
+    static constexpr bool has_texture_buffers = true;
+    static constexpr bool has_image_buffers = true;
+    static constexpr bool has_images = true;
+};
 } // Anonymous namespace
 
 size_t GraphicsPipelineKey::Hash() const noexcept {
@@ -100,7 +108,8 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_c
             base_uniform_bindings[stage + 1] += AccumulateCount(info.constant_buffer_descriptors);
             base_storage_bindings[stage + 1] += AccumulateCount(info.storage_buffers_descriptors);
         }
-        enabled_uniform_buffers[stage] = info.constant_buffer_mask;
+        enabled_uniform_buffer_masks[stage] = info.constant_buffer_mask;
+        std::ranges::copy(info.constant_buffer_used_sizes, uniform_buffer_sizes[stage].begin());
 
         const u32 num_tex_buffer_bindings{AccumulateCount(info.texture_buffer_descriptors)};
         num_texture_buffers[stage] += num_tex_buffer_bindings;
@@ -130,14 +139,6 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_c
     }
 }
 
-struct Spec {
-    static constexpr std::array<bool, 5> enabled_stages{true, true, true, true, true};
-    static constexpr bool has_storage_buffers = true;
-    static constexpr bool has_texture_buffers = true;
-    static constexpr bool has_image_buffers = true;
-    static constexpr bool has_images = true;
-};
-
 void GraphicsPipeline::Configure(bool is_indexed) {
     std::array<ImageId, MAX_TEXTURES + MAX_IMAGES> image_view_ids;
     std::array<u32, MAX_TEXTURES + MAX_IMAGES> image_view_indices;
@@ -147,7 +148,7 @@ void GraphicsPipeline::Configure(bool is_indexed) {
 
     texture_cache.SynchronizeGraphicsDescriptors();
 
-    buffer_cache.SetEnabledUniformBuffers(enabled_uniform_buffers);
+    buffer_cache.SetUniformBuffersState(enabled_uniform_buffer_masks, &uniform_buffer_sizes);
     buffer_cache.runtime.SetBaseUniformBindings(base_uniform_bindings);
     buffer_cache.runtime.SetBaseStorageBindings(base_storage_bindings);
     buffer_cache.runtime.SetEnableStorageBuffers(use_storage_buffers);

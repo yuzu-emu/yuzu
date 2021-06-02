@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
 #include <vector>
 
 #include <boost/container/small_vector.hpp>
@@ -27,6 +28,9 @@ ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descript
                                  vk::ShaderModule spv_module_)
     : device{device_}, update_descriptor_queue{update_descriptor_queue_}, info{info_},
       spv_module(std::move(spv_module_)) {
+    std::copy_n(info.constant_buffer_used_sizes.begin(), uniform_buffer_sizes.size(),
+                uniform_buffer_sizes.begin());
+
     auto func{[this, &descriptor_pool] {
         DescriptorLayoutBuilder builder{device.GetLogical()};
         builder.Add(info, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -75,7 +79,7 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
                                 BufferCache& buffer_cache, TextureCache& texture_cache) {
     update_descriptor_queue.Acquire();
 
-    buffer_cache.SetEnabledComputeUniformBuffers(info.constant_buffer_mask);
+    buffer_cache.SetComputeUniformBufferState(info.constant_buffer_mask, &uniform_buffer_sizes);
     buffer_cache.UnbindComputeStorageBuffers();
     size_t ssbo_index{};
     for (const auto& desc : info.storage_buffers_descriptors) {

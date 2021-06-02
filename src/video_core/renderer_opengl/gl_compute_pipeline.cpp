@@ -43,6 +43,8 @@ ComputePipeline::ComputePipeline(const Device& device, TextureCache& texture_cac
     : texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, gpu_memory{gpu_memory_},
       kepler_compute{kepler_compute_}, program_manager{program_manager_}, info{info_},
       source_program{std::move(source_program_)}, assembly_program{std::move(assembly_program_)} {
+    std::copy_n(info.constant_buffer_used_sizes.begin(), uniform_buffer_sizes.size(),
+                uniform_buffer_sizes.begin());
 
     num_texture_buffers = AccumulateCount(info.texture_buffer_descriptors);
     num_image_buffers = AccumulateCount(info.image_buffer_descriptors);
@@ -63,7 +65,7 @@ ComputePipeline::ComputePipeline(const Device& device, TextureCache& texture_cac
 }
 
 void ComputePipeline::Configure() {
-    buffer_cache.SetEnabledComputeUniformBuffers(info.constant_buffer_mask);
+    buffer_cache.SetComputeUniformBufferState(info.constant_buffer_mask, &uniform_buffer_sizes);
     buffer_cache.UnbindComputeStorageBuffers();
     size_t ssbo_index{};
     for (const auto& desc : info.storage_buffers_descriptors) {

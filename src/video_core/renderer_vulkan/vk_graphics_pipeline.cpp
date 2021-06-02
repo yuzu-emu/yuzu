@@ -218,10 +218,14 @@ GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
       update_descriptor_queue{update_descriptor_queue_}, spv_modules{std::move(stages)} {
     std::ranges::transform(infos, stage_infos.begin(),
                            [](const Shader::Info* info) { return info ? *info : Shader::Info{}; });
-    std::ranges::transform(infos, enabled_uniform_buffers.begin(), [](const Shader::Info* info) {
-        return info ? info->constant_buffer_mask : 0;
-    });
-
+    for (size_t stage = 0; stage < NUM_STAGES; ++stage) {
+        const Shader::Info* const info{infos[stage]};
+        if (!info) {
+            continue;
+        }
+        enabled_uniform_buffer_masks[stage] = info->constant_buffer_mask;
+        std::ranges::copy(info->constant_buffer_used_sizes, uniform_buffer_sizes[stage].begin());
+    }
     auto func{[this, &render_pass_cache, &descriptor_pool] {
         DescriptorLayoutBuilder builder{MakeBuilder(device, stage_infos)};
         descriptor_set_layout = builder.CreateDescriptorSetLayout();
@@ -262,7 +266,7 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
 
     texture_cache.SynchronizeGraphicsDescriptors();
 
-    buffer_cache.SetEnabledUniformBuffers(enabled_uniform_buffers);
+    buffer_cache.SetUniformBuffersState(enabled_uniform_buffer_masks, &uniform_buffer_sizes);
 
     const auto& regs{maxwell3d.regs};
     const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};

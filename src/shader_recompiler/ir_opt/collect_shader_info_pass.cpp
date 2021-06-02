@@ -560,31 +560,44 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::GetCbufU32:
     case IR::Opcode::GetCbufF32:
     case IR::Opcode::GetCbufU32x2: {
-        if (const IR::Value index{inst.Arg(0)}; index.IsImmediate()) {
-            AddConstantBufferDescriptor(info, index.U32(), 1);
-        } else {
+        const IR::Value index{inst.Arg(0)};
+        const IR::Value offset{inst.Arg(1)};
+        if (!index.IsImmediate()) {
             throw NotImplementedException("Constant buffer with non-immediate index");
         }
+        AddConstantBufferDescriptor(info, index.U32(), 1);
+        u32 element_size{};
         switch (inst.GetOpcode()) {
         case IR::Opcode::GetCbufU8:
         case IR::Opcode::GetCbufS8:
             info.used_constant_buffer_types |= IR::Type::U8;
+            element_size = 1;
             break;
         case IR::Opcode::GetCbufU16:
         case IR::Opcode::GetCbufS16:
             info.used_constant_buffer_types |= IR::Type::U16;
+            element_size = 2;
             break;
         case IR::Opcode::GetCbufU32:
             info.used_constant_buffer_types |= IR::Type::U32;
+            element_size = 4;
             break;
         case IR::Opcode::GetCbufF32:
             info.used_constant_buffer_types |= IR::Type::F32;
+            element_size = 4;
             break;
         case IR::Opcode::GetCbufU32x2:
             info.used_constant_buffer_types |= IR::Type::U32x2;
+            element_size = 8;
             break;
         default:
             break;
+        }
+        u32& size{info.constant_buffer_used_sizes[index.U32()]};
+        if (offset.IsImmediate()) {
+            size = std::max(size, offset.U32() + element_size);
+        } else {
+            size = 0x10'000;
         }
         break;
     }
