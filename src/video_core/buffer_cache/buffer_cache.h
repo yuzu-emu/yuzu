@@ -44,6 +44,7 @@ MICROPROFILE_DECLARE(GPU_DownloadMemory);
 using BufferId = SlotId;
 
 using VideoCore::Surface::PixelFormat;
+using namespace Common::Literals;
 
 constexpr u32 NUM_VERTEX_BUFFERS = 32;
 constexpr u32 NUM_TRANSFORM_FEEDBACK_BUFFERS = 4;
@@ -53,7 +54,8 @@ constexpr u32 NUM_STORAGE_BUFFERS = 16;
 constexpr u32 NUM_TEXTURE_BUFFERS = 16;
 constexpr u32 NUM_STAGES = 5;
 
-using namespace Common::Literals;
+using UniformBufferSizes = std::array<std::array<u32, NUM_GRAPHICS_UNIFORM_BUFFERS>, NUM_STAGES>;
+using ComputeUniformBufferSizes = std::array<u32, NUM_COMPUTE_UNIFORM_BUFFERS>;
 
 template <typename P>
 class BufferCache {
@@ -142,9 +144,10 @@ public:
 
     void BindHostComputeBuffers();
 
-    void SetEnabledUniformBuffers(const std::array<u32, NUM_STAGES>& mask);
+    void SetUniformBuffersState(const std::array<u32, NUM_STAGES>& mask,
+                                const UniformBufferSizes* sizes);
 
-    void SetEnabledComputeUniformBuffers(u32 enabled);
+    void SetComputeUniformBufferState(u32 mask, const ComputeUniformBufferSizes* sizes);
 
     void UnbindGraphicsStorageBuffers(size_t stage);
 
@@ -377,8 +380,11 @@ private:
     std::array<Binding, NUM_STORAGE_BUFFERS> compute_storage_buffers;
     std::array<TextureBufferBinding, NUM_TEXTURE_BUFFERS> compute_texture_buffers;
 
-    std::array<u32, NUM_STAGES> enabled_uniform_buffers{};
-    u32 enabled_compute_uniform_buffers = 0;
+    std::array<u32, NUM_STAGES> enabled_uniform_buffer_masks{};
+    u32 enabled_compute_uniform_buffer_mask = 0;
+
+    const UniformBufferSizes* uniform_buffer_sizes{};
+    const ComputeUniformBufferSizes* compute_uniform_buffer_sizes{};
 
     std::array<u32, NUM_STAGES> enabled_storage_buffers{};
     std::array<u32, NUM_STAGES> written_storage_buffers{};
@@ -630,18 +636,22 @@ void BufferCache<P>::BindHostComputeBuffers() {
 }
 
 template <class P>
-void BufferCache<P>::SetEnabledUniformBuffers(const std::array<u32, NUM_STAGES>& mask) {
+void BufferCache<P>::SetUniformBuffersState(const std::array<u32, NUM_STAGES>& mask,
+                                            const UniformBufferSizes* sizes) {
     if constexpr (HAS_PERSISTENT_UNIFORM_BUFFER_BINDINGS) {
-        if (enabled_uniform_buffers != mask) {
+        if (enabled_uniform_buffer_masks != mask) {
             dirty_uniform_buffers.fill(~u32{0});
         }
     }
-    enabled_uniform_buffers = mask;
+    enabled_uniform_buffer_masks = mask;
+    uniform_buffer_sizes = sizes;
 }
 
 template <class P>
-void BufferCache<P>::SetEnabledComputeUniformBuffers(u32 enabled) {
-    enabled_compute_uniform_buffers = enabled;
+void BufferCache<P>::SetComputeUniformBufferState(u32 mask,
+                                                  const ComputeUniformBufferSizes* sizes) {
+    enabled_compute_uniform_buffer_mask = mask;
+    compute_uniform_buffer_sizes = sizes;
 }
 
 template <class P>
@@ -923,7 +933,7 @@ void BufferCache<P>::BindHostGraphicsUniformBuffers(size_t stage) {
         dirty = std::exchange(dirty_uniform_buffers[stage], 0);
     }
     u32 binding_index = 0;
-    ForEachEnabledBit(enabled_uniform_buffers[stage], [&](u32 index) {
+    ForEachEnabledBit(enabled_uniform_buffer_masks[stage], [&](u32 index) {
         const bool needs_bind = ((dirty >> index) & 1) != 0;
         BindHostGraphicsUniformBuffer(stage, index, binding_index, needs_bind);
         if constexpr (NEEDS_BIND_UNIFORM_INDEX) {
@@ -937,7 +947,7 @@ void BufferCache<P>::BindHostGraphicsUniformBuffer(size_t stage, u32 index, u32 
                                                    bool needs_bind) {
     const Binding& binding = uniform_buffers[stage][index];
     const VAddr cpu_addr = binding.cpu_addr;
-    const u32 size = binding.size;
+    const u32 size = std::min(binding.size, (*uniform_buffer_sizes)[stage][index]);
     Buffer& buffer = slot_buffers[binding.buffer_id];
     TouchBuffer(buffer);
     const bool use_fast_buffer = binding.buffer_id != NULL_BUFFER_ID &&
@@ -1052,11 +1062,11 @@ void BufferCache<P>::BindHostComputeUniformBuffers() {
         dirty_uniform_buffers.fill(~u32{0});
     }
     u32 binding_index = 0;
-    ForEachEnabledBit(enabled_compute_uniform_buffers, [&](u32 index) {
+    ForEachEnabledBit(enabled_compute_uniform_buffer_mask, [&](u32 index) {
         const Binding& binding = compute_uniform_buffers[index];
         Buffer& buffer = slot_buffers[binding.buffer_id];
         TouchBuffer(buffer);
-        const u32 size = binding.size;
+        const u32 size = std::min(binding.size, (*compute_uniform_buffer_sizes)[index]);
         SynchronizeBuffer(buffer, binding.cpu_addr, size);
 
         const u32 offset = buffer.Offset(binding.cpu_addr);
@@ -1200,7 +1210,7 @@ void BufferCache<P>::UpdateVertexBuffer(u32 index) {
 
 template <class P>
 void BufferCache<P>::UpdateUniformBuffers(size_t stage) {
-    ForEachEnabledBit(enabled_uniform_buffers[stage], [&](u32 index) {
+    ForEachEnabledBit(enabled_uniform_buffer_masks[stage], [&](u32 index) {
         Binding& binding = uniform_buffers[stage][index];
         if (binding.buffer_id) {
             // Already updated
@@ -1273,7 +1283,7 @@ void BufferCache<P>::UpdateTransformFeedbackBuffer(u32 index) {
 
 template <class P>
 void BufferCache<P>::UpdateComputeUniformBuffers() {
-    ForEachEnabledBit(enabled_compute_uniform_buffers, [&](u32 index) {
+    ForEachEnabledBit(enabled_compute_uniform_buffer_mask, [&](u32 index) {
         Binding& binding = compute_uniform_buffers[index];
         binding = NULL_BINDING;
         const auto& launch_desc = kepler_compute.launch_description;

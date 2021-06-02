@@ -197,6 +197,7 @@ struct Info {
     IR::Type used_storage_buffer_types{};
 
     u32 constant_buffer_mask{};
+    std::array<u32, MAX_CBUFS> constant_buffer_used_sizes{};
     u32 nvn_buffer_base{};
     std::bitset<16> nvn_buffer_used{};
 

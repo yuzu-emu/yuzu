@@ -44,6 +44,8 @@ private:
     VKUpdateDescriptorQueue& update_descriptor_queue;
     Shader::Info info;
 
+    VideoCommon::ComputeUniformBufferSizes uniform_buffer_sizes{};
+
     vk::ShaderModule spv_module;
     vk::DescriptorSetLayout descriptor_set_layout;
     DescriptorAllocator descriptor_allocator;

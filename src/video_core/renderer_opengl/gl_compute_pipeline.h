@@ -72,6 +72,7 @@ private:
     Shader::Info info;
     OGLProgram source_program;
     OGLAssemblyProgram assembly_program;
+    VideoCommon::ComputeUniformBufferSizes uniform_buffer_sizes{};
 
     u32 num_texture_buffers{};
     u32 num_image_buffers{};
