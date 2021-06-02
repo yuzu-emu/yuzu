@@ -96,6 +96,10 @@ public:
         return has_nv_viewport_array2;
     }
 
+    bool HasDerivativeControl() const {
+        return has_derivative_control;
+    }
+
     bool HasDebuggingToolAttached() const {
         return has_debugging_tool_attached;
     }
@@ -141,6 +145,7 @@ private:
     bool has_broken_texture_view_formats{};
     bool has_fast_buffer_sub_data{};
     bool has_nv_viewport_array2{};
+    bool has_derivative_control{};
     bool has_debugging_tool_attached{};
     bool use_assembly_shaders{};
     bool use_asynchronous_shaders{};

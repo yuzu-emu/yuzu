@@ -82,6 +82,7 @@ struct Profile {
     bool support_typeless_image_loads{};
     bool support_demote_to_helper_invocation{};
     bool support_int64_atomics{};
+    bool support_derivative_control{};
 
     bool warp_size_potentially_larger_than_guest{};
 

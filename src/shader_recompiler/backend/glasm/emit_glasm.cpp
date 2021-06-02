@@ -265,9 +265,7 @@ void SetupOptions(const IR::Program& program, const Profile& profile,
     // TODO: Track the shared atomic ops
     header += "OPTION NV_internal;"
               "OPTION NV_shader_storage_buffer;"
-              "OPTION NV_gpu_program_fp64;"
-              "OPTION NV_bindless_texture;"
-              "OPTION ARB_derivative_control;";
+              "OPTION NV_gpu_program_fp64;";
     if (info.uses_int64_bit_atomics) {
         header += "OPTION NV_shader_atomic_int64;";
     }
@@ -294,6 +292,9 @@ void SetupOptions(const IR::Program& program, const Profile& profile,
     }
     if (info.uses_typeless_image_reads && profile.support_typeless_image_loads) {
         header += "OPTION EXT_shader_image_load_formatted;";
+    }
+    if (profile.support_derivative_control) {
+        header += "OPTION ARB_derivative_control;";
     }
     if (stage == Stage::Fragment && runtime_info.force_early_z != 0) {
         header += "OPTION NV_early_fragment_tests;";

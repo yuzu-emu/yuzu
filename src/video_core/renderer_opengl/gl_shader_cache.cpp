@@ -274,6 +274,7 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
         .support_typeless_image_loads = device.HasImageLoadFormatted(),
         .support_demote_to_helper_invocation = false,
         .support_int64_atomics = false,
+        .support_derivative_control = device.HasDerivativeControl(),
 
         .warp_size_potentially_larger_than_guest = true,
 
