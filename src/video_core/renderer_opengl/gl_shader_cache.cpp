@@ -92,9 +92,15 @@ GLenum AssemblyStage(size_t stage_index) {
 
 Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
                                     const Shader::IR::Program& program,
-                                    bool glasm_use_storage_buffers) {
+                                    bool glasm_use_storage_buffers, bool use_assembly_shaders) {
     Shader::RuntimeInfo info;
     switch (program.stage) {
+    case Shader::Stage::VertexB:
+    case Shader::Stage::Geometry:
+        if (!use_assembly_shaders && key.xfb_enabled != 0) {
+            info.xfb_varyings = VideoCommon::MakeTransformFeedbackVaryings(key.xfb_state);
+        }
+        break;
     case Shader::Stage::TessellationEval:
         info.tess_clockwise = key.tessellation_clockwise != 0;
         info.tess_primitive = [&key] {
@@ -420,7 +426,8 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
     OGLProgram source_program;
     std::array<OGLAssemblyProgram, 5> assembly_programs;
     Shader::Backend::Bindings binding;
-    if (!device.UseAssemblyShaders()) {
+    const bool use_glasm{device.UseAssemblyShaders()};
+    if (!use_glasm) {
         source_program.handle = glCreateProgram();
     }
     const size_t first_index = uses_vertex_a && uses_vertex_b ? 1 : 0;
@@ -434,8 +441,9 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
         const size_t stage_index{index - 1};
         infos[stage_index] = &program.info;
 
-        const auto runtime_info{MakeRuntimeInfo(key, program, glasm_use_storage_buffers)};
-        if (device.UseAssemblyShaders()) {
+        const auto runtime_info{
+            MakeRuntimeInfo(key, program, glasm_use_storage_buffers, use_glasm)};
+        if (use_glasm) {
             const std::string code{EmitGLASM(profile, runtime_info, program, binding)};
             assembly_programs[stage_index] = CompileProgram(code, AssemblyStage(stage_index));
         } else {
@@ -443,7 +451,7 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
             AttachShader(Stage(stage_index), source_program.handle, code);
         }
     }
-    if (!device.UseAssemblyShaders()) {
+    if (!use_glasm) {
         LinkProgram(source_program.handle);
     }
     return std::make_unique<GraphicsPipeline>(

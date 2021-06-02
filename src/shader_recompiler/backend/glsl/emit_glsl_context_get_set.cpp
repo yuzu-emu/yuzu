@@ -200,13 +200,21 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
 
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view value,
                       [[maybe_unused]] std::string_view vertex) {
-    const u32 element{static_cast<u32>(attr) % 4};
-    const char swizzle{"xyzw"[element]};
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
-        ctx.Add("out_attr{}{}.{}={};", index, OutputVertexIndex(ctx, vertex), swizzle, value);
+        const u32 element{IR::GenericAttributeElement(attr)};
+        const GenericElementInfo& info{ctx.output_generics.at(index).at(element)};
+        const auto output_decorator{OutputVertexIndex(ctx, vertex)};
+        if (info.num_components == 1) {
+            ctx.Add("{}{}={};", info.name, output_decorator, value);
+        } else {
+            const u32 index_element{element - info.first_element};
+            ctx.Add("{}{}.{}={};", info.name, output_decorator, "xyzw"[index_element], value);
+        }
         return;
     }
+    const u32 element{static_cast<u32>(attr) % 4};
+    const char swizzle{"xyzw"[element]};
     switch (attr) {
     case IR::Attribute::PointSize:
         ctx.Add("gl_PointSize={};", value);
@@ -233,7 +241,6 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
         break;
     }
     default:
-        fmt::print("Set attribute {}", attr);
         throw NotImplementedException("Set attribute {}", attr);
     }
 }

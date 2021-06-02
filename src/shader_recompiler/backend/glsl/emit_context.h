@@ -27,6 +27,12 @@ struct Program;
 
 namespace Shader::Backend::GLSL {
 
+struct GenericElementInfo {
+    std::string name{};
+    u32 first_element{};
+    u32 num_components{};
+};
+
 class EmitContext {
 public:
     explicit EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
@@ -146,6 +152,7 @@ public:
     std::vector<u32> image_buffer_bindings;
     std::vector<u32> texture_bindings;
     std::vector<u32> image_bindings;
+    std::array<std::array<GenericElementInfo, 4>, 32> output_generics{};
 
     bool uses_y_direction{};
     bool uses_cc_carry{};
@@ -154,6 +161,7 @@ private:
     void SetupExtensions(std::string& header);
     void DefineConstantBuffers(Bindings& bindings);
     void DefineStorageBuffers(Bindings& bindings);
+    void DefineGenericOutput(size_t index, u32 invocations);
     void DefineHelperFunctions();
     void SetupImages(Bindings& bindings);
 };
