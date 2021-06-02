@@ -72,8 +72,9 @@ std::vector<Shader::TransformFeedbackVarying> MakeTransformFeedbackVaryings(
             const u32 base_offset = offset;
             const u8 location = locations[offset];
 
+            UNIMPLEMENTED_IF_MSG(layout.stream != 0, "Stream is not zero: {}", layout.stream);
             Shader::TransformFeedbackVarying varying{
-                .buffer = layout.stream,
+                .buffer = static_cast<u32>(buffer),
                 .stride = layout.stride,
                 .offset = offset * 4,
                 .components = 1,
