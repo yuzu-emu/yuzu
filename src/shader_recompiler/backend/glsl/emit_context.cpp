@@ -37,7 +37,6 @@ bool StoresPerVertexAttributes(Stage stage) {
     case Stage::VertexA:
     case Stage::VertexB:
     case Stage::Geometry:
-    case Stage::TessellationControl:
     case Stage::TessellationEval:
         return true;
     default:
@@ -154,9 +153,7 @@ void SetupOutPerVertex(Stage stage, const Info& info, std::string& header) {
         return;
     }
     header += "out gl_PerVertex{";
-    if (info.stores_position) {
-        header += "vec4 gl_Position;";
-    }
+    header += "vec4 gl_Position;";
     if (info.stores_point_size) {
         header += "float gl_PointSize;";
     }
@@ -236,10 +233,8 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     }
     for (size_t index = 0; index < info.stores_generics.size(); ++index) {
         // TODO: Properly resolve attribute issues
-        const auto declaration{fmt::format("layout(location={}) out vec4 out_attr{}{};", index,
-                                           index, OutputDecorator(stage, program.invocations))};
         if (info.stores_generics[index] || stage == Stage::VertexA || stage == Stage::VertexB) {
-            header += declaration;
+            DefineGenericOutput(index, program.invocations);
         }
     }
     header += "\n";
@@ -312,13 +307,53 @@ void EmitContext::DefineStorageBuffers(Bindings& bindings) {
     }
 }
 
+void EmitContext::DefineGenericOutput(size_t index, u32 invocations) {
+    static constexpr std::string_view swizzle{"xyzw"};
+    const size_t base_index{static_cast<size_t>(IR::Attribute::Generic0X) + index * 4};
+    u32 element{0};
+    while (element < 4) {
+        std::string definition{fmt::format("layout(location={}", index)};
+        const u32 remainder{4 - element};
+        const TransformFeedbackVarying* xfb_varying{};
+        if (!runtime_info.xfb_varyings.empty()) {
+            xfb_varying = &runtime_info.xfb_varyings[base_index + element];
+            xfb_varying = xfb_varying && xfb_varying->components > 0 ? xfb_varying : nullptr;
+        }
+        const u32 num_components{xfb_varying ? xfb_varying->components : remainder};
+        if (element > 0) {
+            definition += fmt::format(",component={}", element);
+        }
+        if (xfb_varying) {
+            definition +=
+                fmt::format(",xfb_buffer={},xfb_stride={},xfb_offset={}", xfb_varying->buffer,
+                            xfb_varying->stride, xfb_varying->offset);
+        }
+        std::string name{fmt::format("out_attr{}", index)};
+        if (num_components < 4 || element > 0) {
+            name += fmt::format("_{}", swizzle.substr(element, num_components));
+        }
+        const auto type{num_components == 1 ? "float" : fmt::format("vec{}", num_components)};
+        definition += fmt::format(")out {} {}{};", type, name, OutputDecorator(stage, invocations));
+        header += definition;
+
+        const GenericElementInfo element_info{
+            .name = name,
+            .first_element = element,
+            .num_components = num_components,
+        };
+        std::fill_n(output_generics[index].begin() + element, num_components, element_info);
+        element += num_components;
+    }
+    header += "\n";
+}
+
 void EmitContext::DefineHelperFunctions() {
     if (info.uses_global_increment || info.uses_shared_increment) {
         header += "uint CasIncrement(uint op_a,uint op_b){return(op_a>=op_b)?0u:(op_a+1u);}\n";
     }
     if (info.uses_global_decrement || info.uses_shared_decrement) {
-        header +=
-            "uint CasDecrement(uint op_a,uint op_b){return(op_a==0||op_a>op_b)?op_b:(op_a-1u);}\n";
+        header += "uint CasDecrement(uint op_a,uint "
+                  "op_b){return(op_a==0||op_a>op_b)?op_b:(op_a-1u);}\n";
     }
     if (info.uses_atomic_f32_add) {
         header += "uint CasFloatAdd(uint op_a,float op_b){return "
