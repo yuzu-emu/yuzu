@@ -99,7 +99,7 @@ void NsightAftermathTracker::SaveShader(std::span<const u32> spirv) const {
         LOG_ERROR(Render_Vulkan, "Failed to dump SPIR-V module with hash={:016x}", hash.hash);
         return;
     }
-    if (file.Write(spirv) != spirv.size()) {
+    if (file.WriteSpan(spirv) != spirv.size()) {
         LOG_ERROR(Render_Vulkan, "Failed to write SPIR-V module with hash={:016x}", hash.hash);
         return;
     }
