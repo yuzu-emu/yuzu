@@ -156,6 +156,7 @@ public:
 
     bool uses_y_direction{};
     bool uses_cc_carry{};
+    bool supports_viewport_layer{};
 
 private:
     void SetupExtensions(std::string& header);

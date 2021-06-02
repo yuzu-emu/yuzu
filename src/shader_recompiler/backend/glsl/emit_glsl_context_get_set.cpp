@@ -226,6 +226,11 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
         ctx.Add("gl_Position.{}={};", swizzle, value);
         break;
     case IR::Attribute::ViewportIndex:
+        if (ctx.stage != Stage::Geometry && !ctx.supports_viewport_layer) {
+            // LOG_WARNING(..., "Shader stores viewport index but device does not support viewport
+            // layer extension");
+            break;
+        }
         ctx.Add("gl_ViewportIndex=floatBitsToInt({});", value);
         break;
     case IR::Attribute::ClipDistance0:

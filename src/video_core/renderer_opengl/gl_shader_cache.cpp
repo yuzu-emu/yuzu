@@ -225,6 +225,7 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
           .support_derivative_control = device.HasDerivativeControl(),
           .support_gl_nv_gpu_shader_5 = device.HasNvGpuShader5(),
           .support_gl_amd_gpu_shader_half_float = device.HasAmdShaderHalfFloat(),
+          .support_gl_vertex_viewport_layer = device.HasVertexViewportLayer(),
 
           .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyLargerThanGuest(),
 
