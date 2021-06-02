@@ -114,6 +114,8 @@ void I2F(TranslatorVisitor& v, u64 insn, IR::U32U64 src) {
             IR::U1 is_least;
             if (src_bitsize == 64) {
                 is_least = v.ir.IEqual(src, v.ir.Imm64(std::numeric_limits<s64>::min()));
+            } else if (src_bitsize == 32) {
+                is_least = v.ir.IEqual(src, v.ir.Imm32(std::numeric_limits<s32>::min()));
             } else {
                 const IR::U32 least_value{v.ir.Imm32(-(1 << (src_bitsize - 1)))};
                 is_least = v.ir.IEqual(src, least_value);
