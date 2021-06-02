@@ -148,23 +148,24 @@ std::string_view OutputPrimitive(OutputTopology topology) {
     throw InvalidArgument("Invalid output topology {}", topology);
 }
 
-void SetupOutPerVertex(Stage stage, const Info& info, std::string& header) {
-    if (!StoresPerVertexAttributes(stage)) {
+void SetupOutPerVertex(EmitContext& ctx, std::string& header) {
+    if (!StoresPerVertexAttributes(ctx.stage)) {
         return;
     }
     header += "out gl_PerVertex{";
     header += "vec4 gl_Position;";
-    if (info.stores_point_size) {
+    if (ctx.info.stores_point_size) {
         header += "float gl_PointSize;";
     }
-    if (info.stores_clip_distance) {
+    if (ctx.info.stores_clip_distance) {
         header += "float gl_ClipDistance[];";
     }
-    if (info.stores_viewport_index && stage != Stage::Geometry) {
+    if (ctx.info.stores_viewport_index && ctx.supports_viewport_layer &&
+        ctx.stage != Stage::Geometry) {
         header += "int gl_ViewportIndex;";
     }
     header += "};\n";
-    if (info.stores_viewport_index && stage == Stage::Geometry) {
+    if (ctx.info.stores_viewport_index && ctx.stage == Stage::Geometry) {
         header += "out int gl_ViewportIndex;";
     }
 }
@@ -173,6 +174,7 @@ void SetupOutPerVertex(Stage stage, const Info& info, std::string& header) {
 EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
                          const RuntimeInfo& runtime_info_)
     : info{program.info}, profile{profile_}, runtime_info{runtime_info_} {
+    supports_viewport_layer = profile.support_gl_vertex_viewport_layer;
     SetupExtensions(header);
     stage = program.stage;
     switch (program.stage) {
@@ -206,7 +208,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
                               program.workgroup_size[2]);
         break;
     }
-    SetupOutPerVertex(stage, info, header);
+    SetupOutPerVertex(*this, header);
     for (size_t index = 0; index < info.input_generics.size(); ++index) {
         const auto& generic{info.input_generics[index]};
         if (generic.used) {
@@ -276,7 +278,7 @@ void EmitContext::SetupExtensions(std::string&) {
             header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
         }
     }
-    if (info.stores_viewport_index && stage != Stage::Geometry) {
+    if (info.stores_viewport_index && supports_viewport_layer && stage != Stage::Geometry) {
         header += "#extension GL_ARB_shader_viewport_layer_array : enable\n";
     }
 }
