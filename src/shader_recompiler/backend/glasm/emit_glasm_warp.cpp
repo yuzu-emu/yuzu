@@ -5,6 +5,7 @@
 #include "shader_recompiler/backend/glasm/emit_context.h"
 #include "shader_recompiler/backend/glasm/emit_glasm_instructions.h"
 #include "shader_recompiler/frontend/ir/value.h"
+#include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::GLASM {
 
@@ -111,19 +112,39 @@ void EmitFSwizzleAdd(EmitContext& ctx, IR::Inst& inst, ScalarF32 op_a, ScalarF32
 }
 
 void EmitDPdxFine(EmitContext& ctx, IR::Inst& inst, ScalarF32 p) {
-    ctx.Add("DDX.FINE {}.x,{};", inst, p);
+    if (ctx.profile.support_derivative_control) {
+        ctx.Add("DDX.FINE {}.x,{};", inst, p);
+    } else {
+        // LOG_WARNING
+        ctx.Add("DDX {}.x,{};", inst, p);
+    }
 }
 
 void EmitDPdyFine(EmitContext& ctx, IR::Inst& inst, ScalarF32 p) {
-    ctx.Add("DDY.FINE {}.x,{};", inst, p);
+    if (ctx.profile.support_derivative_control) {
+        ctx.Add("DDY.FINE {}.x,{};", inst, p);
+    } else {
+        // LOG_WARNING
+        ctx.Add("DDY {}.x,{};", inst, p);
+    }
 }
 
 void EmitDPdxCoarse(EmitContext& ctx, IR::Inst& inst, ScalarF32 p) {
-    ctx.Add("DDX.COARSE {}.x,{};", inst, p);
+    if (ctx.profile.support_derivative_control) {
+        ctx.Add("DDX.COARSE {}.x,{};", inst, p);
+    } else {
+        // LOG_WARNING
+        ctx.Add("DDX {}.x,{};", inst, p);
+    }
 }
 
 void EmitDPdyCoarse(EmitContext& ctx, IR::Inst& inst, ScalarF32 p) {
-    ctx.Add("DDY.COARSE {}.x,{};", inst, p);
+    if (ctx.profile.support_derivative_control) {
+        ctx.Add("DDY.COARSE {}.x,{};", inst, p);
+    } else {
+        // LOG_WARNING
+        ctx.Add("DDY {}.x,{};", inst, p);
+    }
 }
 
 } // namespace Shader::Backend::GLASM

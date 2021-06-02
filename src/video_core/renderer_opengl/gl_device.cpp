@@ -154,6 +154,7 @@ Device::Device() {
     has_precise_bug = TestPreciseBug();
     has_broken_texture_view_formats = is_amd || (!is_linux && is_intel);
     has_nv_viewport_array2 = GLAD_GL_NV_viewport_array2;
+    has_derivative_control = GLAD_GL_ARB_derivative_control;
     has_vertex_buffer_unified_memory = GLAD_GL_NV_vertex_buffer_unified_memory;
     has_debugging_tool_attached = IsDebugToolAttached(extensions);
     has_depth_buffer_float = HasExtension(extensions, "GL_NV_depth_buffer_float");
