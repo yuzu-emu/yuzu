@@ -13,16 +13,24 @@
 
 namespace Shader::Optimization {
 
-void VertexATransformPass(IR::Program&) {
-    throw NotImplementedException("VertexA pass");
+void VertexATransformPass(IR::Program& program) {
+  for (IR::Block* const block : program.blocks) {
+      for (IR::Inst& inst : block->Instructions()) {
+          if (inst.GetOpcode() == IR::Opcode::Epilogue) {
+              return inst.Invalidate();
+          }
+      }
+  }
 }
 
-void VertexBTransformPass(IR::Program&) {
-    throw NotImplementedException("VertexA pass");
-}
-
-void DualVertexJoinPass(IR::Program&) {
-    throw NotImplementedException("VertexA pass");
+void VertexBTransformPass(IR::Program& program) {
+  for (IR::Block* const block : program.blocks) {
+      for (IR::Inst& inst : block->Instructions()) {
+          if (inst.GetOpcode() == IR::Opcode::Prologue) {
+              return inst.Invalidate();
+          }
+      }
+  }
 }
 
 } // namespace Shader::Optimization

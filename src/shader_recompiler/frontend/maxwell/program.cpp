@@ -171,20 +171,29 @@ IR::Program MergeDualVertexPrograms(IR::Program& vertex_a, IR::Program& vertex_b
     IR::Program result{};
     Optimization::VertexATransformPass(vertex_a);
     Optimization::VertexBTransformPass(vertex_b);
-    std::swap(result.blocks, vertex_a.blocks);
-    result.blocks.insert(result.blocks.end(), vertex_b.blocks.begin(), vertex_b.blocks.end());
+    for (const auto& term : vertex_a.syntax_list) {
+        if (term.type == IR::AbstractSyntaxNode::Type::Return) {
+            continue;
+        }
+        result.syntax_list.push_back(term);
+    }
+    for (const auto& term : vertex_b.syntax_list) {
+        result.syntax_list.push_back(term);
+    }
+    result.blocks = GenerateBlocks(result.syntax_list);
+    result.post_order_blocks = vertex_b.post_order_blocks;
+    for (const auto& block : vertex_a.post_order_blocks) {
+        result.post_order_blocks.push_back(block);
+    }
     result.stage = Stage::VertexB;
     result.info = vertex_a.info;
     result.local_memory_size = std::max(vertex_a.local_memory_size, vertex_b.local_memory_size);
-
     for (size_t index = 0; index < 32; ++index) {
         result.info.input_generics[index].used |= vertex_b.info.input_generics[index].used;
         result.info.stores_generics[index] |= vertex_b.info.stores_generics[index];
     }
     Optimization::JoinTextureInfo(result.info, vertex_b.info);
     Optimization::JoinStorageInfo(result.info, vertex_b.info);
-    Optimization::DualVertexJoinPass(result);
-    result.post_order_blocks = PostOrder(result.syntax_list.front());
     Optimization::DeadCodeEliminationPass(result);
     Optimization::VerificationPass(result);
     Optimization::CollectShaderInfoPass(env_vertex_b, result);
