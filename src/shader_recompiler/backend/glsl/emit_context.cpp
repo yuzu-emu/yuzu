@@ -91,8 +91,39 @@ std::string_view SamplerType(TextureType type, bool is_depth) {
     case TextureType::Buffer:
         return "samplerBuffer";
     default:
-        fmt::print("Texture type: {}", type);
         throw NotImplementedException("Texture type: {}", type);
+    }
+}
+
+std::string_view ImageType(TextureType type) {
+    switch (type) {
+    case TextureType::Color2D:
+        return "uimage2D";
+    default:
+        throw NotImplementedException("Image type: {}", type);
+    }
+}
+
+std::string_view ImageFormatString(ImageFormat format) {
+    switch (format) {
+    case ImageFormat::Typeless:
+        return "";
+    case ImageFormat::R8_UINT:
+        return ",r8ui";
+    case ImageFormat::R8_SINT:
+        return ",r8i";
+    case ImageFormat::R16_UINT:
+        return ",r16ui";
+    case ImageFormat::R16_SINT:
+        return ",r16i";
+    case ImageFormat::R32_UINT:
+        return ",r32ui";
+    case ImageFormat::R32G32_UINT:
+        return ",rg32ui";
+    case ImageFormat::R32G32B32A32_UINT:
+        return ",rgba32ui";
+    default:
+        throw NotImplementedException("Image format: {}", format);
     }
 }
 
@@ -250,6 +281,7 @@ void EmitContext::SetupExtensions(std::string&) {
     // TODO: track this usage
     header += "#extension GL_ARB_sparse_texture2 : enable\n";
     header += "#extension GL_EXT_texture_shadow_lod : enable\n";
+    header += "#extension GL_EXT_shader_image_load_formatted : enable\n";
     if (info.uses_int64) {
         header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
     }
@@ -396,15 +428,25 @@ void EmitContext::DefineHelperFunctions() {
 void EmitContext::SetupImages(Bindings& bindings) {
     image_buffer_bindings.reserve(info.image_buffer_descriptors.size());
     for (const auto& desc : info.image_buffer_descriptors) {
-        throw NotImplementedException("image_buffer_descriptors");
+        const auto indices{bindings.image + desc.count};
+        for (u32 index = bindings.image; index < indices; ++index) {
+            header += fmt::format("layout(binding={}) uniform uimageBuffer img{};", bindings.image,
+                                  index);
+        }
         image_buffer_bindings.push_back(bindings.image);
         bindings.image += desc.count;
     }
     image_bindings.reserve(info.image_descriptors.size());
     for (const auto& desc : info.image_descriptors) {
-        throw NotImplementedException("image_bindings");
-
         image_bindings.push_back(bindings.image);
+        const auto format{ImageFormatString(desc.format)};
+        const auto image_type{ImageType(desc.type)};
+        const auto qualifier{desc.is_written ? "" : "readonly "};
+        const auto indices{bindings.image + desc.count};
+        for (u32 index = bindings.image; index < indices; ++index) {
+            header += fmt::format("layout(binding={}{})uniform {}{} img{};", bindings.image, format,
+                                  qualifier, image_type, index);
+        }
         bindings.image += desc.count;
     }
     texture_buffer_bindings.reserve(info.texture_buffer_descriptors.size());
