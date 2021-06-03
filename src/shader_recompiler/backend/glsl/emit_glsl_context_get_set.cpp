@@ -45,14 +45,13 @@ void EmitGetCbufU8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst&
                    [[maybe_unused]] const IR::Value& binding,
                    [[maybe_unused]] const IR::Value& offset) {
     if (offset.IsImmediate()) {
-        ctx.AddU32("{}=bitfieldExtract(floatBitsToUint({}_cbuf{}[{}].{}),int({}),8);", inst,
-                   ctx.stage_name, binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
+        ctx.AddU32("{}=bitfieldExtract(ftou({}_cbuf{}[{}].{}),int({}),8);", inst, ctx.stage_name,
+                   binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
                    (offset.U32() % 4) * 8);
     } else {
         const auto offset_var{ctx.var_alloc.Consume(offset)};
-        ctx.AddU32(
-            "{}=bitfieldExtract(floatBitsToUint({}_cbuf{}[{}/16][({}>>2)%4]),int(({}%4)*8),8);",
-            inst, ctx.stage_name, binding.U32(), offset_var, offset_var, offset_var);
+        ctx.AddU32("{}=bitfieldExtract(ftou({}_cbuf{}[{}/16][({}>>2)%4]),int(({}%4)*8),8);", inst,
+                   ctx.stage_name, binding.U32(), offset_var, offset_var, offset_var);
     }
 }
 
@@ -60,14 +59,13 @@ void EmitGetCbufS8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst&
                    [[maybe_unused]] const IR::Value& binding,
                    [[maybe_unused]] const IR::Value& offset) {
     if (offset.IsImmediate()) {
-        ctx.AddU32("{}=bitfieldExtract(floatBitsToInt({}_cbuf{}[{}].{}),int({}),8);", inst,
-                   ctx.stage_name, binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
+        ctx.AddU32("{}=bitfieldExtract(ftoi({}_cbuf{}[{}].{}),int({}),8);", inst, ctx.stage_name,
+                   binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
                    (offset.U32() % 4) * 8);
     } else {
         const auto offset_var{ctx.var_alloc.Consume(offset)};
-        ctx.AddU32(
-            "{}=bitfieldExtract(floatBitsToInt({}_cbuf{}[{}/16][({}>>2)%4]),int(({}%4)*8),8);",
-            inst, ctx.stage_name, binding.U32(), offset_var, offset_var, offset_var);
+        ctx.AddU32("{}=bitfieldExtract(ftoi({}_cbuf{}[{}/16][({}>>2)%4]),int(({}%4)*8),8);", inst,
+                   ctx.stage_name, binding.U32(), offset_var, offset_var, offset_var);
     }
 }
 
@@ -75,12 +73,12 @@ void EmitGetCbufU16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
                     [[maybe_unused]] const IR::Value& binding,
                     [[maybe_unused]] const IR::Value& offset) {
     if (offset.IsImmediate()) {
-        ctx.AddU32("{}=bitfieldExtract(floatBitsToUint({}_cbuf{}[{}].{}),int({}),16);", inst,
-                   ctx.stage_name, binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
+        ctx.AddU32("{}=bitfieldExtract(ftou({}_cbuf{}[{}].{}),int({}),16);", inst, ctx.stage_name,
+                   binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
                    ((offset.U32() / 2) % 2) * 16);
     } else {
         const auto offset_var{ctx.var_alloc.Consume(offset)};
-        ctx.AddU32("{}=bitfieldExtract(floatBitsToUint({}_cbuf{}[{}/16][({}>>2)%4]),int((({}/"
+        ctx.AddU32("{}=bitfieldExtract(ftou({}_cbuf{}[{}/16][({}>>2)%4]),int((({}/"
                    "2)%2)*16),16);",
                    inst, ctx.stage_name, binding.U32(), offset_var, offset_var, offset_var);
     }
@@ -90,12 +88,12 @@ void EmitGetCbufS16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
                     [[maybe_unused]] const IR::Value& binding,
                     [[maybe_unused]] const IR::Value& offset) {
     if (offset.IsImmediate()) {
-        ctx.AddU32("{}=bitfieldExtract(floatBitsToInt({}_cbuf{}[{}].{}),int({}),16);", inst,
-                   ctx.stage_name, binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
+        ctx.AddU32("{}=bitfieldExtract(ftoi({}_cbuf{}[{}].{}),int({}),16);", inst, ctx.stage_name,
+                   binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
                    ((offset.U32() / 2) % 2) * 16);
     } else {
         const auto offset_var{ctx.var_alloc.Consume(offset)};
-        ctx.AddU32("{}=bitfieldExtract(floatBitsToInt({}_cbuf{}[{}/16][({}>>2)%4]),int((({}/"
+        ctx.AddU32("{}=bitfieldExtract(ftoi({}_cbuf{}[{}/16][({}>>2)%4]),int((({}/"
                    "2)%2)*16),16);",
                    inst, ctx.stage_name, binding.U32(), offset_var, offset_var, offset_var);
     }
@@ -104,12 +102,12 @@ void EmitGetCbufS16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
 void EmitGetCbufU32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                     const IR::Value& offset) {
     if (offset.IsImmediate()) {
-        ctx.AddU32("{}=floatBitsToUint({}_cbuf{}[{}].{});", inst, ctx.stage_name, binding.U32(),
+        ctx.AddU32("{}=ftou({}_cbuf{}[{}].{});", inst, ctx.stage_name, binding.U32(),
                    offset.U32() / 16, OffsetSwizzle(offset.U32()));
     } else {
         const auto offset_var{ctx.var_alloc.Consume(offset)};
-        ctx.AddU32("{}=floatBitsToUint({}_cbuf{}[{}/16][({}>>2)%4]);", inst, ctx.stage_name,
-                   binding.U32(), offset_var, offset_var);
+        ctx.AddU32("{}=ftou({}_cbuf{}[{}/16][({}>>2)%4]);", inst, ctx.stage_name, binding.U32(),
+                   offset_var, offset_var);
     }
 }
 
@@ -128,15 +126,14 @@ void EmitGetCbufF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
 void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                       const IR::Value& offset) {
     if (offset.IsImmediate()) {
-        ctx.AddU32x2(
-            "{}=uvec2(floatBitsToUint({}_cbuf{}[{}].{}),floatBitsToUint({}_cbuf{}[{}].{}));", inst,
-            ctx.stage_name, binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
-            ctx.stage_name, binding.U32(), (offset.U32() + 4) / 16,
-            OffsetSwizzle(offset.U32() + 4));
+        ctx.AddU32x2("{}=uvec2(ftou({}_cbuf{}[{}].{}),ftou({}_cbuf{}[{}].{}));", inst,
+                     ctx.stage_name, binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
+                     ctx.stage_name, binding.U32(), (offset.U32() + 4) / 16,
+                     OffsetSwizzle(offset.U32() + 4));
     } else {
         const auto offset_var{ctx.var_alloc.Consume(offset)};
-        ctx.AddU32x2("{}=uvec2(floatBitsToUint({}_cbuf{}[{}/16][({}/"
-                     "4)%4]),floatBitsToUint({}_cbuf{}[({}+4)/16][(({}+4)>>2)%4]));",
+        ctx.AddU32x2("{}=uvec2(ftou({}_cbuf{}[{}/16][({}/"
+                     "4)%4]),ftou({}_cbuf{}[({}+4)/16][(({}+4)>>2)%4]));",
                      inst, ctx.stage_name, binding.U32(), offset_var, offset_var, ctx.stage_name,
                      binding.U32(), offset_var, offset_var);
     }
@@ -180,13 +177,13 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
         ctx.AddF32("{}=gl_PointCoord.{};", inst, swizzle);
         break;
     case IR::Attribute::InstanceId:
-        ctx.AddF32("{}=intBitsToFloat(gl_InstanceID);", inst);
+        ctx.AddF32("{}=itof(gl_InstanceID);", inst);
         break;
     case IR::Attribute::VertexId:
-        ctx.AddF32("{}=intBitsToFloat(gl_VertexID);", inst);
+        ctx.AddF32("{}=itof(gl_VertexID);", inst);
         break;
     case IR::Attribute::FrontFace:
-        ctx.AddF32("{}=intBitsToFloat(gl_FrontFacing?-1:0);", inst);
+        ctx.AddF32("{}=itof(gl_FrontFacing?-1:0);", inst);
         break;
     case IR::Attribute::TessellationEvaluationPointU:
     case IR::Attribute::TessellationEvaluationPointV:
@@ -231,7 +228,7 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
             // layer extension");
             break;
         }
-        ctx.Add("gl_ViewportIndex=floatBitsToInt({});", value);
+        ctx.Add("gl_ViewportIndex=ftoi({});", value);
         break;
     case IR::Attribute::ClipDistance0:
     case IR::Attribute::ClipDistance1:

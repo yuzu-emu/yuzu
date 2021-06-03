@@ -39,7 +39,7 @@ void SsboCasFunctionF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& bindi
                                        ctx.var_alloc.Consume(offset))};
     const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     ctx.Add(cas_loop.data(), ssbo, ret, ssbo, function, ssbo, value, ret);
-    ctx.AddF32("{}=uintBitsToFloat({});", inst, ret);
+    ctx.AddF32("{}=utof({});", inst, ret);
 }
 } // namespace
 
