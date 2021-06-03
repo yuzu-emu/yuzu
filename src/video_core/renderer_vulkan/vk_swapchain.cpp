@@ -65,7 +65,8 @@ VKSwapchain::VKSwapchain(VkSurfaceKHR surface_, const Device& device_, VKSchedul
 VKSwapchain::~VKSwapchain() = default;
 
 void VKSwapchain::Create(u32 width, u32 height, bool srgb) {
-    needs_recreate = false;
+    is_outdated = false;
+    is_suboptimal = false;
 
     const auto physical_device = device.GetPhysical();
     const auto capabilities{physical_device.GetSurfaceCapabilitiesKHR(surface)};
@@ -85,11 +86,22 @@ void VKSwapchain::Create(u32 width, u32 height, bool srgb) {
 }
 
 void VKSwapchain::AcquireNextImage() {
-    const VkResult result =
-        device.GetLogical().AcquireNextImageKHR(*swapchain, std::numeric_limits<u64>::max(),
-                                                *present_semaphores[frame_index], {}, &image_index);
-    needs_recreate |= result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR;
-
+    const VkResult result = device.GetLogical().AcquireNextImageKHR(
+        *swapchain, std::numeric_limits<u64>::max(), *present_semaphores[frame_index],
+        VK_NULL_HANDLE, &image_index);
+    switch (result) {
+    case VK_SUCCESS:
+        break;
+    case VK_SUBOPTIMAL_KHR:
+        is_suboptimal = true;
+        break;
+    case VK_ERROR_OUT_OF_DATE_KHR:
+        is_outdated = true;
+        break;
+    default:
+        LOG_ERROR(Render_Vulkan, "vkAcquireNextImageKHR returned {}", vk::ToString(result));
+        break;
+    }
     scheduler.Wait(resource_ticks[image_index]);
     resource_ticks[image_index] = scheduler.CurrentTick();
 }
@@ -115,7 +127,7 @@ void VKSwapchain::Present(VkSemaphore render_semaphore) {
         LOG_DEBUG(Render_Vulkan, "Suboptimal swapchain");
         break;
     case VK_ERROR_OUT_OF_DATE_KHR:
-        needs_recreate = true;
+        is_outdated = true;
         break;
     default:
         LOG_CRITICAL(Render_Vulkan, "Failed to present with error {}", vk::ToString(result));

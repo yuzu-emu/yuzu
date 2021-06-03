@@ -143,18 +143,17 @@ void RendererVulkan::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
         const Layout::FramebufferLayout layout = render_window.GetFramebufferLayout();
         swapchain.Create(layout.width, layout.height, is_srgb);
     };
-    if (swapchain.NeedsRecreate() || swapchain.HasColorSpaceChanged(is_srgb)) {
+    if (swapchain.IsSubOptimal() || swapchain.HasColorSpaceChanged(is_srgb)) {
         recreate_swapchain();
     }
-    bool needs_recreate;
+    bool is_outdated;
     do {
-        needs_recreate = false;
         swapchain.AcquireNextImage();
-        if (swapchain.NeedsRecreate()) {
+        is_outdated = swapchain.IsOutDated();
+        if (is_outdated) {
             recreate_swapchain();
-            needs_recreate = true;
         }
-    } while (needs_recreate);
+    } while (is_outdated);
     if (has_been_recreated) {
         blit_screen.Recreate();
     }

@@ -38,9 +38,14 @@ public:
         return current_srgb != is_srgb;
     }
 
-    /// Returns true when the image has to be recreated.
-    bool NeedsRecreate() const {
-        return needs_recreate;
+    /// Returns true when the swapchain is outdated.
+    bool IsOutDated() const {
+        return is_outdated;
+    }
+
+    /// Returns true when the swapchain is suboptimal.
+    bool IsSubOptimal() const {
+        return is_suboptimal;
     }
 
     VkExtent2D GetSize() const {
@@ -95,7 +100,8 @@ private:
     VkExtent2D extent{};
 
     bool current_srgb{};
-    bool needs_recreate{};
+    bool is_outdated{};
+    bool is_suboptimal{};
 };
 
 } // namespace Vulkan
