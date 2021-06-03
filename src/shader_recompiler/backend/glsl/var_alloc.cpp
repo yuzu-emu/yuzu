@@ -58,13 +58,13 @@ std::string FormatFloat(std::string_view value, IR::Type type) {
     // TODO: Confirm FP64 nan/inf
     if (type == IR::Type::F32) {
         if (value == "nan") {
-            return "uintBitsToFloat(0x7fc00000)";
+            return "utof(0x7fc00000)";
         }
         if (value == "inf") {
-            return "uintBitsToFloat(0x7f800000)";
+            return "utof(0x7f800000)";
         }
         if (value == "-inf") {
-            return "uintBitsToFloat(0xff800000)";
+            return "utof(0xff800000)";
         }
     }
     if (value.find_first_of('e') != std::string_view::npos) {

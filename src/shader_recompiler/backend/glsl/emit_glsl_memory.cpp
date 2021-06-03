@@ -9,6 +9,62 @@
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLSL {
+void EmitLoadGlobalU8([[maybe_unused]] EmitContext& ctx) {
+    NotImplemented();
+}
+
+void EmitLoadGlobalS8([[maybe_unused]] EmitContext& ctx) {
+    NotImplemented();
+}
+
+void EmitLoadGlobalU16([[maybe_unused]] EmitContext& ctx) {
+    NotImplemented();
+}
+
+void EmitLoadGlobalS16([[maybe_unused]] EmitContext& ctx) {
+    NotImplemented();
+}
+
+void EmitLoadGlobal32(EmitContext& ctx, IR::Inst& inst, std::string_view address) {
+    ctx.AddU32("{}=LoadGlobal32({});", inst, address);
+}
+
+void EmitLoadGlobal64(EmitContext& ctx, IR::Inst& inst, std::string_view address) {
+    ctx.AddU32x2("{}=LoadGlobal64({});", inst, address);
+}
+
+void EmitLoadGlobal128(EmitContext& ctx, IR::Inst& inst, std::string_view address) {
+    ctx.AddU32x4("{}=LoadGlobal128({});", inst, address);
+}
+
+void EmitWriteGlobalU8([[maybe_unused]] EmitContext& ctx) {
+    NotImplemented();
+}
+
+void EmitWriteGlobalS8([[maybe_unused]] EmitContext& ctx) {
+    NotImplemented();
+}
+
+void EmitWriteGlobalU16([[maybe_unused]] EmitContext& ctx) {
+    NotImplemented();
+}
+
+void EmitWriteGlobalS16([[maybe_unused]] EmitContext& ctx) {
+    NotImplemented();
+}
+
+void EmitWriteGlobal32(EmitContext& ctx, std::string_view address, std::string_view value) {
+    ctx.Add("WriteGlobal32({},{});", address, value);
+}
+
+void EmitWriteGlobal64(EmitContext& ctx, std::string_view address, std::string_view value) {
+    ctx.Add("WriteGlobal64({},{});", address, value);
+}
+
+void EmitWriteGlobal128(EmitContext& ctx, std::string_view address, std::string_view value) {
+    ctx.Add("WriteGlobal128({},{});", address, value);
+}
+
 void EmitLoadStorageU8([[maybe_unused]] EmitContext& ctx, IR::Inst& inst,
                        [[maybe_unused]] const IR::Value& binding,
                        [[maybe_unused]] const IR::Value& offset) {

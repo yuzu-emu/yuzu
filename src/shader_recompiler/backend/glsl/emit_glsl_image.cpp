@@ -212,7 +212,11 @@ void EmitImageSampleDrefImplicitLod([[maybe_unused]] EmitContext& ctx,
         }
     } else {
         if (ctx.stage == Stage::Fragment) {
-            ctx.AddF32("{}=texture({},{}({},{}){});", inst, texture, cast, coords, dref, bias);
+            if (info.type == TextureType::ColorArrayCube) {
+                ctx.AddF32("{}=texture({},vec4({}),{});", inst, texture, coords, dref);
+            } else {
+                ctx.AddF32("{}=texture({},{}({},{}){});", inst, texture, cast, coords, dref, bias);
+            }
         } else {
             ctx.AddF32("{}=textureLod({},{}({},{}),0.0);", inst, texture, cast, coords, dref);
         }
@@ -238,6 +242,7 @@ void EmitImageSampleDrefExplicitLod([[maybe_unused]] EmitContext& ctx,
         throw NotImplementedException("EmitImageSampleDrefExplicitLod Lod clamp samples");
     }
     const auto texture{Texture(ctx, info, index)};
+    const auto cast{ShadowSamplerVecCast(info.type)};
     if (!offset.IsEmpty()) {
         const auto offset_str{CastToIntVec(ctx.var_alloc.Consume(offset), info)};
         if (info.type == TextureType::ColorArrayCube) {
@@ -251,7 +256,8 @@ void EmitImageSampleDrefExplicitLod([[maybe_unused]] EmitContext& ctx,
         if (info.type == TextureType::ColorArrayCube) {
             ctx.AddF32("{}=textureLod({},{},{},{});", inst, texture, coords, dref, lod_lc);
         } else {
-            ctx.AddF32("{}=textureLod({},vec3({},{}),{});", inst, texture, coords, dref, lod_lc);
+            ctx.AddF32("{}=textureLod({},{}({},{}),{});", inst, texture, cast, coords, dref,
+                       lod_lc);
         }
     }
 }

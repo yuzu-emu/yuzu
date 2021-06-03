@@ -232,62 +232,6 @@ void EmitUndefU64(EmitContext& ctx, IR::Inst& inst) {
     NotImplemented();
 }
 
-void EmitLoadGlobalU8(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitLoadGlobalS8(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitLoadGlobalU16(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitLoadGlobalS16(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitLoadGlobal32(EmitContext& ctx, std::string_view address) {
-    NotImplemented();
-}
-
-void EmitLoadGlobal64(EmitContext& ctx, std::string_view address) {
-    NotImplemented();
-}
-
-void EmitLoadGlobal128(EmitContext& ctx, std::string_view address) {
-    NotImplemented();
-}
-
-void EmitWriteGlobalU8(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitWriteGlobalS8(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitWriteGlobalU16(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitWriteGlobalS16(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitWriteGlobal32(EmitContext& ctx, std::string_view address, std::string_view value) {
-    NotImplemented();
-}
-
-void EmitWriteGlobal64(EmitContext& ctx, std::string_view address, std::string_view value) {
-    NotImplemented();
-}
-
-void EmitWriteGlobal128(EmitContext& ctx, std::string_view address, std::string_view value) {
-    NotImplemented();
-}
-
 void EmitGetZeroFromOp(EmitContext& ctx) {
     NotImplemented();
 }
