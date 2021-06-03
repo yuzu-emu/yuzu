@@ -40,6 +40,7 @@ namespace OpenGL {
 namespace {
 using Shader::Backend::GLASM::EmitGLASM;
 using Shader::Backend::SPIRV::EmitSPIRV;
+using Shader::Maxwell::MergeDualVertexPrograms;
 using Shader::Maxwell::TranslateProgram;
 using VideoCommon::ComputeEnvironment;
 using VideoCommon::FileEnvironment;
@@ -446,6 +447,8 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
     size_t env_index{};
     u32 total_storage_buffers{};
     std::array<Shader::IR::Program, Maxwell::MaxShaderProgram> programs;
+    const bool uses_vertex_a{key.unique_hashes[0] != 0};
+    const bool uses_vertex_b{key.unique_hashes[1] != 0};
     for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
         if (key.unique_hashes[index] == 0) {
             continue;
@@ -454,11 +457,22 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
         ++env_index;
 
         const u32 cfg_offset{static_cast<u32>(env.StartAddress() + sizeof(Shader::ProgramHeader))};
-        Shader::Maxwell::Flow::CFG cfg(env, pools.flow_block, cfg_offset);
-        programs[index] = TranslateProgram(pools.inst, pools.block, env, cfg);
+        Shader::Maxwell::Flow::CFG cfg(env, pools.flow_block, cfg_offset, index == 0);
+        if (!uses_vertex_a || index != 1) {
+            // Normal path
+            programs[index] = TranslateProgram(pools.inst, pools.block, env, cfg);
 
-        for (const auto& desc : programs[index].info.storage_buffers_descriptors) {
-            total_storage_buffers += desc.count;
+            for (const auto& desc : programs[index].info.storage_buffers_descriptors) {
+                total_storage_buffers += desc.count;
+            }
+        } else {
+            // VertexB path when VertexA is present.
+            Shader::IR::Program& program_va{programs[0]};
+            Shader::IR::Program program_vb{TranslateProgram(pools.inst, pools.block, env, cfg)};
+            for (const auto& desc : program_vb.info.storage_buffers_descriptors) {
+                total_storage_buffers += desc.count;
+            }
+            programs[index] = MergeDualVertexPrograms(program_va, program_vb, env);
         }
     }
     const u32 glasm_storage_buffer_limit{device.GetMaxGLASMStorageBufferBlocks()};
@@ -472,7 +486,9 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
     if (!device.UseAssemblyShaders()) {
         source_program.handle = glCreateProgram();
     }
-    for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
+
+    for (size_t index = uses_vertex_a && uses_vertex_b ? 1 : 0; index < Maxwell::MaxShaderProgram;
+         ++index) {
         if (key.unique_hashes[index] == 0) {
             continue;
         }
