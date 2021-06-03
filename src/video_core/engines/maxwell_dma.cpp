@@ -99,7 +99,8 @@ void MaxwellDMA::CopyBlockLinearToPitch() {
 
     // Optimized path for micro copies.
     const size_t dst_size = static_cast<size_t>(regs.pitch_out) * regs.line_count;
-    if (dst_size < GOB_SIZE && regs.pitch_out <= GOB_SIZE_X) {
+    if (dst_size < GOB_SIZE && regs.pitch_out <= GOB_SIZE_X &&
+        regs.src_params.height > GOB_SIZE_Y) {
         FastCopyBlockLinearToPitch();
         return;
     }
