@@ -14,15 +14,25 @@ namespace {
 std::string Texture(EmitContext& ctx, const IR::TextureInstInfo& info,
                     [[maybe_unused]] const IR::Value& index) {
     if (info.type == TextureType::Buffer) {
-        throw NotImplementedException("TextureType::Buffer");
+        return fmt::format("tex{}", ctx.texture_buffer_bindings.at(info.descriptor_index));
     } else {
         return fmt::format("tex{}", ctx.texture_bindings.at(info.descriptor_index));
+    }
+}
+
+std::string Image(EmitContext& ctx, const IR::TextureInstInfo& info,
+                  [[maybe_unused]] const IR::Value& index) {
+    if (info.type == TextureType::Buffer) {
+        return fmt::format("img{}", ctx.image_buffer_bindings.at(info.descriptor_index));
+    } else {
+        return fmt::format("img{}", ctx.image_bindings.at(info.descriptor_index));
     }
 }
 
 std::string CastToIntVec(std::string_view value, const IR::TextureInstInfo& info) {
     switch (info.type) {
     case TextureType::Color1D:
+    case TextureType::Buffer:
         return fmt::format("int({})", value);
     case TextureType::ColorArray1D:
     case TextureType::Color2D:
@@ -41,6 +51,7 @@ std::string CastToIntVec(std::string_view value, const IR::TextureInstInfo& info
 std::string TexelFetchCastToInt(std::string_view value, const IR::TextureInstInfo& info) {
     switch (info.type) {
     case TextureType::Color1D:
+    case TextureType::Buffer:
         return fmt::format("int({})", value);
     case TextureType::ColorArray1D:
     case TextureType::Color2D:
@@ -349,8 +360,12 @@ void EmitImageFetch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
             ctx.Add("{}=texelFetchOffset({},{},int({}),{});", texel, texture,
                     TexelFetchCastToInt(coords, info), lod, TexelFetchCastToInt(offset, info));
         } else {
-            ctx.Add("{}=texelFetch({},{},int({}));", texel, texture,
-                    TexelFetchCastToInt(coords, info), lod);
+            if (info.type == TextureType::Buffer) {
+                ctx.Add("{}=texelFetch({},int({}));", texel, texture, coords);
+            } else {
+                ctx.Add("{}=texelFetch({},{},int({}));", texel, texture,
+                        TexelFetchCastToInt(coords, info), lod);
+            }
         }
         return;
     }
@@ -434,14 +449,22 @@ void EmitImageGradient([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 void EmitImageRead([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                    [[maybe_unused]] const IR::Value& index,
                    [[maybe_unused]] std::string_view coords) {
-    NotImplemented();
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto sparse_inst{PrepareSparse(inst)};
+    if (sparse_inst) {
+        throw NotImplementedException("EmitImageRead Sparse");
+    }
+    const auto image{Image(ctx, info, index)};
+    ctx.AddU32x4("{}=uvec4(imageLoad({},{}));", inst, image, TexelFetchCastToInt(coords, info));
 }
 
 void EmitImageWrite([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                     [[maybe_unused]] const IR::Value& index,
                     [[maybe_unused]] std::string_view coords,
                     [[maybe_unused]] std::string_view color) {
-    NotImplemented();
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto image{Image(ctx, info, index)};
+    ctx.Add("imageStore({},{},{});", image, TexelFetchCastToInt(coords, info), color);
 }
 
 void EmitBindlessImageSampleImplicitLod(EmitContext&) {
