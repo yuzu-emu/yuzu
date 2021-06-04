@@ -9,6 +9,18 @@
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLSL {
+namespace {
+constexpr char cas_loop[]{"for(;;){{uint old_value={};uint "
+                          "cas_result=atomicCompSwap({},old_value,bitfieldInsert({},{},{},{}));"
+                          "if(cas_result==old_value){{break;}}}}"};
+
+void SsboWriteCas(EmitContext& ctx, const IR::Value& binding, std::string_view offset_var,
+                  std::string_view value, std::string_view bit_offset, u32 num_bits) {
+    const auto ssbo{fmt::format("{}_ssbo{}[{}>>2]", ctx.stage_name, binding.U32(), offset_var)};
+    ctx.Add(cas_loop, ssbo, ssbo, ssbo, value, bit_offset, num_bits);
+}
+} // Anonymous namespace
+
 void EmitLoadGlobalU8([[maybe_unused]] EmitContext& ctx) {
     NotImplemented();
 }
@@ -125,9 +137,8 @@ void EmitWriteStorageU8([[maybe_unused]] EmitContext& ctx,
                         [[maybe_unused]] const IR::Value& offset,
                         [[maybe_unused]] std::string_view value) {
     const auto offset_var{ctx.var_alloc.Consume(offset)};
-    ctx.Add("{}_ssbo{}[{}>>2]=bitfieldInsert({}_ssbo{}[{}>>2],{},int({}%4)*8,8);", ctx.stage_name,
-            binding.U32(), offset_var, ctx.stage_name, binding.U32(), offset_var, value,
-            offset_var);
+    const auto bit_offset{fmt::format("int({}%4)*8", offset_var)};
+    SsboWriteCas(ctx, binding, offset_var, value, bit_offset, 8);
 }
 
 void EmitWriteStorageS8([[maybe_unused]] EmitContext& ctx,
@@ -135,9 +146,8 @@ void EmitWriteStorageS8([[maybe_unused]] EmitContext& ctx,
                         [[maybe_unused]] const IR::Value& offset,
                         [[maybe_unused]] std::string_view value) {
     const auto offset_var{ctx.var_alloc.Consume(offset)};
-    ctx.Add("{}_ssbo{}[{}>>2]=bitfieldInsert({}_ssbo{}[{}>>2],{},int({}%4)*8,8);", ctx.stage_name,
-            binding.U32(), offset_var, ctx.stage_name, binding.U32(), offset_var, value,
-            offset_var);
+    const auto bit_offset{fmt::format("int({}%4)*8", offset_var)};
+    SsboWriteCas(ctx, binding, offset_var, value, bit_offset, 8);
 }
 
 void EmitWriteStorageU16([[maybe_unused]] EmitContext& ctx,
@@ -145,9 +155,8 @@ void EmitWriteStorageU16([[maybe_unused]] EmitContext& ctx,
                          [[maybe_unused]] const IR::Value& offset,
                          [[maybe_unused]] std::string_view value) {
     const auto offset_var{ctx.var_alloc.Consume(offset)};
-    ctx.Add("{}_ssbo{}[{}>>2]=bitfieldInsert({}_ssbo{}[{}>>2],{},int(({}>>1)%2)*16,16);",
-            ctx.stage_name, binding.U32(), offset_var, ctx.stage_name, binding.U32(), offset_var,
-            value, offset_var);
+    const auto bit_offset{fmt::format("int(({}>>1)%2)*16", offset_var)};
+    SsboWriteCas(ctx, binding, offset_var, value, bit_offset, 16);
 }
 
 void EmitWriteStorageS16([[maybe_unused]] EmitContext& ctx,
@@ -155,9 +164,8 @@ void EmitWriteStorageS16([[maybe_unused]] EmitContext& ctx,
                          [[maybe_unused]] const IR::Value& offset,
                          [[maybe_unused]] std::string_view value) {
     const auto offset_var{ctx.var_alloc.Consume(offset)};
-    ctx.Add("{}_ssbo{}[{}>>2]=bitfieldInsert({}_ssbo{}[{}>>2],{},int(({}>>1)%2)*16,16);",
-            ctx.stage_name, binding.U32(), offset_var, ctx.stage_name, binding.U32(), offset_var,
-            value, offset_var);
+    const auto bit_offset{fmt::format("int(({}>>1)%2)*16", offset_var)};
+    SsboWriteCas(ctx, binding, offset_var, value, bit_offset, 16);
 }
 
 void EmitWriteStorage32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
