@@ -25,7 +25,7 @@ void Compare(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string
 bool Precise(IR::Inst& inst) {
     return {inst.Flags<IR::FpControl>().no_contraction};
 }
-} // namespace
+} // Anonymous namespace
 
 void EmitFPAbs16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                  [[maybe_unused]] std::string_view value) {

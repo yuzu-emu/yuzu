@@ -10,13 +10,14 @@
 
 namespace Shader::Backend::GLSL {
 namespace {
-static constexpr std::string_view SWIZZLE{"xyzw"};
+constexpr std::string_view SWIZZLE{"xyzw"};
 void CompositeInsert(EmitContext& ctx, std::string_view result, std::string_view composite,
                      std::string_view object, u32 index) {
     ctx.Add("{}={};", result, composite);
     ctx.Add("{}.{}={};", result, SWIZZLE[index], object);
 }
-} // namespace
+} // Anonymous namespace
+
 void EmitCompositeConstructU32x2(EmitContext& ctx, IR::Inst& inst, std::string_view e1,
                                  std::string_view e2) {
     ctx.AddU32x2("{}=uvec2({},{});", inst, e1, e2);

@@ -31,7 +31,7 @@ struct Program;
 namespace Shader::Backend::GLSL {
 
 struct GenericElementInfo {
-    std::string name{};
+    std::string name;
     u32 first_element{};
     u32 num_components{};
 };
@@ -159,7 +159,6 @@ public:
 
     bool uses_y_direction{};
     bool uses_cc_carry{};
-    bool supports_viewport_layer{};
 
 private:
     void SetupExtensions(std::string& header);
@@ -169,6 +168,7 @@ private:
     void DefineHelperFunctions();
     std::string DefineGlobalMemoryFunctions();
     void SetupImages(Bindings& bindings);
+    void SetupTextures(Bindings& bindings);
 };
 
 } // namespace Shader::Backend::GLSL

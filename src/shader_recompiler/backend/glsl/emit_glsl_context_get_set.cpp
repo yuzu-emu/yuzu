@@ -7,6 +7,7 @@
 #include "shader_recompiler/backend/glsl/emit_context.h"
 #include "shader_recompiler/backend/glsl/emit_glsl_instructions.h"
 #include "shader_recompiler/frontend/ir/value.h"
+#include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::GLSL {
 namespace {
@@ -39,11 +40,10 @@ std::string OutputVertexIndex(EmitContext& ctx, std::string_view vertex) {
         return "";
     }
 }
-} // namespace
+} // Anonymous namespace
 
-void EmitGetCbufU8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                   [[maybe_unused]] const IR::Value& binding,
-                   [[maybe_unused]] const IR::Value& offset) {
+void EmitGetCbufU8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                   const IR::Value& offset) {
     if (offset.IsImmediate()) {
         ctx.AddU32("{}=bitfieldExtract(ftou({}_cbuf{}[{}].{}),int({}),8);", inst, ctx.stage_name,
                    binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
@@ -55,9 +55,8 @@ void EmitGetCbufU8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst&
     }
 }
 
-void EmitGetCbufS8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                   [[maybe_unused]] const IR::Value& binding,
-                   [[maybe_unused]] const IR::Value& offset) {
+void EmitGetCbufS8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                   const IR::Value& offset) {
     if (offset.IsImmediate()) {
         ctx.AddU32("{}=bitfieldExtract(ftoi({}_cbuf{}[{}].{}),int({}),8);", inst, ctx.stage_name,
                    binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
@@ -69,9 +68,8 @@ void EmitGetCbufS8([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst&
     }
 }
 
-void EmitGetCbufU16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                    [[maybe_unused]] const IR::Value& binding,
-                    [[maybe_unused]] const IR::Value& offset) {
+void EmitGetCbufU16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                    const IR::Value& offset) {
     if (offset.IsImmediate()) {
         ctx.AddU32("{}=bitfieldExtract(ftou({}_cbuf{}[{}].{}),int({}),16);", inst, ctx.stage_name,
                    binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
@@ -84,9 +82,8 @@ void EmitGetCbufU16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
     }
 }
 
-void EmitGetCbufS16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                    [[maybe_unused]] const IR::Value& binding,
-                    [[maybe_unused]] const IR::Value& offset) {
+void EmitGetCbufS16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                    const IR::Value& offset) {
     if (offset.IsImmediate()) {
         ctx.AddU32("{}=bitfieldExtract(ftoi({}_cbuf{}[{}].{}),int({}),16);", inst, ctx.stage_name,
                    binding.U32(), offset.U32() / 16, OffsetSwizzle(offset.U32()),
@@ -196,7 +193,7 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
 }
 
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view value,
-                      [[maybe_unused]] std::string_view vertex) {
+                      std::string_view vertex) {
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
         const u32 element{IR::GenericAttributeElement(attr)};
@@ -223,7 +220,7 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
         ctx.Add("gl_Position.{}={};", swizzle, value);
         break;
     case IR::Attribute::ViewportIndex:
-        if (ctx.stage != Stage::Geometry && !ctx.supports_viewport_layer) {
+        if (ctx.stage != Stage::Geometry && !ctx.profile.support_gl_vertex_viewport_layer) {
             // LOG_WARNING(..., "Shader stores viewport index but device does not support viewport
             // layer extension");
             break;
@@ -247,8 +244,7 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     }
 }
 
-void EmitGetPatch([[maybe_unused]] EmitContext& ctx, IR::Inst& inst,
-                  [[maybe_unused]] IR::Patch patch) {
+void EmitGetPatch(EmitContext& ctx, IR::Inst& inst, IR::Patch patch) {
     if (!IR::IsGeneric(patch)) {
         throw NotImplementedException("Non-generic patch load");
     }
