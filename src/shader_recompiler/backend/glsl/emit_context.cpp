@@ -22,9 +22,9 @@ std::string_view InterpDecorator(Interpolation interp) {
     case Interpolation::Smooth:
         return "";
     case Interpolation::Flat:
-        return "flat";
+        return "flat ";
     case Interpolation::NoPerspective:
-        return "noperspective";
+        return "noperspective ";
     }
     throw InvalidArgument("Invalid interpolation {}", interp);
 }
@@ -77,7 +77,6 @@ std::string_view SamplerType(TextureType type, bool is_depth) {
         case TextureType::ColorArrayCube:
             return "samplerCubeArrayShadow";
         default:
-            fmt::print("Texture type: {}", type);
             throw NotImplementedException("Texture type: {}", type);
         }
     }
@@ -191,29 +190,27 @@ void SetupOutPerVertex(EmitContext& ctx, std::string& header) {
     if (!StoresPerVertexAttributes(ctx.stage)) {
         return;
     }
-    header += "out gl_PerVertex{";
-    header += "vec4 gl_Position;";
+    header += "out gl_PerVertex{vec4 gl_Position;";
     if (ctx.info.stores_point_size) {
         header += "float gl_PointSize;";
     }
     if (ctx.info.stores_clip_distance) {
         header += "float gl_ClipDistance[];";
     }
-    if (ctx.info.stores_viewport_index && ctx.supports_viewport_layer &&
+    if (ctx.info.stores_viewport_index && ctx.profile.support_gl_vertex_viewport_layer &&
         ctx.stage != Stage::Geometry) {
         header += "int gl_ViewportIndex;";
     }
-    header += "};\n";
+    header += "};";
     if (ctx.info.stores_viewport_index && ctx.stage == Stage::Geometry) {
         header += "out int gl_ViewportIndex;";
     }
 }
-} // namespace
+} // Anonymous namespace
 
 EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
                          const RuntimeInfo& runtime_info_)
     : info{program.info}, profile{profile_}, runtime_info{runtime_info_} {
-    supports_viewport_layer = profile.support_gl_vertex_viewport_layer;
     SetupExtensions(header);
     stage = program.stage;
     switch (program.stage) {
@@ -222,18 +219,18 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         stage_name = "vs";
         break;
     case Stage::TessellationControl:
-        stage_name = "tsc";
-        header += fmt::format("layout(vertices={})out;\n", program.invocations);
+        stage_name = "tcs";
+        header += fmt::format("layout(vertices={})out;", program.invocations);
         break;
     case Stage::TessellationEval:
-        stage_name = "tse";
-        header += fmt::format("layout({},{},{})in;\n", GetTessMode(runtime_info.tess_primitive),
+        stage_name = "tes";
+        header += fmt::format("layout({},{},{})in;", GetTessMode(runtime_info.tess_primitive),
                               GetTessSpacing(runtime_info.tess_spacing),
                               runtime_info.tess_clockwise ? "cw" : "ccw");
         break;
     case Stage::Geometry:
         stage_name = "gs";
-        header += fmt::format("layout({})in;layout({},max_vertices={})out;\n",
+        header += fmt::format("layout({})in;layout({},max_vertices={})out;",
                               InputPrimitive(runtime_info.input_topology),
                               OutputPrimitive(program.output_topology), program.output_vertices);
         break;
@@ -242,7 +239,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         break;
     case Stage::Compute:
         stage_name = "cs";
-        header += fmt::format("layout(local_size_x={},local_size_y={},local_size_z={}) in;\n",
+        header += fmt::format("layout(local_size_x={},local_size_y={},local_size_z={}) in;",
                               program.workgroup_size[0], program.workgroup_size[1],
                               program.workgroup_size[2]);
         break;
@@ -251,7 +248,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     for (size_t index = 0; index < info.input_generics.size(); ++index) {
         const auto& generic{info.input_generics[index]};
         if (generic.used) {
-            header += fmt::format("layout(location={}){} in vec4 in_attr{}{};", index,
+            header += fmt::format("layout(location={}){}in vec4 in_attr{}{};", index,
                                   InterpDecorator(generic.interpolation), index,
                                   InputArrayDecorator(stage));
         }
@@ -260,11 +257,8 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         if (!info.uses_patches[index]) {
             continue;
         }
-        if (stage == Stage::TessellationControl) {
-            header += fmt::format("layout(location={})patch out vec4 patch{};", index, index);
-        } else {
-            header += fmt::format("layout(location={})patch in vec4 patch{};", index, index);
-        }
+        const auto qualifier{stage == Stage::TessellationControl ? "out" : "in"};
+        header += fmt::format("layout(location={})patch {} vec4 patch{};", index, qualifier, index);
     }
     for (size_t index = 0; index < info.stores_frag_color.size(); ++index) {
         if (!info.stores_frag_color[index]) {
@@ -278,18 +272,18 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
             DefineGenericOutput(index, program.invocations);
         }
     }
-    header += "\n";
     DefineConstantBuffers(bindings);
     DefineStorageBuffers(bindings);
     SetupImages(bindings);
+    SetupTextures(bindings);
     DefineHelperFunctions();
 }
 
 void EmitContext::SetupExtensions(std::string&) {
     // TODO: track this usage
-    header += "#extension GL_ARB_sparse_texture2 : enable\n";
-    header += "#extension GL_EXT_texture_shadow_lod : enable\n";
-    header += "#extension GL_EXT_shader_image_load_formatted : enable\n";
+    header += "#extension GL_ARB_sparse_texture2 : enable\n"
+              "#extension GL_EXT_texture_shadow_lod : enable\n"
+              "#extension GL_EXT_shader_image_load_formatted : enable\n";
     if (info.uses_int64) {
         header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
     }
@@ -312,13 +306,14 @@ void EmitContext::SetupExtensions(std::string&) {
     }
     if (info.uses_subgroup_invocation_id || info.uses_subgroup_mask || info.uses_subgroup_vote ||
         info.uses_subgroup_shuffles || info.uses_fswzadd) {
-        header += "#extension GL_ARB_shader_ballot : enable\n";
-        header += "#extension GL_ARB_shader_group_vote : enable\n";
+        header += "#extension GL_ARB_shader_ballot : enable\n"
+                  "#extension GL_ARB_shader_group_vote : enable\n";
         if (!info.uses_int64) {
             header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
         }
     }
-    if (info.stores_viewport_index && supports_viewport_layer && stage != Stage::Geometry) {
+    if (info.stores_viewport_index && profile.support_gl_vertex_viewport_layer &&
+        stage != Stage::Geometry) {
         header += "#extension GL_ARB_shader_viewport_layer_array : enable\n";
     }
 }
@@ -386,46 +381,45 @@ void EmitContext::DefineGenericOutput(size_t index, u32 invocations) {
         std::fill_n(output_generics[index].begin() + element, num_components, element_info);
         element += num_components;
     }
-    header += "\n";
 }
 
 void EmitContext::DefineHelperFunctions() {
     header += "\n#define ftoi floatBitsToInt\n#define ftou floatBitsToUint\n"
               "#define itof intBitsToFloat\n#define utof uintBitsToFloat\n";
     if (info.uses_global_increment || info.uses_shared_increment) {
-        header += "uint CasIncrement(uint op_a,uint op_b){return(op_a>=op_b)?0u:(op_a+1u);}\n";
+        header += "uint CasIncrement(uint op_a,uint op_b){return op_a>=op_b?0u:(op_a+1u);}";
     }
     if (info.uses_global_decrement || info.uses_shared_decrement) {
         header += "uint CasDecrement(uint op_a,uint "
-                  "op_b){return(op_a==0||op_a>op_b)?op_b:(op_a-1u);}\n";
+                  "op_b){return op_a==0||op_a>op_b?op_b:(op_a-1u);}";
     }
     if (info.uses_atomic_f32_add) {
         header += "uint CasFloatAdd(uint op_a,float op_b){return "
-                  "ftou(utof(op_a)+op_b);}\n";
+                  "ftou(utof(op_a)+op_b);}";
     }
     if (info.uses_atomic_f32x2_add) {
         header += "uint CasFloatAdd32x2(uint op_a,vec2 op_b){return "
-                  "packHalf2x16(unpackHalf2x16(op_a)+op_b);}\n";
+                  "packHalf2x16(unpackHalf2x16(op_a)+op_b);}";
     }
     if (info.uses_atomic_f32x2_min) {
         header += "uint CasFloatMin32x2(uint op_a,vec2 op_b){return "
-                  "packHalf2x16(min(unpackHalf2x16(op_a),op_b));}\n";
+                  "packHalf2x16(min(unpackHalf2x16(op_a),op_b));}";
     }
     if (info.uses_atomic_f32x2_max) {
         header += "uint CasFloatMax32x2(uint op_a,vec2 op_b){return "
-                  "packHalf2x16(max(unpackHalf2x16(op_a),op_b));}\n";
+                  "packHalf2x16(max(unpackHalf2x16(op_a),op_b));}";
     }
     if (info.uses_atomic_f16x2_add) {
         header += "uint CasFloatAdd16x2(uint op_a,f16vec2 op_b){return "
-                  "packFloat2x16(unpackFloat2x16(op_a)+op_b);}\n";
+                  "packFloat2x16(unpackFloat2x16(op_a)+op_b);}";
     }
     if (info.uses_atomic_f16x2_min) {
         header += "uint CasFloatMin16x2(uint op_a,f16vec2 op_b){return "
-                  "packFloat2x16(min(unpackFloat2x16(op_a),op_b));}\n";
+                  "packFloat2x16(min(unpackFloat2x16(op_a),op_b));}";
     }
     if (info.uses_atomic_f16x2_max) {
         header += "uint CasFloatMax16x2(uint op_a,f16vec2 op_b){return "
-                  "packFloat2x16(max(unpackFloat2x16(op_a),op_b));}\n";
+                  "packFloat2x16(max(unpackFloat2x16(op_a),op_b));}";
     }
     if (info.uses_atomic_s32_min) {
         header += "uint CasMinS32(uint op_a,uint op_b){return uint(min(int(op_a),int(op_b)));}";
@@ -534,6 +528,9 @@ void EmitContext::SetupImages(Bindings& bindings) {
         }
         bindings.image += desc.count;
     }
+}
+
+void EmitContext::SetupTextures(Bindings& bindings) {
     texture_buffer_bindings.reserve(info.texture_buffer_descriptors.size());
     for (const auto& desc : info.texture_buffer_descriptors) {
         texture_buffer_bindings.push_back(bindings.texture);

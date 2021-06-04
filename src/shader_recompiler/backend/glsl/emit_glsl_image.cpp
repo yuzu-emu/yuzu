@@ -102,7 +102,7 @@ IR::Inst* PrepareSparse(IR::Inst& inst) {
     }
     return sparse_inst;
 }
-} // namespace
+} // Anonymous namespace
 
 void EmitImageSampleImplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
                                 [[maybe_unused]] const IR::Value& index,

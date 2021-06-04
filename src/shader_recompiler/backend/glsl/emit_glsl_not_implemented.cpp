@@ -25,9 +25,7 @@ void EmitPhi(EmitContext& ctx, IR::Inst& phi) {
     }
 }
 
-void EmitVoid(EmitContext& ctx) {
-    // NotImplemented();
-}
+void EmitVoid(EmitContext& ctx) {}
 
 void EmitReference(EmitContext& ctx, const IR::Value& value) {
     ctx.var_alloc.Consume(value);
@@ -94,13 +92,9 @@ void EmitDeviceMemoryBarrier(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitPrologue(EmitContext& ctx) {
-    // NotImplemented();
-}
+void EmitPrologue(EmitContext& ctx) {}
 
-void EmitEpilogue(EmitContext& ctx) {
-    // NotImplemented();
-}
+void EmitEpilogue(EmitContext& ctx) {}
 
 void EmitEmitVertex(EmitContext& ctx, const IR::Value& stream) {
     ctx.Add("EmitStreamVertex(int({}));", ctx.var_alloc.Consume(stream));

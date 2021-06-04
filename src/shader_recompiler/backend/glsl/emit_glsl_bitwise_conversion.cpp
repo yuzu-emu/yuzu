@@ -10,7 +10,7 @@
 
 namespace Shader::Backend::GLSL {
 namespace {
-static void Alias(IR::Inst& inst, const IR::Value& value) {
+void Alias(IR::Inst& inst, const IR::Value& value) {
     if (value.IsImmediate()) {
         return;
     }

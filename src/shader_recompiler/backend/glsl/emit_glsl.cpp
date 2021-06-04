@@ -83,7 +83,6 @@ void Invoke(EmitContext& ctx, IR::Inst* inst) {
 }
 
 void EmitInst(EmitContext& ctx, IR::Inst* inst) {
-    // ctx.Add("/* $ {} $ */", inst->GetOpcode());
     switch (inst->GetOpcode()) {
 #define OPCODE(name, result_type, ...)                                                             \
     case IR::Opcode::name:                                                                         \
@@ -134,7 +133,7 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
             }
             break;
         case IR::AbstractSyntaxNode::Type::If:
-            ctx.Add("if ({}){{", ctx.var_alloc.Consume(node.data.if_node.cond));
+            ctx.Add("if({}){{", ctx.var_alloc.Consume(node.data.if_node.cond));
             break;
         case IR::AbstractSyntaxNode::Type::EndIf:
             ctx.Add("}}");
@@ -156,12 +155,10 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
             ctx.Add("for(;;){{");
             break;
         case IR::AbstractSyntaxNode::Type::Repeat:
-            ctx.Add("if({}){{", ctx.var_alloc.Consume(node.data.repeat.cond));
-            ctx.Add("continue;\n}}else{{");
-            ctx.Add("break;\n}}\n}}");
+            ctx.Add("if({}){{continue;}}else{{break;}}}}",
+                    ctx.var_alloc.Consume(node.data.repeat.cond));
             break;
         default:
-            fmt::print("{}", node.type);
             throw NotImplementedException("AbstractSyntaxNode::Type {}", node.type);
             break;
         }
@@ -200,7 +197,7 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
     EmitContext ctx{program, bindings, profile, runtime_info};
     Precolor(program);
     EmitCode(ctx, program);
-    const std::string version{fmt::format("#version 460{}\n", GlslVersionSpecifier(ctx))};
+    const std::string version{fmt::format("#version 450{}\n", GlslVersionSpecifier(ctx))};
     ctx.header.insert(0, version);
     if (program.local_memory_size > 0) {
         ctx.header += fmt::format("uint lmem[{}];", program.local_memory_size / 4);
@@ -225,10 +222,8 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
     if (program.info.uses_subgroup_shuffles) {
         ctx.header += "bool shfl_in_bounds;";
     }
-    ctx.header += "\n";
     ctx.code.insert(0, ctx.header);
-    ctx.code += "}";
-    // fmt::print("\n{}\n", ctx.code);
+    ctx.code += '}';
     return ctx.code;
 }
 
