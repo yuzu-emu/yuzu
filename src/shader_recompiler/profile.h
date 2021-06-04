@@ -101,6 +101,8 @@ struct Profile {
     bool has_broken_unsigned_image_offsets{};
     /// Signed instructions with unsigned data types are misinterpreted
     bool has_broken_signed_operations{};
+    /// Dynamic vec4 indexing is broken on some OpenGL drivers
+    bool has_gl_component_indexing_bug{};
     /// Ignores SPIR-V ordered vs unordered using GLSL semantics
     bool ignore_nan_fp_comparisons{};
 };
