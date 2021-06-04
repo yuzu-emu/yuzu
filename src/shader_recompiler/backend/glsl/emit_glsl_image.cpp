@@ -343,11 +343,13 @@ void EmitImageGather([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Ins
     if (offset.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureGatherARB({},{},{},int({})));",
                   *sparse_inst, texture, coords, texel, info.gather_component);
+        return;
     }
     if (offset2.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureGatherOffsetARB({},{},{},{},int({})));",
                   *sparse_inst, texture, CastToIntVec(coords, info), GetOffsetVec(ctx, offset),
                   texel, info.gather_component);
+        return;
     }
     // PTP
     const auto offsets{PtpOffsets(offset, offset2)};
@@ -385,11 +387,13 @@ void EmitImageGatherDref([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR:
     if (offset.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureGatherARB({},{},{},{}));", *sparse_inst,
                   texture, coords, dref, texel);
+        return;
     }
     if (offset2.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureGatherOffsetARB({},{},{},,{},{}));",
                   *sparse_inst, texture, CastToIntVec(coords, info), dref,
                   GetOffsetVec(ctx, offset), texel);
+        return;
     }
     // PTP
     const auto offsets{PtpOffsets(offset, offset2)};
