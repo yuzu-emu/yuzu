@@ -433,8 +433,7 @@ void EmitContext::DefineHelperFunctions() {
 }
 
 std::string EmitContext::DefineGlobalMemoryFunctions() {
-    const auto define_body{[&](std::string& func, size_t index, u32 num_components,
-                               std::string_view return_statement) {
+    const auto define_body{[&](std::string& func, size_t index, std::string_view return_statement) {
         const auto& ssbo{info.storage_buffers_descriptors[index]};
         const u32 size_cbuf_offset{ssbo.cbuf_offset + 8};
         const auto ssbo_addr{fmt::format("ssbo_addr{}", index)};
@@ -458,42 +457,31 @@ std::string EmitContext::DefineGlobalMemoryFunctions() {
         func += comparison;
 
         const auto ssbo_name{fmt::format("{}_ssbo{}", stage_name, index)};
-        switch (num_components) {
-        case 1:
-            func += fmt::format(return_statement, ssbo_name, ssbo_addr);
-            break;
-        case 2:
-            func += fmt::format(return_statement, ssbo_name, ssbo_addr, ssbo_name, ssbo_addr);
-            break;
-        case 4:
-            func += fmt::format(return_statement, ssbo_name, ssbo_addr, ssbo_name, ssbo_addr,
-                                ssbo_name, ssbo_addr, ssbo_name, ssbo_addr);
-            break;
-        }
+        func += fmt::format(return_statement, ssbo_name, ssbo_addr);
     }};
-    std::string write_func{"void WriteGlobal32(uint64_t addr,uint data){\n"};
-    std::string write_func_64{"void WriteGlobal64(uint64_t addr,uvec2 data){\n"};
-    std::string write_func_128{"void WriteGlobal128(uint64_t addr,uvec4 data){\n"};
-    std::string load_func{"uint LoadGlobal32(uint64_t addr){\n"};
-    std::string load_func_64{"uvec2 LoadGlobal64(uint64_t addr){\n"};
-    std::string load_func_128{"uvec4 LoadGlobal128(uint64_t addr){\n"};
+    std::string write_func{"void WriteGlobal32(uint64_t addr,uint data){"};
+    std::string write_func_64{"void WriteGlobal64(uint64_t addr,uvec2 data){"};
+    std::string write_func_128{"void WriteGlobal128(uint64_t addr,uvec4 data){"};
+    std::string load_func{"uint LoadGlobal32(uint64_t addr){"};
+    std::string load_func_64{"uvec2 LoadGlobal64(uint64_t addr){"};
+    std::string load_func_128{"uvec4 LoadGlobal128(uint64_t addr){"};
     const size_t num_buffers{info.storage_buffers_descriptors.size()};
     for (size_t index = 0; index < num_buffers; ++index) {
         if (!info.nvn_buffer_used[index]) {
             continue;
         }
-        define_body(write_func, index, 1, "{}[uint(addr-{})>>2]=data;return;}}");
-        define_body(write_func_64, index, 2,
-                    "{}[uint(addr-{})>>2]=data.x;{}[uint(addr-{}+4)>>2]=data.y;return;}}");
-        define_body(write_func_128, index, 4,
-                    "{}[uint(addr-{})>>2]=data.x;{}[uint(addr-{}+4)>>2]=data.y;{}[uint("
-                    "addr-{}+8)>>2]=data.z;{}[uint(addr-{}+12)>>2]=data.w;return;}}");
-        define_body(load_func, index, 1, "return {}[uint(addr-{})>>2];}}");
-        define_body(load_func_64, index, 2,
-                    "return uvec2({}[uint(addr-{})>>2],{}[uint(addr-{}+4)>>2]);}}");
-        define_body(load_func_128, index, 4,
-                    "return uvec4({}[uint(addr-{})>>2],{}[uint(addr-{}+4)>>2],{}["
-                    "uint(addr-{}+8)>>2],{}[uint(addr-{}+12)>>2]);}}");
+        define_body(write_func, index, "{0}[uint(addr-{1})>>2]=data;return;}}");
+        define_body(write_func_64, index,
+                    "{0}[uint(addr-{1})>>2]=data.x;{0}[uint(addr-{1}+4)>>2]=data.y;return;}}");
+        define_body(write_func_128, index,
+                    "{0}[uint(addr-{1})>>2]=data.x;{0}[uint(addr-{1}+4)>>2]=data.y;{0}[uint("
+                    "addr-{1}+8)>>2]=data.z;{0}[uint(addr-{1}+12)>>2]=data.w;return;}}");
+        define_body(load_func, index, "return {0}[uint(addr-{1})>>2];}}");
+        define_body(load_func_64, index,
+                    "return uvec2({0}[uint(addr-{1})>>2],{0}[uint(addr-{1}+4)>>2]);}}");
+        define_body(load_func_128, index,
+                    "return uvec4({0}[uint(addr-{1})>>2],{0}[uint(addr-{1}+4)>>2],{0}["
+                    "uint(addr-{1}+8)>>2],{0}[uint(addr-{1}+12)>>2]);}}");
     }
     write_func += "}";
     write_func_64 += "}";

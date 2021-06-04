@@ -11,7 +11,7 @@
 
 namespace Shader::Backend::GLSL {
 namespace {
-static constexpr std::string_view SWIZZLE{"xyzw"};
+constexpr char SWIZZLE[]{"xyzw"};
 
 u32 CbufIndex(u32 offset) {
     return (offset / 4) % 4;

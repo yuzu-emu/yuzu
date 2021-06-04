@@ -11,11 +11,8 @@
 
 namespace Shader::Backend::GLSL {
 namespace {
-constexpr const char cas_loop[]{R"(for (;;){{
-    uint old_value={};
-    {}=atomicCompSwap({},old_value,{}({},{}));
-    if ({}==old_value){{break;}}
-}})"};
+constexpr char cas_loop[]{
+    "for (;;){{uint old={};{}=atomicCompSwap({},old,{}({},{}));if({}==old){{break;}}}}"};
 
 void SharedCasFunction(EmitContext& ctx, IR::Inst& inst, std::string_view offset,
                        std::string_view value, std::string_view function) {
