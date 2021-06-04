@@ -78,6 +78,28 @@ std::string ShadowSamplerVecCast(TextureType type) {
     }
 }
 
+std::string GetOffsetVec(EmitContext& ctx, const IR::Value& offset) {
+    if (offset.IsImmediate()) {
+        return fmt::format("int({})", offset.U32());
+    }
+    IR::Inst* const inst{offset.InstRecursive()};
+    if (inst->AreAllArgsImmediates()) {
+        switch (inst->GetOpcode()) {
+        case IR::Opcode::CompositeConstructU32x2:
+            return fmt::format("ivec2({},{})", inst->Arg(0).U32(), inst->Arg(1).U32());
+        case IR::Opcode::CompositeConstructU32x3:
+            return fmt::format("ivec3({},{},{})", inst->Arg(0).U32(), inst->Arg(1).U32(),
+                               inst->Arg(2).U32());
+        case IR::Opcode::CompositeConstructU32x4:
+            return fmt::format("ivec4({},{},{},{})", inst->Arg(0).U32(), inst->Arg(1).U32(),
+                               inst->Arg(2).U32(), inst->Arg(3).U32());
+        default:
+            break;
+        }
+    }
+    return ctx.var_alloc.Consume(offset);
+}
+
 std::string PtpOffsets(const IR::Value& offset, const IR::Value& offset2) {
     const std::array values{offset.InstRecursive(), offset2.InstRecursive()};
     if (!values[0]->AreAllArgsImmediates() || !values[1]->AreAllArgsImmediates()) {
@@ -119,7 +141,7 @@ void EmitImageSampleImplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
     const auto sparse_inst{PrepareSparse(inst)};
     if (!sparse_inst) {
         if (!offset.IsEmpty()) {
-            const auto offset_str{CastToIntVec(ctx.var_alloc.Consume(offset), info)};
+            const auto offset_str{GetOffsetVec(ctx, offset)};
             if (ctx.stage == Stage::Fragment) {
                 ctx.Add("{}=textureOffset({},{},{}{});", texel, texture, coords, offset_str, bias);
             } else {
@@ -137,8 +159,7 @@ void EmitImageSampleImplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
     // TODO: Query sparseTexels extension support
     if (!offset.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureOffsetARB({},{},{},{}{}));",
-                  *sparse_inst, texture, coords, CastToIntVec(ctx.var_alloc.Consume(offset), info),
-                  texel, bias);
+                  *sparse_inst, texture, coords, GetOffsetVec(ctx, offset), texel, bias);
     } else {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureARB({},{},{}{}));", *sparse_inst,
                   texture, coords, texel, bias);
@@ -163,7 +184,7 @@ void EmitImageSampleExplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
     if (!sparse_inst) {
         if (!offset.IsEmpty()) {
             ctx.Add("{}=textureLodOffset({},{},{},{});", texel, texture, coords, lod_lc,
-                    CastToIntVec(ctx.var_alloc.Consume(offset), info));
+                    GetOffsetVec(ctx, offset));
         } else {
             ctx.Add("{}=textureLod({},{},{});", texel, texture, coords, lod_lc);
         }
@@ -173,7 +194,7 @@ void EmitImageSampleExplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
     if (!offset.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTexelFetchOffsetARB({},{},int({}),{},{}));",
                   *sparse_inst, texture, CastToIntVec(coords, info), lod_lc,
-                  CastToIntVec(ctx.var_alloc.Consume(offset), info), texel);
+                  GetOffsetVec(ctx, offset), texel);
     } else {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureLodARB({},{},{},{}));", *sparse_inst,
                   texture, coords, lod_lc, texel);
@@ -202,7 +223,7 @@ void EmitImageSampleDrefImplicitLod([[maybe_unused]] EmitContext& ctx,
     const auto bias{info.has_bias ? fmt::format(",{}", bias_lc) : ""};
     const auto cast{ShadowSamplerVecCast(info.type)};
     if (!offset.IsEmpty()) {
-        const auto offset_str{CastToIntVec(ctx.var_alloc.Consume(offset), info)};
+        const auto offset_str{GetOffsetVec(ctx, offset)};
         if (ctx.stage == Stage::Fragment) {
             ctx.AddF32("{}=textureOffset({},{}({},{}),{}{});", inst, texture, cast, coords, dref,
                        offset_str, bias);
@@ -244,7 +265,7 @@ void EmitImageSampleDrefExplicitLod([[maybe_unused]] EmitContext& ctx,
     const auto texture{Texture(ctx, info, index)};
     const auto cast{ShadowSamplerVecCast(info.type)};
     if (!offset.IsEmpty()) {
-        const auto offset_str{CastToIntVec(ctx.var_alloc.Consume(offset), info)};
+        const auto offset_str{GetOffsetVec(ctx, offset)};
         if (info.type == TextureType::ColorArrayCube) {
             ctx.AddF32("{}=textureLodOffset({},{},{},{},{});", inst, texture, coords, dref, lod_lc,
                        offset_str);
@@ -279,7 +300,7 @@ void EmitImageGather([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Ins
         }
         if (offset2.IsEmpty()) {
             ctx.Add("{}=textureGatherOffset({},{},{},int({}));", texel, texture, coords,
-                    CastToIntVec(ctx.var_alloc.Consume(offset), info), info.gather_component);
+                    GetOffsetVec(ctx, offset), info.gather_component);
             return;
         }
         // PTP
@@ -295,8 +316,8 @@ void EmitImageGather([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Ins
     }
     if (offset2.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureGatherOffsetARB({},{},{},{},int({})));",
-                  *sparse_inst, texture, CastToIntVec(coords, info),
-                  CastToIntVec(ctx.var_alloc.Consume(offset), info), texel, info.gather_component);
+                  *sparse_inst, texture, CastToIntVec(coords, info), GetOffsetVec(ctx, offset),
+                  texel, info.gather_component);
     }
     // PTP
     const auto offsets{PtpOffsets(offset, offset2)};
@@ -322,7 +343,7 @@ void EmitImageGatherDref([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR:
         }
         if (offset2.IsEmpty()) {
             ctx.Add("{}=textureGatherOffset({},{},{},{});", texel, texture, coords, dref,
-                    CastToIntVec(ctx.var_alloc.Consume(offset), info));
+                    GetOffsetVec(ctx, offset));
             return;
         }
         // PTP
@@ -338,7 +359,7 @@ void EmitImageGatherDref([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR:
     if (offset2.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureGatherOffsetARB({},{},{},,{},{}));",
                   *sparse_inst, texture, CastToIntVec(coords, info), dref,
-                  CastToIntVec(ctx.var_alloc.Consume(offset), info), texel);
+                  GetOffsetVec(ctx, offset), texel);
     }
     // PTP
     const auto offsets{PtpOffsets(offset, offset2)};
