@@ -282,8 +282,10 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
 void EmitContext::SetupExtensions(std::string&) {
     // TODO: track this usage
     header += "#extension GL_ARB_sparse_texture2 : enable\n"
-              "#extension GL_EXT_texture_shadow_lod : enable\n"
               "#extension GL_EXT_shader_image_load_formatted : enable\n";
+    if (profile.support_gl_texture_shadow_lod) {
+        header += "#extension GL_EXT_texture_shadow_lod : enable\n";
+    }
     if (info.uses_int64) {
         header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
     }

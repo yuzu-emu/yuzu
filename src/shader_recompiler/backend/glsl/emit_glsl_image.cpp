@@ -8,6 +8,7 @@
 #include "shader_recompiler/backend/glsl/emit_glsl_instructions.h"
 #include "shader_recompiler/frontend/ir/modifiers.h"
 #include "shader_recompiler/frontend/ir/value.h"
+#include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::GLSL {
 namespace {
@@ -67,14 +68,14 @@ std::string TexelFetchCastToInt(std::string_view value, const IR::TextureInstInf
     }
 }
 
-std::string ShadowSamplerVecCast(TextureType type) {
+bool NeedsShadowLodExt(TextureType type) {
     switch (type) {
     case TextureType::ColorArray2D:
     case TextureType::ColorCube:
     case TextureType::ColorArrayCube:
-        return "vec4";
+        return true;
     default:
-        return "vec3";
+        return false;
     }
 }
 
@@ -221,7 +222,22 @@ void EmitImageSampleDrefImplicitLod([[maybe_unused]] EmitContext& ctx,
     }
     const auto texture{Texture(ctx, info, index)};
     const auto bias{info.has_bias ? fmt::format(",{}", bias_lc) : ""};
-    const auto cast{ShadowSamplerVecCast(info.type)};
+    const bool needs_shadow_ext{NeedsShadowLodExt(info.type)};
+    const auto cast{needs_shadow_ext ? "vec4" : "vec3"};
+    const bool use_grad{!ctx.profile.support_gl_texture_shadow_lod &&
+                        ctx.stage != Stage::Fragment && needs_shadow_ext};
+    if (use_grad) {
+        // LOG_WARNING(..., "Device lacks GL_EXT_texture_shadow_lod. Using textureGrad fallback");
+        if (info.type == TextureType::ColorArrayCube) {
+            // LOG_WARNING(..., "textureGrad does not support ColorArrayCube. Stubbing");
+            ctx.AddF32("{}=0.0f;", inst);
+            return;
+        }
+        const auto d_cast{info.type == TextureType::ColorArray2D ? "vec2" : "vec3"};
+        ctx.AddF32("{}=textureGrad({},{}({},{}),{}(0),{}(0));", inst, texture, cast, coords, dref,
+                   d_cast, d_cast);
+        return;
+    }
     if (!offset.IsEmpty()) {
         const auto offset_str{GetOffsetVec(ctx, offset)};
         if (ctx.stage == Stage::Fragment) {
@@ -263,15 +279,29 @@ void EmitImageSampleDrefExplicitLod([[maybe_unused]] EmitContext& ctx,
         throw NotImplementedException("EmitImageSampleDrefExplicitLod Lod clamp samples");
     }
     const auto texture{Texture(ctx, info, index)};
-    const auto cast{ShadowSamplerVecCast(info.type)};
+    const bool needs_shadow_ext{NeedsShadowLodExt(info.type)};
+    const bool use_grad{!ctx.profile.support_gl_texture_shadow_lod && needs_shadow_ext};
+    const auto cast{needs_shadow_ext ? "vec4" : "vec3"};
+    if (use_grad) {
+        // LOG_WARNING(..., "Device lacks GL_EXT_texture_shadow_lod. Using textureGrad fallback");
+        if (info.type == TextureType::ColorArrayCube) {
+            // LOG_WARNING(..., "textureGrad does not support ColorArrayCube. Stubbing");
+            ctx.AddF32("{}=0.0f;", inst);
+            return;
+        }
+        const auto d_cast{info.type == TextureType::ColorArray2D ? "vec2" : "vec3"};
+        ctx.AddF32("{}=textureGrad({},{}({},{}),{}(0),{}(0));", inst, texture, cast, coords, dref,
+                   d_cast, d_cast);
+        return;
+    }
     if (!offset.IsEmpty()) {
         const auto offset_str{GetOffsetVec(ctx, offset)};
         if (info.type == TextureType::ColorArrayCube) {
             ctx.AddF32("{}=textureLodOffset({},{},{},{},{});", inst, texture, coords, dref, lod_lc,
                        offset_str);
         } else {
-            ctx.AddF32("{}=textureLodOffset({},vec3({},{}),{},{});", inst, texture, coords, dref,
-                       lod_lc, offset_str);
+            ctx.AddF32("{}=textureLodOffset({},{}({},{}),{},{});", inst, texture, cast, coords,
+                       dref, lod_lc, offset_str);
         }
     } else {
         if (info.type == TextureType::ColorArrayCube) {
