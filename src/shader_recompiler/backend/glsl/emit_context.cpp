@@ -197,7 +197,7 @@ void SetupOutPerVertex(EmitContext& ctx, std::string& header) {
     if (ctx.info.stores_clip_distance) {
         header += "float gl_ClipDistance[];";
     }
-    if (ctx.info.stores_viewport_index && ctx.profile.support_gl_vertex_viewport_layer &&
+    if (ctx.info.stores_viewport_index && ctx.profile.support_viewport_index_layer_non_geometry &&
         ctx.stage != Stage::Geometry) {
         header += "int gl_ViewportIndex;";
     }
@@ -314,7 +314,7 @@ void EmitContext::SetupExtensions(std::string&) {
             header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
         }
     }
-    if (info.stores_viewport_index && profile.support_gl_vertex_viewport_layer &&
+    if (info.stores_viewport_index && profile.support_viewport_index_layer_non_geometry &&
         stage != Stage::Geometry) {
         header += "#extension GL_ARB_shader_viewport_layer_array : enable\n";
     }
@@ -497,12 +497,13 @@ std::string EmitContext::DefineGlobalMemoryFunctions() {
 void EmitContext::SetupImages(Bindings& bindings) {
     image_buffer_bindings.reserve(info.image_buffer_descriptors.size());
     for (const auto& desc : info.image_buffer_descriptors) {
-        const auto indices{bindings.image + desc.count};
-        for (u32 index = bindings.image; index < indices; ++index) {
-            header += fmt::format("layout(binding={}) uniform uimageBuffer img{};", bindings.image,
-                                  index);
-        }
         image_buffer_bindings.push_back(bindings.image);
+        const auto indices{bindings.image + desc.count};
+        const auto format{ImageFormatString(desc.format)};
+        for (u32 index = bindings.image; index < indices; ++index) {
+            header += fmt::format("layout(binding={}{}) uniform uimageBuffer img{};",
+                                  bindings.image, format, index);
+        }
         bindings.image += desc.count;
     }
     image_bindings.reserve(info.image_descriptors.size());
