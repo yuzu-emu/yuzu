@@ -45,7 +45,7 @@ std::string CastToIntVec(std::string_view value, const IR::TextureInstInfo& info
     case TextureType::ColorArrayCube:
         return fmt::format("ivec4({})", value);
     default:
-        throw NotImplementedException("Offset type {}", info.type.Value());
+        throw NotImplementedException("Integer cast for TextureType {}", info.type.Value());
     }
 }
 
@@ -64,7 +64,7 @@ std::string TexelFetchCastToInt(std::string_view value, const IR::TextureInstInf
     case TextureType::ColorArrayCube:
         return fmt::format("ivec4({})", value);
     default:
-        throw NotImplementedException("Offset type {}", info.type.Value());
+        throw NotImplementedException("TexelFetchCast type {}", info.type.Value());
     }
 }
 
@@ -98,7 +98,19 @@ std::string GetOffsetVec(EmitContext& ctx, const IR::Value& offset) {
             break;
         }
     }
-    return ctx.var_alloc.Consume(offset);
+    const auto offset_str{ctx.var_alloc.Consume(offset)};
+    switch (offset.Type()) {
+    case IR::Type::U32:
+        return fmt::format("int({})", offset_str);
+    case IR::Type::U32x2:
+        return fmt::format("ivec2({})", offset_str);
+    case IR::Type::U32x3:
+        return fmt::format("ivec3({})", offset_str);
+    case IR::Type::U32x4:
+        return fmt::format("ivec4({})", offset_str);
+    default:
+        throw NotImplementedException("Offset type {}", offset.Type());
+    }
 }
 
 std::string PtpOffsets(const IR::Value& offset, const IR::Value& offset2) {
@@ -528,6 +540,88 @@ void EmitImageWrite([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
     ctx.Add("imageStore({},{},{});", image, TexelFetchCastToInt(coords, info), color);
 }
 
+void EmitImageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                           std::string_view coords, std::string_view value) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto image{Image(ctx, info, index)};
+    ctx.AddU32("{}=imageAtomicAdd({},{},{});", inst, image, TexelFetchCastToInt(coords, info),
+               value);
+}
+
+void EmitImageAtomicSMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                           std::string_view coords, std::string_view value) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto image{Image(ctx, info, index)};
+    ctx.AddU32("{}=imageAtomicMin({},{},int({}));", inst, image, TexelFetchCastToInt(coords, info),
+               value);
+}
+
+void EmitImageAtomicUMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                           std::string_view coords, std::string_view value) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto image{Image(ctx, info, index)};
+    ctx.AddU32("{}=imageAtomicMin({},{},uint({}));", inst, image, TexelFetchCastToInt(coords, info),
+               value);
+}
+
+void EmitImageAtomicSMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                           std::string_view coords, std::string_view value) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto image{Image(ctx, info, index)};
+    ctx.AddU32("{}=imageAtomicMax({},{},int({}));", inst, image, TexelFetchCastToInt(coords, info),
+               value);
+}
+
+void EmitImageAtomicUMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                           std::string_view coords, std::string_view value) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto image{Image(ctx, info, index)};
+    ctx.AddU32("{}=imageAtomicMax({},{},uint({}));", inst, image, TexelFetchCastToInt(coords, info),
+               value);
+}
+
+void EmitImageAtomicInc32(EmitContext&, IR::Inst&, const IR::Value&, std::string_view,
+                          std::string_view) {
+    NotImplemented();
+}
+
+void EmitImageAtomicDec32(EmitContext&, IR::Inst&, const IR::Value&, std::string_view,
+                          std::string_view) {
+    NotImplemented();
+}
+
+void EmitImageAtomicAnd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                          std::string_view coords, std::string_view value) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto image{Image(ctx, info, index)};
+    ctx.AddU32("{}=imageAtomicAnd({},{},{});", inst, image, TexelFetchCastToInt(coords, info),
+               value);
+}
+
+void EmitImageAtomicOr32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                         std::string_view coords, std::string_view value) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto image{Image(ctx, info, index)};
+    ctx.AddU32("{}=imageAtomicOr({},{},{});", inst, image, TexelFetchCastToInt(coords, info),
+               value);
+}
+
+void EmitImageAtomicXor32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                          std::string_view coords, std::string_view value) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto image{Image(ctx, info, index)};
+    ctx.AddU32("{}=imageAtomicXor({},{},{});", inst, image, TexelFetchCastToInt(coords, info),
+               value);
+}
+
+void EmitImageAtomicExchange32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+                               std::string_view coords, std::string_view value) {
+    const auto info{inst.Flags<IR::TextureInstInfo>()};
+    const auto image{Image(ctx, info, index)};
+    ctx.AddU32("{}=imageAtomicExchange({},{},{});", inst, image, TexelFetchCastToInt(coords, info),
+               value);
+}
+
 void EmitBindlessImageSampleImplicitLod(EmitContext&) {
     NotImplemented();
 }
@@ -621,6 +715,94 @@ void EmitBoundImageRead(EmitContext&) {
 }
 
 void EmitBoundImageWrite(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBindlessImageAtomicIAdd32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBindlessImageAtomicSMin32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBindlessImageAtomicUMin32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBindlessImageAtomicSMax32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBindlessImageAtomicUMax32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBindlessImageAtomicInc32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBindlessImageAtomicDec32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBindlessImageAtomicAnd32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBindlessImageAtomicOr32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBindlessImageAtomicXor32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBindlessImageAtomicExchange32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBoundImageAtomicIAdd32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBoundImageAtomicSMin32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBoundImageAtomicUMin32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBoundImageAtomicSMax32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBoundImageAtomicUMax32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBoundImageAtomicInc32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBoundImageAtomicDec32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBoundImageAtomicAnd32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBoundImageAtomicOr32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBoundImageAtomicXor32(EmitContext&) {
+    NotImplemented();
+}
+
+void EmitBoundImageAtomicExchange32(EmitContext&) {
     NotImplemented();
 }
 

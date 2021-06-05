@@ -269,6 +269,15 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     const u32 element{static_cast<u32>(attr) % 4};
     const char swizzle{"xyzw"[element]};
     switch (attr) {
+    case IR::Attribute::Layer:
+        if (ctx.stage != Stage::Geometry &&
+            !ctx.profile.support_viewport_index_layer_non_geometry) {
+            // LOG_WARNING(..., "Shader stores viewport layer but device does not support viewport
+            // layer extension");
+            break;
+        }
+        ctx.Add("gl_Layer=ftoi({});", value);
+        break;
     case IR::Attribute::PointSize:
         ctx.Add("gl_PointSize={};", value);
         break;
@@ -279,7 +288,8 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
         ctx.Add("gl_Position.{}={};", swizzle, value);
         break;
     case IR::Attribute::ViewportIndex:
-        if (ctx.stage != Stage::Geometry && !ctx.profile.support_gl_vertex_viewport_layer) {
+        if (ctx.stage != Stage::Geometry &&
+            !ctx.profile.support_viewport_index_layer_non_geometry) {
             // LOG_WARNING(..., "Shader stores viewport index but device does not support viewport
             // layer extension");
             break;
