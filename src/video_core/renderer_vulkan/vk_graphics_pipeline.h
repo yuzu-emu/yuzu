@@ -87,13 +87,17 @@ public:
         configure_func(this, is_indexed);
     }
 
-    GraphicsPipeline* Next(const GraphicsPipelineCacheKey& current_key) noexcept {
+    [[nodiscard]] GraphicsPipeline* Next(const GraphicsPipelineCacheKey& current_key) noexcept {
         if (key == current_key) {
             return this;
         }
         const auto it{std::find(transition_keys.begin(), transition_keys.end(), current_key)};
         return it != transition_keys.end() ? transitions[std::distance(transition_keys.begin(), it)]
                                            : nullptr;
+    }
+
+    [[nodiscard]] bool IsBuilt() const noexcept {
+        return is_built.load(std::memory_order::relaxed);
     }
 
     template <typename Spec>

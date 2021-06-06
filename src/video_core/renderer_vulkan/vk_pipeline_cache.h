@@ -115,6 +115,8 @@ public:
                            const VideoCore::DiskResourceLoadCallback& callback);
 
 private:
+    [[nodiscard]] GraphicsPipeline* BuiltPipeline(GraphicsPipeline* pipeline) const noexcept;
+
     std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline();
 
     std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline(
@@ -139,6 +141,8 @@ private:
 
     GraphicsPipelineCacheKey graphics_key{};
     GraphicsPipeline* current_pipeline{};
+
+    bool use_asynchronous_shaders{};
 
     std::unordered_map<ComputePipelineCacheKey, std::unique_ptr<ComputePipeline>> compute_cache;
     std::unordered_map<GraphicsPipelineCacheKey, std::unique_ptr<GraphicsPipeline>> graphics_cache;
