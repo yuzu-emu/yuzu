@@ -24,6 +24,7 @@
 #include "video_core/host_shaders/opengl_present_frag.h"
 #include "video_core/host_shaders/opengl_present_vert.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
+#include "video_core/renderer_opengl/gl_shader_util.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
 #include "video_core/textures/decoders.h"
@@ -230,13 +231,10 @@ void RendererOpenGL::LoadColorToActiveGLTexture(u8 color_r, u8 color_g, u8 color
 
 void RendererOpenGL::InitOpenGLObjects() {
     // Create shader programs
-    OGLShader vertex_shader;
-    vertex_shader.Create(HostShaders::OPENGL_PRESENT_VERT, GL_VERTEX_SHADER);
-
-    OGLShader fragment_shader;
-    fragment_shader.Create(HostShaders::OPENGL_PRESENT_FRAG, GL_FRAGMENT_SHADER);
-
-    present_program.Create(false, false, vertex_shader.handle, fragment_shader.handle);
+    present_program.handle = glCreateProgram();
+    AttachShader(GL_VERTEX_SHADER, present_program.handle, HostShaders::OPENGL_PRESENT_VERT);
+    AttachShader(GL_FRAGMENT_SHADER, present_program.handle, HostShaders::OPENGL_PRESENT_FRAG);
+    LinkProgram(present_program.handle);
 
     // Generate presentation sampler
     present_sampler.Create();
