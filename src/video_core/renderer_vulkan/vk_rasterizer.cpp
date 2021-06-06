@@ -189,6 +189,7 @@ void RasterizerVulkan::Clear() {
     if (!maxwell3d.ShouldExecute()) {
         return;
     }
+    FlushWork();
 
     query_cache.UpdateCounters();
 
@@ -259,6 +260,8 @@ void RasterizerVulkan::Clear() {
 }
 
 void RasterizerVulkan::DispatchCompute() {
+    FlushWork();
+
     ComputePipeline* const pipeline{pipeline_cache.CurrentComputePipeline()};
     if (!pipeline) {
         return;
