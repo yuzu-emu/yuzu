@@ -140,7 +140,7 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
       buffer_cache(*this, maxwell3d, kepler_compute, gpu_memory, cpu_memory_, buffer_cache_runtime),
       pipeline_cache(*this, maxwell3d, kepler_compute, gpu_memory, device, scheduler,
                      descriptor_pool, update_descriptor_queue, render_pass_cache, buffer_cache,
-                     texture_cache),
+                     texture_cache, gpu.ShaderNotify()),
       query_cache{*this, maxwell3d, gpu_memory, device, scheduler}, accelerate_dma{ buffer_cache },
       fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache, device, scheduler),
       wfi_event(device.GetLogical().CreateEvent()) {

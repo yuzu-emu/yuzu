@@ -235,11 +235,11 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxw
                              VKScheduler& scheduler_, DescriptorPool& descriptor_pool_,
                              VKUpdateDescriptorQueue& update_descriptor_queue_,
                              RenderPassCache& render_pass_cache_, BufferCache& buffer_cache_,
-                             TextureCache& texture_cache_)
+                             TextureCache& texture_cache_, VideoCore::ShaderNotify& shader_notify_)
     : VideoCommon::ShaderCache{rasterizer_, gpu_memory_, maxwell3d_, kepler_compute_},
       device{device_}, scheduler{scheduler_}, descriptor_pool{descriptor_pool_},
       update_descriptor_queue{update_descriptor_queue_}, render_pass_cache{render_pass_cache_},
-      buffer_cache{buffer_cache_}, texture_cache{texture_cache_},
+      buffer_cache{buffer_cache_}, texture_cache{texture_cache_}, shader_notify{shader_notify_},
       use_asynchronous_shaders{Settings::values.use_asynchronous_shaders.GetValue()},
       workers(std::max(std::thread::hardware_concurrency(), 2U) - 1, "yuzu:PipelineBuilder"),
       serialization_thread(1, "yuzu:PipelineSerialization") {
@@ -307,19 +307,7 @@ GraphicsPipeline* PipelineCache::CurrentGraphicsPipeline() {
             return BuiltPipeline(current_pipeline);
         }
     }
-    const auto [pair, is_new]{graphics_cache.try_emplace(graphics_key)};
-    auto& pipeline{pair->second};
-    if (is_new) {
-        pipeline = CreateGraphicsPipeline();
-    }
-    if (!pipeline) {
-        return nullptr;
-    }
-    if (current_pipeline) {
-        current_pipeline->AddTransition(pipeline.get());
-    }
-    current_pipeline = pipeline.get();
-    return BuiltPipeline(current_pipeline);
+    return CurrentGraphicsPipelineSlowPath();
 }
 
 ComputePipeline* PipelineCache::CurrentComputePipeline() {
@@ -416,6 +404,22 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
     workers.WaitForRequests();
 }
 
+GraphicsPipeline* PipelineCache::CurrentGraphicsPipelineSlowPath() {
+    const auto [pair, is_new]{graphics_cache.try_emplace(graphics_key)};
+    auto& pipeline{pair->second};
+    if (is_new) {
+        pipeline = CreateGraphicsPipeline();
+    }
+    if (!pipeline) {
+        return nullptr;
+    }
+    if (current_pipeline) {
+        current_pipeline->AddTransition(pipeline.get());
+    }
+    current_pipeline = pipeline.get();
+    return BuiltPipeline(current_pipeline);
+}
+
 GraphicsPipeline* PipelineCache::BuiltPipeline(GraphicsPipeline* pipeline) const noexcept {
     if (pipeline->IsBuilt()) {
         return pipeline;
@@ -484,14 +488,16 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
         device.SaveShader(code);
         modules[stage_index] = BuildShader(device, code);
         if (device.HasDebuggingToolAttached()) {
-            const std::string name{fmt::format("{:016x}", key.unique_hashes[index])};
+            const std::string name{fmt::format("Shader {:016x}", key.unique_hashes[index])};
             modules[stage_index].SetObjectNameEXT(name.c_str());
         }
     }
     Common::ThreadWorker* const thread_worker{build_in_parallel ? &workers : nullptr};
-    return std::make_unique<GraphicsPipeline>(
-        maxwell3d, gpu_memory, scheduler, buffer_cache, texture_cache, device, descriptor_pool,
-        update_descriptor_queue, thread_worker, render_pass_cache, key, std::move(modules), infos);
+    VideoCore::ShaderNotify* const notify{build_in_parallel ? &shader_notify : nullptr};
+    return std::make_unique<GraphicsPipeline>(maxwell3d, gpu_memory, scheduler, buffer_cache,
+                                              texture_cache, notify, device, descriptor_pool,
+                                              update_descriptor_queue, thread_worker,
+                                              render_pass_cache, key, std::move(modules), infos);
 
 } catch (const Shader::Exception& exception) {
     LOG_ERROR(Render_Vulkan, "{}", exception.what());
@@ -550,12 +556,14 @@ std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
     device.SaveShader(code);
     vk::ShaderModule spv_module{BuildShader(device, code)};
     if (device.HasDebuggingToolAttached()) {
-        const auto name{fmt::format("{:016x}", key.unique_hash)};
+        const auto name{fmt::format("Shader {:016x}", key.unique_hash)};
         spv_module.SetObjectNameEXT(name.c_str());
     }
     Common::ThreadWorker* const thread_worker{build_in_parallel ? &workers : nullptr};
+    VideoCore::ShaderNotify* const notify{build_in_parallel ? &shader_notify : nullptr};
     return std::make_unique<ComputePipeline>(device, descriptor_pool, update_descriptor_queue,
-                                             thread_worker, program.info, std::move(spv_module));
+                                             thread_worker, notify, program.info,
+                                             std::move(spv_module));
 
 } catch (const Shader::Exception& exception) {
     LOG_ERROR(Render_Vulkan, "{}", exception.what());

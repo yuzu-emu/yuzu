@@ -18,6 +18,10 @@
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
+namespace VideoCore {
+class ShaderNotify;
+}
+
 namespace Vulkan {
 
 class Device;
@@ -27,7 +31,8 @@ class ComputePipeline {
 public:
     explicit ComputePipeline(const Device& device, DescriptorPool& descriptor_pool,
                              VKUpdateDescriptorQueue& update_descriptor_queue,
-                             Common::ThreadWorker* thread_worker, const Shader::Info& info,
+                             Common::ThreadWorker* thread_worker,
+                             VideoCore::ShaderNotify* shader_notify, const Shader::Info& info,
                              vk::ShaderModule spv_module);
 
     ComputePipeline& operator=(ComputePipeline&&) noexcept = delete;

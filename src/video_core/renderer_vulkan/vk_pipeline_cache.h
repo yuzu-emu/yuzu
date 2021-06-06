@@ -38,6 +38,10 @@ namespace Shader::IR {
 struct Program;
 }
 
+namespace VideoCore {
+class ShaderNotify;
+}
+
 namespace Vulkan {
 
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
@@ -104,7 +108,7 @@ public:
                            VKScheduler& scheduler, DescriptorPool& descriptor_pool,
                            VKUpdateDescriptorQueue& update_descriptor_queue,
                            RenderPassCache& render_pass_cache, BufferCache& buffer_cache,
-                           TextureCache& texture_cache);
+                           TextureCache& texture_cache, VideoCore::ShaderNotify& shader_notify_);
     ~PipelineCache();
 
     [[nodiscard]] GraphicsPipeline* CurrentGraphicsPipeline();
@@ -115,6 +119,8 @@ public:
                            const VideoCore::DiskResourceLoadCallback& callback);
 
 private:
+    [[nodiscard]] GraphicsPipeline* CurrentGraphicsPipelineSlowPath();
+
     [[nodiscard]] GraphicsPipeline* BuiltPipeline(GraphicsPipeline* pipeline) const noexcept;
 
     std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline();
@@ -138,6 +144,7 @@ private:
     RenderPassCache& render_pass_cache;
     BufferCache& buffer_cache;
     TextureCache& texture_cache;
+    VideoCore::ShaderNotify& shader_notify;
 
     GraphicsPipelineCacheKey graphics_key{};
     GraphicsPipeline* current_pipeline{};
