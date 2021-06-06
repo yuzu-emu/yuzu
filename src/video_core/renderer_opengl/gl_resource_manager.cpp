@@ -83,18 +83,6 @@ void OGLSampler::Release() {
     handle = 0;
 }
 
-void OGLShader::Create(std::string_view source, GLenum type) {
-    if (handle != 0) {
-        return;
-    }
-    if (source.empty()) {
-        return;
-    }
-
-    MICROPROFILE_SCOPE(OpenGL_ResourceCreation);
-    handle = GLShader::LoadShader(source, type);
-}
-
 void OGLShader::Release() {
     if (handle == 0)
         return;
@@ -102,21 +90,6 @@ void OGLShader::Release() {
     MICROPROFILE_SCOPE(OpenGL_ResourceDeletion);
     glDeleteShader(handle);
     handle = 0;
-}
-
-void OGLProgram::CreateFromSource(const char* vert_shader, const char* geo_shader,
-                                  const char* frag_shader, bool separable_program,
-                                  bool hint_retrievable) {
-    OGLShader vert, geo, frag;
-    if (vert_shader)
-        vert.Create(vert_shader, GL_VERTEX_SHADER);
-    if (geo_shader)
-        geo.Create(geo_shader, GL_GEOMETRY_SHADER);
-    if (frag_shader)
-        frag.Create(frag_shader, GL_FRAGMENT_SHADER);
-
-    MICROPROFILE_SCOPE(OpenGL_ResourceCreation);
-    Create(separable_program, hint_retrievable, vert.handle, geo.handle, frag.handle);
 }
 
 void OGLProgram::Release() {

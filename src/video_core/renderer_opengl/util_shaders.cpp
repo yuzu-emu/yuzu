@@ -17,6 +17,7 @@
 #include "video_core/host_shaders/opengl_copy_bgra_comp.h"
 #include "video_core/host_shaders/pitch_unswizzle_comp.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
+#include "video_core/renderer_opengl/gl_shader_util.h"
 #include "video_core/renderer_opengl/gl_texture_cache.h"
 #include "video_core/renderer_opengl/util_shaders.h"
 #include "video_core/texture_cache/accelerated_swizzle.h"
@@ -40,13 +41,12 @@ using VideoCommon::Accelerated::MakeBlockLinearSwizzle3DParams;
 using VideoCore::Surface::BytesPerBlock;
 
 namespace {
-
 OGLProgram MakeProgram(std::string_view source) {
-    OGLShader shader;
-    shader.Create(source, GL_COMPUTE_SHADER);
-
     OGLProgram program;
-    program.Create(true, false, shader.handle);
+    OGLShader shader;
+    program.handle = glCreateProgram();
+    AttachShader(GL_COMPUTE_SHADER, program.handle, source);
+    LinkProgram(program.handle);
     return program;
 }
 
@@ -54,7 +54,6 @@ size_t NumPixelsInCopy(const VideoCommon::ImageCopy& copy) {
     return static_cast<size_t>(copy.extent.width * copy.extent.height *
                                copy.src_subresource.num_layers);
 }
-
 } // Anonymous namespace
 
 UtilShaders::UtilShaders(ProgramManager& program_manager_)

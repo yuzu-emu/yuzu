@@ -5,57 +5,100 @@
 #include <string_view>
 #include <vector>
 #include <glad/glad.h>
+
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "common/settings.h"
 #include "video_core/renderer_opengl/gl_shader_util.h"
 
-namespace OpenGL::GLShader {
+namespace OpenGL {
 
-namespace {
-
-std::string_view StageDebugName(GLenum type) {
-    switch (type) {
-    case GL_VERTEX_SHADER:
-        return "vertex";
-    case GL_GEOMETRY_SHADER:
-        return "geometry";
-    case GL_FRAGMENT_SHADER:
-        return "fragment";
-    case GL_COMPUTE_SHADER:
-        return "compute";
+static void LogShader(GLuint shader) {
+    GLint shader_status{};
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &shader_status);
+    if (shader_status == GL_FALSE) {
+        LOG_ERROR(Render_OpenGL, "Failed to build shader");
     }
-    UNIMPLEMENTED();
-    return "unknown";
+    GLint log_length{};
+    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_length);
+    if (log_length == 0) {
+        return;
+    }
+    std::string log(log_length, 0);
+    glGetShaderInfoLog(shader, log_length, nullptr, log.data());
+    if (shader_status == GL_FALSE) {
+        LOG_ERROR(Render_OpenGL, "{}", log);
+    } else {
+        LOG_WARNING(Render_OpenGL, "{}", log);
+    }
 }
 
-} // Anonymous namespace
+void AttachShader(GLenum stage, GLuint program, std::string_view code) {
+    OGLShader shader;
+    shader.handle = glCreateShader(stage);
 
-GLuint LoadShader(std::string_view source, GLenum type) {
-    const std::string_view debug_type = StageDebugName(type);
-    const GLuint shader_id = glCreateShader(type);
+    const GLint length = static_cast<GLint>(code.size());
+    const GLchar* const code_ptr = code.data();
+    glShaderSource(shader.handle, 1, &code_ptr, &length);
+    glCompileShader(shader.handle);
+    glAttachShader(program, shader.handle);
+    if (Settings::values.renderer_debug) {
+        LogShader(shader.handle);
+    }
+}
 
-    const GLchar* source_string = source.data();
-    const GLint source_length = static_cast<GLint>(source.size());
+void AttachShader(GLenum stage, GLuint program, std::span<const u32> code) {
+    OGLShader shader;
+    shader.handle = glCreateShader(stage);
 
-    glShaderSource(shader_id, 1, &source_string, &source_length);
-    LOG_DEBUG(Render_OpenGL, "Compiling {} shader...", debug_type);
-    glCompileShader(shader_id);
+    glShaderBinary(1, &shader.handle, GL_SHADER_BINARY_FORMAT_SPIR_V_ARB, code.data(),
+                   static_cast<GLsizei>(code.size_bytes()));
+    glSpecializeShader(shader.handle, "main", 0, nullptr, nullptr);
+    glAttachShader(program, shader.handle);
+    if (Settings::values.renderer_debug) {
+        LogShader(shader.handle);
+    }
+}
 
-    GLint result = GL_FALSE;
-    GLint info_log_length;
-    glGetShaderiv(shader_id, GL_COMPILE_STATUS, &result);
-    glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, &info_log_length);
+void LinkProgram(GLuint program) {
+    glLinkProgram(program);
+    if (!Settings::values.renderer_debug) {
+        return;
+    }
+    GLint link_status{};
+    glGetProgramiv(program, GL_LINK_STATUS, &link_status);
 
-    if (info_log_length > 1) {
-        std::string shader_error(info_log_length, ' ');
-        glGetShaderInfoLog(shader_id, info_log_length, nullptr, &shader_error[0]);
-        if (result == GL_TRUE) {
-            LOG_DEBUG(Render_OpenGL, "{}", shader_error);
-        } else {
-            LOG_ERROR(Render_OpenGL, "Error compiling {} shader:\n{}", debug_type, shader_error);
+    GLint log_length{};
+    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_length);
+    if (log_length == 0) {
+        return;
+    }
+    std::string log(log_length, 0);
+    glGetProgramInfoLog(program, log_length, nullptr, log.data());
+    if (link_status == GL_FALSE) {
+        LOG_ERROR(Render_OpenGL, "{}", log);
+    } else {
+        LOG_WARNING(Render_OpenGL, "{}", log);
+    }
+}
+
+OGLAssemblyProgram CompileProgram(std::string_view code, GLenum target) {
+    OGLAssemblyProgram program;
+    glGenProgramsARB(1, &program.handle);
+    glNamedProgramStringEXT(program.handle, target, GL_PROGRAM_FORMAT_ASCII_ARB,
+                            static_cast<GLsizei>(code.size()), code.data());
+    if (Settings::values.renderer_debug) {
+        const auto err = reinterpret_cast<const char*>(glGetString(GL_PROGRAM_ERROR_STRING_NV));
+        if (err && *err) {
+            if (std::strstr(err, "error")) {
+                LOG_CRITICAL(Render_OpenGL, "\n{}", err);
+                LOG_INFO(Render_OpenGL, "\n{}", code);
+            } else {
+                LOG_WARNING(Render_OpenGL, "\n{}", err);
+            }
         }
     }
-    return shader_id;
+    return program;
 }
 
-} // namespace OpenGL::GLShader
+} // namespace OpenGL
