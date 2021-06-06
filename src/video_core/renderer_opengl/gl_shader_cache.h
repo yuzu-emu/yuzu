@@ -12,6 +12,7 @@
 #include <glad/glad.h>
 
 #include "common/common_types.h"
+#include "common/thread_worker.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/value.h"
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
@@ -44,6 +45,8 @@ struct ShaderPools {
 };
 
 class ShaderCache : public VideoCommon::ShaderCache {
+    struct Context;
+
 public:
     explicit ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindow& emu_window_,
                          Tegra::Engines::Maxwell3D& maxwell3d_,
@@ -74,6 +77,8 @@ private:
                                                            const ComputePipelineKey& key,
                                                            Shader::Environment& env);
 
+    std::unique_ptr<Common::StatefulThreadWorker<Context>> CreateWorkers() const;
+
     Core::Frontend::EmuWindow& emu_window;
     const Device& device;
     TextureCache& texture_cache;
@@ -82,6 +87,7 @@ private:
     StateTracker& state_tracker;
 
     GraphicsPipelineKey graphics_key{};
+    const bool use_asynchronous_shaders;
 
     ShaderPools main_pools;
     std::unordered_map<GraphicsPipelineKey, std::unique_ptr<GraphicsPipeline>> graphics_cache;
@@ -89,6 +95,7 @@ private:
 
     Shader::Profile profile;
     std::filesystem::path shader_cache_filename;
+    std::unique_ptr<Common::StatefulThreadWorker<Context>> workers;
 };
 
 } // namespace OpenGL

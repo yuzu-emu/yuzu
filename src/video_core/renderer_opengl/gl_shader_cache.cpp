@@ -239,6 +239,15 @@ void SetXfbState(VideoCommon::TransformFeedbackState& state, const Maxwell& regs
 }
 } // Anonymous namespace
 
+struct ShaderCache::Context {
+    explicit Context(Core::Frontend::EmuWindow& emu_window)
+        : gl_context{emu_window.CreateSharedContext()}, scoped{*gl_context} {}
+
+    std::unique_ptr<Core::Frontend::GraphicsContext> gl_context;
+    Core::Frontend::GraphicsContext::Scoped scoped;
+    ShaderPools pools;
+};
+
 ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindow& emu_window_,
                          Tegra::Engines::Maxwell3D& maxwell3d_,
                          Tegra::Engines::KeplerCompute& kepler_compute_,
@@ -247,46 +256,49 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
                          ProgramManager& program_manager_, StateTracker& state_tracker_)
     : VideoCommon::ShaderCache{rasterizer_, gpu_memory_, maxwell3d_, kepler_compute_},
       emu_window{emu_window_}, device{device_}, texture_cache{texture_cache_},
-      buffer_cache{buffer_cache_}, program_manager{program_manager_}, state_tracker{
-                                                                          state_tracker_} {
-    profile = Shader::Profile{
-        .supported_spirv = 0x00010000,
+      buffer_cache{buffer_cache_}, program_manager{program_manager_}, state_tracker{state_tracker_},
+      use_asynchronous_shaders{device.UseAsynchronousShaders()},
+      profile{
+          .supported_spirv = 0x00010000,
 
-        .unified_descriptor_binding = false,
-        .support_descriptor_aliasing = false,
-        .support_int8 = false,
-        .support_int16 = false,
-        .support_vertex_instance_id = true,
-        .support_float_controls = false,
-        .support_separate_denorm_behavior = false,
-        .support_separate_rounding_mode = false,
-        .support_fp16_denorm_preserve = false,
-        .support_fp32_denorm_preserve = false,
-        .support_fp16_denorm_flush = false,
-        .support_fp32_denorm_flush = false,
-        .support_fp16_signed_zero_nan_preserve = false,
-        .support_fp32_signed_zero_nan_preserve = false,
-        .support_fp64_signed_zero_nan_preserve = false,
-        .support_explicit_workgroup_layout = false,
-        .support_vote = true,
-        .support_viewport_index_layer_non_geometry =
-            device.HasNvViewportArray2() || device.HasVertexViewportLayer(),
-        .support_viewport_mask = device.HasNvViewportArray2(),
-        .support_typeless_image_loads = device.HasImageLoadFormatted(),
-        .support_demote_to_helper_invocation = false,
-        .support_int64_atomics = false,
-        .support_derivative_control = device.HasDerivativeControl(),
+          .unified_descriptor_binding = false,
+          .support_descriptor_aliasing = false,
+          .support_int8 = false,
+          .support_int16 = false,
+          .support_vertex_instance_id = true,
+          .support_float_controls = false,
+          .support_separate_denorm_behavior = false,
+          .support_separate_rounding_mode = false,
+          .support_fp16_denorm_preserve = false,
+          .support_fp32_denorm_preserve = false,
+          .support_fp16_denorm_flush = false,
+          .support_fp32_denorm_flush = false,
+          .support_fp16_signed_zero_nan_preserve = false,
+          .support_fp32_signed_zero_nan_preserve = false,
+          .support_fp64_signed_zero_nan_preserve = false,
+          .support_explicit_workgroup_layout = false,
+          .support_vote = true,
+          .support_viewport_index_layer_non_geometry =
+              device.HasNvViewportArray2() || device.HasVertexViewportLayer(),
+          .support_viewport_mask = device.HasNvViewportArray2(),
+          .support_typeless_image_loads = device.HasImageLoadFormatted(),
+          .support_demote_to_helper_invocation = false,
+          .support_int64_atomics = false,
+          .support_derivative_control = device.HasDerivativeControl(),
 
-        .warp_size_potentially_larger_than_guest = true,
+          .warp_size_potentially_larger_than_guest = true,
 
-        .lower_left_origin_mode = true,
-        .need_declared_frag_colors = true,
+          .lower_left_origin_mode = true,
+          .need_declared_frag_colors = true,
 
-        .has_broken_spirv_clamp = true,
-        .has_broken_unsigned_image_offsets = true,
-        .has_broken_signed_operations = true,
-        .ignore_nan_fp_comparisons = true,
-    };
+          .has_broken_spirv_clamp = true,
+          .has_broken_unsigned_image_offsets = true,
+          .has_broken_signed_operations = true,
+          .ignore_nan_fp_comparisons = true,
+      } {
+    if (use_asynchronous_shaders) {
+        workers = CreateWorkers();
+    }
 }
 
 ShaderCache::~ShaderCache() = default;
@@ -307,29 +319,20 @@ void ShaderCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
     }
     shader_cache_filename = transferable_dir / fmt::format("{:016x}.bin", title_id);
 
-    struct Context {
-        explicit Context(Core::Frontend::EmuWindow& emu_window)
-            : gl_context{emu_window.CreateSharedContext()}, scoped{*gl_context} {}
-
-        std::unique_ptr<Core::Frontend::GraphicsContext> gl_context;
-        Core::Frontend::GraphicsContext::Scoped scoped;
-        ShaderPools pools;
-    };
-    Common::StatefulThreadWorker<Context> workers(
-        std::max(std::thread::hardware_concurrency(), 2U) - 1, "yuzu:ShaderBuilder",
-        [this] { return Context{emu_window}; });
-
+    if (!workers) {
+        workers = CreateWorkers();
+    }
     struct {
         std::mutex mutex;
-        size_t total{0};
-        size_t built{0};
-        bool has_loaded{false};
+        size_t total{};
+        size_t built{};
+        bool has_loaded{};
     } state;
 
     const auto load_compute{[&](std::ifstream& file, FileEnvironment env) {
         ComputePipelineKey key;
         file.read(reinterpret_cast<char*>(&key), sizeof(key));
-        workers.QueueWork(
+        workers->QueueWork(
             [this, key, env = std::move(env), &state, &callback](Context* ctx) mutable {
                 ctx->pools.ReleaseContents();
                 auto pipeline{CreateComputePipeline(ctx->pools, key, env)};
@@ -347,7 +350,7 @@ void ShaderCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
     const auto load_graphics{[&](std::ifstream& file, std::vector<FileEnvironment> envs) {
         GraphicsPipelineKey key;
         file.read(reinterpret_cast<char*>(&key), sizeof(key));
-        workers.QueueWork(
+        workers->QueueWork(
             [this, key, envs = std::move(envs), &state, &callback](Context* ctx) mutable {
                 boost::container::static_vector<Shader::Environment*, 5> env_ptrs;
                 for (auto& env : envs) {
@@ -373,7 +376,10 @@ void ShaderCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
     state.has_loaded = true;
     lock.unlock();
 
-    workers.WaitForRequests();
+    workers->WaitForRequests();
+    if (!use_asynchronous_shaders) {
+        workers.reset();
+    }
 }
 
 GraphicsPipeline* ShaderCache::CurrentGraphicsPipeline() {
@@ -568,6 +574,13 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(ShaderPools&
 } catch (Shader::Exception& exception) {
     LOG_ERROR(Render_OpenGL, "{}", exception.what());
     return nullptr;
+}
+
+std::unique_ptr<Common::StatefulThreadWorker<ShaderCache::Context>> ShaderCache::CreateWorkers()
+    const {
+    return std::make_unique<Common::StatefulThreadWorker<Context>>(
+        std::max(std::thread::hardware_concurrency(), 2U) - 1, "yuzu:ShaderBuilder",
+        [this] { return Context{emu_window}; });
 }
 
 } // namespace OpenGL
