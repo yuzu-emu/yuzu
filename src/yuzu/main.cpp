@@ -2888,13 +2888,13 @@ void GMainWindow::UpdateStatusBar() {
         return;
     }
 
-    auto results = Core::System::GetInstance().GetAndResetPerfStats();
-    auto& shader_notify = Core::System::GetInstance().GPU().ShaderNotify();
-    const auto shaders_building = shader_notify.GetShadersBuilding();
+    auto& system = Core::System::GetInstance();
+    auto results = system.GetAndResetPerfStats();
+    auto& shader_notify = system.GPU().ShaderNotify();
+    const int shaders_building = shader_notify.ShadersBuilding();
 
-    if (shaders_building != 0) {
-        shader_building_label->setText(
-            tr("Building: %n shader(s)", "", static_cast<int>(shaders_building)));
+    if (shaders_building > 0) {
+        shader_building_label->setText(tr("Building: %n shader(s)", "", shaders_building));
         shader_building_label->setVisible(true);
     } else {
         shader_building_label->setVisible(false);

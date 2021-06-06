@@ -17,6 +17,7 @@
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
+#include "video_core/shader_notify.h"
 #include "video_core/vulkan_common/vulkan_device.h"
 
 #if defined(_MSC_VER) && defined(NDEBUG)
@@ -203,30 +204,30 @@ ConfigureFuncPtr ConfigureFunc(const std::array<vk::ShaderModule, NUM_STAGES>& m
 }
 } // Anonymous namespace
 
-GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
-                                   Tegra::MemoryManager& gpu_memory_, VKScheduler& scheduler_,
-                                   BufferCache& buffer_cache_, TextureCache& texture_cache_,
-                                   const Device& device_, DescriptorPool& descriptor_pool,
-                                   VKUpdateDescriptorQueue& update_descriptor_queue_,
-                                   Common::ThreadWorker* worker_thread,
-                                   RenderPassCache& render_pass_cache,
-                                   const GraphicsPipelineCacheKey& key_,
-                                   std::array<vk::ShaderModule, NUM_STAGES> stages,
-                                   const std::array<const Shader::Info*, NUM_STAGES>& infos)
+GraphicsPipeline::GraphicsPipeline(
+    Tegra::Engines::Maxwell3D& maxwell3d_, Tegra::MemoryManager& gpu_memory_,
+    VKScheduler& scheduler_, BufferCache& buffer_cache_, TextureCache& texture_cache_,
+    VideoCore::ShaderNotify* shader_notify, const Device& device_, DescriptorPool& descriptor_pool,
+    VKUpdateDescriptorQueue& update_descriptor_queue_, Common::ThreadWorker* worker_thread,
+    RenderPassCache& render_pass_cache, const GraphicsPipelineCacheKey& key_,
+    std::array<vk::ShaderModule, NUM_STAGES> stages,
+    const std::array<const Shader::Info*, NUM_STAGES>& infos)
     : key{key_}, maxwell3d{maxwell3d_}, gpu_memory{gpu_memory_}, device{device_},
       texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, scheduler{scheduler_},
       update_descriptor_queue{update_descriptor_queue_}, spv_modules{std::move(stages)} {
-    std::ranges::transform(infos, stage_infos.begin(),
-                           [](const Shader::Info* info) { return info ? *info : Shader::Info{}; });
+    if (shader_notify) {
+        shader_notify->MarkShaderBuilding();
+    }
     for (size_t stage = 0; stage < NUM_STAGES; ++stage) {
         const Shader::Info* const info{infos[stage]};
         if (!info) {
             continue;
         }
+        stage_infos[stage] = *info;
         enabled_uniform_buffer_masks[stage] = info->constant_buffer_mask;
         std::ranges::copy(info->constant_buffer_used_sizes, uniform_buffer_sizes[stage].begin());
     }
-    auto func{[this, &render_pass_cache, &descriptor_pool] {
+    auto func{[this, shader_notify, &render_pass_cache, &descriptor_pool] {
         DescriptorLayoutBuilder builder{MakeBuilder(device, stage_infos)};
         descriptor_set_layout = builder.CreateDescriptorSetLayout();
         descriptor_allocator = descriptor_pool.Allocator(*descriptor_set_layout, stage_infos);
@@ -242,6 +243,9 @@ GraphicsPipeline::GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d_,
         std::lock_guard lock{build_mutex};
         is_built = true;
         build_condvar.notify_one();
+        if (shader_notify) {
+            shader_notify->MarkShaderComplete();
+        }
     }};
     if (worker_thread) {
         worker_thread->QueueWork(std::move(func));

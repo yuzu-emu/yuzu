@@ -20,6 +20,10 @@
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
+namespace VideoCore {
+class ShaderNotify;
+}
+
 namespace Vulkan {
 
 struct GraphicsPipelineCacheKey {
@@ -64,16 +68,14 @@ class GraphicsPipeline {
     static constexpr size_t NUM_STAGES = Tegra::Engines::Maxwell3D::Regs::MaxShaderStage;
 
 public:
-    explicit GraphicsPipeline(Tegra::Engines::Maxwell3D& maxwell3d,
-                              Tegra::MemoryManager& gpu_memory, VKScheduler& scheduler,
-                              BufferCache& buffer_cache, TextureCache& texture_cache,
-                              const Device& device, DescriptorPool& descriptor_pool,
-                              VKUpdateDescriptorQueue& update_descriptor_queue,
-                              Common::ThreadWorker* worker_thread,
-                              RenderPassCache& render_pass_cache,
-                              const GraphicsPipelineCacheKey& key,
-                              std::array<vk::ShaderModule, NUM_STAGES> stages,
-                              const std::array<const Shader::Info*, NUM_STAGES>& infos);
+    explicit GraphicsPipeline(
+        Tegra::Engines::Maxwell3D& maxwell3d, Tegra::MemoryManager& gpu_memory,
+        VKScheduler& scheduler, BufferCache& buffer_cache, TextureCache& texture_cache,
+        VideoCore::ShaderNotify* shader_notify, const Device& device,
+        DescriptorPool& descriptor_pool, VKUpdateDescriptorQueue& update_descriptor_queue,
+        Common::ThreadWorker* worker_thread, RenderPassCache& render_pass_cache,
+        const GraphicsPipelineCacheKey& key, std::array<vk::ShaderModule, NUM_STAGES> stages,
+        const std::array<const Shader::Info*, NUM_STAGES>& infos);
 
     GraphicsPipeline& operator=(GraphicsPipeline&&) noexcept = delete;
     GraphicsPipeline(GraphicsPipeline&&) noexcept = delete;

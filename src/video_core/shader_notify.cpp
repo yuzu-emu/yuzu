@@ -2,42 +2,35 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <mutex>
+#include <atomic>
+#include <chrono>
+#include <optional>
+
 #include "video_core/shader_notify.h"
 
 using namespace std::chrono_literals;
 
 namespace VideoCore {
-namespace {
-constexpr auto UPDATE_TICK = 32ms;
-}
 
-ShaderNotify::ShaderNotify() = default;
-ShaderNotify::~ShaderNotify() = default;
+const auto TIME_TO_STOP_REPORTING = 2s;
 
-std::size_t ShaderNotify::GetShadersBuilding() {
-    const auto now = std::chrono::high_resolution_clock::now();
-    const auto diff = now - last_update;
-    if (diff > UPDATE_TICK) {
-        std::shared_lock lock(mutex);
-        last_updated_count = accurate_count;
+int ShaderNotify::ShadersBuilding() noexcept {
+    const int now_complete = num_complete.load(std::memory_order::relaxed);
+    const int now_building = num_building.load(std::memory_order::relaxed);
+    if (now_complete == now_building) {
+        const auto now = std::chrono::high_resolution_clock::now();
+        if (completed && num_complete == num_when_completed) {
+            if (now - complete_time > TIME_TO_STOP_REPORTING) {
+                report_base = now_complete;
+                completed = false;
+            }
+        } else {
+            completed = true;
+            num_when_completed = num_complete;
+            complete_time = now;
+        }
     }
-    return last_updated_count;
-}
-
-std::size_t ShaderNotify::GetShadersBuildingAccurate() {
-    std::shared_lock lock{mutex};
-    return accurate_count;
-}
-
-void ShaderNotify::MarkShaderComplete() {
-    std::unique_lock lock{mutex};
-    accurate_count--;
-}
-
-void ShaderNotify::MarkSharderBuilding() {
-    std::unique_lock lock{mutex};
-    accurate_count++;
+    return now_building - report_base;
 }
 
 } // namespace VideoCore
