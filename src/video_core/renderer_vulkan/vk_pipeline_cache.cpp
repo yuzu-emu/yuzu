@@ -240,6 +240,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxw
       device{device_}, scheduler{scheduler_}, descriptor_pool{descriptor_pool_},
       update_descriptor_queue{update_descriptor_queue_}, render_pass_cache{render_pass_cache_},
       buffer_cache{buffer_cache_}, texture_cache{texture_cache_},
+      use_asynchronous_shaders{Settings::values.use_asynchronous_shaders.GetValue()},
       workers(std::max(std::thread::hardware_concurrency(), 2U) - 1, "yuzu:PipelineBuilder"),
       serialization_thread(1, "yuzu:PipelineSerialization") {
     const auto& float_control{device.FloatControlProperties()};
@@ -303,7 +304,7 @@ GraphicsPipeline* PipelineCache::CurrentGraphicsPipeline() {
         GraphicsPipeline* const next{current_pipeline->Next(graphics_key)};
         if (next) {
             current_pipeline = next;
-            return current_pipeline;
+            return BuiltPipeline(current_pipeline);
         }
     }
     const auto [pair, is_new]{graphics_cache.try_emplace(graphics_key)};
@@ -318,7 +319,7 @@ GraphicsPipeline* PipelineCache::CurrentGraphicsPipeline() {
         current_pipeline->AddTransition(pipeline.get());
     }
     current_pipeline = pipeline.get();
-    return current_pipeline;
+    return BuiltPipeline(current_pipeline);
 }
 
 ComputePipeline* PipelineCache::CurrentComputePipeline() {
@@ -413,6 +414,27 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
     lock.unlock();
 
     workers.WaitForRequests();
+}
+
+GraphicsPipeline* PipelineCache::BuiltPipeline(GraphicsPipeline* pipeline) const noexcept {
+    if (pipeline->IsBuilt()) {
+        return pipeline;
+    }
+    if (!use_asynchronous_shaders) {
+        return pipeline;
+    }
+    // If something is using depth, we can assume that games are not rendering anything which
+    // will be used one time.
+    if (maxwell3d.regs.zeta_enable) {
+        return nullptr;
+    }
+    // If games are using a small index count, we can assume these are full screen quads.
+    // Usually these shaders are only used once for building textures so we can assume they
+    // can't be built async
+    if (maxwell3d.regs.index_array.count <= 6 || maxwell3d.regs.vertex_buffer.count <= 6) {
+        return pipeline;
+    }
+    return nullptr;
 }
 
 std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
