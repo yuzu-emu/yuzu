@@ -13,7 +13,7 @@
 
 namespace OpenGL {
 
-static void LogShader(GLuint shader) {
+static void LogShader(GLuint shader, std::optional<std::string_view> code = {}) {
     GLint shader_status{};
     glGetShaderiv(shader, GL_COMPILE_STATUS, &shader_status);
     if (shader_status == GL_FALSE) {
@@ -28,6 +28,9 @@ static void LogShader(GLuint shader) {
     glGetShaderInfoLog(shader, log_length, nullptr, log.data());
     if (shader_status == GL_FALSE) {
         LOG_ERROR(Render_OpenGL, "{}", log);
+        if (code.has_value()) {
+            LOG_INFO(Render_OpenGL, "\n{}", *code);
+        }
     } else {
         LOG_WARNING(Render_OpenGL, "{}", log);
     }
@@ -43,7 +46,7 @@ void AttachShader(GLenum stage, GLuint program, std::string_view code) {
     glCompileShader(shader.handle);
     glAttachShader(program, shader.handle);
     if (Settings::values.renderer_debug) {
-        LogShader(shader.handle);
+        LogShader(shader.handle, code);
     }
 }
 
