@@ -206,6 +206,20 @@ void SetupOutPerVertex(EmitContext& ctx, std::string& header) {
         header += "out int gl_ViewportIndex;";
     }
 }
+
+bool UsesTyplessImage(const Info& info) {
+    for (const auto& desc : info.image_buffer_descriptors) {
+        if (desc.format == ImageFormat::Typeless) {
+            return true;
+        }
+    }
+    for (const auto& desc : info.image_descriptors) {
+        if (desc.format == ImageFormat::Typeless) {
+            return true;
+        }
+    }
+    return false;
+}
 } // Anonymous namespace
 
 EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
@@ -281,8 +295,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
 
 void EmitContext::SetupExtensions(std::string&) {
     // TODO: track this usage
-    header += "#extension GL_ARB_sparse_texture2 : enable\n"
-              "#extension GL_EXT_shader_image_load_formatted : enable\n";
+    header += "#extension GL_ARB_sparse_texture2 : enable\n";
     if (profile.support_gl_texture_shadow_lod) {
         header += "#extension GL_EXT_texture_shadow_lod : enable\n";
     }
@@ -317,6 +330,9 @@ void EmitContext::SetupExtensions(std::string&) {
     if (info.stores_viewport_index && profile.support_viewport_index_layer_non_geometry &&
         stage != Stage::Geometry) {
         header += "#extension GL_ARB_shader_viewport_layer_array : enable\n";
+    }
+    if (UsesTyplessImage(info)) {
+        header += "#extension GL_EXT_shader_image_load_formatted : enable\n";
     }
 }
 
