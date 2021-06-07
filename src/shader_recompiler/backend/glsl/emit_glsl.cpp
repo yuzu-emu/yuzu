@@ -172,19 +172,28 @@ std::string GlslVersionSpecifier(const EmitContext& ctx) {
     return "";
 }
 
+bool IsPreciseType(GlslVarType type) {
+    switch (type) {
+    case GlslVarType::PrecF32:
+    case GlslVarType::PrecF64:
+        return true;
+    default:
+        return false;
+    }
+}
+
 void DefineVariables(const EmitContext& ctx, std::string& header) {
     for (u32 i = 0; i < static_cast<u32>(GlslVarType::Void); ++i) {
         const auto type{static_cast<GlslVarType>(i)};
         const auto& tracker{ctx.var_alloc.GetUseTracker(type)};
         const auto type_name{ctx.var_alloc.GetGlslType(type)};
-        const auto precise{
-            (type == GlslVarType::PrecF32 || type == GlslVarType::PrecF64) ? "precise " : ""};
+        const auto precise{IsPreciseType(type) ? "precise " : ""};
         // Temps/return types that are never used are stored at index 0
         if (tracker.uses_temp) {
-            header += fmt::format("{}{} {}={}(0);", precise, type_name,
+            header += fmt::format("{}{} t{}={}(0);", precise, type_name,
                                   ctx.var_alloc.Representation(0, type), type_name);
         }
-        for (u32 index = 1; index <= tracker.num_used; ++index) {
+        for (u32 index = 0; index < tracker.num_used; ++index) {
             header += fmt::format("{}{} {}={}(0);", precise, type_name,
                                   ctx.var_alloc.Representation(index, type), type_name);
         }

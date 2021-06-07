@@ -116,8 +116,8 @@ std::string VarAlloc::Define(IR::Inst& inst, GlslVarType type) {
         id.type.Assign(type);
         GetUseTracker(type).uses_temp = true;
         inst.SetDefinition<Id>(id);
+        return "t" + Representation(inst.Definition<Id>());
     }
-    return Representation(inst.Definition<Id>());
 }
 
 std::string VarAlloc::Define(IR::Inst& inst, IR::Type type) {
@@ -156,21 +156,27 @@ std::string VarAlloc::GetGlslType(IR::Type type) const {
 
 Id VarAlloc::Alloc(GlslVarType type) {
     auto& use_tracker{GetUseTracker(type)};
-    if (use_tracker.num_used < NUM_VARS) {
-        for (size_t var = 1; var < NUM_VARS; ++var) {
-            if (use_tracker.var_use[var]) {
-                continue;
-            }
-            use_tracker.num_used = std::max(use_tracker.num_used, var + 1);
-            use_tracker.var_use[var] = true;
-            Id ret{};
-            ret.is_valid.Assign(1);
-            ret.type.Assign(type);
-            ret.index.Assign(static_cast<u32>(var));
-            return ret;
+    const auto num_vars{use_tracker.var_use.size()};
+    for (size_t var = 0; var < num_vars; ++var) {
+        if (use_tracker.var_use[var]) {
+            continue;
         }
+        use_tracker.num_used = std::max(use_tracker.num_used, var + 1);
+        use_tracker.var_use[var] = true;
+        Id ret{};
+        ret.is_valid.Assign(1);
+        ret.type.Assign(type);
+        ret.index.Assign(static_cast<u32>(var));
+        return ret;
     }
-    throw NotImplementedException("Variable spilling");
+    // Allocate a new variable
+    use_tracker.var_use.push_back(true);
+    Id ret{};
+    ret.is_valid.Assign(1);
+    ret.type.Assign(type);
+    ret.index.Assign(static_cast<u32>(use_tracker.num_used));
+    ++use_tracker.num_used;
+    return ret;
 }
 
 void VarAlloc::Free(Id id) {
