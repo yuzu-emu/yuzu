@@ -57,11 +57,10 @@ static_assert(sizeof(Id) == sizeof(u32));
 
 class VarAlloc {
 public:
-    static constexpr size_t NUM_VARS = 1023;
     struct UseTracker {
-        size_t num_used{};
-        std::bitset<NUM_VARS> var_use{};
         bool uses_temp{};
+        size_t num_used{};
+        std::vector<bool> var_use;
     };
 
     /// Used for explicit usages of variables, may revert to temporaries
