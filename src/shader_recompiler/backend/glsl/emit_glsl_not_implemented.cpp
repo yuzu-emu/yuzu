@@ -80,18 +80,6 @@ void EmitDemoteToHelperInvocation(EmitContext& ctx, std::string_view continue_la
     ctx.Add("discard;");
 }
 
-void EmitBarrier(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitWorkgroupMemoryBarrier(EmitContext& ctx) {
-    NotImplemented();
-}
-
-void EmitDeviceMemoryBarrier(EmitContext& ctx) {
-    NotImplemented();
-}
-
 void EmitPrologue(EmitContext& ctx) {}
 
 void EmitEpilogue(EmitContext& ctx) {}
