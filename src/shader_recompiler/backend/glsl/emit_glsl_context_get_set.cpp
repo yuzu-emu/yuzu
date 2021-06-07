@@ -30,10 +30,8 @@ std::string InputVertexIndex(EmitContext& ctx, std::string_view vertex) {
     return IsInputArray(ctx.stage) ? fmt::format("[{}]", vertex) : "";
 }
 
-std::string OutputVertexIndex(EmitContext& ctx, std::string_view vertex) {
+std::string OutputVertexIndex(EmitContext& ctx) {
     switch (ctx.stage) {
-    case Stage::Geometry:
-        return fmt::format("[{}]", vertex);
     case Stage::TessellationControl:
         return "[gl_InvocationID]";
     default:
@@ -252,12 +250,12 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
 }
 
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view value,
-                      std::string_view vertex) {
+                      [[maybe_unused]] std::string_view vertex) {
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
         const u32 element{IR::GenericAttributeElement(attr)};
         const GenericElementInfo& info{ctx.output_generics.at(index).at(element)};
-        const auto output_decorator{OutputVertexIndex(ctx, vertex)};
+        const auto output_decorator{OutputVertexIndex(ctx)};
         if (info.num_components == 1) {
             ctx.Add("{}{}={};", info.name, output_decorator, value);
         } else {
