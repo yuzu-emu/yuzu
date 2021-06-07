@@ -332,7 +332,10 @@ void GraphicsPipeline::Configure(bool is_indexed) {
         for (const auto& desc : info.image_descriptors) {
             for (u32 index = 0; index < desc.count; ++index) {
                 ImageView& image_view{texture_cache.GetImageView(*(views_it++))};
-                images[image_binding++] = image_view.Handle(desc.type);
+                if (desc.is_written) {
+                    texture_cache.MarkModification(image_view.image_id);
+                }
+                images[image_binding++] = image_view.StorageView(desc.type, desc.format);
             }
         }
     }};

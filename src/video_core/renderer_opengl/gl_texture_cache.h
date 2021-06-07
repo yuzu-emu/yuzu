@@ -185,6 +185,9 @@ public:
                        const VideoCommon::ImageViewInfo& view_info);
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::NullImageParams&);
 
+    [[nodiscard]] GLuint StorageView(Shader::TextureType texture_type,
+                                     Shader::ImageFormat image_format);
+
     [[nodiscard]] GLuint Handle(Shader::TextureType handle_type) const noexcept {
         return views[static_cast<size_t>(handle_type)];
     }
@@ -206,16 +209,29 @@ public:
     }
 
 private:
-    void SetupView(const Device& device, Image& image, Shader::TextureType view_type, GLuint handle,
-                   const VideoCommon::ImageViewInfo& info,
-                   VideoCommon::SubresourceRange view_range);
+    struct StorageViews {
+        std::array<GLuint, Shader::NUM_TEXTURE_TYPES> signeds{};
+        std::array<GLuint, Shader::NUM_TEXTURE_TYPES> unsigneds{};
+    };
+
+    void SetupView(Shader::TextureType view_type);
+
+    GLuint MakeView(Shader::TextureType view_type, GLenum view_format);
 
     std::array<GLuint, Shader::NUM_TEXTURE_TYPES> views{};
     std::vector<OGLTextureView> stored_views;
+    std::unique_ptr<StorageViews> storage_views;
     GLenum internal_format = GL_NONE;
     GLuint default_handle = 0;
     GPUVAddr gpu_addr = 0;
     u32 buffer_size = 0;
+    GLuint original_texture = 0;
+    int num_samples = 0;
+    VideoCommon::SubresourceRange flat_range;
+    VideoCommon::SubresourceRange full_range;
+    std::array<u8, 4> swizzle{};
+    bool set_object_label = false;
+    bool is_render_target = false;
 };
 
 class ImageAlloc : public VideoCommon::ImageAllocBase {};

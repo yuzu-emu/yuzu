@@ -328,6 +328,28 @@ void AttachTexture(GLuint fbo, GLenum attachment, const ImageView* image_view) {
     }
 }
 
+[[nodiscard]] GLenum ShaderFormat(Shader::ImageFormat format) {
+    switch (format) {
+    case Shader::ImageFormat::Typeless:
+        break;
+    case Shader::ImageFormat::R8_SINT:
+        return GL_R8I;
+    case Shader::ImageFormat::R8_UINT:
+        return GL_R8UI;
+    case Shader::ImageFormat::R16_UINT:
+        return GL_R16UI;
+    case Shader::ImageFormat::R16_SINT:
+        return GL_R16I;
+    case Shader::ImageFormat::R32_UINT:
+        return GL_R32UI;
+    case Shader::ImageFormat::R32G32_UINT:
+        return GL_RG32UI;
+    case Shader::ImageFormat::R32G32B32A32_UINT:
+        return GL_RGBA32UI;
+    }
+    UNREACHABLE_MSG("Invalid image format={}", format);
+    return GL_R32UI;
+}
 } // Anonymous namespace
 
 ImageBufferMap::~ImageBufferMap() {
@@ -837,21 +859,28 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
     } else {
         internal_format = MaxwellToGL::GetFormatTuple(format).internal_format;
     }
-    VideoCommon::SubresourceRange flatten_range = info.range;
-    std::array<GLuint, 2> handles;
-    stored_views.reserve(2);
-
+    full_range = info.range;
+    flat_range = info.range;
+    set_object_label = device.HasDebuggingToolAttached();
+    is_render_target = info.IsRenderTarget();
+    original_texture = image.texture.handle;
+    num_samples = image.info.num_samples;
+    if (!is_render_target) {
+        swizzle[0] = info.x_source;
+        swizzle[1] = info.y_source;
+        swizzle[2] = info.z_source;
+        swizzle[3] = info.w_source;
+    }
     switch (info.type) {
     case ImageViewType::e1DArray:
-        flatten_range.extent.layers = 1;
+        flat_range.extent.layers = 1;
         [[fallthrough]];
     case ImageViewType::e1D:
-        glGenTextures(2, handles.data());
-        SetupView(device, image, Shader::TextureType::Color1D, handles[0], info, flatten_range);
-        SetupView(device, image, Shader::TextureType::ColorArray1D, handles[1], info, info.range);
+        SetupView(Shader::TextureType::Color1D);
+        SetupView(Shader::TextureType::ColorArray1D);
         break;
     case ImageViewType::e2DArray:
-        flatten_range.extent.layers = 1;
+        flat_range.extent.layers = 1;
         [[fallthrough]];
     case ImageViewType::e2D:
         if (True(flags & VideoCommon::ImageViewFlagBits::Slice)) {
@@ -861,26 +890,23 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
                 .base = {.level = info.range.base.level, .layer = 0},
                 .extent = {.levels = 1, .layers = 1},
             };
-            glGenTextures(1, handles.data());
-            SetupView(device, image, Shader::TextureType::Color3D, handles[0], info, slice_range);
+            full_range = slice_range;
+
+            SetupView(Shader::TextureType::Color3D);
         } else {
-            glGenTextures(2, handles.data());
-            SetupView(device, image, Shader::TextureType::Color2D, handles[0], info, flatten_range);
-            SetupView(device, image, Shader::TextureType::ColorArray2D, handles[1], info,
-                      info.range);
+            SetupView(Shader::TextureType::Color2D);
+            SetupView(Shader::TextureType::ColorArray2D);
         }
         break;
     case ImageViewType::e3D:
-        glGenTextures(1, handles.data());
-        SetupView(device, image, Shader::TextureType::Color3D, handles[0], info, info.range);
+        SetupView(Shader::TextureType::Color3D);
         break;
     case ImageViewType::CubeArray:
-        flatten_range.extent.layers = 6;
+        flat_range.extent.layers = 6;
         [[fallthrough]];
     case ImageViewType::Cube:
-        glGenTextures(2, handles.data());
-        SetupView(device, image, Shader::TextureType::ColorCube, handles[0], info, flatten_range);
-        SetupView(device, image, Shader::TextureType::ColorArrayCube, handles[1], info, info.range);
+        SetupView(Shader::TextureType::ColorCube);
+        SetupView(Shader::TextureType::ColorArrayCube);
         break;
     case ImageViewType::Rect:
         UNIMPLEMENTED();
@@ -928,22 +954,62 @@ ImageView::ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo& info,
 ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::NullImageParams& params)
     : VideoCommon::ImageViewBase{params}, views{runtime.null_image_views} {}
 
-void ImageView::SetupView(const Device& device, Image& image, Shader::TextureType view_type,
-                          GLuint handle, const VideoCommon::ImageViewInfo& info,
-                          VideoCommon::SubresourceRange view_range) {
-    const GLuint parent = image.texture.handle;
-    const GLenum target = ImageTarget(view_type, image.info.num_samples);
-    glTextureView(handle, target, parent, internal_format, view_range.base.level,
+GLuint ImageView::StorageView(Shader::TextureType texture_type, Shader::ImageFormat image_format) {
+    if (image_format == Shader::ImageFormat::Typeless) {
+        return Handle(texture_type);
+    }
+    const bool is_signed{image_format == Shader::ImageFormat::R8_SINT ||
+                         image_format == Shader::ImageFormat::R16_SINT};
+    if (!storage_views) {
+        storage_views = std::make_unique<StorageViews>();
+    }
+    auto& type_views{is_signed ? storage_views->signeds : storage_views->unsigneds};
+    GLuint& view{type_views[static_cast<size_t>(texture_type)]};
+    if (view == 0) {
+        view = MakeView(texture_type, ShaderFormat(image_format));
+    }
+    return view;
+}
+
+void ImageView::SetupView(Shader::TextureType view_type) {
+    views[static_cast<size_t>(view_type)] = MakeView(view_type, internal_format);
+}
+
+GLuint ImageView::MakeView(Shader::TextureType view_type, GLenum view_format) {
+    VideoCommon::SubresourceRange view_range;
+    switch (view_type) {
+    case Shader::TextureType::Color1D:
+    case Shader::TextureType::Color2D:
+    case Shader::TextureType::ColorCube:
+        view_range = flat_range;
+        break;
+    case Shader::TextureType::ColorArray1D:
+    case Shader::TextureType::ColorArray2D:
+    case Shader::TextureType::Color3D:
+    case Shader::TextureType::ColorArrayCube:
+        view_range = full_range;
+        break;
+    default:
+        UNREACHABLE();
+    }
+    OGLTextureView& view = stored_views.emplace_back();
+    view.Create();
+
+    const GLenum target = ImageTarget(view_type, num_samples);
+    glTextureView(view.handle, target, original_texture, view_format, view_range.base.level,
                   view_range.extent.levels, view_range.base.layer, view_range.extent.layers);
-    if (!info.IsRenderTarget()) {
-        ApplySwizzle(handle, format, info.Swizzle());
+    if (!is_render_target) {
+        std::array<SwizzleSource, 4> casted_swizzle;
+        std::ranges::transform(swizzle, casted_swizzle.begin(), [](u8 component_swizzle) {
+            return static_cast<SwizzleSource>(component_swizzle);
+        });
+        ApplySwizzle(view.handle, format, casted_swizzle);
     }
-    if (device.HasDebuggingToolAttached()) {
+    if (set_object_label) {
         const std::string name = VideoCommon::Name(*this);
-        glObjectLabel(GL_TEXTURE, handle, static_cast<GLsizei>(name.size()), name.data());
+        glObjectLabel(GL_TEXTURE, view.handle, static_cast<GLsizei>(name.size()), name.data());
     }
-    stored_views.emplace_back().handle = handle;
-    views[static_cast<size_t>(view_type)] = handle;
+    return view.handle;
 }
 
 Sampler::Sampler(TextureCacheRuntime& runtime, const TSCEntry& config) {
