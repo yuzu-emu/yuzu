@@ -35,9 +35,17 @@ std::string GetMaxThreadId(std::string_view thread_id, std::string_view clamp,
     const auto min_thread_id{ComputeMinThreadId(thread_id, segmentation_mask)};
     return ComputeMaxThreadId(min_thread_id, clamp, not_seg_mask);
 }
+
+void UseShuffleNv(EmitContext& ctx, IR::Inst& inst, std::string_view shfl_op,
+                  std::string_view value, std::string_view index,
+                  [[maybe_unused]] std::string_view clamp, std::string_view segmentation_mask) {
+    const auto width{fmt::format("32u>>(bitCount({}&31u))", segmentation_mask)};
+    ctx.AddU32("{}={}({},{},{},shfl_in_bounds);", inst, shfl_op, value, index, width);
+    SetInBoundsFlag(ctx, inst);
+}
 } // namespace
 
-void EmitLaneId([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst) {
+void EmitLaneId(EmitContext& ctx, IR::Inst& inst) {
     ctx.AddU32("{}=gl_SubGroupInvocationARB&31u;", inst);
 }
 
@@ -103,6 +111,10 @@ void EmitSubgroupGeMask(EmitContext& ctx, IR::Inst& inst) {
 void EmitShuffleIndex(EmitContext& ctx, IR::Inst& inst, std::string_view value,
                       std::string_view index, std::string_view clamp,
                       std::string_view segmentation_mask) {
+    if (ctx.profile.support_gl_warp_intrinsics) {
+        UseShuffleNv(ctx, inst, "shuffleNV", value, index, clamp, segmentation_mask);
+        return;
+    }
     const auto not_seg_mask{fmt::format("(~{})", segmentation_mask)};
     const auto thread_id{"gl_SubGroupInvocationARB"};
     const auto min_thread_id{ComputeMinThreadId(thread_id, segmentation_mask)};
@@ -117,6 +129,10 @@ void EmitShuffleIndex(EmitContext& ctx, IR::Inst& inst, std::string_view value,
 
 void EmitShuffleUp(EmitContext& ctx, IR::Inst& inst, std::string_view value, std::string_view index,
                    std::string_view clamp, std::string_view segmentation_mask) {
+    if (ctx.profile.support_gl_warp_intrinsics) {
+        UseShuffleNv(ctx, inst, "shuffleUpNV", value, index, clamp, segmentation_mask);
+        return;
+    }
     const auto thread_id{"gl_SubGroupInvocationARB"};
     const auto max_thread_id{GetMaxThreadId(thread_id, clamp, segmentation_mask)};
     const auto src_thread_id{fmt::format("({}-{})", thread_id, index)};
@@ -128,6 +144,10 @@ void EmitShuffleUp(EmitContext& ctx, IR::Inst& inst, std::string_view value, std
 void EmitShuffleDown(EmitContext& ctx, IR::Inst& inst, std::string_view value,
                      std::string_view index, std::string_view clamp,
                      std::string_view segmentation_mask) {
+    if (ctx.profile.support_gl_warp_intrinsics) {
+        UseShuffleNv(ctx, inst, "shuffleDownNV", value, index, clamp, segmentation_mask);
+        return;
+    }
     const auto thread_id{"gl_SubGroupInvocationARB"};
     const auto max_thread_id{GetMaxThreadId(thread_id, clamp, segmentation_mask)};
     const auto src_thread_id{fmt::format("({}+{})", thread_id, index)};
@@ -139,6 +159,10 @@ void EmitShuffleDown(EmitContext& ctx, IR::Inst& inst, std::string_view value,
 void EmitShuffleButterfly(EmitContext& ctx, IR::Inst& inst, std::string_view value,
                           std::string_view index, std::string_view clamp,
                           std::string_view segmentation_mask) {
+    if (ctx.profile.support_gl_warp_intrinsics) {
+        UseShuffleNv(ctx, inst, "shuffleXorNV", value, index, clamp, segmentation_mask);
+        return;
+    }
     const auto thread_id{"gl_SubGroupInvocationARB"};
     const auto max_thread_id{GetMaxThreadId(thread_id, clamp, segmentation_mask)};
     const auto src_thread_id{fmt::format("({}^{})", thread_id, index)};
@@ -147,10 +171,12 @@ void EmitShuffleButterfly(EmitContext& ctx, IR::Inst& inst, std::string_view val
     ctx.AddU32("{}=shfl_in_bounds?readInvocationARB({},{}):{};", inst, value, src_thread_id, value);
 }
 
-void EmitFSwizzleAdd([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                     [[maybe_unused]] std::string_view op_a, [[maybe_unused]] std::string_view op_b,
-                     [[maybe_unused]] std::string_view swizzle) {
-    NotImplemented();
+void EmitFSwizzleAdd(EmitContext& ctx, IR::Inst& inst, std::string_view op_a, std::string_view op_b,
+                     std::string_view swizzle) {
+    const auto mask{fmt::format("({}>>((gl_SubGroupInvocationARB&3)<<1))&3", swizzle)};
+    const std::string modifier_a = fmt::format("FSWZ_A[{}]", mask);
+    const std::string modifier_b = fmt::format("FSWZ_B[{}]", mask);
+    ctx.AddF32("{}=({}*{})+({}*{});", inst, op_a, modifier_a, op_b, modifier_b);
 }
 
 void EmitDPdxFine(EmitContext& ctx, IR::Inst& inst, std::string_view op_a) {
