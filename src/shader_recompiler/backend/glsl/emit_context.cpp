@@ -306,6 +306,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     SetupImages(bindings);
     SetupTextures(bindings);
     DefineHelperFunctions();
+    DefineConstants();
 }
 
 void EmitContext::SetupExtensions(std::string&) {
@@ -338,6 +339,9 @@ void EmitContext::SetupExtensions(std::string&) {
                   "#extension GL_ARB_shader_group_vote : enable\n";
         if (!info.uses_int64) {
             header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
+        }
+        if (profile.support_gl_warp_intrinsics) {
+            header += "#extension GL_NV_shader_thread_shuffle : enable\n";
         }
     }
     if (info.stores_viewport_index && profile.support_viewport_index_layer_non_geometry &&
@@ -602,6 +606,13 @@ void EmitContext::SetupTextures(Bindings& bindings) {
                                   sampler_type, index);
         }
         bindings.texture += desc.count;
+    }
+}
+
+void EmitContext::DefineConstants() {
+    if (info.uses_fswzadd) {
+        header += "const float FSWZ_A[]=float[4](-1.f,1.f,-1.f,0.f);"
+                  "const float FSWZ_B[]=float[4](-1.f,-1.f,1.f,-1.f);";
     }
 }
 
