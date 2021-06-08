@@ -206,26 +206,12 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
     case IR::Attribute::PositionX:
     case IR::Attribute::PositionY:
     case IR::Attribute::PositionZ:
-    case IR::Attribute::PositionW:
-        switch (ctx.stage) {
-        case Stage::VertexA:
-        case Stage::VertexB:
-            ctx.AddF32("{}=gl_Position.{};", inst, swizzle);
-            break;
-        case Stage::TessellationEval:
-            ctx.AddF32("{}=gl_TessCoord.{};", inst, swizzle);
-            break;
-        case Stage::TessellationControl:
-        case Stage::Geometry:
-            ctx.AddF32("{}=gl_in[{}].gl_Position.{};", inst, vertex, swizzle);
-            break;
-        case Stage::Fragment:
-            ctx.AddF32("{}=gl_FragCoord.{};", inst, swizzle);
-            break;
-        default:
-            throw NotImplementedException("Get Position for stage {}", ctx.stage);
-        }
+    case IR::Attribute::PositionW: {
+        const bool is_array{IsInputArray(ctx.stage)};
+        const auto input_decorator{is_array ? fmt::format("gl_in[{}].", vertex) : ""};
+        ctx.AddF32("{}={}{}.{};", inst, input_decorator, ctx.position_name, swizzle);
         break;
+    }
     case IR::Attribute::PointSpriteS:
     case IR::Attribute::PointSpriteT:
         ctx.AddF32("{}=gl_PointCoord.{};", inst, swizzle);
@@ -309,6 +295,20 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     default:
         throw NotImplementedException("Set attribute {}", attr);
     }
+}
+
+void EmitGetAttributeIndexed(EmitContext& ctx, IR::Inst& inst, std::string_view offset,
+                             std::string_view vertex) {
+    const bool is_array{ctx.stage == Stage::Geometry};
+    const auto vertex_arg{is_array ? fmt::format(",{}", vertex) : ""};
+    ctx.AddF32("{}=IndexedAttrLoad(int({}){});", inst, offset, vertex_arg);
+}
+
+void EmitSetAttributeIndexed([[maybe_unused]] EmitContext& ctx,
+                             [[maybe_unused]] std::string_view offset,
+                             [[maybe_unused]] std::string_view value,
+                             [[maybe_unused]] std::string_view vertex) {
+    NotImplemented();
 }
 
 void EmitGetPatch(EmitContext& ctx, IR::Inst& inst, IR::Patch patch) {

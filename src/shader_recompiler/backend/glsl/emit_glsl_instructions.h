@@ -69,7 +69,8 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
                       std::string_view vertex);
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view value,
                       std::string_view vertex);
-void EmitGetAttributeIndexed(EmitContext& ctx, std::string_view offset, std::string_view vertex);
+void EmitGetAttributeIndexed(EmitContext& ctx, IR::Inst& inst, std::string_view offset,
+                             std::string_view vertex);
 void EmitSetAttributeIndexed(EmitContext& ctx, std::string_view offset, std::string_view value,
                              std::string_view vertex);
 void EmitGetPatch(EmitContext& ctx, IR::Inst& inst, IR::Patch patch);
