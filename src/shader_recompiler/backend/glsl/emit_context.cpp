@@ -104,8 +104,22 @@ std::string_view SamplerType(TextureType type, bool is_depth) {
 
 std::string_view ImageType(TextureType type) {
     switch (type) {
+    case TextureType::Color1D:
+        return "uimage1D";
+    case TextureType::ColorArray1D:
+        return "uimage1DArray";
     case TextureType::Color2D:
         return "uimage2D";
+    case TextureType::ColorArray2D:
+        return "uimage2DArray";
+    case TextureType::Color3D:
+        return "uimage3D";
+    case TextureType::ColorCube:
+        return "uimageCube";
+    case TextureType::ColorArrayCube:
+        return "uimageCubeArray";
+    case TextureType::Buffer:
+        return "uimageBuffer";
     default:
         throw NotImplementedException("Image type: {}", type);
     }
@@ -250,6 +264,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         break;
     case Stage::Fragment:
         stage_name = "fs";
+        position_name = "gl_FragCoord";
         break;
     case Stage::Compute:
         stage_name = "cs";
@@ -448,6 +463,33 @@ void EmitContext::DefineHelperFunctions() {
     }
     if (info.uses_global_memory) {
         header += DefineGlobalMemoryFunctions();
+    }
+    if (info.loads_indexed_attributes) {
+        const bool is_array{stage == Stage::Geometry};
+        const auto vertex_arg{is_array ? ",uint vertex" : ""};
+        std::string func{
+            fmt::format("float IndexedAttrLoad(int offset{}){{int base_index=offset>>2;uint "
+                        "masked_index=uint(base_index)&3u;switch(base_index>>2){{",
+                        vertex_arg)};
+        if (info.loads_position) {
+            func += fmt::format("case {}:", static_cast<u32>(IR::Attribute::PositionX) >> 2);
+            const auto position_idx{is_array ? "gl_in[vertex]." : ""};
+            func += fmt::format("return {}{}[masked_index];", position_idx, position_name);
+        }
+        const u32 base_attribute_value = static_cast<u32>(IR::Attribute::Generic0X) >> 2;
+        for (u32 i = 0; i < info.input_generics.size(); ++i) {
+            if (!info.input_generics[i].used) {
+                continue;
+            }
+            const auto vertex_idx{is_array ? "[vertex]" : ""};
+            func += fmt::format("case {}:", base_attribute_value + i);
+            func += fmt::format("return in_attr{}{}[masked_index];", i, vertex_idx);
+        }
+        func += "default: return 0.0;}}";
+        header += func;
+    }
+    if (info.stores_indexed_attributes) {
+        // TODO
     }
 }
 

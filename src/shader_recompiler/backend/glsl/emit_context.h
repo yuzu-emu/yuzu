@@ -150,6 +150,7 @@ public:
 
     Stage stage{};
     std::string_view stage_name = "invalid";
+    std::string_view position_name = "gl_Position";
 
     std::vector<u32> texture_buffer_bindings;
     std::vector<u32> image_buffer_bindings;

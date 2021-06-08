@@ -124,15 +124,6 @@ void EmitGetIndirectBranchVariable(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitGetAttributeIndexed(EmitContext& ctx, std::string_view offset, std::string_view vertex) {
-    NotImplemented();
-}
-
-void EmitSetAttributeIndexed(EmitContext& ctx, std::string_view offset, std::string_view value,
-                             std::string_view vertex) {
-    NotImplemented();
-}
-
 void EmitSetSampleMask(EmitContext& ctx, std::string_view value) {
     NotImplemented();
 }
