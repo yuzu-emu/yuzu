@@ -220,20 +220,6 @@ void SetupOutPerVertex(EmitContext& ctx, std::string& header) {
         header += "out int gl_ViewportIndex;";
     }
 }
-
-bool UsesTyplessImage(const Info& info) {
-    for (const auto& desc : info.image_buffer_descriptors) {
-        if (desc.format == ImageFormat::Typeless) {
-            return true;
-        }
-    }
-    for (const auto& desc : info.image_descriptors) {
-        if (desc.format == ImageFormat::Typeless) {
-            return true;
-        }
-    }
-    return false;
-}
 } // Anonymous namespace
 
 EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
@@ -358,7 +344,7 @@ void EmitContext::SetupExtensions(std::string&) {
     if (info.stores_viewport_mask && profile.support_viewport_mask) {
         header += "#extension GL_NV_viewport_array2 : enable\n";
     }
-    if (UsesTyplessImage(info)) {
+    if (info.uses_typeless_image_reads || info.uses_typeless_image_writes) {
         header += "#extension GL_EXT_shader_image_load_formatted : enable\n";
     }
 }
