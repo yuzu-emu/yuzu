@@ -266,6 +266,9 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     case Stage::Fragment:
         stage_name = "fs";
         position_name = "gl_FragCoord";
+        if (runtime_info.force_early_z) {
+            header += "layout(early_fragment_tests)in;";
+        }
         break;
     case Stage::Compute:
         stage_name = "cs";
