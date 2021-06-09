@@ -203,6 +203,9 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
         return;
     }
     switch (attr) {
+    case IR::Attribute::PrimitiveId:
+        ctx.AddF32("{}=itof(gl_PrimitiveID);", inst);
+        break;
     case IR::Attribute::PositionX:
     case IR::Attribute::PositionY:
     case IR::Attribute::PositionZ:
@@ -212,9 +215,19 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
         ctx.AddF32("{}={}{}.{};", inst, input_decorator, ctx.position_name, swizzle);
         break;
     }
+    case IR::Attribute::ColorFrontDiffuseR:
+    case IR::Attribute::ColorFrontDiffuseG:
+    case IR::Attribute::ColorFrontDiffuseB:
+    case IR::Attribute::ColorFrontDiffuseA:
+        ctx.AddF32("{}=gl_FrontMaterial.diffuse.{};", inst, swizzle);
+        break;
     case IR::Attribute::PointSpriteS:
     case IR::Attribute::PointSpriteT:
         ctx.AddF32("{}=gl_PointCoord.{};", inst, swizzle);
+        break;
+    case IR::Attribute::TessellationEvaluationPointU:
+    case IR::Attribute::TessellationEvaluationPointV:
+        ctx.AddF32("{}=gl_TessCoord.{};", inst, swizzle);
         break;
     case IR::Attribute::InstanceId:
         ctx.AddF32("{}=itof(gl_InstanceID);", inst);
@@ -224,10 +237,6 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
         break;
     case IR::Attribute::FrontFace:
         ctx.AddF32("{}=itof(gl_FrontFacing?-1:0);", inst);
-        break;
-    case IR::Attribute::TessellationEvaluationPointU:
-    case IR::Attribute::TessellationEvaluationPointV:
-        ctx.AddF32("{}=gl_TessCoord.{};", inst, swizzle);
         break;
     default:
         fmt::print("Get attribute {}", attr);
@@ -262,6 +271,23 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
         }
         ctx.Add("gl_Layer=ftoi({});", value);
         break;
+    case IR::Attribute::ViewportIndex:
+        if (ctx.stage != Stage::Geometry &&
+            !ctx.profile.support_viewport_index_layer_non_geometry) {
+            // LOG_WARNING(..., "Shader stores viewport index but device does not support viewport
+            // layer extension");
+            break;
+        }
+        ctx.Add("gl_ViewportIndex=ftoi({});", value);
+        break;
+    case IR::Attribute::ViewportMask:
+        if (ctx.stage != Stage::Geometry && !ctx.profile.support_viewport_mask) {
+            // LOG_WARNING(..., "Shader stores viewport mask but device does not support viewport
+            // mask extension");
+            break;
+        }
+        ctx.Add("gl_ViewportMask[0]=ftoi({});", value);
+        break;
     case IR::Attribute::PointSize:
         ctx.Add("gl_PointSize={};", value);
         break;
@@ -271,14 +297,32 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     case IR::Attribute::PositionW:
         ctx.Add("gl_Position.{}={};", swizzle, value);
         break;
-    case IR::Attribute::ViewportIndex:
-        if (ctx.stage != Stage::Geometry &&
-            !ctx.profile.support_viewport_index_layer_non_geometry) {
-            // LOG_WARNING(..., "Shader stores viewport index but device does not support viewport
-            // layer extension");
-            break;
-        }
-        ctx.Add("gl_ViewportIndex=ftoi({});", value);
+    case IR::Attribute::ColorFrontDiffuseR:
+    case IR::Attribute::ColorFrontDiffuseG:
+    case IR::Attribute::ColorFrontDiffuseB:
+    case IR::Attribute::ColorFrontDiffuseA:
+        ctx.Add("gl_FrontMaterial.diffuse.{}={};", swizzle, value);
+        break;
+    case IR::Attribute::ColorFrontSpecularR:
+    case IR::Attribute::ColorFrontSpecularG:
+    case IR::Attribute::ColorFrontSpecularB:
+    case IR::Attribute::ColorFrontSpecularA:
+        ctx.Add("gl_FrontMaterial.specular.{}={};", swizzle, value);
+        break;
+    case IR::Attribute::ColorBackDiffuseR:
+    case IR::Attribute::ColorBackDiffuseG:
+    case IR::Attribute::ColorBackDiffuseB:
+    case IR::Attribute::ColorBackDiffuseA:
+        ctx.Add("gl_BackMaterial.diffuse.{}={};", swizzle, value);
+        break;
+    case IR::Attribute::ColorBackSpecularR:
+    case IR::Attribute::ColorBackSpecularG:
+    case IR::Attribute::ColorBackSpecularB:
+    case IR::Attribute::ColorBackSpecularA:
+        ctx.Add("gl_BackMaterial.specular.{}={};", swizzle, value);
+        break;
+    case IR::Attribute::FogCoordinate:
+        ctx.Add("gl_FragCoord.x={};", value);
         break;
     case IR::Attribute::ClipDistance0:
     case IR::Attribute::ClipDistance1:

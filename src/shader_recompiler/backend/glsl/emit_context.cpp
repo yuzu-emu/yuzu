@@ -239,6 +239,7 @@ bool UsesTyplessImage(const Info& info) {
 EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
                          const RuntimeInfo& runtime_info_)
     : info{program.info}, profile{profile_}, runtime_info{runtime_info_} {
+    header += "#pragma optionNV(fastmath off)\n";
     SetupExtensions(header);
     stage = program.stage;
     switch (program.stage) {
@@ -350,6 +351,9 @@ void EmitContext::SetupExtensions(std::string&) {
     }
     if (info.uses_sparse_residency) {
         header += "#extension GL_ARB_sparse_texture2 : enable\n";
+    }
+    if (info.stores_viewport_mask && profile.support_viewport_mask) {
+        header += "#extension GL_NV_viewport_array2 : enable\n";
     }
     if (UsesTyplessImage(info)) {
         header += "#extension GL_EXT_shader_image_load_formatted : enable\n";
