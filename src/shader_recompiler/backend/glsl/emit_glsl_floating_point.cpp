@@ -47,17 +47,17 @@ void EmitFPAdd16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& i
 
 void EmitFPAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
     if (Precise(inst)) {
-        ctx.AddPrecF32("{}=float({})+float({});", inst, a, b);
+        ctx.AddPrecF32("{}={}+{};", inst, a, b);
     } else {
-        ctx.AddF32("{}=float({})+float({});", inst, a, b);
+        ctx.AddF32("{}={}+{};", inst, a, b);
     }
 }
 
 void EmitFPAdd64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
     if (Precise(inst)) {
-        ctx.AddPrecF64("{}=double({})+double({});", inst, a, b);
+        ctx.AddPrecF64("{}={}+{};", inst, a, b);
     } else {
-        ctx.AddF64("{}=double({})+double({});", inst, a, b);
+        ctx.AddF64("{}={}+{};", inst, a, b);
     }
 }
 
