@@ -429,7 +429,7 @@ void RasterizerOpenGL::WaitForIdle() {
 }
 
 void RasterizerOpenGL::FragmentBarrier() {
-    glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT);
+    glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 }
 
 void RasterizerOpenGL::TiledCacheBarrier() {
