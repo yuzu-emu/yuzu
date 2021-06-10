@@ -245,7 +245,8 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         break;
     case Stage::Geometry:
         stage_name = "gs";
-        header += fmt::format("layout({})in;layout({},max_vertices={})out;",
+        header += fmt::format("layout({})in;layout({},max_vertices={})out;"
+                              "in gl_PerVertex{{vec4 gl_Position;}}gl_in[];",
                               InputPrimitive(runtime_info.input_topology),
                               OutputPrimitive(program.output_topology), program.output_vertices);
         break;
