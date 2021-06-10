@@ -69,7 +69,7 @@ u32 GenericEnvironment::TextureBoundBuffer() const {
 }
 
 u32 GenericEnvironment::LocalMemorySize() const {
-    return local_memory_size;
+    return local_memory_size + sph.common3.shader_local_memory_crs_size;
 }
 
 u32 GenericEnvironment::SharedMemorySize() const {
