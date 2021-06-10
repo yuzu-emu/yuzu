@@ -69,7 +69,7 @@ u32 GenericEnvironment::TextureBoundBuffer() const {
 }
 
 u32 GenericEnvironment::LocalMemorySize() const {
-    return local_memory_size + sph.common3.shader_local_memory_crs_size;
+    return local_memory_size;
 }
 
 u32 GenericEnvironment::SharedMemorySize() const {
@@ -233,7 +233,7 @@ GraphicsEnvironment::GraphicsEnvironment(Tegra::Engines::Maxwell3D& maxwell3d_,
     }
     const u64 local_size{sph.LocalMemorySize()};
     ASSERT(local_size <= std::numeric_limits<u32>::max());
-    local_memory_size = static_cast<u32>(local_size);
+    local_memory_size = static_cast<u32>(local_size) + sph.common3.shader_local_memory_crs_size;
     texture_bound = maxwell3d->regs.tex_cb_index;
 }
 
@@ -261,7 +261,7 @@ ComputeEnvironment::ComputeEnvironment(Tegra::Engines::KeplerCompute& kepler_com
                                                                           &kepler_compute_} {
     const auto& qmd{kepler_compute->launch_description};
     stage = Shader::Stage::Compute;
-    local_memory_size = qmd.local_pos_alloc;
+    local_memory_size = qmd.local_pos_alloc + qmd.local_crs_alloc;
     texture_bound = kepler_compute->regs.tex_cb_index;
     shared_memory_size = qmd.shared_alloc;
     workgroup_size = {qmd.block_dim_x, qmd.block_dim_y, qmd.block_dim_z};
