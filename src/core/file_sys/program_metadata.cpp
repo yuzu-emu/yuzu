@@ -34,11 +34,55 @@ Loader::ResultStatus ProgramMetadata::Load(VirtualFile file) {
         return Loader::ResultStatus::ErrorBadACIHeader;
     }
 
-    if (sizeof(FileAccessControl) != file->ReadObject(&acid_file_access, acid_header.fac_offset)) {
+    // Load acid_file_access per-component instead of the entire struct, since this struct does not
+    // reflect the layout of the real data.
+    std::size_t current_offset = acid_header.fac_offset;
+    if (sizeof(FileAccessControl::version) != file->ReadBytes(&acid_file_access.version,
+                                                              sizeof(FileAccessControl::version),
+                                                              current_offset)) {
+        return Loader::ResultStatus::ErrorBadFileAccessControl;
+    }
+    if (sizeof(FileAccessControl::permissions) !=
+        file->ReadBytes(&acid_file_access.permissions, sizeof(FileAccessControl::permissions),
+                        current_offset += sizeof(FileAccessControl::version) + 3)) {
+        return Loader::ResultStatus::ErrorBadFileAccessControl;
+    }
+    if (sizeof(FileAccessControl::unknown) !=
+        file->ReadBytes(&acid_file_access.unknown, sizeof(FileAccessControl::unknown),
+                        current_offset + sizeof(FileAccessControl::permissions))) {
         return Loader::ResultStatus::ErrorBadFileAccessControl;
     }
 
-    if (sizeof(FileAccessHeader) != file->ReadObject(&aci_file_access, aci_header.fah_offset)) {
+    // Load aci_file_access per-component instead of the entire struct, same as acid_file_access
+    current_offset = aci_header.fah_offset;
+    if (sizeof(FileAccessHeader::version) != file->ReadBytes(&aci_file_access.version,
+                                                             sizeof(FileAccessHeader::version),
+                                                             current_offset)) {
+        return Loader::ResultStatus::ErrorBadFileAccessHeader;
+    }
+    if (sizeof(FileAccessHeader::permissions) !=
+        file->ReadBytes(&aci_file_access.permissions, sizeof(FileAccessHeader::permissions),
+                        current_offset += sizeof(FileAccessHeader::version) + 3)) {
+        return Loader::ResultStatus::ErrorBadFileAccessHeader;
+    }
+    if (sizeof(FileAccessHeader::unk_offset) !=
+        file->ReadBytes(&aci_file_access.unk_offset, sizeof(FileAccessHeader::unk_offset),
+                        current_offset += sizeof(FileAccessHeader::permissions))) {
+        return Loader::ResultStatus::ErrorBadFileAccessHeader;
+    }
+    if (sizeof(FileAccessHeader::unk_size) !=
+        file->ReadBytes(&aci_file_access.unk_size, sizeof(FileAccessHeader::unk_size),
+                        current_offset += sizeof(FileAccessHeader::unk_offset))) {
+        return Loader::ResultStatus::ErrorBadFileAccessHeader;
+    }
+    if (sizeof(FileAccessHeader::unk_offset_2) !=
+        file->ReadBytes(&aci_file_access.unk_offset_2, sizeof(FileAccessHeader::unk_offset_2),
+                        current_offset += sizeof(FileAccessHeader::unk_size))) {
+        return Loader::ResultStatus::ErrorBadFileAccessHeader;
+    }
+    if (sizeof(FileAccessHeader::unk_size_2) !=
+        file->ReadBytes(&aci_file_access.unk_size_2, sizeof(FileAccessHeader::unk_size_2),
+                        current_offset + sizeof(FileAccessHeader::unk_offset_2))) {
         return Loader::ResultStatus::ErrorBadFileAccessHeader;
     }
 
@@ -150,9 +194,7 @@ void ProgramMetadata::Print() const {
     LOG_DEBUG(Service_FS, " > Is Retail:           {}", acid_header.is_retail ? "YES" : "NO");
     LOG_DEBUG(Service_FS, "Title ID Min:           0x{:016X}", acid_header.title_id_min);
     LOG_DEBUG(Service_FS, "Title ID Max:           0x{:016X}", acid_header.title_id_max);
-    u64_le permissions_l; // local copy to fix alignment error
-    std::memcpy(&permissions_l, &acid_file_access.permissions, sizeof(permissions_l));
-    LOG_DEBUG(Service_FS, "Filesystem Access:      0x{:016X}\n", permissions_l);
+    LOG_DEBUG(Service_FS, "Filesystem Access:      0x{:016X}\n", acid_file_access.permissions);
 
     // Begin ACI0 printing (actual perms, unsigned)
     LOG_DEBUG(Service_FS, "Magic:                  {:.4}", aci_header.magic.data());

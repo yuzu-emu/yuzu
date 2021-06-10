@@ -143,30 +143,24 @@ private:
 
     static_assert(sizeof(AciHeader) == 0x40, "ACI0 header structure size is wrong");
 
-#pragma pack(push, 1)
-
+    // FileAccessControl and FileAccessHeader need loaded per-component: this layout does not
+    // reflect the real layout to avoid reference binding to misaligned addresses
     struct FileAccessControl {
         u8 version;
-        INSERT_PADDING_BYTES(3);
+        // 3 padding bytes
         u64_le permissions;
         std::array<u8, 0x20> unknown;
     };
 
-    static_assert(sizeof(FileAccessControl) == 0x2C, "FS access control structure size is wrong");
-
     struct FileAccessHeader {
         u8 version;
-        INSERT_PADDING_BYTES(3);
+        // 3 padding bytes
         u64_le permissions;
         u32_le unk_offset;
         u32_le unk_size;
         u32_le unk_offset_2;
         u32_le unk_size_2;
     };
-
-    static_assert(sizeof(FileAccessHeader) == 0x1C, "FS access header structure size is wrong");
-
-#pragma pack(pop)
 
     Header npdm_header;
     AciHeader aci_header;
