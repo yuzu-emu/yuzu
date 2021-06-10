@@ -90,16 +90,14 @@ public:
                          VideoCore::Surface::PixelFormat format);
 
     void BindFastUniformBuffer(size_t stage, u32 binding_index, u32 size) {
+        const GLuint handle = fast_uniforms[stage][binding_index].handle;
+        const GLsizeiptr gl_size = static_cast<GLsizeiptr>(size);
         if (use_assembly_shaders) {
-            const GLuint handle = fast_uniforms[stage][binding_index].handle;
-            const GLsizeiptr gl_size = static_cast<GLsizeiptr>(size);
             glBindBufferRangeNV(PABO_LUT[stage], binding_index, handle, 0, gl_size);
         } else {
             const GLuint base_binding = graphics_base_uniform_bindings[stage];
             const GLuint binding = base_binding + binding_index;
-            glBindBufferRange(GL_UNIFORM_BUFFER, binding,
-                              fast_uniforms[stage][binding_index].handle, 0,
-                              static_cast<GLsizeiptr>(size));
+            glBindBufferRange(GL_UNIFORM_BUFFER, binding, handle, 0, gl_size);
         }
     }
 
@@ -130,6 +128,10 @@ public:
 
     [[nodiscard]] bool HasFastBufferSubData() const noexcept {
         return has_fast_buffer_sub_data;
+    }
+
+    [[nodiscard]] bool SupportsNonZeroUniformOffset() const noexcept {
+        return !use_assembly_shaders;
     }
 
     void SetBaseUniformBindings(const std::array<GLuint, 5>& bindings) {

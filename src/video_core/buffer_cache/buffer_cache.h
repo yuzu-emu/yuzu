@@ -640,6 +640,9 @@ void BufferCache<P>::SetUniformBuffersState(const std::array<u32, NUM_STAGES>& m
                                             const UniformBufferSizes* sizes) {
     if constexpr (HAS_PERSISTENT_UNIFORM_BUFFER_BINDINGS) {
         if (enabled_uniform_buffer_masks != mask) {
+            if constexpr (IS_OPENGL) {
+                fast_bound_uniform_buffers.fill(0);
+            }
             dirty_uniform_buffers.fill(~u32{0});
         }
     }
@@ -959,6 +962,7 @@ void BufferCache<P>::BindHostGraphicsUniformBuffer(size_t stage, u32 index, u32 
                 // Fast path for Nvidia
                 if (!HasFastUniformBufferBound(stage, binding_index)) {
                     // We only have to bind when the currently bound buffer is not the fast version
+                    fast_bound_uniform_buffers[stage] |= 1U << binding_index;
                     runtime.BindFastUniformBuffer(stage, binding_index, size);
                 }
                 const auto span = ImmediateBufferWithData(cpu_addr, size);
@@ -966,8 +970,9 @@ void BufferCache<P>::BindHostGraphicsUniformBuffer(size_t stage, u32 index, u32 
                 return;
             }
         }
-        fast_bound_uniform_buffers[stage] |= 1U << binding_index;
-
+        if constexpr (IS_OPENGL) {
+            fast_bound_uniform_buffers[stage] |= 1U << binding_index;
+        }
         // Stream buffer path to avoid stalling on non-Nvidia drivers or Vulkan
         const std::span<u8> span = runtime.BindMappedUniformBuffer(stage, binding_index, size);
         cpu_memory.ReadBlockUnsafe(cpu_addr, span.data(), size);
@@ -985,9 +990,15 @@ void BufferCache<P>::BindHostGraphicsUniformBuffer(size_t stage, u32 index, u32 
         // This exists to avoid instances where the fast buffer is bound and a GPU write happens
         return;
     }
-    fast_bound_uniform_buffers[stage] &= ~(1U << binding_index);
-
     const u32 offset = buffer.Offset(cpu_addr);
+    if constexpr (IS_OPENGL) {
+        // Fast buffer will be unbound
+        fast_bound_uniform_buffers[stage] &= ~(1U << binding_index);
+
+        // Mark the index as dirty if offset doesn't match
+        const bool is_copy_bind = offset != 0 && !runtime.SupportsNonZeroUniformOffset();
+        dirty_uniform_buffers[stage] |= (is_copy_bind ? 1U : 0U) << index;
+    }
     if constexpr (NEEDS_BIND_UNIFORM_INDEX) {
         runtime.BindUniformBuffer(stage, binding_index, buffer, offset, size);
     } else {
