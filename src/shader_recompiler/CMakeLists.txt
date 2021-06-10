@@ -37,7 +37,6 @@ add_library(shader_recompiler STATIC
     backend/glsl/emit_glsl_convert.cpp
     backend/glsl/emit_glsl_floating_point.cpp
     backend/glsl/emit_glsl_image.cpp
-    backend/glsl/emit_glsl_image_atomic.cpp
     backend/glsl/emit_glsl_instructions.h
     backend/glsl/emit_glsl_integer.cpp
     backend/glsl/emit_glsl_logical.cpp

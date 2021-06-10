@@ -12,8 +12,7 @@
 
 namespace Shader::Backend::GLSL {
 namespace {
-std::string Texture(EmitContext& ctx, const IR::TextureInstInfo& info,
-                    [[maybe_unused]] const IR::Value& index) {
+std::string Texture(EmitContext& ctx, const IR::TextureInstInfo& info) {
     if (info.type == TextureType::Buffer) {
         return fmt::format("tex{}", ctx.texture_buffer_bindings.at(info.descriptor_index));
     } else {
@@ -21,8 +20,7 @@ std::string Texture(EmitContext& ctx, const IR::TextureInstInfo& info,
     }
 }
 
-std::string Image(EmitContext& ctx, const IR::TextureInstInfo& info,
-                  [[maybe_unused]] const IR::Value& index) {
+std::string Image(EmitContext& ctx, const IR::TextureInstInfo& info) {
     if (info.type == TextureType::Buffer) {
         return fmt::format("img{}", ctx.image_buffer_bindings.at(info.descriptor_index));
     } else {
@@ -139,16 +137,14 @@ IR::Inst* PrepareSparse(IR::Inst& inst) {
 }
 } // Anonymous namespace
 
-void EmitImageSampleImplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                                [[maybe_unused]] const IR::Value& index,
-                                [[maybe_unused]] std::string_view coords,
-                                [[maybe_unused]] std::string_view bias_lc,
-                                [[maybe_unused]] const IR::Value& offset) {
+void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst,
+                                [[maybe_unused]] const IR::Value& index, std::string_view coords,
+                                std::string_view bias_lc, const IR::Value& offset) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     if (info.has_lod_clamp) {
         throw NotImplementedException("EmitImageSampleImplicitLod Lod clamp samples");
     }
-    const auto texture{Texture(ctx, info, index)};
+    const auto texture{Texture(ctx, info)};
     const auto bias{info.has_bias ? fmt::format(",{}", bias_lc) : ""};
     const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
     const auto sparse_inst{PrepareSparse(inst)};
@@ -179,11 +175,9 @@ void EmitImageSampleImplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
     }
 }
 
-void EmitImageSampleExplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                                [[maybe_unused]] const IR::Value& index,
-                                [[maybe_unused]] std::string_view coords,
-                                [[maybe_unused]] std::string_view lod_lc,
-                                [[maybe_unused]] const IR::Value& offset) {
+void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst& inst,
+                                [[maybe_unused]] const IR::Value& index, std::string_view coords,
+                                std::string_view lod_lc, const IR::Value& offset) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     if (info.has_bias) {
         throw NotImplementedException("EmitImageSampleExplicitLod Bias texture samples");
@@ -191,7 +185,7 @@ void EmitImageSampleExplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
     if (info.has_lod_clamp) {
         throw NotImplementedException("EmitImageSampleExplicitLod Lod clamp samples");
     }
-    const auto texture{Texture(ctx, info, index)};
+    const auto texture{Texture(ctx, info)};
     const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
     const auto sparse_inst{PrepareSparse(inst)};
     if (!sparse_inst) {
@@ -214,13 +208,10 @@ void EmitImageSampleExplicitLod([[maybe_unused]] EmitContext& ctx, [[maybe_unuse
     }
 }
 
-void EmitImageSampleDrefImplicitLod([[maybe_unused]] EmitContext& ctx,
-                                    [[maybe_unused]] IR::Inst& inst,
+void EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst& inst,
                                     [[maybe_unused]] const IR::Value& index,
-                                    [[maybe_unused]] std::string_view coords,
-                                    [[maybe_unused]] std::string_view dref,
-                                    [[maybe_unused]] std::string_view bias_lc,
-                                    [[maybe_unused]] const IR::Value& offset) {
+                                    std::string_view coords, std::string_view dref,
+                                    std::string_view bias_lc, const IR::Value& offset) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto sparse_inst{PrepareSparse(inst)};
     if (sparse_inst) {
@@ -232,7 +223,7 @@ void EmitImageSampleDrefImplicitLod([[maybe_unused]] EmitContext& ctx,
     if (info.has_lod_clamp) {
         throw NotImplementedException("EmitImageSampleDrefImplicitLod Lod clamp samples");
     }
-    const auto texture{Texture(ctx, info, index)};
+    const auto texture{Texture(ctx, info)};
     const auto bias{info.has_bias ? fmt::format(",{}", bias_lc) : ""};
     const bool needs_shadow_ext{NeedsShadowLodExt(info.type)};
     const auto cast{needs_shadow_ext ? "vec4" : "vec3"};
@@ -272,13 +263,10 @@ void EmitImageSampleDrefImplicitLod([[maybe_unused]] EmitContext& ctx,
     }
 }
 
-void EmitImageSampleDrefExplicitLod([[maybe_unused]] EmitContext& ctx,
-                                    [[maybe_unused]] IR::Inst& inst,
+void EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst& inst,
                                     [[maybe_unused]] const IR::Value& index,
-                                    [[maybe_unused]] std::string_view coords,
-                                    [[maybe_unused]] std::string_view dref,
-                                    [[maybe_unused]] std::string_view lod_lc,
-                                    [[maybe_unused]] const IR::Value& offset) {
+                                    std::string_view coords, std::string_view dref,
+                                    std::string_view lod_lc, const IR::Value& offset) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto sparse_inst{PrepareSparse(inst)};
     if (sparse_inst) {
@@ -290,7 +278,7 @@ void EmitImageSampleDrefExplicitLod([[maybe_unused]] EmitContext& ctx,
     if (info.has_lod_clamp) {
         throw NotImplementedException("EmitImageSampleDrefExplicitLod Lod clamp samples");
     }
-    const auto texture{Texture(ctx, info, index)};
+    const auto texture{Texture(ctx, info)};
     const bool needs_shadow_ext{NeedsShadowLodExt(info.type)};
     const bool use_grad{!ctx.profile.support_gl_texture_shadow_lod && needs_shadow_ext};
     const auto cast{needs_shadow_ext ? "vec4" : "vec3"};
@@ -325,13 +313,10 @@ void EmitImageSampleDrefExplicitLod([[maybe_unused]] EmitContext& ctx,
     }
 }
 
-void EmitImageGather([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                     [[maybe_unused]] const IR::Value& index,
-                     [[maybe_unused]] std::string_view coords,
-                     [[maybe_unused]] const IR::Value& offset,
-                     [[maybe_unused]] const IR::Value& offset2) {
+void EmitImageGather(EmitContext& ctx, IR::Inst& inst, [[maybe_unused]] const IR::Value& index,
+                     std::string_view coords, const IR::Value& offset, const IR::Value& offset2) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto texture{Texture(ctx, info, index)};
+    const auto texture{Texture(ctx, info)};
     const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
     const auto sparse_inst{PrepareSparse(inst)};
     if (!sparse_inst) {
@@ -370,14 +355,11 @@ void EmitImageGather([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Ins
               info.gather_component);
 }
 
-void EmitImageGatherDref([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                         [[maybe_unused]] const IR::Value& index,
-                         [[maybe_unused]] std::string_view coords,
-                         [[maybe_unused]] const IR::Value& offset,
-                         [[maybe_unused]] const IR::Value& offset2,
-                         [[maybe_unused]] std::string_view dref) {
+void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, [[maybe_unused]] const IR::Value& index,
+                         std::string_view coords, const IR::Value& offset, const IR::Value& offset2,
+                         std::string_view dref) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto texture{Texture(ctx, info, index)};
+    const auto texture{Texture(ctx, info)};
     const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
     const auto sparse_inst{PrepareSparse(inst)};
     if (!sparse_inst) {
@@ -413,10 +395,8 @@ void EmitImageGatherDref([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR:
               *sparse_inst, texture, CastToIntVec(coords, info), dref, offsets, texel);
 }
 
-void EmitImageFetch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                    [[maybe_unused]] const IR::Value& index,
-                    [[maybe_unused]] std::string_view coords,
-                    [[maybe_unused]] std::string_view offset, [[maybe_unused]] std::string_view lod,
+void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, [[maybe_unused]] const IR::Value& index,
+                    std::string_view coords, std::string_view offset, std::string_view lod,
                     [[maybe_unused]] std::string_view ms) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     if (info.has_bias) {
@@ -425,7 +405,7 @@ void EmitImageFetch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
     if (info.has_lod_clamp) {
         throw NotImplementedException("EmitImageFetch Lod clamp samples");
     }
-    const auto texture{Texture(ctx, info, index)};
+    const auto texture{Texture(ctx, info)};
     const auto sparse_inst{PrepareSparse(inst)};
     const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
     if (!sparse_inst) {
@@ -453,11 +433,10 @@ void EmitImageFetch([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst
     }
 }
 
-void EmitImageQueryDimensions([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                              [[maybe_unused]] const IR::Value& index,
-                              [[maybe_unused]] std::string_view lod) {
+void EmitImageQueryDimensions(EmitContext& ctx, IR::Inst& inst,
+                              [[maybe_unused]] const IR::Value& index, std::string_view lod) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto texture{Texture(ctx, info, index)};
+    const auto texture{Texture(ctx, info)};
     switch (info.type) {
     case TextureType::Color1D:
         return ctx.AddU32x4(
@@ -481,20 +460,16 @@ void EmitImageQueryDimensions([[maybe_unused]] EmitContext& ctx, [[maybe_unused]
     throw LogicError("Unspecified image type {}", info.type.Value());
 }
 
-void EmitImageQueryLod([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                       [[maybe_unused]] const IR::Value& index,
-                       [[maybe_unused]] std::string_view coords) {
+void EmitImageQueryLod(EmitContext& ctx, IR::Inst& inst, [[maybe_unused]] const IR::Value& index,
+                       std::string_view coords) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto texture{Texture(ctx, info, index)};
+    const auto texture{Texture(ctx, info)};
     return ctx.AddF32x4("{}=vec4(textureQueryLod({},{}),0.0,0.0);", inst, texture, coords);
 }
 
-void EmitImageGradient([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                       [[maybe_unused]] const IR::Value& index,
-                       [[maybe_unused]] std::string_view coords,
-                       [[maybe_unused]] const IR::Value& derivatives,
-                       [[maybe_unused]] const IR::Value& offset,
-                       [[maybe_unused]] const IR::Value& lod_clamp) {
+void EmitImageGradient(EmitContext& ctx, IR::Inst& inst, [[maybe_unused]] const IR::Value& index,
+                       std::string_view coords, const IR::Value& derivatives,
+                       const IR::Value& offset, [[maybe_unused]] const IR::Value& lod_clamp) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     if (info.has_lod_clamp) {
         throw NotImplementedException("EmitImageGradient Lod clamp samples");
@@ -506,7 +481,7 @@ void EmitImageGradient([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
     if (!offset.IsEmpty()) {
         throw NotImplementedException("EmitImageGradient offset");
     }
-    const auto texture{Texture(ctx, info, index)};
+    const auto texture{Texture(ctx, info)};
     const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
     const bool multi_component{info.num_derivates > 1 || info.has_lod_clamp};
     const auto derivatives_vec{ctx.var_alloc.Consume(derivatives)};
@@ -519,63 +494,65 @@ void EmitImageGradient([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
     }
 }
 
-void EmitImageRead([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                   [[maybe_unused]] const IR::Value& index,
-                   [[maybe_unused]] std::string_view coords) {
+void EmitImageRead(EmitContext& ctx, IR::Inst& inst, [[maybe_unused]] const IR::Value& index,
+                   std::string_view coords) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto sparse_inst{PrepareSparse(inst)};
     if (sparse_inst) {
         throw NotImplementedException("EmitImageRead Sparse");
     }
-    const auto image{Image(ctx, info, index)};
+    const auto image{Image(ctx, info)};
     ctx.AddU32x4("{}=uvec4(imageLoad({},{}));", inst, image, TexelFetchCastToInt(coords, info));
 }
 
-void EmitImageWrite([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                    [[maybe_unused]] const IR::Value& index,
-                    [[maybe_unused]] std::string_view coords,
-                    [[maybe_unused]] std::string_view color) {
+void EmitImageWrite(EmitContext& ctx, IR::Inst& inst, [[maybe_unused]] const IR::Value& index,
+                    std::string_view coords, std::string_view color) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto image{Image(ctx, info, index)};
+    const auto image{Image(ctx, info)};
     ctx.Add("imageStore({},{},{});", image, TexelFetchCastToInt(coords, info), color);
 }
 
-void EmitImageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                           std::string_view coords, std::string_view value) {
+void EmitImageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst,
+                           [[maybe_unused]] const IR::Value& index, std::string_view coords,
+                           std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto image{Image(ctx, info, index)};
+    const auto image{Image(ctx, info)};
     ctx.AddU32("{}=imageAtomicAdd({},{},{});", inst, image, TexelFetchCastToInt(coords, info),
                value);
 }
 
-void EmitImageAtomicSMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                           std::string_view coords, std::string_view value) {
+void EmitImageAtomicSMin32(EmitContext& ctx, IR::Inst& inst,
+                           [[maybe_unused]] const IR::Value& index, std::string_view coords,
+                           std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto image{Image(ctx, info, index)};
+    const auto image{Image(ctx, info)};
     ctx.AddU32("{}=imageAtomicMin({},{},int({}));", inst, image, TexelFetchCastToInt(coords, info),
                value);
 }
 
-void EmitImageAtomicUMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                           std::string_view coords, std::string_view value) {
+void EmitImageAtomicUMin32(EmitContext& ctx, IR::Inst& inst,
+                           [[maybe_unused]] const IR::Value& index, std::string_view coords,
+                           std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto image{Image(ctx, info, index)};
+    const auto image{Image(ctx, info)};
     ctx.AddU32("{}=imageAtomicMin({},{},uint({}));", inst, image, TexelFetchCastToInt(coords, info),
                value);
 }
 
-void EmitImageAtomicSMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                           std::string_view coords, std::string_view value) {
+void EmitImageAtomicSMax32(EmitContext& ctx, IR::Inst& inst,
+                           [[maybe_unused]] const IR::Value& index, std::string_view coords,
+                           std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto image{Image(ctx, info, index)};
+    const auto image{Image(ctx, info)};
     ctx.AddU32("{}=imageAtomicMax({},{},int({}));", inst, image, TexelFetchCastToInt(coords, info),
                value);
 }
 
-void EmitImageAtomicUMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                           std::string_view coords, std::string_view value) {
+void EmitImageAtomicUMax32(EmitContext& ctx, IR::Inst& inst,
+                           [[maybe_unused]] const IR::Value& index, std::string_view coords,
+                           std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto image{Image(ctx, info, index)};
+    const auto image{Image(ctx, info)};
     ctx.AddU32("{}=imageAtomicMax({},{},uint({}));", inst, image, TexelFetchCastToInt(coords, info),
                value);
 }
@@ -590,34 +567,35 @@ void EmitImageAtomicDec32(EmitContext&, IR::Inst&, const IR::Value&, std::string
     NotImplemented();
 }
 
-void EmitImageAtomicAnd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+void EmitImageAtomicAnd32(EmitContext& ctx, IR::Inst& inst, [[maybe_unused]] const IR::Value& index,
                           std::string_view coords, std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto image{Image(ctx, info, index)};
+    const auto image{Image(ctx, info)};
     ctx.AddU32("{}=imageAtomicAnd({},{},{});", inst, image, TexelFetchCastToInt(coords, info),
                value);
 }
 
-void EmitImageAtomicOr32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+void EmitImageAtomicOr32(EmitContext& ctx, IR::Inst& inst, [[maybe_unused]] const IR::Value& index,
                          std::string_view coords, std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto image{Image(ctx, info, index)};
+    const auto image{Image(ctx, info)};
     ctx.AddU32("{}=imageAtomicOr({},{},{});", inst, image, TexelFetchCastToInt(coords, info),
                value);
 }
 
-void EmitImageAtomicXor32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
+void EmitImageAtomicXor32(EmitContext& ctx, IR::Inst& inst, [[maybe_unused]] const IR::Value& index,
                           std::string_view coords, std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto image{Image(ctx, info, index)};
+    const auto image{Image(ctx, info)};
     ctx.AddU32("{}=imageAtomicXor({},{},{});", inst, image, TexelFetchCastToInt(coords, info),
                value);
 }
 
-void EmitImageAtomicExchange32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
-                               std::string_view coords, std::string_view value) {
+void EmitImageAtomicExchange32(EmitContext& ctx, IR::Inst& inst,
+                               [[maybe_unused]] const IR::Value& index, std::string_view coords,
+                               std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
-    const auto image{Image(ctx, info, index)};
+    const auto image{Image(ctx, info)};
     ctx.AddU32("{}=imageAtomicExchange({},{},{});", inst, image, TexelFetchCastToInt(coords, info),
                value);
 }
