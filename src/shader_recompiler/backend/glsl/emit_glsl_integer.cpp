@@ -156,13 +156,11 @@ void EmitBitwiseNot32(EmitContext& ctx, IR::Inst& inst, std::string_view value) 
     ctx.AddU32("{}=~{};", inst, value);
 }
 
-void EmitFindSMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                    [[maybe_unused]] std::string_view value) {
+void EmitFindSMsb32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
     ctx.AddU32("{}=findMSB(int({}));", inst, value);
 }
 
-void EmitFindUMsb32([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
-                    [[maybe_unused]] std::string_view value) {
+void EmitFindUMsb32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
     ctx.AddU32("{}=findMSB(uint({}));", inst, value);
 }
 

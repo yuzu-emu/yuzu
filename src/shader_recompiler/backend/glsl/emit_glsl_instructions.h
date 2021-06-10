@@ -27,14 +27,7 @@ void EmitIdentity(EmitContext& ctx, IR::Inst& inst, const IR::Value& value);
 void EmitConditionRef(EmitContext& ctx, IR::Inst& inst, const IR::Value& value);
 void EmitReference(EmitContext& ctx, const IR::Value& value);
 void EmitPhiMove(EmitContext& ctx, const IR::Value& phi, const IR::Value& value);
-void EmitBranch(EmitContext& ctx, std::string_view label);
-void EmitBranchConditional(EmitContext& ctx, std::string_view condition,
-                           std::string_view true_label, std::string_view false_label);
-void EmitLoopMerge(EmitContext& ctx, std::string_view merge_label, std::string_view continue_label);
-void EmitSelectionMerge(EmitContext& ctx, std::string_view merge_label);
-void EmitReturn(EmitContext& ctx);
 void EmitJoin(EmitContext& ctx);
-void EmitUnreachable(EmitContext& ctx);
 void EmitDemoteToHelperInvocation(EmitContext& ctx, std::string_view continue_label);
 void EmitBarrier(EmitContext& ctx);
 void EmitWorkgroupMemoryBarrier(EmitContext& ctx);

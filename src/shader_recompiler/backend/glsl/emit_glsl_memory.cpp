@@ -21,19 +21,19 @@ void SsboWriteCas(EmitContext& ctx, const IR::Value& binding, std::string_view o
 }
 } // Anonymous namespace
 
-void EmitLoadGlobalU8([[maybe_unused]] EmitContext& ctx) {
+void EmitLoadGlobalU8(EmitContext&) {
     NotImplemented();
 }
 
-void EmitLoadGlobalS8([[maybe_unused]] EmitContext& ctx) {
+void EmitLoadGlobalS8(EmitContext&) {
     NotImplemented();
 }
 
-void EmitLoadGlobalU16([[maybe_unused]] EmitContext& ctx) {
+void EmitLoadGlobalU16(EmitContext&) {
     NotImplemented();
 }
 
-void EmitLoadGlobalS16([[maybe_unused]] EmitContext& ctx) {
+void EmitLoadGlobalS16(EmitContext&) {
     NotImplemented();
 }
 
@@ -49,19 +49,19 @@ void EmitLoadGlobal128(EmitContext& ctx, IR::Inst& inst, std::string_view addres
     ctx.AddU32x4("{}=LoadGlobal128({});", inst, address);
 }
 
-void EmitWriteGlobalU8([[maybe_unused]] EmitContext& ctx) {
+void EmitWriteGlobalU8(EmitContext&) {
     NotImplemented();
 }
 
-void EmitWriteGlobalS8([[maybe_unused]] EmitContext& ctx) {
+void EmitWriteGlobalS8(EmitContext&) {
     NotImplemented();
 }
 
-void EmitWriteGlobalU16([[maybe_unused]] EmitContext& ctx) {
+void EmitWriteGlobalU16(EmitContext&) {
     NotImplemented();
 }
 
-void EmitWriteGlobalS16([[maybe_unused]] EmitContext& ctx) {
+void EmitWriteGlobalS16(EmitContext&) {
     NotImplemented();
 }
 
@@ -77,33 +77,29 @@ void EmitWriteGlobal128(EmitContext& ctx, std::string_view address, std::string_
     ctx.Add("WriteGlobal128({},{});", address, value);
 }
 
-void EmitLoadStorageU8([[maybe_unused]] EmitContext& ctx, IR::Inst& inst,
-                       [[maybe_unused]] const IR::Value& binding,
-                       [[maybe_unused]] const IR::Value& offset) {
+void EmitLoadStorageU8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                       const IR::Value& offset) {
     const auto offset_var{ctx.var_alloc.Consume(offset)};
     ctx.AddU32("{}=bitfieldExtract({}_ssbo{}[{}>>2],int({}%4)*8,8);", inst, ctx.stage_name,
                binding.U32(), offset_var, offset_var);
 }
 
-void EmitLoadStorageS8([[maybe_unused]] EmitContext& ctx, IR::Inst& inst,
-                       [[maybe_unused]] const IR::Value& binding,
-                       [[maybe_unused]] const IR::Value& offset) {
+void EmitLoadStorageS8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                       const IR::Value& offset) {
     const auto offset_var{ctx.var_alloc.Consume(offset)};
     ctx.AddS32("{}=bitfieldExtract(int({}_ssbo{}[{}>>2]),int({}%4)*8,8);", inst, ctx.stage_name,
                binding.U32(), offset_var, offset_var);
 }
 
-void EmitLoadStorageU16([[maybe_unused]] EmitContext& ctx, IR::Inst& inst,
-                        [[maybe_unused]] const IR::Value& binding,
-                        [[maybe_unused]] const IR::Value& offset) {
+void EmitLoadStorageU16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                        const IR::Value& offset) {
     const auto offset_var{ctx.var_alloc.Consume(offset)};
     ctx.AddU32("{}=bitfieldExtract({}_ssbo{}[{}>>2],int(({}>>1)%2)*16,16);", inst, ctx.stage_name,
                binding.U32(), offset_var, offset_var);
 }
 
-void EmitLoadStorageS16([[maybe_unused]] EmitContext& ctx, IR::Inst& inst,
-                        [[maybe_unused]] const IR::Value& binding,
-                        [[maybe_unused]] const IR::Value& offset) {
+void EmitLoadStorageS16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
+                        const IR::Value& offset) {
     const auto offset_var{ctx.var_alloc.Consume(offset)};
     ctx.AddS32("{}=bitfieldExtract(int({}_ssbo{}[{}>>2]),int(({}>>1)%2)*16,16);", inst,
                ctx.stage_name, binding.U32(), offset_var, offset_var);
@@ -132,37 +128,29 @@ void EmitLoadStorage128(EmitContext& ctx, IR::Inst& inst, const IR::Value& bindi
                  binding.U32(), offset_var);
 }
 
-void EmitWriteStorageU8([[maybe_unused]] EmitContext& ctx,
-                        [[maybe_unused]] const IR::Value& binding,
-                        [[maybe_unused]] const IR::Value& offset,
-                        [[maybe_unused]] std::string_view value) {
+void EmitWriteStorageU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                        std::string_view value) {
     const auto offset_var{ctx.var_alloc.Consume(offset)};
     const auto bit_offset{fmt::format("int({}%4)*8", offset_var)};
     SsboWriteCas(ctx, binding, offset_var, value, bit_offset, 8);
 }
 
-void EmitWriteStorageS8([[maybe_unused]] EmitContext& ctx,
-                        [[maybe_unused]] const IR::Value& binding,
-                        [[maybe_unused]] const IR::Value& offset,
-                        [[maybe_unused]] std::string_view value) {
+void EmitWriteStorageS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                        std::string_view value) {
     const auto offset_var{ctx.var_alloc.Consume(offset)};
     const auto bit_offset{fmt::format("int({}%4)*8", offset_var)};
     SsboWriteCas(ctx, binding, offset_var, value, bit_offset, 8);
 }
 
-void EmitWriteStorageU16([[maybe_unused]] EmitContext& ctx,
-                         [[maybe_unused]] const IR::Value& binding,
-                         [[maybe_unused]] const IR::Value& offset,
-                         [[maybe_unused]] std::string_view value) {
+void EmitWriteStorageU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                         std::string_view value) {
     const auto offset_var{ctx.var_alloc.Consume(offset)};
     const auto bit_offset{fmt::format("int(({}>>1)%2)*16", offset_var)};
     SsboWriteCas(ctx, binding, offset_var, value, bit_offset, 16);
 }
 
-void EmitWriteStorageS16([[maybe_unused]] EmitContext& ctx,
-                         [[maybe_unused]] const IR::Value& binding,
-                         [[maybe_unused]] const IR::Value& offset,
-                         [[maybe_unused]] std::string_view value) {
+void EmitWriteStorageS16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                         std::string_view value) {
     const auto offset_var{ctx.var_alloc.Consume(offset)};
     const auto bit_offset{fmt::format("int(({}>>1)%2)*16", offset_var)};
     SsboWriteCas(ctx, binding, offset_var, value, bit_offset, 16);
@@ -181,10 +169,8 @@ void EmitWriteStorage64(EmitContext& ctx, const IR::Value& binding, const IR::Va
     ctx.Add("{}_ssbo{}[({}+4)>>2]={}.y;", ctx.stage_name, binding.U32(), offset_var, value);
 }
 
-void EmitWriteStorage128([[maybe_unused]] EmitContext& ctx,
-                         [[maybe_unused]] const IR::Value& binding,
-                         [[maybe_unused]] const IR::Value& offset,
-                         [[maybe_unused]] std::string_view value) {
+void EmitWriteStorage128(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset,
+                         std::string_view value) {
     const auto offset_var{ctx.var_alloc.Consume(offset)};
     ctx.Add("{}_ssbo{}[{}>>2]={}.x;", ctx.stage_name, binding.U32(), offset_var, value);
     ctx.Add("{}_ssbo{}[({}+4)>>2]={}.y;", ctx.stage_name, binding.U32(), offset_var, value);
