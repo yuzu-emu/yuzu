@@ -239,7 +239,6 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
         ctx.AddF32("{}=itof(gl_FrontFacing?-1:0);", inst);
         break;
     default:
-        fmt::print("Get attribute {}", attr);
         throw NotImplementedException("Get attribute {}", attr);
     }
 }
@@ -397,8 +396,37 @@ void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, std::string_vi
     ctx.Add("frag_color{}.{}={};", index, swizzle, value);
 }
 
+void EmitSetSampleMask(EmitContext& ctx, std::string_view value) {
+    ctx.Add("gl_SampleMask[0]=int({})", value);
+}
+
+void EmitSetFragDepth(EmitContext& ctx, std::string_view value) {
+    ctx.Add("gl_FragDepth={};", value);
+}
+
 void EmitLocalInvocationId(EmitContext& ctx, IR::Inst& inst) {
     ctx.AddU32x3("{}=gl_LocalInvocationID;", inst);
+}
+
+void EmitWorkgroupId(EmitContext& ctx, IR::Inst& inst) {
+    ctx.AddU32x3("{}=gl_WorkGroupID;", inst);
+}
+
+void EmitInvocationId(EmitContext& ctx, IR::Inst& inst) {
+    ctx.AddU32("{}=uint(gl_InvocationID);", inst);
+}
+
+void EmitSampleId(EmitContext& ctx, IR::Inst& inst) {
+    ctx.AddU32("{}=uint(gl_SampleID);", inst);
+}
+
+void EmitIsHelperInvocation(EmitContext& ctx, IR::Inst& inst) {
+    ctx.AddU1("{}=gl_HelperInvocation;", inst);
+}
+
+void EmitYDirection(EmitContext& ctx, IR::Inst& inst) {
+    ctx.uses_y_direction = true;
+    ctx.AddF32("{}=gl_FrontMaterial.ambient.a;", inst);
 }
 
 void EmitLoadLocal(EmitContext& ctx, IR::Inst& inst, std::string_view word_offset) {

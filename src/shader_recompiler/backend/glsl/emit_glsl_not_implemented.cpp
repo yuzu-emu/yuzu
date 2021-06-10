@@ -124,14 +124,6 @@ void EmitGetIndirectBranchVariable(EmitContext& ctx) {
     NotImplemented();
 }
 
-void EmitSetSampleMask(EmitContext& ctx, std::string_view value) {
-    NotImplemented();
-}
-
-void EmitSetFragDepth(EmitContext& ctx, std::string_view value) {
-    ctx.Add("gl_FragDepth={};", value);
-}
-
 void EmitGetZFlag(EmitContext& ctx) {
     NotImplemented();
 }
@@ -162,27 +154,6 @@ void EmitSetCFlag(EmitContext& ctx) {
 
 void EmitSetOFlag(EmitContext& ctx) {
     NotImplemented();
-}
-
-void EmitWorkgroupId(EmitContext& ctx, IR::Inst& inst) {
-    ctx.AddU32x3("{}=gl_WorkGroupID;", inst);
-}
-
-void EmitInvocationId(EmitContext& ctx, IR::Inst& inst) {
-    ctx.AddU32("{}=uint(gl_InvocationID);", inst);
-}
-
-void EmitSampleId(EmitContext& ctx, IR::Inst& inst) {
-    NotImplemented();
-}
-
-void EmitIsHelperInvocation(EmitContext& ctx, IR::Inst& inst) {
-    ctx.AddU1("{}=gl_HelperInvocation;", inst);
-}
-
-void EmitYDirection(EmitContext& ctx, IR::Inst& inst) {
-    ctx.uses_y_direction = true;
-    ctx.AddF32("{}=gl_FrontMaterial.ambient.a;", inst);
 }
 
 void EmitUndefU1(EmitContext& ctx, IR::Inst& inst) {
