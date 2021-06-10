@@ -230,8 +230,8 @@ struct ProgramHeader {
     };
 
     [[nodiscard]] u64 LocalMemorySize() const noexcept {
-        return (common1.shader_local_memory_low_size |
-                (common2.shader_local_memory_high_size << 24));
+        return static_cast<u64>(common1.shader_local_memory_low_size) |
+               (static_cast<u64>(common2.shader_local_memory_high_size) << 24);
     }
 };
 static_assert(sizeof(ProgramHeader) == 0x50, "Incorrect structure size");
