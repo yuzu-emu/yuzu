@@ -25,6 +25,25 @@ constexpr std::array PROGRAM_LUT{
     GL_VERTEX_PROGRAM_NV,   GL_TESS_CONTROL_PROGRAM_NV, GL_TESS_EVALUATION_PROGRAM_NV,
     GL_GEOMETRY_PROGRAM_NV, GL_FRAGMENT_PROGRAM_NV,
 };
+
+[[nodiscard]] GLenum GetTextureBufferFormat(GLenum gl_format) {
+    switch (gl_format) {
+    case GL_RGBA8_SNORM:
+        return GL_RGBA8;
+    case GL_R8_SNORM:
+        return GL_R8;
+    case GL_RGBA16_SNORM:
+        return GL_RGBA16;
+    case GL_R16_SNORM:
+        return GL_R16;
+    case GL_RG16_SNORM:
+        return GL_RG16;
+    case GL_RG8_SNORM:
+        return GL_RG8;
+    default:
+        return gl_format;
+    }
+}
 } // Anonymous namespace
 
 Buffer::Buffer(BufferCacheRuntime&, VideoCommon::NullBufferParams null_params)
@@ -76,7 +95,11 @@ GLuint Buffer::View(u32 offset, u32 size, PixelFormat format) {
     OGLTexture texture;
     texture.Create(GL_TEXTURE_BUFFER);
     const GLenum gl_format{MaxwellToGL::GetFormatTuple(format).internal_format};
-    glTextureBufferRange(texture.handle, gl_format, buffer.handle, offset, size);
+    const GLenum texture_format{GetTextureBufferFormat(gl_format)};
+    if (texture_format != gl_format) {
+        LOG_WARNING(Render_OpenGL, "Emulating SNORM texture buffer with UNORM.");
+    }
+    glTextureBufferRange(texture.handle, texture_format, buffer.handle, offset, size);
     views.push_back({
         .offset = offset,
         .size = size,
