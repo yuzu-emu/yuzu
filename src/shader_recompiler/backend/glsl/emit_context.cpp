@@ -256,6 +256,12 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         if (runtime_info.force_early_z) {
             header += "layout(early_fragment_tests)in;";
         }
+        if (info.uses_sample_id) {
+            header += "in int gl_SampleID;";
+        }
+        if (info.stores_sample_mask) {
+            header += "out int gl_SampleMask[];";
+        }
         break;
     case Stage::Compute:
         stage_name = "cs";
