@@ -116,7 +116,7 @@ std::string VarAlloc::Define(IR::Inst& inst, GlslVarType type) {
         id.type.Assign(type);
         GetUseTracker(type).uses_temp = true;
         inst.SetDefinition<Id>(id);
-        return "t" + Representation(inst.Definition<Id>());
+        return 't' + Representation(inst.Definition<Id>());
     }
 }
 

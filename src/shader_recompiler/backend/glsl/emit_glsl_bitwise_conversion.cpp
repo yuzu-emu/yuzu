@@ -19,7 +19,7 @@ void Alias(IR::Inst& inst, const IR::Value& value) {
     value_inst.DestructiveRemoveUsage();
     inst.SetDefinition(value_inst.Definition<Id>());
 }
-} // namespace
+} // Anonymous namespace
 
 void EmitIdentity(EmitContext&, IR::Inst& inst, const IR::Value& value) {
     Alias(inst, value);

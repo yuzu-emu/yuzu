@@ -13,8 +13,13 @@ namespace {
 constexpr std::string_view SWIZZLE{"xyzw"};
 void CompositeInsert(EmitContext& ctx, std::string_view result, std::string_view composite,
                      std::string_view object, u32 index) {
-    ctx.Add("{}={};", result, composite);
-    ctx.Add("{}.{}={};", result, SWIZZLE[index], object);
+    if (result == composite) {
+        // The result is aliased with the composite
+        ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
+    } else {
+        ctx.Add("{}={};", result, composite);
+        ctx.Add("{}.{}={};", result, SWIZZLE[index], object);
+    }
 }
 } // Anonymous namespace
 

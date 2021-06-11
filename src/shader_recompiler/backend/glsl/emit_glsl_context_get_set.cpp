@@ -31,12 +31,7 @@ std::string InputVertexIndex(EmitContext& ctx, std::string_view vertex) {
 }
 
 std::string OutputVertexIndex(EmitContext& ctx) {
-    switch (ctx.stage) {
-    case Stage::TessellationControl:
-        return "[gl_InvocationID]";
-    default:
-        return "";
-    }
+    return ctx.stage == Stage::TessellationControl ? "[gl_InvocationID]" : "";
 }
 } // Anonymous namespace
 
@@ -219,7 +214,11 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
     case IR::Attribute::ColorFrontDiffuseG:
     case IR::Attribute::ColorFrontDiffuseB:
     case IR::Attribute::ColorFrontDiffuseA:
-        ctx.AddF32("{}=gl_FrontMaterial.diffuse.{};", inst, swizzle);
+        if (ctx.stage == Stage::Fragment) {
+            ctx.AddF32("{}=gl_Color.{};", inst, swizzle);
+        } else {
+            ctx.AddF32("{}=gl_FrontColor.{};", inst, swizzle);
+        }
         break;
     case IR::Attribute::PointSpriteS:
     case IR::Attribute::PointSpriteT:
@@ -300,28 +299,36 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     case IR::Attribute::ColorFrontDiffuseG:
     case IR::Attribute::ColorFrontDiffuseB:
     case IR::Attribute::ColorFrontDiffuseA:
-        ctx.Add("gl_FrontMaterial.diffuse.{}={};", swizzle, value);
+        if (ctx.stage == Stage::Fragment) {
+            ctx.Add("gl_Color.{}={};", swizzle, value);
+        } else {
+            ctx.Add("gl_FrontColor.{}={};", swizzle, value);
+        }
         break;
     case IR::Attribute::ColorFrontSpecularR:
     case IR::Attribute::ColorFrontSpecularG:
     case IR::Attribute::ColorFrontSpecularB:
     case IR::Attribute::ColorFrontSpecularA:
-        ctx.Add("gl_FrontMaterial.specular.{}={};", swizzle, value);
+        if (ctx.stage == Stage::Fragment) {
+            ctx.Add("gl_SecondaryColor.{}={};", swizzle, value);
+        } else {
+            ctx.Add("gl_FrontSecondaryColor.{}={};", swizzle, value);
+        }
         break;
     case IR::Attribute::ColorBackDiffuseR:
     case IR::Attribute::ColorBackDiffuseG:
     case IR::Attribute::ColorBackDiffuseB:
     case IR::Attribute::ColorBackDiffuseA:
-        ctx.Add("gl_BackMaterial.diffuse.{}={};", swizzle, value);
+        ctx.Add("gl_BackColor.{}={};", swizzle, value);
         break;
     case IR::Attribute::ColorBackSpecularR:
     case IR::Attribute::ColorBackSpecularG:
     case IR::Attribute::ColorBackSpecularB:
     case IR::Attribute::ColorBackSpecularA:
-        ctx.Add("gl_BackMaterial.specular.{}={};", swizzle, value);
+        ctx.Add("gl_BackSecondaryColor.{}={};", swizzle, value);
         break;
     case IR::Attribute::FogCoordinate:
-        ctx.Add("gl_FragCoord.x={};", value);
+        ctx.Add("gl_FogFragCoord.x={};", value);
         break;
     case IR::Attribute::ClipDistance0:
     case IR::Attribute::ClipDistance1:
