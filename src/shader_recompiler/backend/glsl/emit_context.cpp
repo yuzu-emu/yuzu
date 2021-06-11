@@ -13,7 +13,7 @@ u32 CbufIndex(size_t offset) {
     return (offset / 4) % 4;
 }
 
-char CbufSwizzle(size_t offset) {
+char Swizzle(size_t offset) {
     return "xyzw"[CbufIndex(offset)];
 }
 
@@ -341,8 +341,8 @@ void EmitContext::SetupExtensions(std::string&) {
             header += "#extension GL_NV_shader_thread_shuffle : enable\n";
         }
     }
-    if (info.stores_viewport_index && profile.support_viewport_index_layer_non_geometry &&
-        stage != Stage::Geometry) {
+    if ((info.stores_viewport_index || info.stores_layer) &&
+        profile.support_viewport_index_layer_non_geometry && stage != Stage::Geometry) {
         header += "#extension GL_ARB_shader_viewport_layer_array : enable\n";
     }
     if (info.uses_sparse_residency) {
@@ -428,16 +428,16 @@ void EmitContext::DefineHelperFunctions() {
         header += "uint CasIncrement(uint op_a,uint op_b){return op_a>=op_b?0u:(op_a+1u);}";
     }
     if (info.uses_global_decrement || info.uses_shared_decrement) {
-        header += "uint CasDecrement(uint op_a,uint "
-                  "op_b){return op_a==0||op_a>op_b?op_b:(op_a-1u);}";
+        header += "uint CasDecrement(uint op_a,uint op_b){"
+                  "return op_a==0||op_a>op_b?op_b:(op_a-1u);}";
     }
     if (info.uses_atomic_f32_add) {
-        header += "uint CasFloatAdd(uint op_a,float op_b){return "
-                  "ftou(utof(op_a)+op_b);}";
+        header += "uint CasFloatAdd(uint op_a,float op_b){"
+                  "return ftou(utof(op_a)+op_b);}";
     }
     if (info.uses_atomic_f32x2_add) {
-        header += "uint CasFloatAdd32x2(uint op_a,vec2 op_b){return "
-                  "packHalf2x16(unpackHalf2x16(op_a)+op_b);}";
+        header += "uint CasFloatAdd32x2(uint op_a,vec2 op_b){"
+                  "return packHalf2x16(unpackHalf2x16(op_a)+op_b);}";
     }
     if (info.uses_atomic_f32x2_min) {
         header += "uint CasFloatMin32x2(uint op_a,vec2 op_b){return "
@@ -476,9 +476,10 @@ void EmitContext::DefineHelperFunctions() {
                         "masked_index=uint(base_index)&3u;switch(base_index>>2){{",
                         vertex_arg)};
         if (info.loads_position) {
-            func += fmt::format("case {}:", static_cast<u32>(IR::Attribute::PositionX) >> 2);
             const auto position_idx{is_array ? "gl_in[vertex]." : ""};
-            func += fmt::format("return {}{}[masked_index];", position_idx, position_name);
+            func += fmt::format("case {}:return {}{}[masked_index];",
+                                static_cast<u32>(IR::Attribute::PositionX) >> 2, position_idx,
+                                position_name);
         }
         const u32 base_attribute_value = static_cast<u32>(IR::Attribute::Generic0X) >> 2;
         for (u32 i = 0; i < info.input_generics.size(); ++i) {
@@ -486,8 +487,8 @@ void EmitContext::DefineHelperFunctions() {
                 continue;
             }
             const auto vertex_idx{is_array ? "[vertex]" : ""};
-            func += fmt::format("case {}:", base_attribute_value + i);
-            func += fmt::format("return in_attr{}{}[masked_index];", i, vertex_idx);
+            func += fmt::format("case {}:return in_attr{}{}[masked_index];",
+                                base_attribute_value + i, i, vertex_idx);
         }
         func += "default: return 0.0;}}";
         header += func;
@@ -508,8 +509,8 @@ std::string EmitContext::DefineGlobalMemoryFunctions() {
         for (size_t i = 0; i < addr_xy.size(); ++i) {
             const auto addr_loc{ssbo.cbuf_offset + 4 * i};
             const auto size_loc{size_cbuf_offset + 4 * i};
-            addr_xy[i] = fmt::format("ftou({}[{}].{})", cbuf, addr_loc / 16, CbufSwizzle(addr_loc));
-            size_xy[i] = fmt::format("ftou({}[{}].{})", cbuf, size_loc / 16, CbufSwizzle(size_loc));
+            addr_xy[i] = fmt::format("ftou({}[{}].{})", cbuf, addr_loc / 16, Swizzle(addr_loc));
+            size_xy[i] = fmt::format("ftou({}[{}].{})", cbuf, size_loc / 16, Swizzle(size_loc));
         }
         const auto addr_pack{fmt::format("packUint2x32(uvec2({},{}))", addr_xy[0], addr_xy[1])};
         const auto addr_statment{fmt::format("uint64_t {}={};", ssbo_addr, addr_pack)};

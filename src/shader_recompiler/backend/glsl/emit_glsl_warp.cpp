@@ -89,23 +89,23 @@ void EmitSubgroupBallot(EmitContext& ctx, IR::Inst& inst, std::string_view pred)
 }
 
 void EmitSubgroupEqMask(EmitContext& ctx, IR::Inst& inst) {
-    ctx.AddU32("{}=uvec2(gl_SubGroupEqMaskARB).x;", inst);
+    ctx.AddU32("{}=uint(gl_SubGroupEqMaskARB.x);", inst);
 }
 
 void EmitSubgroupLtMask(EmitContext& ctx, IR::Inst& inst) {
-    ctx.AddU32("{}=uvec2(gl_SubGroupLtMaskARB).x;", inst);
+    ctx.AddU32("{}=uint(gl_SubGroupLtMaskARB.x);", inst);
 }
 
 void EmitSubgroupLeMask(EmitContext& ctx, IR::Inst& inst) {
-    ctx.AddU32("{}=uvec2(gl_SubGroupLeMaskARB).x;", inst);
+    ctx.AddU32("{}=uint(gl_SubGroupLeMaskARB.x);", inst);
 }
 
 void EmitSubgroupGtMask(EmitContext& ctx, IR::Inst& inst) {
-    ctx.AddU32("{}=uvec2(gl_SubGroupGtMaskARB).x;", inst);
+    ctx.AddU32("{}=uint(gl_SubGroupGtMaskARB.x);", inst);
 }
 
 void EmitSubgroupGeMask(EmitContext& ctx, IR::Inst& inst) {
-    ctx.AddU32("{}=uvec2(gl_SubGroupGeMaskARB).x;", inst);
+    ctx.AddU32("{}=uint(gl_SubGroupGeMaskARB.x);", inst);
 }
 
 void EmitShuffleIndex(EmitContext& ctx, IR::Inst& inst, std::string_view value,

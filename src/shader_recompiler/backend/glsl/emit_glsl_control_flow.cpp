@@ -14,8 +14,7 @@ void EmitJoin(EmitContext&) {
     throw NotImplementedException("Join shouldn't be emitted");
 }
 
-void EmitDemoteToHelperInvocation(EmitContext& ctx,
-                                  [[maybe_unused]] std::string_view continue_label) {
+void EmitDemoteToHelperInvocation(EmitContext& ctx) {
     ctx.Add("discard;");
 }
 

@@ -5,6 +5,7 @@
 #include <ranges>
 #include <string>
 
+#include "common/alignment.h"
 #include "shader_recompiler/backend/glsl/emit_context.h"
 #include "shader_recompiler/backend/glsl/emit_glsl.h"
 #include "shader_recompiler/backend/glsl/emit_glsl_instructions.h"
@@ -159,8 +160,7 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
                     ctx.var_alloc.Consume(node.data.repeat.cond));
             break;
         default:
-            throw NotImplementedException("AbstractSyntaxNode::Type {}", node.type);
-            break;
+            throw NotImplementedException("AbstractSyntaxNode Type {}", node.type);
         }
     }
 }
@@ -209,10 +209,11 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
     const std::string version{fmt::format("#version 450{}\n", GlslVersionSpecifier(ctx))};
     ctx.header.insert(0, version);
     if (program.local_memory_size > 0) {
-        ctx.header += fmt::format("uint lmem[{}];", program.local_memory_size / 4);
+        ctx.header += fmt::format("uint lmem[{}];", Common::AlignUp(program.local_memory_size, 4));
     }
     if (program.shared_memory_size > 0) {
-        ctx.header += fmt::format("shared uint smem[{}];", program.shared_memory_size / 4);
+        ctx.header +=
+            fmt::format("shared uint smem[{}];", Common::AlignUp(program.shared_memory_size, 4));
     }
     ctx.header += "\nvoid main(){\n";
     if (program.stage == Stage::VertexA || program.stage == Stage::VertexB) {

@@ -15,14 +15,13 @@ void Compare(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string
              std::string_view op, bool ordered) {
     ctx.AddU1("{}={}{}{}", inst, lhs, op, rhs, lhs, rhs);
     if (ordered) {
-        ctx.code += fmt::format("&&!isnan({})&&!isnan({})", lhs, rhs);
+        ctx.Add("&&!isnan({})&&!isnan({});", lhs, rhs);
     } else {
-        ctx.code += fmt::format("||isnan({})||isnan({})", lhs, rhs);
+        ctx.Add("||isnan({})||isnan({});", lhs, rhs);
     }
-    ctx.code += ";";
 }
 
-bool Precise(IR::Inst& inst) {
+bool IsPrecise(const IR::Inst& inst) {
     return {inst.Flags<IR::FpControl>().no_contraction};
 }
 } // Anonymous namespace
@@ -46,7 +45,7 @@ void EmitFPAdd16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& i
 }
 
 void EmitFPAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    if (Precise(inst)) {
+    if (IsPrecise(inst)) {
         ctx.AddPrecF32("{}={}+{};", inst, a, b);
     } else {
         ctx.AddF32("{}={}+{};", inst, a, b);
@@ -54,7 +53,7 @@ void EmitFPAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::stri
 }
 
 void EmitFPAdd64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    if (Precise(inst)) {
+    if (IsPrecise(inst)) {
         ctx.AddPrecF64("{}={}+{};", inst, a, b);
     } else {
         ctx.AddF64("{}={}+{};", inst, a, b);
@@ -69,7 +68,7 @@ void EmitFPFma16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& i
 
 void EmitFPFma32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b,
                  std::string_view c) {
-    if (Precise(inst)) {
+    if (IsPrecise(inst)) {
         ctx.AddPrecF32("{}=fma({},{},{});", inst, a, b, c);
     } else {
         ctx.AddF32("{}=fma({},{},{});", inst, a, b, c);
@@ -78,7 +77,7 @@ void EmitFPFma32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::stri
 
 void EmitFPFma64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b,
                  std::string_view c) {
-    if (Precise(inst)) {
+    if (IsPrecise(inst)) {
         ctx.AddPrecF64("{}=fma({},{},{});", inst, a, b, c);
     } else {
         ctx.AddF64("{}=fma({},{},{});", inst, a, b, c);
@@ -107,7 +106,7 @@ void EmitFPMul16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& i
 }
 
 void EmitFPMul32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    if (Precise(inst)) {
+    if (IsPrecise(inst)) {
         ctx.AddPrecF32("{}={}*{};", inst, a, b);
     } else {
         ctx.AddF32("{}={}*{};", inst, a, b);
@@ -115,7 +114,7 @@ void EmitFPMul32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::stri
 }
 
 void EmitFPMul64(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    if (Precise(inst)) {
+    if (IsPrecise(inst)) {
         ctx.AddPrecF64("{}={}*{};", inst, a, b);
     } else {
         ctx.AddF64("{}={}*{};", inst, a, b);
