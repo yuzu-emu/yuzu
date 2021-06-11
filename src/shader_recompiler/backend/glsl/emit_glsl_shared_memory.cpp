@@ -14,7 +14,7 @@ void EmitLoadSharedU8(EmitContext& ctx, IR::Inst& inst, std::string_view offset)
 }
 
 void EmitLoadSharedS8(EmitContext& ctx, IR::Inst& inst, std::string_view offset) {
-    ctx.AddS32("{}=bitfieldExtract(int(smem[{}>>2]),int({}%4)*8,8);", inst, offset, offset);
+    ctx.AddU32("{}=bitfieldExtract(int(smem[{}>>2]),int({}%4)*8,8);", inst, offset, offset);
 }
 
 void EmitLoadSharedU16(EmitContext& ctx, IR::Inst& inst, std::string_view offset) {
@@ -22,7 +22,7 @@ void EmitLoadSharedU16(EmitContext& ctx, IR::Inst& inst, std::string_view offset
 }
 
 void EmitLoadSharedS16(EmitContext& ctx, IR::Inst& inst, std::string_view offset) {
-    ctx.AddS32("{}=bitfieldExtract(int(smem[{}>>2]),int(({}>>1)%2)*16,16);", inst, offset, offset);
+    ctx.AddU32("{}=bitfieldExtract(int(smem[{}>>2]),int(({}>>1)%2)*16,16);", inst, offset, offset);
 }
 
 void EmitLoadSharedU32(EmitContext& ctx, IR::Inst& inst, std::string_view offset) {

@@ -87,7 +87,7 @@ void EmitLoadStorageU8(EmitContext& ctx, IR::Inst& inst, const IR::Value& bindin
 void EmitLoadStorageS8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                        const IR::Value& offset) {
     const auto offset_var{ctx.var_alloc.Consume(offset)};
-    ctx.AddS32("{}=bitfieldExtract(int({}_ssbo{}[{}>>2]),int({}%4)*8,8);", inst, ctx.stage_name,
+    ctx.AddU32("{}=bitfieldExtract(int({}_ssbo{}[{}>>2]),int({}%4)*8,8);", inst, ctx.stage_name,
                binding.U32(), offset_var, offset_var);
 }
 
@@ -101,7 +101,7 @@ void EmitLoadStorageU16(EmitContext& ctx, IR::Inst& inst, const IR::Value& bindi
 void EmitLoadStorageS16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                         const IR::Value& offset) {
     const auto offset_var{ctx.var_alloc.Consume(offset)};
-    ctx.AddS32("{}=bitfieldExtract(int({}_ssbo{}[{}>>2]),int(({}>>1)%2)*16,16);", inst,
+    ctx.AddU32("{}=bitfieldExtract(int({}_ssbo{}[{}>>2]),int(({}>>1)%2)*16,16);", inst,
                ctx.stage_name, binding.U32(), offset_var, offset_var);
 }
 

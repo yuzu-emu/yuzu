@@ -68,18 +68,8 @@ public:
     }
 
     template <typename... Args>
-    void AddS32(const char* format_str, IR::Inst& inst, Args&&... args) {
-        Add<GlslVarType::S32>(format_str, inst, args...);
-    }
-
-    template <typename... Args>
     void AddF32(const char* format_str, IR::Inst& inst, Args&&... args) {
         Add<GlslVarType::F32>(format_str, inst, args...);
-    }
-
-    template <typename... Args>
-    void AddS64(const char* format_str, IR::Inst& inst, Args&&... args) {
-        Add<GlslVarType::S64>(format_str, inst, args...);
     }
 
     template <typename... Args>

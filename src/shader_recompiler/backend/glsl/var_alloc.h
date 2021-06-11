@@ -21,10 +21,8 @@ namespace Shader::Backend::GLSL {
 enum class GlslVarType : u32 {
     U1,
     F16x2,
-    S32,
     U32,
     F32,
-    S64,
     U64,
     F64,
     U32x2,
@@ -42,7 +40,7 @@ struct Id {
     union {
         u32 raw;
         BitField<0, 1, u32> is_valid;
-        BitField<1, 5, GlslVarType> type;
+        BitField<1, 4, GlslVarType> type;
         BitField<6, 26, u32> index;
     };
 
@@ -90,7 +88,6 @@ private:
 
     UseTracker var_bool{};
     UseTracker var_f16x2{};
-    UseTracker var_s32{};
     UseTracker var_u32{};
     UseTracker var_u32x2{};
     UseTracker var_u32x3{};
@@ -100,7 +97,6 @@ private:
     UseTracker var_f32x3{};
     UseTracker var_f32x4{};
     UseTracker var_u64{};
-    UseTracker var_s64{};
     UseTracker var_f64{};
     UseTracker var_precf32{};
     UseTracker var_precf64{};
