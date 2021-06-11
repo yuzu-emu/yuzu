@@ -34,6 +34,11 @@ struct GenericElementInfo {
     u32 num_components{};
 };
 
+struct TextureImageDefinition {
+    u32 binding;
+    u32 count;
+};
+
 class EmitContext {
 public:
     explicit EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
@@ -140,10 +145,10 @@ public:
     std::string_view stage_name = "invalid";
     std::string_view position_name = "gl_Position";
 
-    std::vector<u32> texture_buffer_bindings;
-    std::vector<u32> image_buffer_bindings;
-    std::vector<u32> texture_bindings;
-    std::vector<u32> image_bindings;
+    std::vector<TextureImageDefinition> texture_buffers;
+    std::vector<TextureImageDefinition> image_buffers;
+    std::vector<TextureImageDefinition> textures;
+    std::vector<TextureImageDefinition> images;
     std::array<std::array<GenericElementInfo, 4>, 32> output_generics{};
 
     bool uses_y_direction{};

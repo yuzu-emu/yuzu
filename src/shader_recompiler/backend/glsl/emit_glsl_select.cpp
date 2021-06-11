@@ -28,12 +28,12 @@ void EmitSelectU16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::stri
 
 void EmitSelectU32(EmitContext& ctx, IR::Inst& inst, std::string_view cond,
                    std::string_view true_value, std::string_view false_value) {
-    ctx.AddU32("{}={}?uint({}):uint({});", inst, cond, true_value, false_value);
+    ctx.AddU32("{}={}?{}:{};", inst, cond, true_value, false_value);
 }
 
 void EmitSelectU64(EmitContext& ctx, IR::Inst& inst, std::string_view cond,
                    std::string_view true_value, std::string_view false_value) {
-    ctx.AddU64("{}={}?uint64_t({}):uint64_t({});", inst, cond, true_value, false_value);
+    ctx.AddU64("{}={}?{}:{};", inst, cond, true_value, false_value);
 }
 
 void EmitSelectF16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] std::string_view cond,

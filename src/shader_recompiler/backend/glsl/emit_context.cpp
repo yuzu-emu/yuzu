@@ -559,53 +559,45 @@ std::string EmitContext::DefineGlobalMemoryFunctions() {
 }
 
 void EmitContext::SetupImages(Bindings& bindings) {
-    image_buffer_bindings.reserve(info.image_buffer_descriptors.size());
+    image_buffers.reserve(info.image_buffer_descriptors.size());
     for (const auto& desc : info.image_buffer_descriptors) {
-        image_buffer_bindings.push_back(bindings.image);
-        const auto indices{bindings.image + desc.count};
+        image_buffers.push_back({bindings.image, desc.count});
         const auto format{ImageFormatString(desc.format)};
-        for (u32 index = bindings.image; index < indices; ++index) {
-            header += fmt::format("layout(binding={}{}) uniform uimageBuffer img{};",
-                                  bindings.image, format, index);
-        }
+        const auto array_decorator{desc.count > 1 ? fmt::format("[{}]", desc.count) : ""};
+        header += fmt::format("layout(binding={}{}) uniform uimageBuffer img{}{};", bindings.image,
+                              format, bindings.image, array_decorator);
         bindings.image += desc.count;
     }
-    image_bindings.reserve(info.image_descriptors.size());
+    images.reserve(info.image_descriptors.size());
     for (const auto& desc : info.image_descriptors) {
-        image_bindings.push_back(bindings.image);
+        images.push_back({bindings.image, desc.count});
         const auto format{ImageFormatString(desc.format)};
         const auto image_type{ImageType(desc.type)};
         const auto qualifier{desc.is_written ? "" : "readonly "};
-        const auto indices{bindings.image + desc.count};
-        for (u32 index = bindings.image; index < indices; ++index) {
-            header += fmt::format("layout(binding={}{})uniform {}{} img{};", bindings.image, format,
-                                  qualifier, image_type, index);
-        }
+        const auto array_decorator{desc.count > 1 ? fmt::format("[{}]", desc.count) : ""};
+        header += fmt::format("layout(binding={}{})uniform {}{} img{}{};", bindings.image, format,
+                              qualifier, image_type, bindings.image, array_decorator);
         bindings.image += desc.count;
     }
 }
 
 void EmitContext::SetupTextures(Bindings& bindings) {
-    texture_buffer_bindings.reserve(info.texture_buffer_descriptors.size());
+    texture_buffers.reserve(info.texture_buffer_descriptors.size());
     for (const auto& desc : info.texture_buffer_descriptors) {
-        texture_buffer_bindings.push_back(bindings.texture);
+        texture_buffers.push_back({bindings.texture, desc.count});
         const auto sampler_type{SamplerType(TextureType::Buffer, false)};
-        const auto indices{bindings.texture + desc.count};
-        for (u32 index = bindings.texture; index < indices; ++index) {
-            header += fmt::format("layout(binding={}) uniform {} tex{};", bindings.texture,
-                                  sampler_type, index);
-        }
+        const auto array_decorator{desc.count > 1 ? fmt::format("[{}]", desc.count) : ""};
+        header += fmt::format("layout(binding={}) uniform {} tex{}{};", bindings.texture,
+                              sampler_type, bindings.texture, array_decorator);
         bindings.texture += desc.count;
     }
-    texture_bindings.reserve(info.texture_descriptors.size());
+    textures.reserve(info.texture_descriptors.size());
     for (const auto& desc : info.texture_descriptors) {
+        textures.push_back({bindings.texture, desc.count});
         const auto sampler_type{SamplerType(desc.type, desc.is_depth)};
-        texture_bindings.push_back(bindings.texture);
-        const auto indices{bindings.texture + desc.count};
-        for (u32 index = bindings.texture; index < indices; ++index) {
-            header += fmt::format("layout(binding={}) uniform {} tex{};", bindings.texture,
-                                  sampler_type, index);
-        }
+        const auto array_decorator{desc.count > 1 ? fmt::format("[{}]", desc.count) : ""};
+        header += fmt::format("layout(binding={}) uniform {} tex{}{};", bindings.texture,
+                              sampler_type, bindings.texture, array_decorator);
         bindings.texture += desc.count;
     }
 }
