@@ -17,14 +17,14 @@ Id ExtractU16(EmitContext& ctx, Id value) {
 
 Id ExtractS16(EmitContext& ctx, Id value) {
     if (ctx.profile.support_int16) {
-        return ctx.OpUConvert(ctx.S16, value);
+        return ctx.OpSConvert(ctx.S16, value);
     } else {
         return ctx.OpBitFieldSExtract(ctx.U32[1], value, ctx.u32_zero_value, ctx.Const(16u));
     }
 }
 
 Id ExtractU8(EmitContext& ctx, Id value) {
-    if (ctx.profile.support_int16) {
+    if (ctx.profile.support_int8) {
         return ctx.OpUConvert(ctx.U8, value);
     } else {
         return ctx.OpBitFieldUExtract(ctx.U32[1], value, ctx.u32_zero_value, ctx.Const(8u));
@@ -42,7 +42,7 @@ Id ExtractS8(EmitContext& ctx, Id value) {
 
 Id EmitConvertS16F16(EmitContext& ctx, Id value) {
     if (ctx.profile.support_int16) {
-        return ctx.OpUConvert(ctx.U32[1], ctx.OpConvertFToS(ctx.U16, value));
+        return ctx.OpSConvert(ctx.U32[1], ctx.OpConvertFToS(ctx.U16, value));
     } else {
         return ExtractS16(ctx, ctx.OpConvertFToS(ctx.U32[1], value));
     }
@@ -50,7 +50,7 @@ Id EmitConvertS16F16(EmitContext& ctx, Id value) {
 
 Id EmitConvertS16F32(EmitContext& ctx, Id value) {
     if (ctx.profile.support_int16) {
-        return ctx.OpUConvert(ctx.U32[1], ctx.OpConvertFToS(ctx.U16, value));
+        return ctx.OpSConvert(ctx.U32[1], ctx.OpConvertFToS(ctx.U16, value));
     } else {
         return ExtractS16(ctx, ctx.OpConvertFToS(ctx.U32[1], value));
     }
@@ -58,7 +58,7 @@ Id EmitConvertS16F32(EmitContext& ctx, Id value) {
 
 Id EmitConvertS16F64(EmitContext& ctx, Id value) {
     if (ctx.profile.support_int16) {
-        return ctx.OpUConvert(ctx.U32[1], ctx.OpConvertFToS(ctx.U16, value));
+        return ctx.OpSConvert(ctx.U32[1], ctx.OpConvertFToS(ctx.U16, value));
     } else {
         return ExtractS16(ctx, ctx.OpConvertFToS(ctx.U32[1], value));
     }
