@@ -9,6 +9,17 @@
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLSL {
+namespace {
+constexpr char cas_loop[]{"for(;;){{uint old_value={};uint "
+                          "cas_result=atomicCompSwap({},old_value,bitfieldInsert({},{},{},{}));"
+                          "if(cas_result==old_value){{break;}}}}"};
+
+void SharedWriteCas(EmitContext& ctx, std::string_view offset, std::string_view value,
+                    std::string_view bit_offset, u32 num_bits) {
+    const auto smem{fmt::format("smem[{}>>2]", offset)};
+    ctx.Add(cas_loop, smem, smem, smem, value, bit_offset, num_bits);
+}
+} // Anonymous namespace
 void EmitLoadSharedU8(EmitContext& ctx, IR::Inst& inst, std::string_view offset) {
     ctx.AddU32("{}=bitfieldExtract(smem[{}>>2],int({}%4)*8,8);", inst, offset, offset);
 }
@@ -39,13 +50,13 @@ void EmitLoadSharedU128(EmitContext& ctx, IR::Inst& inst, std::string_view offse
 }
 
 void EmitWriteSharedU8(EmitContext& ctx, std::string_view offset, std::string_view value) {
-    ctx.Add("smem[{}>>2]=bitfieldInsert(smem[{}>>2],{},int({}%4)*8,8);", offset, offset, value,
-            offset);
+    const auto bit_offset{fmt::format("int({}%4)*8", offset)};
+    SharedWriteCas(ctx, offset, value, bit_offset, 8);
 }
 
 void EmitWriteSharedU16(EmitContext& ctx, std::string_view offset, std::string_view value) {
-    ctx.Add("smem[{}>>2]=bitfieldInsert(smem[{}>>2],{},int(({}>>1)%2)*16,16);", offset, offset,
-            value, offset);
+    const auto bit_offset{fmt::format("int(({}>>1)%2)*16", offset)};
+    SharedWriteCas(ctx, offset, value, bit_offset, 16);
 }
 
 void EmitWriteSharedU32(EmitContext& ctx, std::string_view offset, std::string_view value) {
