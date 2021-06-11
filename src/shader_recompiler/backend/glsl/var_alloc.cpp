@@ -21,12 +21,8 @@ std::string TypePrefix(GlslVarType type) {
         return "f16x2_";
     case GlslVarType::U32:
         return "u_";
-    case GlslVarType::S32:
-        return "s_";
     case GlslVarType::F32:
         return "f_";
-    case GlslVarType::S64:
-        return "s64_";
     case GlslVarType::U64:
         return "u64_";
     case GlslVarType::F64:
@@ -213,13 +209,9 @@ std::string VarAlloc::GetGlslType(GlslVarType type) const {
         return "f16vec2";
     case GlslVarType::U32:
         return "uint";
-    case GlslVarType::S32:
-        return "int";
     case GlslVarType::F32:
     case GlslVarType::PrecF32:
         return "float";
-    case GlslVarType::S64:
-        return "int64_t";
     case GlslVarType::U64:
         return "uint64_t";
     case GlslVarType::F64:
@@ -252,12 +244,8 @@ VarAlloc::UseTracker& VarAlloc::GetUseTracker(GlslVarType type) {
         return var_f16x2;
     case GlslVarType::U32:
         return var_u32;
-    case GlslVarType::S32:
-        return var_s32;
     case GlslVarType::F32:
         return var_f32;
-    case GlslVarType::S64:
-        return var_s64;
     case GlslVarType::U64:
         return var_u64;
     case GlslVarType::F64:
@@ -291,12 +279,8 @@ const VarAlloc::UseTracker& VarAlloc::GetUseTracker(GlslVarType type) const {
         return var_f16x2;
     case GlslVarType::U32:
         return var_u32;
-    case GlslVarType::S32:
-        return var_s32;
     case GlslVarType::F32:
         return var_f32;
-    case GlslVarType::S64:
-        return var_s64;
     case GlslVarType::U64:
         return var_u64;
     case GlslVarType::F64:

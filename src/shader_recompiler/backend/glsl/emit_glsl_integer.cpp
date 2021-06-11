@@ -103,7 +103,7 @@ void EmitShiftRightLogical64(EmitContext& ctx, IR::Inst& inst, std::string_view 
 
 void EmitShiftRightArithmetic32(EmitContext& ctx, IR::Inst& inst, std::string_view base,
                                 std::string_view shift) {
-    ctx.AddS32("{}=int({})>>{};", inst, base, shift);
+    ctx.AddU32("{}=int({})>>{};", inst, base, shift);
 }
 
 void EmitShiftRightArithmetic64(EmitContext& ctx, IR::Inst& inst, std::string_view base,

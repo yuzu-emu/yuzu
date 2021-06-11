@@ -183,7 +183,7 @@ void EmitStorageAtomicIAdd64(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 void EmitStorageAtomicSMin64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
     // LOG_WARNING(..., "Op falling to non-atomic");
-    ctx.AddS64("{}=packInt2x32(ivec2({}_ssbo{}[{}>>2],{}_ssbo{}[({}>>2)+1]));", inst,
+    ctx.AddU64("{}=packInt2x32(ivec2({}_ssbo{}[{}>>2],{}_ssbo{}[({}>>2)+1]));", inst,
                ctx.stage_name, binding.U32(), ctx.var_alloc.Consume(offset), ctx.stage_name,
                binding.U32(), ctx.var_alloc.Consume(offset));
     ctx.Add("for(int i=0;i<2;++i){{ "
@@ -208,7 +208,7 @@ void EmitStorageAtomicUMin64(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 void EmitStorageAtomicSMax64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
     // LOG_WARNING(..., "Op falling to non-atomic");
-    ctx.AddS64("{}=packInt2x32(ivec2({}_ssbo{}[{}>>2],{}_ssbo{}[({}>>2)+1]));", inst,
+    ctx.AddU64("{}=packInt2x32(ivec2({}_ssbo{}[{}>>2],{}_ssbo{}[({}>>2)+1]));", inst,
                ctx.stage_name, binding.U32(), ctx.var_alloc.Consume(offset), ctx.stage_name,
                binding.U32(), ctx.var_alloc.Consume(offset));
     ctx.Add("for(int i=0;i<2;++i){{ "

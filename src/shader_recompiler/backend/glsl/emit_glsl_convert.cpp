@@ -15,7 +15,7 @@ void EmitConvertS16F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 }
 
 void EmitConvertS16F32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
-    ctx.AddS32("{}=(int({})&0xffff)|(bitfieldExtract(int({}),31,1)<<15);", inst, value, value);
+    ctx.AddU32("{}=(int({})&0xffff)|(bitfieldExtract(int({}),31,1)<<15);", inst, value, value);
 }
 
 void EmitConvertS16F64([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -29,11 +29,11 @@ void EmitConvertS32F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 }
 
 void EmitConvertS32F32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
-    ctx.AddS32("{}=int({});", inst, value);
+    ctx.AddU32("{}=int({});", inst, value);
 }
 
 void EmitConvertS32F64(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
-    ctx.AddS32("{}=int({});", inst, value);
+    ctx.AddU32("{}=int({});", inst, value);
 }
 
 void EmitConvertS64F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
@@ -42,11 +42,11 @@ void EmitConvertS64F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 }
 
 void EmitConvertS64F32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
-    ctx.AddS64("{}=int64_t(double({}));", inst, value);
+    ctx.AddU64("{}=int64_t(double({}));", inst, value);
 }
 
 void EmitConvertS64F64(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
-    ctx.AddS64("{}=int64_t({});", inst, value);
+    ctx.AddU64("{}=int64_t({});", inst, value);
 }
 
 void EmitConvertU16F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::Inst& inst,
