@@ -205,6 +205,9 @@ Id EmitConvertF32S16(EmitContext& ctx, Id value) {
 }
 
 Id EmitConvertF32S32(EmitContext& ctx, Id value) {
+    if (ctx.profile.has_broken_signed_operations) {
+        value = ctx.OpBitcast(ctx.S32[1], value);
+    }
     return ctx.OpConvertSToF(ctx.F32[1], value);
 }
 
@@ -237,6 +240,9 @@ Id EmitConvertF64S16(EmitContext& ctx, Id value) {
 }
 
 Id EmitConvertF64S32(EmitContext& ctx, Id value) {
+    if (ctx.profile.has_broken_signed_operations) {
+        value = ctx.OpBitcast(ctx.S32[1], value);
+    }
     return ctx.OpConvertSToF(ctx.F64[1], value);
 }
 
