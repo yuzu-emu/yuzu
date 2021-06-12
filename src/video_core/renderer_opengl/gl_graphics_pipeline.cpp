@@ -117,8 +117,8 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_c
                                    BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
                                    Tegra::Engines::Maxwell3D& maxwell3d_,
                                    ProgramManager& program_manager_, StateTracker& state_tracker_,
-                                   const std::array<std::string, 5> assembly_sources,
-                                   const std::array<std::string, 5> glsl_sources,
+                                   std::array<std::string, 5> assembly_sources,
+                                   std::array<std::string, 5> glsl_sources,
                                    const std::array<const Shader::Info*, 5>& infos,
                                    const VideoCommon::TransformFeedbackState* xfb_state)
     : texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, gpu_memory{gpu_memory_},
