@@ -54,6 +54,7 @@ struct DrawParams {
     u32 num_instances;
     u32 base_vertex;
     u32 num_vertices;
+    u32 first_index;
     bool is_indexed;
 };
 
@@ -103,6 +104,7 @@ DrawParams MakeDrawParams(const Maxwell& regs, u32 num_instances, bool is_instan
         .num_instances = is_instanced ? num_instances : 1,
         .base_vertex = is_indexed ? regs.vb_element_base : regs.vertex_buffer.first,
         .num_vertices = is_indexed ? regs.index_array.count : regs.vertex_buffer.count,
+        .first_index = is_indexed ? regs.index_array.first : 0,
         .is_indexed = is_indexed,
     };
     if (regs.draw.topology == Maxwell::PrimitiveTopology::Quads) {
@@ -173,8 +175,9 @@ void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
     const DrawParams draw_params{MakeDrawParams(regs, num_instances, is_instanced, is_indexed)};
     scheduler.Record([draw_params](vk::CommandBuffer cmdbuf) {
         if (draw_params.is_indexed) {
-            cmdbuf.DrawIndexed(draw_params.num_vertices, draw_params.num_instances, 0,
-                               draw_params.base_vertex, draw_params.base_instance);
+            cmdbuf.DrawIndexed(draw_params.num_vertices, draw_params.num_instances,
+                               draw_params.first_index, draw_params.base_vertex,
+                               draw_params.base_instance);
         } else {
             cmdbuf.Draw(draw_params.num_vertices, draw_params.num_instances,
                         draw_params.base_vertex, draw_params.base_instance);
