@@ -40,7 +40,7 @@ ComputePipeline::ComputePipeline(const Device& device, TextureCache& texture_cac
                                  BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
                                  Tegra::Engines::KeplerCompute& kepler_compute_,
                                  ProgramManager& program_manager_, const Shader::Info& info_,
-                                 const std::string code)
+                                 std::string code)
     : texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, gpu_memory{gpu_memory_},
       kepler_compute{kepler_compute_}, program_manager{program_manager_}, info{info_} {
     if (device.UseAssemblyShaders()) {
