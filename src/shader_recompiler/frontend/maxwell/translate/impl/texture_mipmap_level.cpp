@@ -46,16 +46,15 @@ Shader::TextureType GetType(TextureType type) {
 }
 
 IR::Value MakeCoords(TranslatorVisitor& v, IR::Reg reg, TextureType type) {
-    const auto read_array{[&]() -> IR::F32 { return v.ir.ConvertUToF(32, 16, v.X(reg)); }};
     switch (type) {
     case TextureType::_1D:
         return v.F(reg);
     case TextureType::ARRAY_1D:
-        return v.ir.CompositeConstruct(v.F(reg + 1), read_array());
+        return v.F(reg + 1);
     case TextureType::_2D:
         return v.ir.CompositeConstruct(v.F(reg), v.F(reg + 1));
     case TextureType::ARRAY_2D:
-        return v.ir.CompositeConstruct(v.F(reg + 1), v.F(reg + 2), read_array());
+        return v.ir.CompositeConstruct(v.F(reg + 1), v.F(reg + 2));
     case TextureType::_3D:
         return v.ir.CompositeConstruct(v.F(reg), v.F(reg + 1), v.F(reg + 2));
     case TextureType::ARRAY_3D:
@@ -63,7 +62,7 @@ IR::Value MakeCoords(TranslatorVisitor& v, IR::Reg reg, TextureType type) {
     case TextureType::CUBE:
         return v.ir.CompositeConstruct(v.F(reg), v.F(reg + 1), v.F(reg + 2));
     case TextureType::ARRAY_CUBE:
-        return v.ir.CompositeConstruct(v.F(reg + 1), v.F(reg + 2), v.F(reg + 3), read_array());
+        return v.ir.CompositeConstruct(v.F(reg + 1), v.F(reg + 2), v.F(reg + 3));
     }
     throw NotImplementedException("Invalid texture type {}", type);
 }
