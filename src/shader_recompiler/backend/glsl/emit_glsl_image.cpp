@@ -45,7 +45,7 @@ std::string CastToIntVec(std::string_view value, const IR::TextureInstInfo& info
     }
 }
 
-std::string TexelFetchCastToInt(std::string_view value, const IR::TextureInstInfo& info) {
+std::string CoordsCastToInt(std::string_view value, const IR::TextureInstInfo& info) {
     switch (info.type) {
     case TextureType::Color1D:
     case TextureType::Buffer:
@@ -407,13 +407,13 @@ void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
     if (!sparse_inst) {
         if (!offset.empty()) {
             ctx.Add("{}=texelFetchOffset({},{},int({}),{});", texel, texture,
-                    TexelFetchCastToInt(coords, info), lod, TexelFetchCastToInt(offset, info));
+                    CoordsCastToInt(coords, info), lod, CoordsCastToInt(offset, info));
         } else {
             if (info.type == TextureType::Buffer) {
                 ctx.Add("{}=texelFetch({},int({}));", texel, texture, coords);
             } else {
                 ctx.Add("{}=texelFetch({},{},int({}));", texel, texture,
-                        TexelFetchCastToInt(coords, info), lod);
+                        CoordsCastToInt(coords, info), lod);
             }
         }
         return;
@@ -498,29 +498,28 @@ void EmitImageRead(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
         throw NotImplementedException("EmitImageRead Sparse");
     }
     const auto image{Image(ctx, info, index)};
-    ctx.AddU32x4("{}=uvec4(imageLoad({},{}));", inst, image, TexelFetchCastToInt(coords, info));
+    ctx.AddU32x4("{}=uvec4(imageLoad({},{}));", inst, image, CoordsCastToInt(coords, info));
 }
 
 void EmitImageWrite(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                     std::string_view coords, std::string_view color) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto image{Image(ctx, info, index)};
-    ctx.Add("imageStore({},{},{});", image, TexelFetchCastToInt(coords, info), color);
+    ctx.Add("imageStore({},{},{});", image, CoordsCastToInt(coords, info), color);
 }
 
 void EmitImageAtomicIAdd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                            std::string_view coords, std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto image{Image(ctx, info, index)};
-    ctx.AddU32("{}=imageAtomicAdd({},{},{});", inst, image, TexelFetchCastToInt(coords, info),
-               value);
+    ctx.AddU32("{}=imageAtomicAdd({},{},{});", inst, image, CoordsCastToInt(coords, info), value);
 }
 
 void EmitImageAtomicSMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                            std::string_view coords, std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto image{Image(ctx, info, index)};
-    ctx.AddU32("{}=imageAtomicMin({},{},int({}));", inst, image, TexelFetchCastToInt(coords, info),
+    ctx.AddU32("{}=imageAtomicMin({},{},int({}));", inst, image, CoordsCastToInt(coords, info),
                value);
 }
 
@@ -528,7 +527,7 @@ void EmitImageAtomicUMin32(EmitContext& ctx, IR::Inst& inst, const IR::Value& in
                            std::string_view coords, std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto image{Image(ctx, info, index)};
-    ctx.AddU32("{}=imageAtomicMin({},{},uint({}));", inst, image, TexelFetchCastToInt(coords, info),
+    ctx.AddU32("{}=imageAtomicMin({},{},uint({}));", inst, image, CoordsCastToInt(coords, info),
                value);
 }
 
@@ -536,7 +535,7 @@ void EmitImageAtomicSMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& in
                            std::string_view coords, std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto image{Image(ctx, info, index)};
-    ctx.AddU32("{}=imageAtomicMax({},{},int({}));", inst, image, TexelFetchCastToInt(coords, info),
+    ctx.AddU32("{}=imageAtomicMax({},{},int({}));", inst, image, CoordsCastToInt(coords, info),
                value);
 }
 
@@ -544,7 +543,7 @@ void EmitImageAtomicUMax32(EmitContext& ctx, IR::Inst& inst, const IR::Value& in
                            std::string_view coords, std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto image{Image(ctx, info, index)};
-    ctx.AddU32("{}=imageAtomicMax({},{},uint({}));", inst, image, TexelFetchCastToInt(coords, info),
+    ctx.AddU32("{}=imageAtomicMax({},{},uint({}));", inst, image, CoordsCastToInt(coords, info),
                value);
 }
 
@@ -562,31 +561,28 @@ void EmitImageAtomicAnd32(EmitContext& ctx, IR::Inst& inst, const IR::Value& ind
                           std::string_view coords, std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto image{Image(ctx, info, index)};
-    ctx.AddU32("{}=imageAtomicAnd({},{},{});", inst, image, TexelFetchCastToInt(coords, info),
-               value);
+    ctx.AddU32("{}=imageAtomicAnd({},{},{});", inst, image, CoordsCastToInt(coords, info), value);
 }
 
 void EmitImageAtomicOr32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                          std::string_view coords, std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto image{Image(ctx, info, index)};
-    ctx.AddU32("{}=imageAtomicOr({},{},{});", inst, image, TexelFetchCastToInt(coords, info),
-               value);
+    ctx.AddU32("{}=imageAtomicOr({},{},{});", inst, image, CoordsCastToInt(coords, info), value);
 }
 
 void EmitImageAtomicXor32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                           std::string_view coords, std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto image{Image(ctx, info, index)};
-    ctx.AddU32("{}=imageAtomicXor({},{},{});", inst, image, TexelFetchCastToInt(coords, info),
-               value);
+    ctx.AddU32("{}=imageAtomicXor({},{},{});", inst, image, CoordsCastToInt(coords, info), value);
 }
 
 void EmitImageAtomicExchange32(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                                std::string_view coords, std::string_view value) {
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto image{Image(ctx, info, index)};
-    ctx.AddU32("{}=imageAtomicExchange({},{},{});", inst, image, TexelFetchCastToInt(coords, info),
+    ctx.AddU32("{}=imageAtomicExchange({},{},{});", inst, image, CoordsCastToInt(coords, info),
                value);
 }
 

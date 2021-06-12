@@ -42,7 +42,7 @@ void EmitConvertS64F16([[maybe_unused]] EmitContext& ctx, [[maybe_unused]] IR::I
 }
 
 void EmitConvertS64F32(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
-    ctx.AddU64("{}=int64_t(double({}));", inst, value);
+    ctx.AddU64("{}=int64_t({});", inst, value);
 }
 
 void EmitConvertS64F64(EmitContext& ctx, IR::Inst& inst, std::string_view value) {
