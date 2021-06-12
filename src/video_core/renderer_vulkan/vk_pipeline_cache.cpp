@@ -109,6 +109,20 @@ static Shader::AttributeType CastAttributeType(const FixedPipelineState::VertexA
     return Shader::AttributeType::Float;
 }
 
+Shader::AttributeType AttributeType(const FixedPipelineState& state, size_t index) {
+    switch (state.DynamicAttributeType(index)) {
+    case 0:
+        return Shader::AttributeType::Disabled;
+    case 1:
+        return Shader::AttributeType::Float;
+    case 2:
+        return Shader::AttributeType::SignedInt;
+    case 3:
+        return Shader::AttributeType::UnsignedInt;
+    }
+    return Shader::AttributeType::Disabled;
+}
+
 Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineCacheKey& key,
                                     const Shader::IR::Program& program) {
     Shader::RuntimeInfo info;
@@ -123,13 +137,19 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineCacheKey& key,
             if (key.state.topology == Maxwell::PrimitiveTopology::Points) {
                 info.fixed_state_point_size = point_size;
             }
-            if (key.state.xfb_enabled != 0) {
+            if (key.state.xfb_enabled) {
                 info.xfb_varyings = VideoCommon::MakeTransformFeedbackVaryings(key.state.xfb_state);
             }
             info.convert_depth_mode = gl_ndc;
         }
-        std::ranges::transform(key.state.attributes, info.generic_input_types.begin(),
-                               &CastAttributeType);
+        if (key.state.dynamic_vertex_input) {
+            for (size_t index = 0; index < Maxwell::NumVertexAttributes; ++index) {
+                info.generic_input_types[index] = AttributeType(key.state, index);
+            }
+        } else {
+            std::ranges::transform(key.state.attributes, info.generic_input_types.begin(),
+                                   &CastAttributeType);
+        }
         break;
     case Shader::Stage::TessellationEval:
         // We have to flip tessellation clockwise for some reason...
@@ -298,7 +318,8 @@ GraphicsPipeline* PipelineCache::CurrentGraphicsPipeline() {
         current_pipeline = nullptr;
         return nullptr;
     }
-    graphics_key.state.Refresh(maxwell3d, device.IsExtExtendedDynamicStateSupported());
+    graphics_key.state.Refresh(maxwell3d, device.IsExtExtendedDynamicStateSupported(),
+                               device.IsExtVertexInputDynamicStateSupported());
 
     if (current_pipeline) {
         GraphicsPipeline* const next{current_pipeline->Next(graphics_key)};

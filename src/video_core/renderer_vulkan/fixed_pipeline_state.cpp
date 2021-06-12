@@ -50,7 +50,7 @@ void RefreshXfbState(VideoCommon::TransformFeedbackState& state, const Maxwell& 
 } // Anonymous namespace
 
 void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
-                                 bool has_extended_dynamic_state) {
+                                 bool has_extended_dynamic_state, bool has_dynamic_vertex_input) {
     const Maxwell& regs = maxwell3d.regs;
     const std::array enabled_lut{
         regs.polygon_offset_point_enable,
@@ -60,7 +60,8 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
     const u32 topology_index = static_cast<u32>(regs.draw.topology.Value());
 
     raw1 = 0;
-    no_extended_dynamic_state.Assign(has_extended_dynamic_state ? 0 : 1);
+    extended_dynamic_state.Assign(has_extended_dynamic_state ? 1 : 0);
+    dynamic_vertex_input.Assign(has_dynamic_vertex_input ? 1 : 0);
     xfb_enabled.Assign(regs.tfb_enabled != 0);
     primitive_restart_enable.Assign(regs.primitive_restart.enabled != 0 ? 1 : 0);
     depth_bias_enable.Assign(enabled_lut[POLYGON_OFFSET_ENABLE_LUT[topology_index]] != 0 ? 1 : 0);
@@ -73,11 +74,11 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
     tessellation_clockwise.Assign(regs.tess_mode.cw.Value());
     logic_op_enable.Assign(regs.logic_op.enable != 0 ? 1 : 0);
     logic_op.Assign(PackLogicOp(regs.logic_op.operation));
-    rasterize_enable.Assign(regs.rasterize_enable != 0 ? 1 : 0);
     topology.Assign(regs.draw.topology);
     msaa_mode.Assign(regs.multisample_mode);
 
     raw2 = 0;
+    rasterize_enable.Assign(regs.rasterize_enable != 0 ? 1 : 0);
     const auto test_func =
         regs.alpha_test_enabled != 0 ? regs.alpha_test_func : Maxwell::ComparisonOp::Always;
     alpha_test_func.Assign(PackComparisonOp(test_func));
@@ -93,24 +94,44 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
     alpha_test_ref = Common::BitCast<u32>(regs.alpha_test_ref);
     point_size = Common::BitCast<u32>(regs.point_size);
 
-    if (maxwell3d.dirty.flags[Dirty::InstanceDivisors]) {
-        maxwell3d.dirty.flags[Dirty::InstanceDivisors] = false;
-        for (size_t index = 0; index < Maxwell::NumVertexArrays; ++index) {
-            const bool is_enabled = regs.instanced_arrays.IsInstancingEnabled(index);
-            binding_divisors[index] = is_enabled ? regs.vertex_array[index].divisor : 0;
-        }
-    }
-    if (maxwell3d.dirty.flags[Dirty::VertexAttributes]) {
-        maxwell3d.dirty.flags[Dirty::VertexAttributes] = false;
-        for (size_t index = 0; index < Maxwell::NumVertexAttributes; ++index) {
-            const auto& input = regs.vertex_attrib_format[index];
-            auto& attribute = attributes[index];
-            attribute.raw = 0;
-            attribute.enabled.Assign(input.IsConstant() ? 0 : 1);
-            attribute.buffer.Assign(input.buffer);
-            attribute.offset.Assign(input.offset);
-            attribute.type.Assign(static_cast<u32>(input.type.Value()));
-            attribute.size.Assign(static_cast<u32>(input.size.Value()));
+    if (maxwell3d.dirty.flags[Dirty::VertexInput]) {
+        if (has_dynamic_vertex_input) {
+            // Dirty flag will be reset by the command buffer update
+            static constexpr std::array LUT{
+                0u, // Invalid
+                1u, // SignedNorm
+                1u, // UnsignedNorm
+                2u, // SignedInt
+                3u, // UnsignedInt
+                1u, // UnsignedScaled
+                1u, // SignedScaled
+                1u, // Float
+            };
+            const auto& attrs = regs.vertex_attrib_format;
+            attribute_types = 0;
+            for (size_t i = 0; i < Maxwell::NumVertexAttributes; ++i) {
+                const u32 mask = attrs[i].constant != 0 ? 0 : 3;
+                const u32 type = LUT[static_cast<size_t>(attrs[i].type.Value())];
+                attribute_types |= static_cast<u64>(type & mask) << (i * 2);
+            }
+        } else {
+            maxwell3d.dirty.flags[Dirty::VertexInput] = false;
+            enabled_divisors = 0;
+            for (size_t index = 0; index < Maxwell::NumVertexArrays; ++index) {
+                const bool is_enabled = regs.instanced_arrays.IsInstancingEnabled(index);
+                binding_divisors[index] = is_enabled ? regs.vertex_array[index].divisor : 0;
+                enabled_divisors |= (is_enabled ? u64{1} : 0) << index;
+            }
+            for (size_t index = 0; index < Maxwell::NumVertexAttributes; ++index) {
+                const auto& input = regs.vertex_attrib_format[index];
+                auto& attribute = attributes[index];
+                attribute.raw = 0;
+                attribute.enabled.Assign(input.IsConstant() ? 0 : 1);
+                attribute.buffer.Assign(input.buffer);
+                attribute.offset.Assign(input.offset);
+                attribute.type.Assign(static_cast<u32>(input.type.Value()));
+                attribute.size.Assign(static_cast<u32>(input.size.Value()));
+            }
         }
     }
     if (maxwell3d.dirty.flags[Dirty::Blending]) {
@@ -126,10 +147,10 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
             return static_cast<u16>(viewport.swizzle.raw);
         });
     }
-    if (no_extended_dynamic_state != 0) {
+    if (!extended_dynamic_state) {
         dynamic_state.Refresh(regs);
     }
-    if (xfb_enabled != 0) {
+    if (xfb_enabled) {
         RefreshXfbState(xfb_state, regs);
     }
 }

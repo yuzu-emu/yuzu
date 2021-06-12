@@ -168,44 +168,51 @@ struct FixedPipelineState {
 
     union {
         u32 raw1;
-        BitField<0, 1, u32> no_extended_dynamic_state;
-        BitField<1, 1, u32> xfb_enabled;
-        BitField<2, 1, u32> primitive_restart_enable;
-        BitField<3, 1, u32> depth_bias_enable;
-        BitField<4, 1, u32> depth_clamp_disabled;
-        BitField<5, 1, u32> ndc_minus_one_to_one;
-        BitField<6, 2, u32> polygon_mode;
-        BitField<8, 5, u32> patch_control_points_minus_one;
-        BitField<13, 2, u32> tessellation_primitive;
-        BitField<15, 2, u32> tessellation_spacing;
-        BitField<17, 1, u32> tessellation_clockwise;
-        BitField<18, 1, u32> logic_op_enable;
-        BitField<19, 4, u32> logic_op;
-        BitField<23, 1, u32> rasterize_enable;
+        BitField<0, 1, u32> extended_dynamic_state;
+        BitField<1, 1, u32> dynamic_vertex_input;
+        BitField<2, 1, u32> xfb_enabled;
+        BitField<3, 1, u32> primitive_restart_enable;
+        BitField<4, 1, u32> depth_bias_enable;
+        BitField<5, 1, u32> depth_clamp_disabled;
+        BitField<6, 1, u32> ndc_minus_one_to_one;
+        BitField<7, 2, u32> polygon_mode;
+        BitField<9, 5, u32> patch_control_points_minus_one;
+        BitField<14, 2, u32> tessellation_primitive;
+        BitField<16, 2, u32> tessellation_spacing;
+        BitField<18, 1, u32> tessellation_clockwise;
+        BitField<19, 1, u32> logic_op_enable;
+        BitField<20, 4, u32> logic_op;
         BitField<24, 4, Maxwell::PrimitiveTopology> topology;
         BitField<28, 4, Tegra::Texture::MsaaMode> msaa_mode;
     };
     union {
         u32 raw2;
-        BitField<0, 3, u32> alpha_test_func;
-        BitField<3, 1, u32> early_z;
-        BitField<4, 1, u32> depth_enabled;
-        BitField<5, 5, u32> depth_format;
-        BitField<10, 1, u32> y_negate;
-        BitField<11, 1, u32> provoking_vertex_last;
+        BitField<0, 1, u32> rasterize_enable;
+        BitField<1, 3, u32> alpha_test_func;
+        BitField<4, 1, u32> early_z;
+        BitField<5, 1, u32> depth_enabled;
+        BitField<6, 5, u32> depth_format;
+        BitField<11, 1, u32> y_negate;
+        BitField<12, 1, u32> provoking_vertex_last;
     };
     std::array<u8, Maxwell::NumRenderTargets> color_formats;
 
     u32 alpha_test_ref;
     u32 point_size;
-    std::array<u32, Maxwell::NumVertexArrays> binding_divisors;
-    std::array<VertexAttribute, Maxwell::NumVertexAttributes> attributes;
     std::array<BlendingAttachment, Maxwell::NumRenderTargets> attachments;
     std::array<u16, Maxwell::NumViewports> viewport_swizzles;
+    union {
+        u64 attribute_types; // Used with VK_EXT_vertex_input_dynamic_state
+        u64 enabled_divisors;
+    };
+    std::array<VertexAttribute, Maxwell::NumVertexAttributes> attributes;
+    std::array<u32, Maxwell::NumVertexArrays> binding_divisors;
+
     DynamicState dynamic_state;
     VideoCommon::TransformFeedbackState xfb_state;
 
-    void Refresh(Tegra::Engines::Maxwell3D& maxwell3d, bool has_extended_dynamic_state);
+    void Refresh(Tegra::Engines::Maxwell3D& maxwell3d, bool has_extended_dynamic_state,
+                 bool has_dynamic_vertex_input);
 
     size_t Hash() const noexcept;
 
@@ -216,16 +223,24 @@ struct FixedPipelineState {
     }
 
     size_t Size() const noexcept {
-        if (xfb_enabled != 0) {
+        if (xfb_enabled) {
             // When transform feedback is enabled, use the whole struct
             return sizeof(*this);
-        } else if (no_extended_dynamic_state != 0) {
-            // Dynamic state is enabled, we can enable more
-            return offsetof(FixedPipelineState, xfb_state);
-        } else {
-            // No XFB, extended dynamic state enabled
+        }
+        if (dynamic_vertex_input) {
+            // Exclude dynamic state and attributes
+            return offsetof(FixedPipelineState, attributes);
+        }
+        if (extended_dynamic_state) {
+            // Exclude dynamic state
             return offsetof(FixedPipelineState, dynamic_state);
         }
+        // Default
+        return offsetof(FixedPipelineState, xfb_state);
+    }
+
+    u32 DynamicAttributeType(size_t index) const noexcept {
+        return (attribute_types >> (index * 2)) & 0b11;
     }
 };
 static_assert(std::has_unique_object_representations_v<FixedPipelineState>);
