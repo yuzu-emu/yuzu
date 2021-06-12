@@ -7,6 +7,7 @@
 #include "common/cityhash.h"
 #include "video_core/renderer_opengl/gl_compute_pipeline.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
+#include "video_core/renderer_opengl/gl_shader_util.h"
 
 namespace OpenGL {
 
@@ -39,10 +40,16 @@ ComputePipeline::ComputePipeline(const Device& device, TextureCache& texture_cac
                                  BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
                                  Tegra::Engines::KeplerCompute& kepler_compute_,
                                  ProgramManager& program_manager_, const Shader::Info& info_,
-                                 OGLProgram source_program_, OGLAssemblyProgram assembly_program_)
+                                 const std::string code)
     : texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, gpu_memory{gpu_memory_},
-      kepler_compute{kepler_compute_}, program_manager{program_manager_}, info{info_},
-      source_program{std::move(source_program_)}, assembly_program{std::move(assembly_program_)} {
+      kepler_compute{kepler_compute_}, program_manager{program_manager_}, info{info_} {
+    if (device.UseAssemblyShaders()) {
+        assembly_program = CompileProgram(code, GL_COMPUTE_PROGRAM_NV);
+    } else {
+        source_program.handle = glCreateProgram();
+        AttachShader(GL_COMPUTE_SHADER, source_program.handle, code);
+        LinkProgram(source_program.handle);
+    }
     std::copy_n(info.constant_buffer_used_sizes.begin(), uniform_buffer_sizes.size(),
                 uniform_buffer_sizes.begin());
 

@@ -9,6 +9,7 @@
 #include "shader_recompiler/shader_info.h"
 #include "video_core/renderer_opengl/gl_graphics_pipeline.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
+#include "video_core/renderer_opengl/gl_shader_util.h"
 #include "video_core/renderer_opengl/gl_state_tracker.h"
 #include "video_core/texture_cache/texture_cache.h"
 
@@ -31,6 +32,40 @@ u32 AccumulateCount(const Range& range) {
         num += desc.count;
     }
     return num;
+}
+
+GLenum Stage(size_t stage_index) {
+    switch (stage_index) {
+    case 0:
+        return GL_VERTEX_SHADER;
+    case 1:
+        return GL_TESS_CONTROL_SHADER;
+    case 2:
+        return GL_TESS_EVALUATION_SHADER;
+    case 3:
+        return GL_GEOMETRY_SHADER;
+    case 4:
+        return GL_FRAGMENT_SHADER;
+    }
+    UNREACHABLE_MSG("{}", stage_index);
+    return GL_NONE;
+}
+
+GLenum AssemblyStage(size_t stage_index) {
+    switch (stage_index) {
+    case 0:
+        return GL_VERTEX_PROGRAM_NV;
+    case 1:
+        return GL_TESS_CONTROL_PROGRAM_NV;
+    case 2:
+        return GL_TESS_EVALUATION_PROGRAM_NV;
+    case 3:
+        return GL_GEOMETRY_PROGRAM_NV;
+    case 4:
+        return GL_FRAGMENT_PROGRAM_NV;
+    }
+    UNREACHABLE_MSG("{}", stage_index);
+    return GL_NONE;
 }
 
 /// Translates hardware transform feedback indices
@@ -82,19 +117,33 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_c
                                    BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
                                    Tegra::Engines::Maxwell3D& maxwell3d_,
                                    ProgramManager& program_manager_, StateTracker& state_tracker_,
-                                   OGLProgram program_,
-                                   std::array<OGLAssemblyProgram, 5> assembly_programs_,
+                                   const std::array<std::string, 5> assembly_sources,
+                                   const std::array<std::string, 5> glsl_sources,
                                    const std::array<const Shader::Info*, 5>& infos,
                                    const VideoCommon::TransformFeedbackState* xfb_state)
-    : texture_cache{texture_cache_}, buffer_cache{buffer_cache_},
-      gpu_memory{gpu_memory_}, maxwell3d{maxwell3d_}, program_manager{program_manager_},
-      state_tracker{state_tracker_}, program{std::move(program_)}, assembly_programs{std::move(
-                                                                       assembly_programs_)} {
+    : texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, gpu_memory{gpu_memory_},
+      maxwell3d{maxwell3d_}, program_manager{program_manager_}, state_tracker{state_tracker_} {
     std::ranges::transform(infos, stage_infos.begin(),
                            [](const Shader::Info* info) { return info ? *info : Shader::Info{}; });
-
-    for (size_t stage = 0; stage < 5; ++stage) {
-        enabled_stages_mask |= (assembly_programs[stage].handle != 0 ? 1 : 0) << stage;
+    if (device.UseAssemblyShaders()) {
+        for (size_t stage = 0; stage < 5; ++stage) {
+            const auto code{assembly_sources[stage]};
+            if (code.empty()) {
+                continue;
+            }
+            assembly_programs[stage] = CompileProgram(code, AssemblyStage(stage));
+            enabled_stages_mask |= (assembly_programs[stage].handle != 0 ? 1 : 0) << stage;
+        }
+    } else {
+        program.handle = glCreateProgram();
+        for (size_t stage = 0; stage < 5; ++stage) {
+            const auto code{glsl_sources[stage]};
+            if (code.empty()) {
+                continue;
+            }
+            AttachShader(Stage(stage), program.handle, code);
+        }
+        LinkProgram(program.handle);
     }
     u32 num_textures{};
     u32 num_images{};

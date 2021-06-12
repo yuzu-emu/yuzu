@@ -54,7 +54,7 @@ public:
                              BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
                              Tegra::Engines::KeplerCompute& kepler_compute_,
                              ProgramManager& program_manager_, const Shader::Info& info_,
-                             OGLProgram source_program_, OGLAssemblyProgram assembly_program_);
+                             const std::string code);
 
     void Configure();
 
