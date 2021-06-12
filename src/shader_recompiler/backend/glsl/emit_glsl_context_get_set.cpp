@@ -34,16 +34,16 @@ std::string OutputVertexIndex(EmitContext& ctx) {
     return ctx.stage == Stage::TessellationControl ? "[gl_InvocationID]" : "";
 }
 
-void GetCbuf(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, const IR::Value& offset,
-             u32 num_bits, std::string_view cast = {}, bool component_indexing_bug = false,
-             std::string_view bit_offset = {}) {
+void GetCbuf(EmitContext& ctx, std::string_view ret, const IR::Value& binding,
+             const IR::Value& offset, u32 num_bits, std::string_view cast = {},
+             bool component_indexing_bug = false, std::string_view bit_offset = {}) {
     const bool is_immediate{offset.IsImmediate()};
     if (is_immediate) {
         const s32 signed_offset{static_cast<s32>(offset.U32())};
         static constexpr u32 cbuf_size{4096 * 16};
         if (signed_offset < 0 || offset.U32() > cbuf_size) {
             // LOG_WARNING(..., "Immediate constant buffer offset is out of bounds");
-            ctx.AddU32("{}=0u;", inst);
+            ctx.Add("{}=0u;", ret);
             return;
         }
     }
@@ -60,10 +60,9 @@ void GetCbuf(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, const I
                                                         bit_offset, num_bits)};
     if (!component_indexing_bug) {
         const auto result{fmt::format(extraction, swizzle)};
-        ctx.AddU32("{}={};", inst, result);
+        ctx.Add("{}={};", ret, result);
         return;
     }
-    const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     const auto cbuf_offset{fmt::format("{}>>2", offset_var)};
     for (u32 i = 0; i < 4; ++i) {
         const auto swizzle_string{fmt::format(".{}", "xyzw"[i])};
@@ -74,26 +73,28 @@ void GetCbuf(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, const I
 
 void GetCbuf8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, const IR::Value& offset,
               std::string_view cast) {
+    const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     if (offset.IsImmediate()) {
         const auto bit_offset{fmt::format("{}", (offset.U32() % 4) * 8)};
-        GetCbuf(ctx, inst, binding, offset, 8, cast, false, bit_offset);
+        GetCbuf(ctx, ret, binding, offset, 8, cast, false, bit_offset);
     } else {
         const auto offset_var{ctx.var_alloc.Consume(offset)};
         const auto bit_offset{fmt::format("({}%4)*8", offset_var)};
-        GetCbuf(ctx, inst, binding, offset, 8, cast, ctx.profile.has_gl_component_indexing_bug,
+        GetCbuf(ctx, ret, binding, offset, 8, cast, ctx.profile.has_gl_component_indexing_bug,
                 bit_offset);
     }
 }
 
 void GetCbuf16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, const IR::Value& offset,
                std::string_view cast) {
+    const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     if (offset.IsImmediate()) {
         const auto bit_offset{fmt::format("{}", ((offset.U32() / 2) % 2) * 16)};
-        GetCbuf(ctx, inst, binding, offset, 16, cast, false, bit_offset);
+        GetCbuf(ctx, ret, binding, offset, 16, cast, false, bit_offset);
     } else {
         const auto offset_var{ctx.var_alloc.Consume(offset)};
         const auto bit_offset{fmt::format("(({}>>1)%2)*16", offset_var)};
-        GetCbuf(ctx, inst, binding, offset, 16, cast, ctx.profile.has_gl_component_indexing_bug,
+        GetCbuf(ctx, ret, binding, offset, 16, cast, ctx.profile.has_gl_component_indexing_bug,
                 bit_offset);
     }
 }
@@ -121,12 +122,14 @@ void EmitGetCbufS16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
 
 void EmitGetCbufU32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                     const IR::Value& offset) {
-    GetCbuf(ctx, inst, binding, offset, 32, "ftou");
+    const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
+    GetCbuf(ctx, ret, binding, offset, 32, "ftou");
 }
 
 void EmitGetCbufF32(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                     const IR::Value& offset) {
-    GetCbuf(ctx, inst, binding, offset, 32);
+    const auto ret{ctx.var_alloc.Define(inst, GlslVarType::F32)};
+    GetCbuf(ctx, ret, binding, offset, 32);
 }
 
 void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
