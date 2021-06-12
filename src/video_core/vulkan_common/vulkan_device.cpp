@@ -412,6 +412,19 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         LOG_INFO(Render_Vulkan, "Device doesn't support extended dynamic state");
     }
 
+    VkPhysicalDeviceProvokingVertexFeaturesEXT provoking_vertex;
+    if (ext_provoking_vertex) {
+        provoking_vertex = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT,
+            .pNext = nullptr,
+            .provokingVertexLast = VK_TRUE,
+            .transformFeedbackPreservesProvokingVertex = VK_TRUE,
+        };
+        SetNext(next, provoking_vertex);
+    } else {
+        LOG_INFO(Render_Vulkan, "Device doesn't support provoking vertex last");
+    }
+
     VkPhysicalDeviceShaderAtomicInt64FeaturesKHR atomic_int64;
     if (ext_shader_atomic_int64) {
         atomic_int64 = {
@@ -718,6 +731,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
     bool has_ext_custom_border_color{};
     bool has_ext_extended_dynamic_state{};
     bool has_ext_shader_atomic_int64{};
+    bool has_ext_provoking_vertex{};
     for (const VkExtensionProperties& extension : physical.EnumerateDeviceExtensionProperties()) {
         const auto test = [&](std::optional<std::reference_wrapper<bool>> status, const char* name,
                               bool push) {
@@ -748,6 +762,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         test(has_ext_custom_border_color, VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME, false);
         test(has_ext_extended_dynamic_state, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, false);
         test(has_ext_subgroup_size_control, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, false);
+        test(has_ext_provoking_vertex, VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME, false);
         test(has_ext_shader_atomic_int64, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME, false);
         test(has_khr_workgroup_memory_explicit_layout,
              VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME, false);
@@ -798,6 +813,19 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         }
     } else {
         is_warp_potentially_bigger = true;
+    }
+    if (has_ext_provoking_vertex) {
+        VkPhysicalDeviceProvokingVertexFeaturesEXT provoking_vertex;
+        provoking_vertex.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT;
+        provoking_vertex.pNext = nullptr;
+        features.pNext = &provoking_vertex;
+        physical.GetFeatures2KHR(features);
+
+        if (provoking_vertex.provokingVertexLast &&
+            provoking_vertex.transformFeedbackPreservesProvokingVertex) {
+            extensions.push_back(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
+            ext_provoking_vertex = true;
+        }
     }
     if (has_ext_shader_atomic_int64) {
         VkPhysicalDeviceShaderAtomicInt64Features atomic_int64;

@@ -84,14 +84,14 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
     early_z.Assign(regs.force_early_fragment_tests != 0 ? 1 : 0);
     depth_enabled.Assign(regs.zeta_enable != 0 ? 1 : 0);
     depth_format.Assign(static_cast<u32>(regs.zeta.format));
+    y_negate.Assign(regs.screen_y_control.y_negate != 0 ? 1 : 0);
+    provoking_vertex_last.Assign(regs.provoking_vertex_last != 0 ? 1 : 0);
 
     for (size_t i = 0; i < regs.rt.size(); ++i) {
         color_formats[i] = static_cast<u8>(regs.rt[i].format);
     }
     alpha_test_ref = Common::BitCast<u32>(regs.alpha_test_ref);
     point_size = Common::BitCast<u32>(regs.point_size);
-
-    y_negate.Assign(regs.screen_y_control.y_negate != 0 ? 1 : 0);
 
     if (maxwell3d.dirty.flags[Dirty::InstanceDivisors]) {
         maxwell3d.dirty.flags[Dirty::InstanceDivisors] = false;

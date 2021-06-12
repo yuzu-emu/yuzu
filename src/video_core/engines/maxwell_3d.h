@@ -1151,7 +1151,11 @@ public:
                     u32 index;
                 } primitive_restart;
 
-                INSERT_PADDING_WORDS_NOINIT(0x5F);
+                INSERT_PADDING_WORDS_NOINIT(0xE);
+
+                u32 provoking_vertex_last;
+
+                INSERT_PADDING_WORDS_NOINIT(0x50);
 
                 struct {
                     u32 start_addr_high;
@@ -1672,6 +1676,7 @@ ASSERT_REG_POSITION(point_coord_replace, 0x581);
 ASSERT_REG_POSITION(code_address, 0x582);
 ASSERT_REG_POSITION(draw, 0x585);
 ASSERT_REG_POSITION(primitive_restart, 0x591);
+ASSERT_REG_POSITION(provoking_vertex_last, 0x5A1);
 ASSERT_REG_POSITION(index_array, 0x5F2);
 ASSERT_REG_POSITION(polygon_offset_clamp, 0x61F);
 ASSERT_REG_POSITION(instanced_arrays, 0x620);
