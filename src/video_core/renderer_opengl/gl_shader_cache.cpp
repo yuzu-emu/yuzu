@@ -56,40 +56,6 @@ auto MakeSpan(Container& container) {
     return std::span(container.data(), container.size());
 }
 
-GLenum Stage(size_t stage_index) {
-    switch (stage_index) {
-    case 0:
-        return GL_VERTEX_SHADER;
-    case 1:
-        return GL_TESS_CONTROL_SHADER;
-    case 2:
-        return GL_TESS_EVALUATION_SHADER;
-    case 3:
-        return GL_GEOMETRY_SHADER;
-    case 4:
-        return GL_FRAGMENT_SHADER;
-    }
-    UNREACHABLE_MSG("{}", stage_index);
-    return GL_NONE;
-}
-
-GLenum AssemblyStage(size_t stage_index) {
-    switch (stage_index) {
-    case 0:
-        return GL_VERTEX_PROGRAM_NV;
-    case 1:
-        return GL_TESS_CONTROL_PROGRAM_NV;
-    case 2:
-        return GL_TESS_EVALUATION_PROGRAM_NV;
-    case 3:
-        return GL_GEOMETRY_PROGRAM_NV;
-    case 4:
-        return GL_FRAGMENT_PROGRAM_NV;
-    }
-    UNREACHABLE_MSG("{}", stage_index);
-    return GL_NONE;
-}
-
 Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
                                     const Shader::IR::Program& program,
                                     bool glasm_use_storage_buffers, bool use_assembly_shaders) {
@@ -426,12 +392,10 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
     std::array<const Shader::Info*, Maxwell::MaxShaderStage> infos{};
 
     OGLProgram source_program;
-    std::array<OGLAssemblyProgram, 5> assembly_programs;
+    std::array<std::string, 5> assembly_sources;
+    std::array<std::string, 5> glsl_sources;
     Shader::Backend::Bindings binding;
     const bool use_glasm{device.UseAssemblyShaders()};
-    if (!use_glasm) {
-        source_program.handle = glCreateProgram();
-    }
     const size_t first_index = uses_vertex_a && uses_vertex_b ? 1 : 0;
     for (size_t index = first_index; index < Maxwell::MaxShaderProgram; ++index) {
         if (key.unique_hashes[index] == 0) {
@@ -446,20 +410,14 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
         const auto runtime_info{
             MakeRuntimeInfo(key, program, glasm_use_storage_buffers, use_glasm)};
         if (use_glasm) {
-            const std::string code{EmitGLASM(profile, runtime_info, program, binding)};
-            assembly_programs[stage_index] = CompileProgram(code, AssemblyStage(stage_index));
+            assembly_sources[stage_index] = EmitGLASM(profile, runtime_info, program, binding);
         } else {
-            const auto code{EmitGLSL(profile, runtime_info, program, binding)};
-            AttachShader(Stage(stage_index), source_program.handle, code);
+            glsl_sources[stage_index] = EmitGLSL(profile, runtime_info, program, binding);
         }
-    }
-    if (!use_glasm) {
-        LinkProgram(source_program.handle);
     }
     return std::make_unique<GraphicsPipeline>(
         device, texture_cache, buffer_cache, gpu_memory, maxwell3d, program_manager, state_tracker,
-        std::move(source_program), std::move(assembly_programs), infos,
-        key.xfb_enabled != 0 ? &key.xfb_state : nullptr);
+        assembly_sources, glsl_sources, infos, key.xfb_enabled != 0 ? &key.xfb_state : nullptr);
 
 } catch (Shader::Exception& exception) {
     LOG_ERROR(Render_OpenGL, "{}", exception.what());
@@ -496,22 +454,10 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(ShaderPools&
     }
     Shader::RuntimeInfo info;
     info.glasm_use_storage_buffers = num_storage_buffers <= device.GetMaxGLASMStorageBufferBlocks();
-
-    OGLAssemblyProgram asm_program;
-    OGLProgram source_program;
-    if (device.UseAssemblyShaders()) {
-        const std::string code{EmitGLASM(profile, info, program)};
-        asm_program = CompileProgram(code, GL_COMPUTE_PROGRAM_NV);
-    } else {
-        const auto code{EmitGLSL(profile, program)};
-        OGLShader shader;
-        source_program.handle = glCreateProgram();
-        AttachShader(GL_COMPUTE_SHADER, source_program.handle, code);
-        LinkProgram(source_program.handle);
-    }
+    const std::string code{device.UseAssemblyShaders() ? EmitGLASM(profile, info, program)
+                                                       : EmitGLSL(profile, program)};
     return std::make_unique<ComputePipeline>(device, texture_cache, buffer_cache, gpu_memory,
-                                             kepler_compute, program_manager, program.info,
-                                             std::move(source_program), std::move(asm_program));
+                                             kepler_compute, program_manager, program.info, code);
 } catch (Shader::Exception& exception) {
     LOG_ERROR(Render_OpenGL, "{}", exception.what());
     return nullptr;
