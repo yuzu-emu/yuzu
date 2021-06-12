@@ -472,39 +472,65 @@ void GraphicsPipeline::ConfigureDraw() {
 
 void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
     FixedPipelineState::DynamicState dynamic{};
-    if (!device.IsExtExtendedDynamicStateSupported()) {
+    if (key.state.extended_dynamic_state) {
         dynamic = key.state.dynamic_state;
     }
     static_vector<VkVertexInputBindingDescription, 32> vertex_bindings;
     static_vector<VkVertexInputBindingDivisorDescriptionEXT, 32> vertex_binding_divisors;
-    for (size_t index = 0; index < Maxwell::NumVertexArrays; ++index) {
-        const bool instanced = key.state.binding_divisors[index] != 0;
-        const auto rate = instanced ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
-        vertex_bindings.push_back({
-            .binding = static_cast<u32>(index),
-            .stride = dynamic.vertex_strides[index],
-            .inputRate = rate,
-        });
-        if (instanced) {
-            vertex_binding_divisors.push_back({
-                .binding = static_cast<u32>(index),
-                .divisor = key.state.binding_divisors[index],
+    static_vector<VkVertexInputAttributeDescription, 32> vertex_attributes;
+    if (key.state.dynamic_vertex_input) {
+        const auto& input_attributes = stage_infos[0].input_generics;
+        for (size_t index = 0; index < key.state.attributes.size(); ++index) {
+            const u32 type = key.state.DynamicAttributeType(index);
+            if (!input_attributes[index].used || type == 0) {
+                continue;
+            }
+            vertex_attributes.push_back({
+                .location = static_cast<u32>(index),
+                .binding = 0,
+                .format = type == 1   ? VK_FORMAT_R32_SFLOAT
+                          : type == 2 ? VK_FORMAT_R32_SINT
+                                      : VK_FORMAT_R32_UINT,
+                .offset = 0,
             });
         }
-    }
-    static_vector<VkVertexInputAttributeDescription, 32> vertex_attributes;
-    const auto& input_attributes = stage_infos[0].input_generics;
-    for (size_t index = 0; index < key.state.attributes.size(); ++index) {
-        const auto& attribute = key.state.attributes[index];
-        if (!attribute.enabled || !input_attributes[index].used) {
-            continue;
+        if (!vertex_attributes.empty()) {
+            vertex_bindings.push_back({
+                .binding = 0,
+                .stride = 4,
+                .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+            });
         }
-        vertex_attributes.push_back({
-            .location = static_cast<u32>(index),
-            .binding = attribute.buffer,
-            .format = MaxwellToVK::VertexFormat(attribute.Type(), attribute.Size()),
-            .offset = attribute.offset,
-        });
+    } else {
+        for (size_t index = 0; index < Maxwell::NumVertexArrays; ++index) {
+            const bool instanced = key.state.binding_divisors[index] != 0;
+            const auto rate =
+                instanced ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
+            vertex_bindings.push_back({
+                .binding = static_cast<u32>(index),
+                .stride = dynamic.vertex_strides[index],
+                .inputRate = rate,
+            });
+            if (instanced) {
+                vertex_binding_divisors.push_back({
+                    .binding = static_cast<u32>(index),
+                    .divisor = key.state.binding_divisors[index],
+                });
+            }
+        }
+        const auto& input_attributes = stage_infos[0].input_generics;
+        for (size_t index = 0; index < key.state.attributes.size(); ++index) {
+            const auto& attribute = key.state.attributes[index];
+            if (!attribute.enabled || !input_attributes[index].used) {
+                continue;
+            }
+            vertex_attributes.push_back({
+                .location = static_cast<u32>(index),
+                .binding = attribute.buffer,
+                .format = MaxwellToVK::VertexFormat(attribute.Type(), attribute.Size()),
+                .offset = attribute.offset,
+            });
+        }
     }
     VkPipelineVertexInputStateCreateInfo vertex_input_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -545,27 +571,25 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .flags = 0,
         .patchControlPoints = key.state.patch_control_points_minus_one.Value() + 1,
     };
-    VkPipelineViewportStateCreateInfo viewport_ci{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .viewportCount = Maxwell::NumViewports,
-        .pViewports = nullptr,
-        .scissorCount = Maxwell::NumViewports,
-        .pScissors = nullptr,
-    };
+
     std::array<VkViewportSwizzleNV, Maxwell::NumViewports> swizzles;
     std::ranges::transform(key.state.viewport_swizzles, swizzles.begin(), UnpackViewportSwizzle);
-    VkPipelineViewportSwizzleStateCreateInfoNV swizzle_ci{
+    const VkPipelineViewportSwizzleStateCreateInfoNV swizzle_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SWIZZLE_STATE_CREATE_INFO_NV,
         .pNext = nullptr,
         .flags = 0,
         .viewportCount = Maxwell::NumViewports,
         .pViewportSwizzles = swizzles.data(),
     };
-    if (device.IsNvViewportSwizzleSupported()) {
-        viewport_ci.pNext = &swizzle_ci;
-    }
+    const VkPipelineViewportStateCreateInfo viewport_ci{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+        .pNext = device.IsNvViewportSwizzleSupported() ? &swizzle_ci : nullptr,
+        .flags = 0,
+        .viewportCount = Maxwell::NumViewports,
+        .pViewports = nullptr,
+        .scissorCount = Maxwell::NumViewports,
+        .pScissors = nullptr,
+    };
 
     const VkPipelineRasterizationProvokingVertexStateCreateInfoEXT provoking_vertex{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT,
@@ -660,13 +684,13 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .pAttachments = cb_attachments.data(),
         .blendConstants = {},
     };
-    static_vector<VkDynamicState, 17> dynamic_states{
+    static_vector<VkDynamicState, 18> dynamic_states{
         VK_DYNAMIC_STATE_VIEWPORT,           VK_DYNAMIC_STATE_SCISSOR,
         VK_DYNAMIC_STATE_DEPTH_BIAS,         VK_DYNAMIC_STATE_BLEND_CONSTANTS,
         VK_DYNAMIC_STATE_DEPTH_BOUNDS,       VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
         VK_DYNAMIC_STATE_STENCIL_WRITE_MASK, VK_DYNAMIC_STATE_STENCIL_REFERENCE,
     };
-    if (device.IsExtExtendedDynamicStateSupported()) {
+    if (key.state.extended_dynamic_state) {
         static constexpr std::array extended{
             VK_DYNAMIC_STATE_CULL_MODE_EXT,
             VK_DYNAMIC_STATE_FRONT_FACE_EXT,
@@ -678,6 +702,9 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
             VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT,
             VK_DYNAMIC_STATE_STENCIL_OP_EXT,
         };
+        if (key.state.dynamic_vertex_input) {
+            dynamic_states.push_back(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+        }
         dynamic_states.insert(dynamic_states.end(), extended.begin(), extended.end());
     }
     const VkPipelineDynamicStateCreateInfo dynamic_state_ci{

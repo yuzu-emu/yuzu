@@ -133,6 +133,8 @@ private:
     void UpdateStencilOp(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateStencilTestEnable(Tegra::Engines::Maxwell3D::Regs& regs);
 
+    void UpdateVertexInput(Tegra::Engines::Maxwell3D::Regs& regs);
+
     Tegra::GPU& gpu;
     Tegra::MemoryManager& gpu_memory;
     Tegra::Engines::Maxwell3D& maxwell3d;

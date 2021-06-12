@@ -238,6 +238,7 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkCmdSetPrimitiveTopologyEXT vkCmdSetPrimitiveTopologyEXT{};
     PFN_vkCmdSetStencilOpEXT vkCmdSetStencilOpEXT{};
     PFN_vkCmdSetStencilTestEnableEXT vkCmdSetStencilTestEnableEXT{};
+    PFN_vkCmdSetVertexInputEXT vkCmdSetVertexInputEXT{};
     PFN_vkCmdResolveImage vkCmdResolveImage{};
     PFN_vkCreateBuffer vkCreateBuffer{};
     PFN_vkCreateBufferView vkCreateBufferView{};
@@ -1201,6 +1202,13 @@ public:
 
     void SetStencilTestEnableEXT(bool enable) const noexcept {
         dld->vkCmdSetStencilTestEnableEXT(handle, enable ? VK_TRUE : VK_FALSE);
+    }
+
+    void SetVertexInputEXT(
+        vk::Span<VkVertexInputBindingDescription2EXT> bindings,
+        vk::Span<VkVertexInputAttributeDescription2EXT> attributes) const noexcept {
+        dld->vkCmdSetVertexInputEXT(handle, bindings.size(), bindings.data(), attributes.size(),
+                                    attributes.data());
     }
 
     void BindTransformFeedbackBuffersEXT(u32 first, u32 count, const VkBuffer* buffers,

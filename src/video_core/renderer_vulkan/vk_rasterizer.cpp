@@ -546,6 +546,9 @@ void RasterizerVulkan::UpdateDynamicStates() {
         UpdateFrontFace(regs);
         UpdateStencilOp(regs);
         UpdateStencilTestEnable(regs);
+        if (device.IsExtVertexInputDynamicStateSupported()) {
+            UpdateVertexInput(regs);
+        }
     }
 }
 
@@ -772,6 +775,59 @@ void RasterizerVulkan::UpdateStencilTestEnable(Tegra::Engines::Maxwell3D::Regs& 
     }
     scheduler.Record([enable = regs.stencil_enable](vk::CommandBuffer cmdbuf) {
         cmdbuf.SetStencilTestEnableEXT(enable);
+    });
+}
+
+void RasterizerVulkan::UpdateVertexInput(Tegra::Engines::Maxwell3D::Regs& regs) {
+    auto& dirty{maxwell3d.dirty.flags};
+    if (!dirty[Dirty::VertexInput]) {
+        return;
+    }
+    dirty[Dirty::VertexInput] = false;
+
+    boost::container::static_vector<VkVertexInputBindingDescription2EXT, 32> bindings;
+    boost::container::static_vector<VkVertexInputAttributeDescription2EXT, 32> attributes;
+
+    for (size_t index = 0; index < Maxwell::NumVertexAttributes; ++index) {
+        if (!dirty[Dirty::VertexAttribute0 + index]) {
+            continue;
+        }
+        const Maxwell::VertexAttribute attribute{regs.vertex_attrib_format[index]};
+        const u32 binding{attribute.buffer};
+        dirty[Dirty::VertexAttribute0 + index] = false;
+        dirty[Dirty::VertexBinding0 + static_cast<size_t>(binding)] = true;
+
+        attributes.push_back({
+            .sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT,
+            .pNext = nullptr,
+            .location = static_cast<u32>(index),
+            .binding = binding,
+            .format = attribute.IsConstant()
+                          ? VK_FORMAT_A8B8G8R8_UNORM_PACK32
+                          : MaxwellToVK::VertexFormat(attribute.type, attribute.size),
+            .offset = attribute.offset,
+        });
+    }
+    for (size_t index = 0; index < Maxwell::NumVertexAttributes; ++index) {
+        if (!dirty[Dirty::VertexBinding0 + index]) {
+            continue;
+        }
+        dirty[Dirty::VertexBinding0 + index] = false;
+
+        const u32 binding{static_cast<u32>(index)};
+        const auto& input_binding{regs.vertex_array[binding]};
+        const bool is_instanced{regs.instanced_arrays.IsInstancingEnabled(binding)};
+        bindings.push_back({
+            .sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT,
+            .pNext = nullptr,
+            .binding = binding,
+            .stride = input_binding.stride,
+            .inputRate = is_instanced ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX,
+            .divisor = is_instanced ? input_binding.divisor : 1,
+        });
+    }
+    scheduler.Record([bindings, attributes](vk::CommandBuffer cmdbuf) {
+        cmdbuf.SetVertexInputEXT(bindings, attributes);
     });
 }
 
