@@ -238,16 +238,13 @@ void ShaderCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
     if (title_id == 0) {
         return;
     }
-    auto shader_dir{Common::FS::GetYuzuPath(Common::FS::YuzuPath::ShaderDir)};
-    auto base_dir{shader_dir / "new_opengl"};
-    auto transferable_dir{base_dir / "transferable"};
-    auto precompiled_dir{base_dir / "precompiled"};
-    if (!Common::FS::CreateDir(shader_dir) || !Common::FS::CreateDir(base_dir) ||
-        !Common::FS::CreateDir(transferable_dir) || !Common::FS::CreateDir(precompiled_dir)) {
-        LOG_ERROR(Common_Filesystem, "Failed to create pipeline cache directories");
+    const auto shader_dir{Common::FS::GetYuzuPath(Common::FS::YuzuPath::ShaderDir)};
+    const auto base_dir{shader_dir / fmt::format("{:016x}", title_id)};
+    if (!Common::FS::CreateDir(shader_dir) || !Common::FS::CreateDir(base_dir)) {
+        LOG_ERROR(Common_Filesystem, "Failed to create shader cache directories");
         return;
     }
-    shader_cache_filename = transferable_dir / fmt::format("{:016x}.bin", title_id);
+    shader_cache_filename = base_dir / "opengl.bin";
 
     if (!workers) {
         workers = CreateWorkers();
