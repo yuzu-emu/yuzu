@@ -38,6 +38,15 @@ void GetCbuf(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, const I
              u32 num_bits, std::string_view cast = {}, bool component_indexing_bug = false,
              std::string_view bit_offset = {}) {
     const bool is_immediate{offset.IsImmediate()};
+    if (is_immediate) {
+        const s32 signed_offset{static_cast<s32>(offset.U32())};
+        static constexpr u32 cbuf_size{4096 * 16};
+        if (signed_offset < 0 || offset.U32() > cbuf_size) {
+            // LOG_WARNING(..., "Immediate constant buffer offset is out of bounds");
+            ctx.AddU32("{}=0u;", inst);
+            return;
+        }
+    }
     const auto offset_var{ctx.var_alloc.Consume(offset)};
     const auto index{is_immediate ? fmt::format("{}", offset.U32() / 16)
                                   : fmt::format("{}>>4", offset_var)};
@@ -124,7 +133,14 @@ void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding
                       const IR::Value& offset) {
     const auto cbuf{fmt::format("{}_cbuf{}", ctx.stage_name, binding.U32())};
     if (offset.IsImmediate()) {
+        static constexpr u32 cbuf_size{4096 * 16};
         const u32 u32_offset{offset.U32()};
+        const s32 signed_offset{static_cast<s32>(offset.U32())};
+        if (signed_offset < 0 || u32_offset > cbuf_size) {
+            // LOG_WARNING(..., "Immediate constant buffer offset is out of bounds");
+            ctx.AddU32x2("{}=uvec2(0u);", inst);
+            return;
+        }
         if (u32_offset % 2 == 0) {
             ctx.AddU32x2("{}=ftou({}[{}].{}{});", inst, cbuf, u32_offset / 16,
                          OffsetSwizzle(u32_offset), OffsetSwizzle(u32_offset + 4));
