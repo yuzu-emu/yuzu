@@ -1644,35 +1644,15 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
 
 void GMainWindow::OnTransferableShaderCacheOpenFile(u64 program_id) {
     const auto shader_cache_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::ShaderDir);
-    const auto transferable_shader_cache_folder_path = shader_cache_dir / "opengl" / "transferable";
-    const auto transferable_shader_cache_file_path =
-        transferable_shader_cache_folder_path / fmt::format("{:016X}.bin", program_id);
-
-    if (!Common::FS::Exists(transferable_shader_cache_file_path)) {
+    const auto shader_cache_folder_path{shader_cache_dir / fmt::format("{:016x}", program_id)};
+    if (!Common::FS::Exists(shader_cache_folder_path)) {
         QMessageBox::warning(this, tr("Error Opening Transferable Shader Cache"),
                              tr("A shader cache for this title does not exist."));
         return;
     }
-
-    const auto qt_shader_cache_folder_path =
-        QString::fromStdString(Common::FS::PathToUTF8String(transferable_shader_cache_folder_path));
-    const auto qt_shader_cache_file_path =
-        QString::fromStdString(Common::FS::PathToUTF8String(transferable_shader_cache_file_path));
-
-    // Windows supports opening a folder with selecting a specified file in explorer. On every other
-    // OS we just open the transferable shader cache folder without preselecting the transferable
-    // shader cache file for the selected game.
-#if defined(Q_OS_WIN)
-    const QString explorer = QStringLiteral("explorer");
-    QStringList param;
-    if (!QFileInfo(qt_shader_cache_file_path).isDir()) {
-        param << QStringLiteral("/select,");
-    }
-    param << QDir::toNativeSeparators(qt_shader_cache_file_path);
-    QProcess::startDetached(explorer, param);
-#else
-    QDesktopServices::openUrl(QUrl::fromLocalFile(qt_shader_cache_folder_path));
-#endif
+    const auto shader_path_string{Common::FS::PathToUTF8String(shader_cache_folder_path)};
+    const auto qt_shader_cache_path = QString::fromStdString(shader_path_string);
+    QDesktopServices::openUrl(QUrl::fromLocalFile(qt_shader_cache_path));
 }
 
 static std::size_t CalculateRomFSEntrySize(const FileSys::VirtualDir& dir, bool full) {
