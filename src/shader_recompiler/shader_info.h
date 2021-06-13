@@ -196,6 +196,7 @@ struct Info {
     bool uses_int64_bit_atomics{};
     bool uses_global_memory{};
     bool uses_atomic_image_u32{};
+    bool uses_shadow_lod{};
 
     IR::Type used_constant_buffer_types{};
     IR::Type used_storage_buffer_types{};
