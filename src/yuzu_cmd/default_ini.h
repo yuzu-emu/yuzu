@@ -163,6 +163,14 @@ backend =
 # 0 (default): Disabled, 1: Enabled
 debug =
 
+# Enable Nsight Aftermath crash dumps
+# 0 (default): Disabled, 1: Enabled
+nsight_aftermath =
+
+# Disable shader loop safety checks, executing the shader without loop logic changes
+# 0 (default): Disabled, 1: Enabled
+disable_shader_loop_safety_checks =
+
 # Which Vulkan physical device to use (defaults to 0)
 vulkan_device =
 

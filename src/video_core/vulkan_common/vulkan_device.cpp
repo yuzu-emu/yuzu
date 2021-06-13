@@ -467,7 +467,7 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     }
 
     VkDeviceDiagnosticsConfigCreateInfoNV diagnostics_nv;
-    if (nv_device_diagnostics_config) {
+    if (Settings::values.enable_nsight_aftermath && nv_device_diagnostics_config) {
         nsight_aftermath_tracker = std::make_unique<NsightAftermathTracker>();
 
         diagnostics_nv = {
@@ -781,7 +781,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         test(has_ext_shader_atomic_int64, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME, false);
         test(has_khr_workgroup_memory_explicit_layout,
              VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME, false);
-        if (Settings::values.renderer_debug) {
+        if (Settings::values.enable_nsight_aftermath) {
             test(nv_device_diagnostics_config, VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME,
                  true);
         }

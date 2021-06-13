@@ -32,6 +32,8 @@ OPCODE(GetGotoVariable,                                     U1,             U32,
 OPCODE(SetGotoVariable,                                     Void,           U32,            U1,                                                             )
 OPCODE(GetIndirectBranchVariable,                           U32,                                                                                            )
 OPCODE(SetIndirectBranchVariable,                           Void,           U32,                                                                            )
+OPCODE(GetLoopSafetyVariable,                               U32,            U32,                                                                            )
+OPCODE(SetLoopSafetyVariable,                               Void,           U32,            U32,                                                            )
 OPCODE(GetCbufU8,                                           U32,            U32,            U32,                                                            )
 OPCODE(GetCbufS8,                                           U32,            U32,            U32,                                                            )
 OPCODE(GetCbufU16,                                          U32,            U32,            U32,                                                            )

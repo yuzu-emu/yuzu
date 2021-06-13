@@ -43,6 +43,8 @@ void EmitSetGotoVariable(EmitContext& ctx);
 void EmitGetGotoVariable(EmitContext& ctx);
 void EmitSetIndirectBranchVariable(EmitContext& ctx);
 void EmitGetIndirectBranchVariable(EmitContext& ctx);
+void EmitSetLoopSafetyVariable(EmitContext& ctx);
+void EmitGetLoopSafetyVariable(EmitContext& ctx);
 Id EmitGetCbufU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 Id EmitGetCbufS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);
 Id EmitGetCbufU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset);

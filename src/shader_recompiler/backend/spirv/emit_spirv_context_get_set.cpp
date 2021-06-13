@@ -163,35 +163,43 @@ Id GetCbufElement(EmitContext& ctx, Id vector, const IR::Value& offset, u32 inde
 } // Anonymous namespace
 
 void EmitGetRegister(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+    throw LogicError("Unreachable instruction");
 }
 
 void EmitSetRegister(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+    throw LogicError("Unreachable instruction");
 }
 
 void EmitGetPred(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+    throw LogicError("Unreachable instruction");
 }
 
 void EmitSetPred(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+    throw LogicError("Unreachable instruction");
 }
 
 void EmitSetGotoVariable(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+    throw LogicError("Unreachable instruction");
 }
 
 void EmitGetGotoVariable(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+    throw LogicError("Unreachable instruction");
 }
 
 void EmitSetIndirectBranchVariable(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+    throw LogicError("Unreachable instruction");
 }
 
 void EmitGetIndirectBranchVariable(EmitContext&) {
-    throw NotImplementedException("SPIR-V Instruction");
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitSetLoopSafetyVariable(EmitContext&) {
+    throw LogicError("Unreachable instruction");
+}
+
+void EmitGetLoopSafetyVariable(EmitContext&) {
+    throw LogicError("Unreachable instruction");
 }
 
 Id EmitGetCbufU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {

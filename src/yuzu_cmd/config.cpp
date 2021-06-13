@@ -424,6 +424,10 @@ void Config::ReadValues() {
     Settings::values.renderer_backend.SetValue(
         static_cast<Settings::RendererBackend>(renderer_backend));
     Settings::values.renderer_debug = sdl2_config->GetBoolean("Renderer", "debug", false);
+    Settings::values.enable_nsight_aftermath =
+        sdl2_config->GetBoolean("Renderer", "nsight_aftermath", false);
+    Settings::values.disable_shader_loop_safety_checks =
+        sdl2_config->GetBoolean("Renderer", "disable_shader_loop_safety_checks", false);
     Settings::values.vulkan_device.SetValue(
         sdl2_config->GetInteger("Renderer", "vulkan_device", 0));
 

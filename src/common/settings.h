@@ -136,6 +136,8 @@ struct Values {
     // Renderer
     Setting<RendererBackend> renderer_backend;
     bool renderer_debug;
+    bool enable_nsight_aftermath;
+    bool disable_shader_loop_safety_checks;
     Setting<int> vulkan_device;
 
     Setting<u16> resolution_factor{1};

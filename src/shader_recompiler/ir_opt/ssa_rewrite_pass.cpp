@@ -48,73 +48,91 @@ struct GotoVariable : FlagTag {
     u32 index;
 };
 
+struct LoopSafetyVariable {
+    LoopSafetyVariable() = default;
+    explicit LoopSafetyVariable(u32 index_) : index{index_} {}
+
+    auto operator<=>(const LoopSafetyVariable&) const noexcept = default;
+
+    u32 index;
+};
+
 struct IndirectBranchVariable {
     auto operator<=>(const IndirectBranchVariable&) const noexcept = default;
 };
 
-using Variant = std::variant<IR::Reg, IR::Pred, ZeroFlagTag, SignFlagTag, CarryFlagTag,
-                             OverflowFlagTag, GotoVariable, IndirectBranchVariable>;
-using ValueMap = boost::container::flat_map<IR::Block*, IR::Value, std::less<IR::Block*>>;
+using Variant =
+    std::variant<IR::Reg, IR::Pred, ZeroFlagTag, SignFlagTag, CarryFlagTag, OverflowFlagTag,
+                 GotoVariable, LoopSafetyVariable, IndirectBranchVariable>;
+using ValueMap = boost::container::flat_map<IR::Block*, IR::Value>;
 
 struct DefTable {
-    const IR::Value& Def(IR::Block* block, IR::Reg variable) noexcept {
+    const IR::Value& Def(IR::Block* block, IR::Reg variable) {
         return block->SsaRegValue(variable);
     }
-    void SetDef(IR::Block* block, IR::Reg variable, const IR::Value& value) noexcept {
+    void SetDef(IR::Block* block, IR::Reg variable, const IR::Value& value) {
         block->SetSsaRegValue(variable, value);
     }
 
-    const IR::Value& Def(IR::Block* block, IR::Pred variable) noexcept {
+    const IR::Value& Def(IR::Block* block, IR::Pred variable) {
         return preds[IR::PredIndex(variable)][block];
     }
-    void SetDef(IR::Block* block, IR::Pred variable, const IR::Value& value) noexcept {
+    void SetDef(IR::Block* block, IR::Pred variable, const IR::Value& value) {
         preds[IR::PredIndex(variable)].insert_or_assign(block, value);
     }
 
-    const IR::Value& Def(IR::Block* block, GotoVariable variable) noexcept {
+    const IR::Value& Def(IR::Block* block, GotoVariable variable) {
         return goto_vars[variable.index][block];
     }
-    void SetDef(IR::Block* block, GotoVariable variable, const IR::Value& value) noexcept {
+    void SetDef(IR::Block* block, GotoVariable variable, const IR::Value& value) {
         goto_vars[variable.index].insert_or_assign(block, value);
     }
 
-    const IR::Value& Def(IR::Block* block, IndirectBranchVariable) noexcept {
+    const IR::Value& Def(IR::Block* block, LoopSafetyVariable variable) {
+        return loop_safety_vars[variable.index][block];
+    }
+    void SetDef(IR::Block* block, LoopSafetyVariable variable, const IR::Value& value) {
+        loop_safety_vars[variable.index].insert_or_assign(block, value);
+    }
+
+    const IR::Value& Def(IR::Block* block, IndirectBranchVariable) {
         return indirect_branch_var[block];
     }
-    void SetDef(IR::Block* block, IndirectBranchVariable, const IR::Value& value) noexcept {
+    void SetDef(IR::Block* block, IndirectBranchVariable, const IR::Value& value) {
         indirect_branch_var.insert_or_assign(block, value);
     }
 
-    const IR::Value& Def(IR::Block* block, ZeroFlagTag) noexcept {
+    const IR::Value& Def(IR::Block* block, ZeroFlagTag) {
         return zero_flag[block];
     }
-    void SetDef(IR::Block* block, ZeroFlagTag, const IR::Value& value) noexcept {
+    void SetDef(IR::Block* block, ZeroFlagTag, const IR::Value& value) {
         zero_flag.insert_or_assign(block, value);
     }
 
-    const IR::Value& Def(IR::Block* block, SignFlagTag) noexcept {
+    const IR::Value& Def(IR::Block* block, SignFlagTag) {
         return sign_flag[block];
     }
-    void SetDef(IR::Block* block, SignFlagTag, const IR::Value& value) noexcept {
+    void SetDef(IR::Block* block, SignFlagTag, const IR::Value& value) {
         sign_flag.insert_or_assign(block, value);
     }
 
-    const IR::Value& Def(IR::Block* block, CarryFlagTag) noexcept {
+    const IR::Value& Def(IR::Block* block, CarryFlagTag) {
         return carry_flag[block];
     }
-    void SetDef(IR::Block* block, CarryFlagTag, const IR::Value& value) noexcept {
+    void SetDef(IR::Block* block, CarryFlagTag, const IR::Value& value) {
         carry_flag.insert_or_assign(block, value);
     }
 
-    const IR::Value& Def(IR::Block* block, OverflowFlagTag) noexcept {
+    const IR::Value& Def(IR::Block* block, OverflowFlagTag) {
         return overflow_flag[block];
     }
-    void SetDef(IR::Block* block, OverflowFlagTag, const IR::Value& value) noexcept {
+    void SetDef(IR::Block* block, OverflowFlagTag, const IR::Value& value) {
         overflow_flag.insert_or_assign(block, value);
     }
 
     std::array<ValueMap, IR::NUM_USER_PREDS> preds;
     boost::container::flat_map<u32, ValueMap> goto_vars;
+    boost::container::flat_map<u32, ValueMap> loop_safety_vars;
     ValueMap indirect_branch_var;
     ValueMap zero_flag;
     ValueMap sign_flag;
@@ -132,6 +150,10 @@ IR::Opcode UndefOpcode(IR::Pred) noexcept {
 
 IR::Opcode UndefOpcode(const FlagTag&) noexcept {
     return IR::Opcode::UndefU1;
+}
+
+IR::Opcode UndefOpcode(const LoopSafetyVariable&) noexcept {
+    return IR::Opcode::UndefU32;
 }
 
 IR::Opcode UndefOpcode(IndirectBranchVariable) noexcept {
@@ -315,6 +337,9 @@ void VisitInst(Pass& pass, IR::Block* block, IR::Inst& inst) {
     case IR::Opcode::SetGotoVariable:
         pass.WriteVariable(GotoVariable{inst.Arg(0).U32()}, block, inst.Arg(1));
         break;
+    case IR::Opcode::SetLoopSafetyVariable:
+        pass.WriteVariable(LoopSafetyVariable{inst.Arg(0).U32()}, block, inst.Arg(0));
+        break;
     case IR::Opcode::SetIndirectBranchVariable:
         pass.WriteVariable(IndirectBranchVariable{}, block, inst.Arg(0));
         break;
@@ -342,6 +367,9 @@ void VisitInst(Pass& pass, IR::Block* block, IR::Inst& inst) {
         break;
     case IR::Opcode::GetGotoVariable:
         inst.ReplaceUsesWith(pass.ReadVariable(GotoVariable{inst.Arg(0).U32()}, block));
+        break;
+    case IR::Opcode::GetLoopSafetyVariable:
+        inst.ReplaceUsesWith(pass.ReadVariable(LoopSafetyVariable{inst.Arg(0).U32()}, block));
         break;
     case IR::Opcode::GetIndirectBranchVariable:
         inst.ReplaceUsesWith(pass.ReadVariable(IndirectBranchVariable{}, block));

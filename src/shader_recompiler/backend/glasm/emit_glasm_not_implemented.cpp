@@ -153,6 +153,14 @@ void EmitGetIndirectBranchVariable(EmitContext& ctx) {
     NotImplemented();
 }
 
+void EmitSetLoopSafetyVariable(EmitContext& ctx) {
+    NotImplemented();
+}
+
+void EmitGetLoopSafetyVariable(EmitContext& ctx) {
+    NotImplemented();
+}
+
 void EmitGetZFlag(EmitContext& ctx) {
     NotImplemented();
 }

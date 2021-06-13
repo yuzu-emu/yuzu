@@ -42,8 +42,12 @@ void ConfigureDebug::SetConfiguration() {
     ui->use_auto_stub->setChecked(Settings::values.use_auto_stub);
     ui->enable_graphics_debugging->setEnabled(runtime_lock);
     ui->enable_graphics_debugging->setChecked(Settings::values.renderer_debug);
+    ui->enable_nsight_aftermath->setEnabled(runtime_lock);
+    ui->enable_nsight_aftermath->setChecked(Settings::values.enable_nsight_aftermath);
     ui->disable_macro_jit->setEnabled(runtime_lock);
     ui->disable_macro_jit->setChecked(Settings::values.disable_macro_jit);
+    ui->disable_loop_safety_checks->setEnabled(runtime_lock);
+    ui->disable_loop_safety_checks->setChecked(Settings::values.disable_shader_loop_safety_checks);
     ui->extended_logging->setChecked(Settings::values.extended_logging);
 }
 
@@ -57,6 +61,9 @@ void ConfigureDebug::ApplyConfiguration() {
     Settings::values.use_debug_asserts = ui->use_debug_asserts->isChecked();
     Settings::values.use_auto_stub = ui->use_auto_stub->isChecked();
     Settings::values.renderer_debug = ui->enable_graphics_debugging->isChecked();
+    Settings::values.enable_nsight_aftermath = ui->enable_nsight_aftermath->isChecked();
+    Settings::values.disable_shader_loop_safety_checks =
+        ui->disable_loop_safety_checks->isChecked();
     Settings::values.disable_macro_jit = ui->disable_macro_jit->isChecked();
     Settings::values.extended_logging = ui->extended_logging->isChecked();
     Debugger::ToggleConsole();

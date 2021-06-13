@@ -793,6 +793,10 @@ void Config::ReadRendererValues() {
 
     ReadSettingGlobal(Settings::values.renderer_backend, QStringLiteral("backend"), 0);
     ReadSettingGlobal(Settings::values.renderer_debug, QStringLiteral("debug"), false);
+    ReadSettingGlobal(Settings::values.enable_nsight_aftermath, QStringLiteral("nsight_aftermath"),
+                      false);
+    ReadSettingGlobal(Settings::values.disable_shader_loop_safety_checks,
+                      QStringLiteral("disable_shader_loop_safety_checks"), false);
     ReadSettingGlobal(Settings::values.vulkan_device, QStringLiteral("vulkan_device"), 0);
 #ifdef _WIN32
     ReadSettingGlobal(Settings::values.fullscreen_mode, QStringLiteral("fullscreen_mode"), 0);
@@ -1380,6 +1384,10 @@ void Config::SaveRendererValues() {
                        static_cast<int>(Settings::values.renderer_backend.GetValue(global)),
                        Settings::values.renderer_backend.UsingGlobal(), 0);
     WriteSetting(QStringLiteral("debug"), Settings::values.renderer_debug, false);
+    WriteSetting(QStringLiteral("nsight_aftermath"), Settings::values.enable_nsight_aftermath,
+                 false);
+    WriteSetting(QStringLiteral("disable_shader_loop_safety_checks"),
+                 Settings::values.disable_shader_loop_safety_checks, false);
     WriteSettingGlobal(QStringLiteral("vulkan_device"), Settings::values.vulkan_device, 0);
 #ifdef _WIN32
     WriteSettingGlobal(QStringLiteral("fullscreen_mode"), Settings::values.fullscreen_mode, 0);
