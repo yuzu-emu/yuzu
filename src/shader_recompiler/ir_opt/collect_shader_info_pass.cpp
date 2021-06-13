@@ -35,6 +35,7 @@ void GetAttribute(Info& info, IR::Attribute attr) {
     }
     if (attr >= IR::Attribute::FixedFncTexture0S && attr <= IR::Attribute::FixedFncTexture9Q) {
         info.loads_fixed_fnc_textures = true;
+        info.loads_legacy_varyings = true;
         return;
     }
     switch (attr) {
@@ -52,6 +53,7 @@ void GetAttribute(Info& info, IR::Attribute attr) {
     case IR::Attribute::ColorFrontDiffuseB:
     case IR::Attribute::ColorFrontDiffuseA:
         info.loads_color_front_diffuse = true;
+        info.loads_legacy_varyings = true;
         break;
     case IR::Attribute::PointSpriteS:
     case IR::Attribute::PointSpriteT:
@@ -82,6 +84,7 @@ void SetAttribute(Info& info, IR::Attribute attr) {
     }
     if (attr >= IR::Attribute::FixedFncTexture0S && attr <= IR::Attribute::FixedFncTexture9Q) {
         info.stores_fixed_fnc_textures = true;
+        info.stores_legacy_varyings = true;
         return;
     }
     switch (attr) {
@@ -105,24 +108,28 @@ void SetAttribute(Info& info, IR::Attribute attr) {
     case IR::Attribute::ColorFrontDiffuseB:
     case IR::Attribute::ColorFrontDiffuseA:
         info.stores_color_front_diffuse = true;
+        info.stores_legacy_varyings = true;
         break;
     case IR::Attribute::ColorFrontSpecularR:
     case IR::Attribute::ColorFrontSpecularG:
     case IR::Attribute::ColorFrontSpecularB:
     case IR::Attribute::ColorFrontSpecularA:
         info.stores_color_front_specular = true;
+        info.stores_legacy_varyings = true;
         break;
     case IR::Attribute::ColorBackDiffuseR:
     case IR::Attribute::ColorBackDiffuseG:
     case IR::Attribute::ColorBackDiffuseB:
     case IR::Attribute::ColorBackDiffuseA:
         info.stores_color_back_diffuse = true;
+        info.stores_legacy_varyings = true;
         break;
     case IR::Attribute::ColorBackSpecularR:
     case IR::Attribute::ColorBackSpecularG:
     case IR::Attribute::ColorBackSpecularB:
     case IR::Attribute::ColorBackSpecularA:
-        info.stores_color_front_specular = true;
+        info.stores_color_back_specular = true;
+        info.stores_legacy_varyings = true;
         break;
     case IR::Attribute::ClipDistance0:
     case IR::Attribute::ClipDistance1:

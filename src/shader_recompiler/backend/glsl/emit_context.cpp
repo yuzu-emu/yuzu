@@ -200,6 +200,27 @@ std::string_view OutputPrimitive(OutputTopology topology) {
     throw InvalidArgument("Invalid output topology {}", topology);
 }
 
+void SetupLegacyOutPerVertex(EmitContext& ctx, std::string& header) {
+    if (!ctx.info.stores_legacy_varyings) {
+        return;
+    }
+    if (ctx.info.stores_fixed_fnc_textures) {
+        header += "vec4 gl_TexCoord[8];";
+    }
+    if (ctx.info.stores_color_front_diffuse) {
+        header += "vec4 gl_FrontColor;";
+    }
+    if (ctx.info.stores_color_front_specular) {
+        header += "vec4 gl_FrontSecondaryColor;";
+    }
+    if (ctx.info.stores_color_back_diffuse) {
+        header += "vec4 gl_BackColor;";
+    }
+    if (ctx.info.stores_color_back_specular) {
+        header += "vec4 gl_BackSecondaryColor;";
+    }
+}
+
 void SetupOutPerVertex(EmitContext& ctx, std::string& header) {
     if (!StoresPerVertexAttributes(ctx.stage)) {
         return;
@@ -215,18 +236,34 @@ void SetupOutPerVertex(EmitContext& ctx, std::string& header) {
         ctx.stage != Stage::Geometry) {
         header += "int gl_ViewportIndex;";
     }
+    SetupLegacyOutPerVertex(ctx, header);
     header += "};";
     if (ctx.info.stores_viewport_index && ctx.stage == Stage::Geometry) {
         header += "out int gl_ViewportIndex;";
     }
 }
+
+void SetupLegacyInPerFragment(EmitContext& ctx, std::string& header) {
+    if (!ctx.info.loads_legacy_varyings) {
+        return;
+    }
+    header += "in gl_PerFragment{";
+    if (ctx.info.loads_fixed_fnc_textures) {
+        header += "vec4 gl_TexCoord[8];";
+    }
+    if (ctx.info.loads_color_front_diffuse) {
+        header += "vec4 gl_Color;";
+    }
+    header += "};";
+}
+
 } // Anonymous namespace
 
 EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
                          const RuntimeInfo& runtime_info_)
     : info{program.info}, profile{profile_}, runtime_info{runtime_info_} {
     header += "#pragma optionNV(fastmath off)\n";
-    SetupExtensions(header);
+    SetupExtensions();
     stage = program.stage;
     switch (program.stage) {
     case Stage::VertexA:
@@ -271,6 +308,8 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         break;
     }
     SetupOutPerVertex(*this, header);
+    SetupLegacyInPerFragment(*this, header);
+
     for (size_t index = 0; index < info.input_generics.size(); ++index) {
         const auto& generic{info.input_generics[index]};
         if (generic.used) {
@@ -306,7 +345,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     DefineConstants();
 }
 
-void EmitContext::SetupExtensions(std::string&) {
+void EmitContext::SetupExtensions() {
     if (profile.support_gl_texture_shadow_lod) {
         header += "#extension GL_EXT_texture_shadow_lod : enable\n";
     }
