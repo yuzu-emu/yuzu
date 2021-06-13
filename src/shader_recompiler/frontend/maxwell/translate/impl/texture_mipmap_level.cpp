@@ -46,6 +46,8 @@ Shader::TextureType GetType(TextureType type) {
 }
 
 IR::Value MakeCoords(TranslatorVisitor& v, IR::Reg reg, TextureType type) {
+    // The ISA reads an array component here, but this is not needed on high level shading languages
+    // We are dropping this information.
     switch (type) {
     case TextureType::_1D:
         return v.F(reg);
