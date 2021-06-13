@@ -94,7 +94,11 @@ std::string GetOffsetVec(EmitContext& ctx, const IR::Value& offset) {
             break;
         }
     }
-    const auto offset_str{ctx.var_alloc.Consume(offset)};
+    const bool has_var_aoffi{ctx.profile.support_gl_variable_aoffi};
+    if (!has_var_aoffi) {
+        // LOG_WARNING("Device does not support variable texture offsets, STUBBING");
+    }
+    const auto offset_str{has_var_aoffi ? ctx.var_alloc.Consume(offset) : "0"};
     switch (offset.Type()) {
     case IR::Type::U32:
         return fmt::format("int({})", offset_str);
@@ -146,7 +150,12 @@ void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Valu
     const auto bias{info.has_bias ? fmt::format(",{}", bias_lc) : ""};
     const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
     const auto sparse_inst{PrepareSparse(inst)};
-    if (!sparse_inst) {
+    const bool supports_sparse{ctx.profile.support_gl_sparse_textures};
+    if (sparse_inst && !supports_sparse) {
+        // LOG_WARNING(..., "Device does not support sparse texture queries. STUBBING");
+        ctx.AddU1("{}=true;", *sparse_inst);
+    }
+    if (!sparse_inst || !supports_sparse) {
         if (!offset.IsEmpty()) {
             const auto offset_str{GetOffsetVec(ctx, offset)};
             if (ctx.stage == Stage::Fragment) {
@@ -163,7 +172,6 @@ void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Valu
         }
         return;
     }
-    // TODO: Query sparseTexels extension support
     if (!offset.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureOffsetARB({},{},{},{}{}));",
                   *sparse_inst, texture, coords, GetOffsetVec(ctx, offset), texel, bias);
@@ -186,7 +194,12 @@ void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Valu
     const auto texture{Texture(ctx, info, index)};
     const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
     const auto sparse_inst{PrepareSparse(inst)};
-    if (!sparse_inst) {
+    const bool supports_sparse{ctx.profile.support_gl_sparse_textures};
+    if (sparse_inst && !supports_sparse) {
+        // LOG_WARNING(..., "Device does not support sparse texture queries. STUBBING");
+        ctx.AddU1("{}=true;", *sparse_inst);
+    }
+    if (!sparse_inst || !supports_sparse) {
         if (!offset.IsEmpty()) {
             ctx.Add("{}=textureLodOffset({},{},{},{});", texel, texture, coords, lod_lc,
                     GetOffsetVec(ctx, offset));
@@ -195,7 +208,6 @@ void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Valu
         }
         return;
     }
-    // TODO: Query sparseTexels extension support
     if (!offset.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTexelFetchOffsetARB({},{},int({}),{},{}));",
                   *sparse_inst, texture, CastToIntVec(coords, info), lod_lc,
@@ -315,7 +327,12 @@ void EmitImageGather(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
     const auto texture{Texture(ctx, info, index)};
     const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
     const auto sparse_inst{PrepareSparse(inst)};
-    if (!sparse_inst) {
+    const bool supports_sparse{ctx.profile.support_gl_sparse_textures};
+    if (sparse_inst && !supports_sparse) {
+        // LOG_WARNING(..., "Device does not support sparse texture queries. STUBBING");
+        ctx.AddU1("{}=true;", *sparse_inst);
+    }
+    if (!sparse_inst || !supports_sparse) {
         if (offset.IsEmpty()) {
             ctx.Add("{}=textureGather({},{},int({}));", texel, texture, coords,
                     info.gather_component);
@@ -332,7 +349,6 @@ void EmitImageGather(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
                 info.gather_component);
         return;
     }
-    // TODO: Query sparseTexels extension support
     if (offset.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureGatherARB({},{},{},int({})));",
                   *sparse_inst, texture, coords, texel, info.gather_component);
@@ -358,7 +374,12 @@ void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& inde
     const auto texture{Texture(ctx, info, index)};
     const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
     const auto sparse_inst{PrepareSparse(inst)};
-    if (!sparse_inst) {
+    const bool supports_sparse{ctx.profile.support_gl_sparse_textures};
+    if (sparse_inst && !supports_sparse) {
+        // LOG_WARNING(..., "Device does not support sparse texture queries. STUBBING");
+        ctx.AddU1("{}=true;", *sparse_inst);
+    }
+    if (!sparse_inst || !supports_sparse) {
         if (offset.IsEmpty()) {
             ctx.Add("{}=textureGather({},{},{});", texel, texture, coords, dref);
             return;
@@ -373,7 +394,6 @@ void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& inde
         ctx.Add("{}=textureGatherOffsets({},{},{},{});", texel, texture, coords, dref, offsets);
         return;
     }
-    // TODO: Query sparseTexels extension support
     if (offset.IsEmpty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTextureGatherARB({},{},{},{}));", *sparse_inst,
                   texture, coords, dref, texel);
@@ -404,7 +424,12 @@ void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
     const auto texture{Texture(ctx, info, index)};
     const auto sparse_inst{PrepareSparse(inst)};
     const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
-    if (!sparse_inst) {
+    const bool supports_sparse{ctx.profile.support_gl_sparse_textures};
+    if (sparse_inst && !supports_sparse) {
+        // LOG_WARNING(..., "Device does not support sparse texture queries. STUBBING");
+        ctx.AddU1("{}=true;", *sparse_inst);
+    }
+    if (!sparse_inst || !supports_sparse) {
         if (!offset.empty()) {
             ctx.Add("{}=texelFetchOffset({},{},int({}),{});", texel, texture,
                     CoordsCastToInt(coords, info), lod, CoordsCastToInt(offset, info));
@@ -418,7 +443,6 @@ void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
         }
         return;
     }
-    // TODO: Query sparseTexels extension support
     if (!offset.empty()) {
         ctx.AddU1("{}=sparseTexelsResidentARB(sparseTexelFetchOffsetARB({},{},int({}),{},{}));",
                   *sparse_inst, texture, CastToIntVec(coords, info), lod,

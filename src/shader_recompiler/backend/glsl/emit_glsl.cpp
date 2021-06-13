@@ -215,7 +215,7 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
         ctx.header +=
             fmt::format("shared uint smem[{}];", Common::AlignUp(program.shared_memory_size, 4));
     }
-    ctx.header += "\nvoid main(){\n";
+    ctx.header += "void main(){\n";
     if (program.stage == Stage::VertexA || program.stage == Stage::VertexB) {
         ctx.header += "gl_Position = vec4(0.0f, 0.0f, 0.0f, 1.0f);";
         // TODO: Properly resolve attribute issues

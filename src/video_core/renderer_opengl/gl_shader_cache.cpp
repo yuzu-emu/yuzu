@@ -193,6 +193,8 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
           .support_gl_amd_gpu_shader_half_float = device.HasAmdShaderHalfFloat(),
           .support_gl_texture_shadow_lod = device.HasTextureShadowLod(),
           .support_gl_warp_intrinsics = false,
+          .support_gl_variable_aoffi = device.HasVariableAoffi(),
+          .support_gl_sparse_textures = device.HasSparseTexture2(),
 
           .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyLargerThanGuest(),
 
