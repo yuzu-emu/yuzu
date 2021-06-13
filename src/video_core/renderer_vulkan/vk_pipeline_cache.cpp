@@ -391,10 +391,16 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
         });
         ++state.total;
     }};
+    const bool extended_dynamic_state = device.IsExtExtendedDynamicStateSupported();
+    const bool dynamic_vertex_input = device.IsExtVertexInputDynamicStateSupported();
     const auto load_graphics{[&](std::ifstream& file, std::vector<FileEnvironment> envs) {
         GraphicsPipelineCacheKey key;
         file.read(reinterpret_cast<char*>(&key), sizeof(key));
 
+        if ((key.state.extended_dynamic_state != 0) != extended_dynamic_state ||
+            (key.state.dynamic_vertex_input != 0) != dynamic_vertex_input) {
+            return;
+        }
         workers.QueueWork([this, key, envs = std::move(envs), &state, &callback]() mutable {
             ShaderPools pools;
             boost::container::static_vector<Shader::Environment*, 5> env_ptrs;
