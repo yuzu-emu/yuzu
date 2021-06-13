@@ -425,6 +425,18 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         LOG_INFO(Render_Vulkan, "Device doesn't support provoking vertex last");
     }
 
+    VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_dynamic;
+    if (ext_vertex_input_dynamic_state) {
+        vertex_input_dynamic = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT,
+            .pNext = nullptr,
+            .vertexInputDynamicState = VK_TRUE,
+        };
+        SetNext(next, vertex_input_dynamic);
+    } else {
+        LOG_INFO(Render_Vulkan, "Device doesn't support vertex input dynamic state");
+    }
+
     VkPhysicalDeviceShaderAtomicInt64FeaturesKHR atomic_int64;
     if (ext_shader_atomic_int64) {
         atomic_int64 = {
@@ -732,6 +744,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
     bool has_ext_extended_dynamic_state{};
     bool has_ext_shader_atomic_int64{};
     bool has_ext_provoking_vertex{};
+    bool has_ext_vertex_input_dynamic_state{};
     for (const VkExtensionProperties& extension : physical.EnumerateDeviceExtensionProperties()) {
         const auto test = [&](std::optional<std::reference_wrapper<bool>> status, const char* name,
                               bool push) {
@@ -763,6 +776,8 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         test(has_ext_extended_dynamic_state, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, false);
         test(has_ext_subgroup_size_control, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, false);
         test(has_ext_provoking_vertex, VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME, false);
+        test(has_ext_vertex_input_dynamic_state, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME,
+             false);
         test(has_ext_shader_atomic_int64, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME, false);
         test(has_khr_workgroup_memory_explicit_layout,
              VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME, false);
@@ -825,6 +840,19 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
             provoking_vertex.transformFeedbackPreservesProvokingVertex) {
             extensions.push_back(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
             ext_provoking_vertex = true;
+        }
+    }
+    if (has_ext_vertex_input_dynamic_state) {
+        VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input;
+        vertex_input.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT;
+        vertex_input.pNext = nullptr;
+        features.pNext = &vertex_input;
+        physical.GetFeatures2KHR(features);
+
+        if (vertex_input.vertexInputDynamicState) {
+            extensions.push_back(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+            ext_vertex_input_dynamic_state = true;
         }
     }
     if (has_ext_shader_atomic_int64) {
