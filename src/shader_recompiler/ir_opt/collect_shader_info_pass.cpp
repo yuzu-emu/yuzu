@@ -636,10 +636,18 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::ImageGatherDref:
     case IR::Opcode::ImageFetch:
     case IR::Opcode::ImageQueryDimensions:
-    case IR::Opcode::ImageQueryLod:
     case IR::Opcode::ImageGradient: {
         const TextureType type{inst.Flags<IR::TextureInstInfo>().type};
         info.uses_sampled_1d |= type == TextureType::Color1D || type == TextureType::ColorArray1D;
+        info.uses_sparse_residency |=
+            inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp) != nullptr;
+        break;
+    }
+    case IR::Opcode::ImageQueryLod: {
+        const auto flags{inst.Flags<IR::TextureInstInfo>()};
+        const TextureType type{flags.type};
+        info.uses_sampled_1d |= type == TextureType::Color1D || type == TextureType::ColorArray1D;
+        info.uses_shadow_lod |= flags.is_depth != 0;
         info.uses_sparse_residency |=
             inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp) != nullptr;
         break;

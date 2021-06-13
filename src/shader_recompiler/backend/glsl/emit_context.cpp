@@ -302,9 +302,11 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         break;
     case Stage::Compute:
         stage_name = "cs";
+        const u32 local_x{std::max(program.workgroup_size[0], 1u)};
+        const u32 local_y{std::max(program.workgroup_size[1], 1u)};
+        const u32 local_z{std::max(program.workgroup_size[2], 1u)};
         header += fmt::format("layout(local_size_x={},local_size_y={},local_size_z={}) in;",
-                              program.workgroup_size[0], program.workgroup_size[1],
-                              program.workgroup_size[2]);
+                              local_x, local_y, local_z);
         break;
     }
     SetupOutPerVertex(*this, header);
@@ -346,7 +348,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
 }
 
 void EmitContext::SetupExtensions() {
-    if (profile.support_gl_texture_shadow_lod) {
+    if (info.uses_shadow_lod && profile.support_gl_texture_shadow_lod) {
         header += "#extension GL_EXT_texture_shadow_lod : enable\n";
     }
     if (info.uses_int64) {
