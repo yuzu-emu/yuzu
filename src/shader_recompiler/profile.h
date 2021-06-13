@@ -87,6 +87,8 @@ struct Profile {
     bool support_gl_amd_gpu_shader_half_float{};
     bool support_gl_texture_shadow_lod{};
     bool support_gl_warp_intrinsics{};
+    bool support_gl_variable_aoffi{};
+    bool support_gl_sparse_textures{};
 
     bool warp_size_potentially_larger_than_guest{};
 

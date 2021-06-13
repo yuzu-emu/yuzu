@@ -384,7 +384,7 @@ void EmitContext::SetupExtensions() {
         profile.support_viewport_index_layer_non_geometry && stage != Stage::Geometry) {
         header += "#extension GL_ARB_shader_viewport_layer_array : enable\n";
     }
-    if (info.uses_sparse_residency) {
+    if (info.uses_sparse_residency && profile.support_gl_sparse_textures) {
         header += "#extension GL_ARB_sparse_texture2 : enable\n";
     }
     if (info.stores_viewport_mask && profile.support_viewport_mask) {

@@ -128,6 +128,10 @@ public:
         return has_amd_shader_half_float;
     }
 
+    bool HasSparseTexture2() const {
+        return has_sparse_texture_2;
+    }
+
     bool IsWarpSizePotentiallyLargerThanGuest() const {
         return warp_size_potentially_larger_than_guest;
     }
@@ -165,6 +169,7 @@ private:
     bool has_depth_buffer_float{};
     bool has_nv_gpu_shader_5{};
     bool has_amd_shader_half_float{};
+    bool has_sparse_texture_2{};
     bool warp_size_potentially_larger_than_guest{};
 };
 
