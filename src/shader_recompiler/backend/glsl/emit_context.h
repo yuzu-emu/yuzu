@@ -157,7 +157,7 @@ public:
     bool uses_cc_carry{};
 
 private:
-    void SetupExtensions(std::string& header);
+    void SetupExtensions();
     void DefineConstantBuffers(Bindings& bindings);
     void DefineStorageBuffers(Bindings& bindings);
     void DefineGenericOutput(size_t index, u32 invocations);

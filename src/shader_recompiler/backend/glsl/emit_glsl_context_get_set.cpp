@@ -98,6 +98,10 @@ void GetCbuf16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, const
                 bit_offset);
     }
 }
+
+u32 TexCoordIndex(IR::Attribute attr) {
+    return (static_cast<u32>(attr) - static_cast<u32>(IR::Attribute::FixedFncTexture0S)) / 4;
+}
 } // Anonymous namespace
 
 void EmitGetCbufU8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
@@ -178,6 +182,17 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
         ctx.AddF32("{}=in_attr{}{}.{};", inst, index, InputVertexIndex(ctx, vertex), swizzle);
         return;
     }
+    // GLSL only exposes 8 legacy texcoords
+    if (attr >= IR::Attribute::FixedFncTexture8S && attr <= IR::Attribute::FixedFncTexture9Q) {
+        // LOG_WARNING(..., "GLSL does not allow access to gl_TexCoord[{}]", TexCoordIndex(attr));
+        ctx.AddF32("{}=0.f;", inst);
+        return;
+    }
+    if (attr >= IR::Attribute::FixedFncTexture0S && attr <= IR::Attribute::FixedFncTexture7Q) {
+        const u32 index{TexCoordIndex(attr)};
+        ctx.AddF32("{}=gl_TexCoord[{}].{};", inst, index, swizzle);
+        return;
+    }
     switch (attr) {
     case IR::Attribute::PrimitiveId:
         ctx.AddF32("{}=itof(gl_PrimitiveID);", inst);
@@ -227,19 +242,29 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
                       [[maybe_unused]] std::string_view vertex) {
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
-        const u32 element{IR::GenericAttributeElement(attr)};
-        const GenericElementInfo& info{ctx.output_generics.at(index).at(element)};
+        const u32 attr_element{IR::GenericAttributeElement(attr)};
+        const GenericElementInfo& info{ctx.output_generics.at(index).at(attr_element)};
         const auto output_decorator{OutputVertexIndex(ctx)};
         if (info.num_components == 1) {
             ctx.Add("{}{}={};", info.name, output_decorator, value);
         } else {
-            const u32 index_element{element - info.first_element};
+            const u32 index_element{attr_element - info.first_element};
             ctx.Add("{}{}.{}={};", info.name, output_decorator, "xyzw"[index_element], value);
         }
         return;
     }
     const u32 element{static_cast<u32>(attr) % 4};
     const char swizzle{"xyzw"[element]};
+    // GLSL only exposes 8 legacy texcoords
+    if (attr >= IR::Attribute::FixedFncTexture8S && attr <= IR::Attribute::FixedFncTexture9Q) {
+        // LOG_WARNING(..., "GLSL does not allow access to gl_TexCoord[{}]", TexCoordIndex(attr));
+        return;
+    }
+    if (attr >= IR::Attribute::FixedFncTexture0S && attr <= IR::Attribute::FixedFncTexture7Q) {
+        const u32 index{TexCoordIndex(attr)};
+        ctx.Add("gl_TexCoord[{}].{}={};", index, swizzle, value);
+        return;
+    }
     switch (attr) {
     case IR::Attribute::Layer:
         if (ctx.stage != Stage::Geometry &&

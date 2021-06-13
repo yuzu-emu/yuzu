@@ -128,6 +128,7 @@ struct Info {
     bool loads_instance_id{};
     bool loads_vertex_id{};
     bool loads_front_face{};
+    bool loads_legacy_varyings{};
 
     bool loads_tess_coord{};
 
@@ -150,6 +151,7 @@ struct Info {
     bool stores_clip_distance{};
     bool stores_fog_coordinate{};
     bool stores_viewport_mask{};
+    bool stores_legacy_varyings{};
 
     bool stores_tess_level_outer{};
     bool stores_tess_level_inner{};
