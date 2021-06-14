@@ -98,7 +98,7 @@ void EmitSharedAtomicExchange32(EmitContext& ctx, IR::Inst& inst, std::string_vi
 
 void EmitSharedAtomicExchange64(EmitContext& ctx, IR::Inst& inst, std::string_view pointer_offset,
                                 std::string_view value) {
-    // LOG_WARNING("Int64 Atomics not supported, fallback to non-atomic");
+    LOG_WARNING(Shader_GLSL, "Int64 Atomics not supported, fallback to non-atomic");
     ctx.AddU64("{}=packUint2x32(uvec2(smem[{}>>2],smem[({}+4)>>2]));", inst, pointer_offset,
                pointer_offset);
     ctx.Add("smem[{}>>2]=unpackUint2x32({}).x;smem[({}+4)>>2]=unpackUint2x32({}).y;",
@@ -171,7 +171,7 @@ void EmitStorageAtomicExchange32(EmitContext& ctx, IR::Inst& inst, const IR::Val
 
 void EmitStorageAtomicIAdd64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
-    // LOG_WARNING(..., "Op falling to non-atomic");
+    LOG_WARNING(Shader_GLSL, "Int64 Atomics not supported, fallback to non-atomic");
     ctx.AddU64("{}=packUint2x32(uvec2({}_ssbo{}[{}>>2],{}_ssbo{}[({}>>2)+1]));", inst,
                ctx.stage_name, binding.U32(), ctx.var_alloc.Consume(offset), ctx.stage_name,
                binding.U32(), ctx.var_alloc.Consume(offset));
@@ -182,7 +182,7 @@ void EmitStorageAtomicIAdd64(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 
 void EmitStorageAtomicSMin64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
-    // LOG_WARNING(..., "Op falling to non-atomic");
+    LOG_WARNING(Shader_GLSL, "Int64 Atomics not supported, fallback to non-atomic");
     ctx.AddU64("{}=packInt2x32(ivec2({}_ssbo{}[{}>>2],{}_ssbo{}[({}>>2)+1]));", inst,
                ctx.stage_name, binding.U32(), ctx.var_alloc.Consume(offset), ctx.stage_name,
                binding.U32(), ctx.var_alloc.Consume(offset));
@@ -195,7 +195,7 @@ void EmitStorageAtomicSMin64(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 
 void EmitStorageAtomicUMin64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
-    // LOG_WARNING(..., "Op falling to non-atomic");
+    LOG_WARNING(Shader_GLSL, "Int64 Atomics not supported, fallback to non-atomic");
     ctx.AddU64("{}=packUint2x32(uvec2({}_ssbo{}[{}>>2],{}_ssbo{}[({}>>2)+1]));", inst,
                ctx.stage_name, binding.U32(), ctx.var_alloc.Consume(offset), ctx.stage_name,
                binding.U32(), ctx.var_alloc.Consume(offset));
@@ -207,7 +207,7 @@ void EmitStorageAtomicUMin64(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 
 void EmitStorageAtomicSMax64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
-    // LOG_WARNING(..., "Op falling to non-atomic");
+    LOG_WARNING(Shader_GLSL, "Int64 Atomics not supported, fallback to non-atomic");
     ctx.AddU64("{}=packInt2x32(ivec2({}_ssbo{}[{}>>2],{}_ssbo{}[({}>>2)+1]));", inst,
                ctx.stage_name, binding.U32(), ctx.var_alloc.Consume(offset), ctx.stage_name,
                binding.U32(), ctx.var_alloc.Consume(offset));
@@ -220,8 +220,7 @@ void EmitStorageAtomicSMax64(EmitContext& ctx, IR::Inst& inst, const IR::Value& 
 
 void EmitStorageAtomicUMax64(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding,
                              const IR::Value& offset, std::string_view value) {
-    // LOG_WARNING(..., "Op falling to non-atomic");
-
+    LOG_WARNING(Shader_GLSL, "Int64 Atomics not supported, fallback to non-atomic");
     ctx.AddU64("{}=packUint2x32(uvec2({}_ssbo{}[{}>>2],{}_ssbo{}[({}>>2)+1]));", inst,
                ctx.stage_name, binding.U32(), ctx.var_alloc.Consume(offset), ctx.stage_name,
                binding.U32(), ctx.var_alloc.Consume(offset));

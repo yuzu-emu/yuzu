@@ -96,7 +96,7 @@ std::string GetOffsetVec(EmitContext& ctx, const IR::Value& offset) {
     }
     const bool has_var_aoffi{ctx.profile.support_gl_variable_aoffi};
     if (!has_var_aoffi) {
-        // LOG_WARNING("Device does not support variable texture offsets, STUBBING");
+        LOG_WARNING(Shader_GLSL, "Device does not support variable texture offsets, STUBBING");
     }
     const auto offset_str{has_var_aoffi ? ctx.var_alloc.Consume(offset) : "0"};
     switch (offset.Type()) {
@@ -116,7 +116,7 @@ std::string GetOffsetVec(EmitContext& ctx, const IR::Value& offset) {
 std::string PtpOffsets(const IR::Value& offset, const IR::Value& offset2) {
     const std::array values{offset.InstRecursive(), offset2.InstRecursive()};
     if (!values[0]->AreAllArgsImmediates() || !values[1]->AreAllArgsImmediates()) {
-        // LOG_WARNING("Not all arguments in PTP are immediate, STUBBING");
+        LOG_WARNING(Shader_GLSL, "Not all arguments in PTP are immediate, STUBBING");
         return "ivec2[](ivec2(0), ivec2(1), ivec2(2), ivec2(3))";
     }
     const IR::Opcode opcode{values[0]->GetOpcode()};
@@ -152,7 +152,7 @@ void EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Valu
     const auto sparse_inst{PrepareSparse(inst)};
     const bool supports_sparse{ctx.profile.support_gl_sparse_textures};
     if (sparse_inst && !supports_sparse) {
-        // LOG_WARNING(..., "Device does not support sparse texture queries. STUBBING");
+        LOG_WARNING(Shader_GLSL, "Device does not support sparse texture queries. STUBBING");
         ctx.AddU1("{}=true;", *sparse_inst);
     }
     if (!sparse_inst || !supports_sparse) {
@@ -196,7 +196,7 @@ void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Valu
     const auto sparse_inst{PrepareSparse(inst)};
     const bool supports_sparse{ctx.profile.support_gl_sparse_textures};
     if (sparse_inst && !supports_sparse) {
-        // LOG_WARNING(..., "Device does not support sparse texture queries. STUBBING");
+        LOG_WARNING(Shader_GLSL, "Device does not support sparse texture queries. STUBBING");
         ctx.AddU1("{}=true;", *sparse_inst);
     }
     if (!sparse_inst || !supports_sparse) {
@@ -239,9 +239,10 @@ void EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::
     const bool use_grad{!ctx.profile.support_gl_texture_shadow_lod &&
                         ctx.stage != Stage::Fragment && needs_shadow_ext};
     if (use_grad) {
-        // LOG_WARNING(..., "Device lacks GL_EXT_texture_shadow_lod. Using textureGrad fallback");
+        LOG_WARNING(Shader_GLSL,
+                    "Device lacks GL_EXT_texture_shadow_lod. Using textureGrad fallback");
         if (info.type == TextureType::ColorArrayCube) {
-            // LOG_WARNING(..., "textureGrad does not support ColorArrayCube. Stubbing");
+            LOG_WARNING(Shader_GLSL, "textureGrad does not support ColorArrayCube. Stubbing");
             ctx.AddF32("{}=0.0f;", inst);
             return;
         }
@@ -291,9 +292,10 @@ void EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::
     const bool use_grad{!ctx.profile.support_gl_texture_shadow_lod && needs_shadow_ext};
     const auto cast{needs_shadow_ext ? "vec4" : "vec3"};
     if (use_grad) {
-        // LOG_WARNING(..., "Device lacks GL_EXT_texture_shadow_lod. Using textureGrad fallback");
+        LOG_WARNING(Shader_GLSL,
+                    "Device lacks GL_EXT_texture_shadow_lod. Using textureGrad fallback");
         if (info.type == TextureType::ColorArrayCube) {
-            // LOG_WARNING(..., "textureGrad does not support ColorArrayCube. Stubbing");
+            LOG_WARNING(Shader_GLSL, "textureGrad does not support ColorArrayCube. Stubbing");
             ctx.AddF32("{}=0.0f;", inst);
             return;
         }
@@ -329,7 +331,7 @@ void EmitImageGather(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
     const auto sparse_inst{PrepareSparse(inst)};
     const bool supports_sparse{ctx.profile.support_gl_sparse_textures};
     if (sparse_inst && !supports_sparse) {
-        // LOG_WARNING(..., "Device does not support sparse texture queries. STUBBING");
+        LOG_WARNING(Shader_GLSL, "Device does not support sparse texture queries. STUBBING");
         ctx.AddU1("{}=true;", *sparse_inst);
     }
     if (!sparse_inst || !supports_sparse) {
@@ -376,7 +378,7 @@ void EmitImageGatherDref(EmitContext& ctx, IR::Inst& inst, const IR::Value& inde
     const auto sparse_inst{PrepareSparse(inst)};
     const bool supports_sparse{ctx.profile.support_gl_sparse_textures};
     if (sparse_inst && !supports_sparse) {
-        // LOG_WARNING(..., "Device does not support sparse texture queries. STUBBING");
+        LOG_WARNING(Shader_GLSL, "Device does not support sparse texture queries. STUBBING");
         ctx.AddU1("{}=true;", *sparse_inst);
     }
     if (!sparse_inst || !supports_sparse) {
@@ -426,7 +428,7 @@ void EmitImageFetch(EmitContext& ctx, IR::Inst& inst, const IR::Value& index,
     const auto texel{ctx.var_alloc.Define(inst, GlslVarType::F32x4)};
     const bool supports_sparse{ctx.profile.support_gl_sparse_textures};
     if (sparse_inst && !supports_sparse) {
-        // LOG_WARNING(..., "Device does not support sparse texture queries. STUBBING");
+        LOG_WARNING(Shader_GLSL, "Device does not support sparse texture queries. STUBBING");
         ctx.AddU1("{}=true;", *sparse_inst);
     }
     if (!sparse_inst || !supports_sparse) {
