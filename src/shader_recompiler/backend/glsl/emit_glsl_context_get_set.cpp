@@ -42,7 +42,7 @@ void GetCbuf(EmitContext& ctx, std::string_view ret, const IR::Value& binding,
         const s32 signed_offset{static_cast<s32>(offset.U32())};
         static constexpr u32 cbuf_size{4096 * 16};
         if (signed_offset < 0 || offset.U32() > cbuf_size) {
-            // LOG_WARNING(..., "Immediate constant buffer offset is out of bounds");
+            LOG_WARNING(Shader_GLSL, "Immediate constant buffer offset is out of bounds");
             ctx.Add("{}=0u;", ret);
             return;
         }
@@ -144,7 +144,7 @@ void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding
         const u32 u32_offset{offset.U32()};
         const s32 signed_offset{static_cast<s32>(offset.U32())};
         if (signed_offset < 0 || u32_offset > cbuf_size) {
-            // LOG_WARNING(..., "Immediate constant buffer offset is out of bounds");
+            LOG_WARNING(Shader_GLSL, "Immediate constant buffer offset is out of bounds");
             ctx.AddU32x2("{}=uvec2(0u);", inst);
             return;
         }
@@ -184,7 +184,8 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
     }
     // GLSL only exposes 8 legacy texcoords
     if (attr >= IR::Attribute::FixedFncTexture8S && attr <= IR::Attribute::FixedFncTexture9Q) {
-        // LOG_WARNING(..., "GLSL does not allow access to gl_TexCoord[{}]", TexCoordIndex(attr));
+        LOG_WARNING(Shader_GLSL, "GLSL does not allow access to gl_TexCoord[{}]",
+                    TexCoordIndex(attr));
         ctx.AddF32("{}=0.f;", inst);
         return;
     }
@@ -257,7 +258,8 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     const char swizzle{"xyzw"[element]};
     // GLSL only exposes 8 legacy texcoords
     if (attr >= IR::Attribute::FixedFncTexture8S && attr <= IR::Attribute::FixedFncTexture9Q) {
-        // LOG_WARNING(..., "GLSL does not allow access to gl_TexCoord[{}]", TexCoordIndex(attr));
+        LOG_WARNING(Shader_GLSL, "GLSL does not allow access to gl_TexCoord[{}]",
+                    TexCoordIndex(attr));
         return;
     }
     if (attr >= IR::Attribute::FixedFncTexture0S && attr <= IR::Attribute::FixedFncTexture7Q) {
@@ -269,8 +271,8 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     case IR::Attribute::Layer:
         if (ctx.stage != Stage::Geometry &&
             !ctx.profile.support_viewport_index_layer_non_geometry) {
-            // LOG_WARNING(..., "Shader stores viewport layer but device does not support viewport
-            // layer extension");
+            LOG_WARNING(Shader_GLSL, "Shader stores viewport layer but device does not support "
+                                     "viewport layer extension");
             break;
         }
         ctx.Add("gl_Layer=ftoi({});", value);
@@ -278,16 +280,17 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     case IR::Attribute::ViewportIndex:
         if (ctx.stage != Stage::Geometry &&
             !ctx.profile.support_viewport_index_layer_non_geometry) {
-            // LOG_WARNING(..., "Shader stores viewport index but device does not support viewport
-            // layer extension");
+            LOG_WARNING(Shader_GLSL, "Shader stores viewport index but device does not support "
+                                     "viewport layer extension");
             break;
         }
         ctx.Add("gl_ViewportIndex=ftoi({});", value);
         break;
     case IR::Attribute::ViewportMask:
         if (ctx.stage != Stage::Geometry && !ctx.profile.support_viewport_mask) {
-            // LOG_WARNING(..., "Shader stores viewport mask but device does not support viewport
-            // mask extension");
+            LOG_WARNING(
+                Shader_GLSL,
+                "Shader stores viewport mask but device does not support viewport mask extension");
             break;
         }
         ctx.Add("gl_ViewportMask[0]=ftoi({});", value);
