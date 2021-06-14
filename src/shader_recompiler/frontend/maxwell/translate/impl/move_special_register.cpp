@@ -118,7 +118,7 @@ enum class SpecialRegister : u64 {
     case SpecialRegister::SR_THREAD_KILL:
         return IR::U32{ir.Select(ir.IsHelperInvocation(), ir.Imm32(-1), ir.Imm32(0))};
     case SpecialRegister::SR_INVOCATION_INFO:
-        // LOG_WARNING(..., "SR_INVOCATION_INFO is stubbed");
+        LOG_WARNING(Shader, "(STUBBED) SR_INVOCATION_INFO");
         return ir.Imm32(0x00ff'0000);
     case SpecialRegister::SR_TID: {
         const IR::Value tid{ir.LocalInvocationId()};
@@ -140,10 +140,10 @@ enum class SpecialRegister : u64 {
     case SpecialRegister::SR_CTAID_Z:
         return ir.WorkgroupIdZ();
     case SpecialRegister::SR_WSCALEFACTOR_XY:
-        // LOG_WARNING(..., "SR_WSCALEFACTOR_XY is stubbed");
+        LOG_WARNING(Shader, "(STUBBED) SR_WSCALEFACTOR_XY");
         return ir.Imm32(Common::BitCast<u32>(1.0f));
     case SpecialRegister::SR_WSCALEFACTOR_Z:
-        // LOG_WARNING(..., "SR_WSCALEFACTOR_Z is stubbed");
+        LOG_WARNING(Shader, "(STUBBED) SR_WSCALEFACTOR_Z");
         return ir.Imm32(Common::BitCast<u32>(1.0f));
     case SpecialRegister::SR_LANEID:
         return ir.LaneId();
@@ -160,7 +160,7 @@ enum class SpecialRegister : u64 {
     case SpecialRegister::SR_Y_DIRECTION:
         return ir.BitCast<IR::U32>(ir.YDirection());
     case SpecialRegister::SR_AFFINITY:
-        // LOG_WARNING(..., "SR_AFFINITY is stubbed");
+        LOG_WARNING(Shader, "(STUBBED) SR_AFFINITY");
         return ir.Imm32(0); // This is the default value hardware returns.
     default:
         throw NotImplementedException("S2R special register {}", special_register);

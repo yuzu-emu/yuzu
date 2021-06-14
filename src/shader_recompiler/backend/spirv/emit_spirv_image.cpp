@@ -39,7 +39,7 @@ public:
         }
         const std::array values{offset.InstRecursive(), offset2.InstRecursive()};
         if (!values[0]->AreAllArgsImmediates() || !values[1]->AreAllArgsImmediates()) {
-            // LOG_WARNING("Not all arguments in PTP are immediate, STUBBING");
+            LOG_WARNING(Shader_SPIRV, "Not all arguments in PTP are immediate, ignoring");
             return;
         }
         const IR::Opcode opcode{values[0]->GetOpcode()};
@@ -442,7 +442,7 @@ Id EmitImageGradient(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, I
 Id EmitImageRead(EmitContext& ctx, IR::Inst* inst, const IR::Value& index, Id coords) {
     const auto info{inst->Flags<IR::TextureInstInfo>()};
     if (info.image_format == ImageFormat::Typeless && !ctx.profile.support_typeless_image_loads) {
-        // LOG_WARNING(..., "Typeless image read not supported by host");
+        LOG_WARNING(Shader_SPIRV, "Typeless image read not supported by host");
         return ctx.ConstantNull(ctx.U32[4]);
     }
     return Emit(&EmitContext::OpImageSparseRead, &EmitContext::OpImageRead, ctx, inst, ctx.U32[4],

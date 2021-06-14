@@ -253,7 +253,7 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
         }
     }
     if (!ctx.reg_alloc.IsEmpty()) {
-        // LOG_WARNING ...;
+        LOG_WARNING(Shader_GLASM, "Register leak after generating code");
     }
 }
 
