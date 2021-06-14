@@ -910,6 +910,7 @@ void BufferCache<P>::BindHostComputeUniformBuffers() {
     if constexpr (HAS_PERSISTENT_UNIFORM_BUFFER_BINDINGS) {
         // Mark all uniform buffers as dirty
         dirty_uniform_buffers.fill(~u32{0});
+        fast_bound_uniform_buffers.fill(0);
     }
     u32 binding_index = 0;
     ForEachEnabledBit(enabled_compute_uniform_buffer_mask, [&](u32 index) {
