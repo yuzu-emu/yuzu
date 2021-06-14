@@ -48,7 +48,7 @@ void TranslatorVisitor::VOTE(u64 insn) {
 }
 
 void TranslatorVisitor::VOTE_vtg(u64) {
-    // LOG_WARNING(ShaderDecompiler, "VOTE.VTG: Stubbed!");
+    LOG_WARNING(Shader, "(STUBBED) called");
 }
 
 } // namespace Shader::Maxwell

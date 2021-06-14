@@ -131,7 +131,7 @@ void EmitEmitVertex(EmitContext& ctx, const IR::Value& stream) {
     if (stream.IsImmediate()) {
         ctx.OpEmitStreamVertex(ctx.Def(stream));
     } else {
-        // LOG_WARNING(..., "EmitVertex's stream is not constant");
+        LOG_WARNING(Shader_SPIRV, "Stream is not immediate");
         ctx.OpEmitStreamVertex(ctx.u32_zero_value);
     }
     // Restore fixed pipeline point size after emitting the vertex
@@ -142,7 +142,7 @@ void EmitEndPrimitive(EmitContext& ctx, const IR::Value& stream) {
     if (stream.IsImmediate()) {
         ctx.OpEndStreamPrimitive(ctx.Def(stream));
     } else {
-        // LOG_WARNING(..., "EndPrimitive's stream is not constant");
+        LOG_WARNING(Shader_SPIRV, "Stream is not immediate");
         ctx.OpEndStreamPrimitive(ctx.u32_zero_value);
     }
 }

@@ -139,12 +139,12 @@ void SwizzleOffsets(EmitContext& ctx, Register off_x, Register off_y, const IR::
 
 std::string GradOffset(const IR::Value& offset) {
     if (offset.IsImmediate()) {
-        // LOG_WARNING immediate
+        LOG_WARNING(Shader_GLASM, "Gradient offset is a scalar immediate");
         return "";
     }
     IR::Inst* const vector{offset.InstRecursive()};
     if (!vector->AreAllArgsImmediates()) {
-        // LOG_WARNING elements not immediate
+        LOG_WARNING(Shader_GLASM, "Gradient offset vector is not immediate");
         return "";
     }
     switch (vector->NumArgs()) {

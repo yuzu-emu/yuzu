@@ -114,6 +114,10 @@ enum class Class : u8 {
     Render_Software,   ///< Software renderer backend
     Render_OpenGL,     ///< OpenGL backend
     Render_Vulkan,     ///< Vulkan backend
+    Shader,            ///< Shader recompiler
+    Shader_SPIRV,      ///< Shader SPIR-V code generation
+    Shader_GLASM,      ///< Shader GLASM code generation
+    Shader_GLSL,       ///< Shader GLSL code generation
     Audio,             ///< Audio emulation
     Audio_DSP,         ///< The HLE implementation of the DSP
     Audio_Sink,        ///< Emulator audio output backend

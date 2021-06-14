@@ -115,7 +115,7 @@ void EmitDPdxFine(EmitContext& ctx, IR::Inst& inst, ScalarF32 p) {
     if (ctx.profile.support_derivative_control) {
         ctx.Add("DDX.FINE {}.x,{};", inst, p);
     } else {
-        // LOG_WARNING
+        LOG_WARNING(Shader_GLASM, "Fine derivatives not supported by device");
         ctx.Add("DDX {}.x,{};", inst, p);
     }
 }
@@ -124,7 +124,7 @@ void EmitDPdyFine(EmitContext& ctx, IR::Inst& inst, ScalarF32 p) {
     if (ctx.profile.support_derivative_control) {
         ctx.Add("DDY.FINE {}.x,{};", inst, p);
     } else {
-        // LOG_WARNING
+        LOG_WARNING(Shader_GLASM, "Fine derivatives not supported by device");
         ctx.Add("DDY {}.x,{};", inst, p);
     }
 }
@@ -133,7 +133,7 @@ void EmitDPdxCoarse(EmitContext& ctx, IR::Inst& inst, ScalarF32 p) {
     if (ctx.profile.support_derivative_control) {
         ctx.Add("DDX.COARSE {}.x,{};", inst, p);
     } else {
-        // LOG_WARNING
+        LOG_WARNING(Shader_GLASM, "Coarse derivatives not supported by device");
         ctx.Add("DDX {}.x,{};", inst, p);
     }
 }
@@ -142,7 +142,7 @@ void EmitDPdyCoarse(EmitContext& ctx, IR::Inst& inst, ScalarF32 p) {
     if (ctx.profile.support_derivative_control) {
         ctx.Add("DDY.COARSE {}.x,{};", inst, p);
     } else {
-        // LOG_WARNING
+        LOG_WARNING(Shader_GLASM, "Coarse derivatives not supported by device");
         ctx.Add("DDY {}.x,{};", inst, p);
     }
 }

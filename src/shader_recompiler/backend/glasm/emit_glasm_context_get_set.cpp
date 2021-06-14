@@ -145,14 +145,16 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, ScalarF32 value,
         if (ctx.stage == Stage::Geometry || ctx.profile.support_viewport_index_layer_non_geometry) {
             ctx.Add("MOV.F result.layer.x,{};", value);
         } else {
-            // LOG_WARNING
+            LOG_WARNING(Shader_GLASM,
+                        "Layer stored outside of geometry shader not supported by device");
         }
         break;
     case IR::Attribute::ViewportIndex:
         if (ctx.stage == Stage::Geometry || ctx.profile.support_viewport_index_layer_non_geometry) {
             ctx.Add("MOV.F result.viewport.x,{};", value);
         } else {
-            // LOG_WARNING
+            LOG_WARNING(Shader_GLASM,
+                        "Viewport stored outside of geometry shader not supported by device");
         }
         break;
     case IR::Attribute::PointSize:
