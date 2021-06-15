@@ -187,6 +187,7 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
           .support_gl_warp_intrinsics = false,
           .support_gl_variable_aoffi = device.HasVariableAoffi(),
           .support_gl_sparse_textures = device.HasSparseTexture2(),
+          .support_gl_derivative_control = device.HasDerivativeControl(),
 
           .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyLargerThanGuest(),
 

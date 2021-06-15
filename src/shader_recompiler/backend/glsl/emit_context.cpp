@@ -395,6 +395,9 @@ void EmitContext::SetupExtensions() {
     if (info.uses_typeless_image_reads || info.uses_typeless_image_writes) {
         header += "#extension GL_EXT_shader_image_load_formatted : enable\n";
     }
+    if (info.uses_derivatives && profile.support_gl_derivative_control) {
+        header += "#extension GL_ARB_derivative_control : enable\n";
+    }
 }
 
 void EmitContext::DefineConstantBuffers(Bindings& bindings) {
