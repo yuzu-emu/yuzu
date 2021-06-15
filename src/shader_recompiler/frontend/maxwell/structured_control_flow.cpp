@@ -750,7 +750,9 @@ private:
                 } else {
                     IR::Block* const init_block{block_pool.Create(inst_pool)};
                     IR::IREmitter ir{*init_block};
-                    ir.SetLoopSafetyVariable(this_loop_id, ir.Imm32(0x2000));
+
+                    static constexpr u32 SAFETY_THRESHOLD = 0x2000;
+                    ir.SetLoopSafetyVariable(this_loop_id, ir.Imm32(SAFETY_THRESHOLD));
 
                     if (current_block) {
                         current_block->AddBranch(init_block);

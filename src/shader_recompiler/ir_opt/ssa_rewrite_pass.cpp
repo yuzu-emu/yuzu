@@ -338,7 +338,7 @@ void VisitInst(Pass& pass, IR::Block* block, IR::Inst& inst) {
         pass.WriteVariable(GotoVariable{inst.Arg(0).U32()}, block, inst.Arg(1));
         break;
     case IR::Opcode::SetLoopSafetyVariable:
-        pass.WriteVariable(LoopSafetyVariable{inst.Arg(0).U32()}, block, inst.Arg(0));
+        pass.WriteVariable(LoopSafetyVariable{inst.Arg(0).U32()}, block, inst.Arg(1));
         break;
     case IR::Opcode::SetIndirectBranchVariable:
         pass.WriteVariable(IndirectBranchVariable{}, block, inst.Arg(0));
