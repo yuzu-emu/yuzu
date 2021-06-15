@@ -472,7 +472,7 @@ void GraphicsPipeline::ConfigureDraw() {
 
 void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
     FixedPipelineState::DynamicState dynamic{};
-    if (key.state.extended_dynamic_state) {
+    if (!key.state.extended_dynamic_state) {
         dynamic = key.state.dynamic_state;
     }
     static_vector<VkVertexInputBindingDescription, 32> vertex_bindings;
