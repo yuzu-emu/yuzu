@@ -156,8 +156,7 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
             ctx.Add("for(;;){{");
             break;
         case IR::AbstractSyntaxNode::Type::Repeat:
-            ctx.Add("if({}){{continue;}}else{{break;}}}}",
-                    ctx.var_alloc.Consume(node.data.repeat.cond));
+            ctx.Add("if(!{}){{break;}}}}", ctx.var_alloc.Consume(node.data.repeat.cond));
             break;
         default:
             throw NotImplementedException("AbstractSyntaxNode Type {}", node.type);
@@ -166,7 +165,7 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
 }
 
 std::string GlslVersionSpecifier(const EmitContext& ctx) {
-    if (ctx.uses_y_direction || ctx.info.stores_legacy_varyings) {
+    if (ctx.uses_y_direction || ctx.info.stores_legacy_varyings || ctx.info.loads_legacy_varyings) {
         return " compatibility";
     }
     return "";
@@ -187,7 +186,8 @@ void DefineVariables(const EmitContext& ctx, std::string& header) {
         const auto type{static_cast<GlslVarType>(i)};
         const auto& tracker{ctx.var_alloc.GetUseTracker(type)};
         const auto type_name{ctx.var_alloc.GetGlslType(type)};
-        const auto precise{IsPreciseType(type) ? "precise " : ""};
+        const bool has_precise_bug{ctx.stage == Stage::Fragment && ctx.profile.has_gl_precise_bug};
+        const auto precise{!has_precise_bug && IsPreciseType(type) ? "precise " : ""};
         // Temps/return types that are never used are stored at index 0
         if (tracker.uses_temp) {
             header += fmt::format("{}{} t{}={}(0);", precise, type_name,

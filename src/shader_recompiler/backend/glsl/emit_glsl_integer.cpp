@@ -28,6 +28,7 @@ void SetSignFlag(EmitContext& ctx, IR::Inst& inst, std::string_view result) {
     sign->Invalidate();
 }
 } // Anonymous namespace
+
 void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
     const auto result{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     if (IR::Inst* const carry{inst.GetAssociatedPseudoOperation(IR::Opcode::GetCarryFromOp)}) {

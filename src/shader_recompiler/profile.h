@@ -105,6 +105,8 @@ struct Profile {
     bool has_broken_signed_operations{};
     /// Dynamic vec4 indexing is broken on some OpenGL drivers
     bool has_gl_component_indexing_bug{};
+    /// The precise type qualifier is broken in the fragment stage of some drivers
+    bool has_gl_precise_bug{};
     /// Ignores SPIR-V ordered vs unordered using GLSL semantics
     bool ignore_nan_fp_comparisons{};
 };
