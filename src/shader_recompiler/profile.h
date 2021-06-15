@@ -89,6 +89,7 @@ struct Profile {
     bool support_gl_warp_intrinsics{};
     bool support_gl_variable_aoffi{};
     bool support_gl_sparse_textures{};
+    bool support_gl_derivative_control{};
 
     bool warp_size_potentially_larger_than_guest{};
 

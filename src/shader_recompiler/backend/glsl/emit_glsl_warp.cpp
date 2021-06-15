@@ -180,18 +180,38 @@ void EmitFSwizzleAdd(EmitContext& ctx, IR::Inst& inst, std::string_view op_a, st
 }
 
 void EmitDPdxFine(EmitContext& ctx, IR::Inst& inst, std::string_view op_a) {
-    ctx.AddF32("{}=dFdxFine({});", inst, op_a);
+    if (ctx.profile.support_gl_derivative_control) {
+        ctx.AddF32("{}=dFdxFine({});", inst, op_a);
+    } else {
+        LOG_WARNING(Shader_GLSL, "Device does not support dFdxFine, fallback to dFdx");
+        ctx.AddF32("{}=dFdx({});", inst, op_a);
+    }
 }
 
 void EmitDPdyFine(EmitContext& ctx, IR::Inst& inst, std::string_view op_a) {
-    ctx.AddF32("{}=dFdyFine({});", inst, op_a);
+    if (ctx.profile.support_gl_derivative_control) {
+        ctx.AddF32("{}=dFdyFine({});", inst, op_a);
+    } else {
+        LOG_WARNING(Shader_GLSL, "Device does not support dFdyFine, fallback to dFdy");
+        ctx.AddF32("{}=dFdy({});", inst, op_a);
+    }
 }
 
 void EmitDPdxCoarse(EmitContext& ctx, IR::Inst& inst, std::string_view op_a) {
-    ctx.AddF32("{}=dFdxCoarse({});", inst, op_a);
+    if (ctx.profile.support_gl_derivative_control) {
+        ctx.AddF32("{}=dFdxCoarse({});", inst, op_a);
+    } else {
+        LOG_WARNING(Shader_GLSL, "Device does not support dFdxCoarse, fallback to dFdx");
+        ctx.AddF32("{}=dFdx({});", inst, op_a);
+    }
 }
 
 void EmitDPdyCoarse(EmitContext& ctx, IR::Inst& inst, std::string_view op_a) {
-    ctx.AddF32("{}=dFdyCoarse({});", inst, op_a);
+    if (ctx.profile.support_gl_derivative_control) {
+        ctx.AddF32("{}=dFdyCoarse({});", inst, op_a);
+    } else {
+        LOG_WARNING(Shader_GLSL, "Device does not support dFdyCoarse, fallback to dFdy");
+        ctx.AddF32("{}=dFdy({});", inst, op_a);
+    }
 }
 } // namespace Shader::Backend::GLSL
