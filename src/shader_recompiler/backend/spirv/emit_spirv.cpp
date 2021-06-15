@@ -294,7 +294,7 @@ void SetupDenormControl(const Profile& profile, const IR::Program& program, Emit
                         Id main_func) {
     const Info& info{program.info};
     if (info.uses_fp32_denorms_flush && info.uses_fp32_denorms_preserve) {
-        LOG_ERROR(Shader_SPIRV, "Fp32 denorm flush and preserve on the same shader");
+        LOG_WARNING(Shader_SPIRV, "Fp32 denorm flush and preserve on the same shader");
     } else if (info.uses_fp32_denorms_flush) {
         if (profile.support_fp32_denorm_flush) {
             ctx.AddCapability(spv::Capability::DenormFlushToZero);
@@ -315,7 +315,7 @@ void SetupDenormControl(const Profile& profile, const IR::Program& program, Emit
         return;
     }
     if (info.uses_fp16_denorms_flush && info.uses_fp16_denorms_preserve) {
-        LOG_ERROR(Shader_SPIRV, "Fp16 denorm flush and preserve on the same shader");
+        LOG_WARNING(Shader_SPIRV, "Fp16 denorm flush and preserve on the same shader");
     } else if (info.uses_fp16_denorms_flush) {
         if (profile.support_fp16_denorm_flush) {
             ctx.AddCapability(spv::Capability::DenormFlushToZero);
