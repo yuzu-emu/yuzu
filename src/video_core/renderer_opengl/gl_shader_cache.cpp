@@ -17,7 +17,6 @@
 #include "common/scope_exit.h"
 #include "common/thread_worker.h"
 #include "core/core.h"
-#include "core/frontend/emu_window.h"
 #include "shader_recompiler/backend/glasm/emit_glasm.h"
 #include "shader_recompiler/backend/glsl/emit_glsl.h"
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
@@ -50,6 +49,7 @@ using VideoCommon::FileEnvironment;
 using VideoCommon::GenericEnvironment;
 using VideoCommon::GraphicsEnvironment;
 using VideoCommon::SerializePipeline;
+using Context = ShaderContext::Context;
 
 template <typename Container>
 auto MakeSpan(Container& container) {
@@ -143,25 +143,17 @@ void SetXfbState(VideoCommon::TransformFeedbackState& state, const Maxwell& regs
 }
 } // Anonymous namespace
 
-struct ShaderCache::Context {
-    explicit Context(Core::Frontend::EmuWindow& emu_window)
-        : gl_context{emu_window.CreateSharedContext()}, scoped{*gl_context} {}
-
-    std::unique_ptr<Core::Frontend::GraphicsContext> gl_context;
-    Core::Frontend::GraphicsContext::Scoped scoped;
-    ShaderPools pools;
-};
-
 ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindow& emu_window_,
                          Tegra::Engines::Maxwell3D& maxwell3d_,
                          Tegra::Engines::KeplerCompute& kepler_compute_,
                          Tegra::MemoryManager& gpu_memory_, const Device& device_,
                          TextureCache& texture_cache_, BufferCache& buffer_cache_,
-                         ProgramManager& program_manager_, StateTracker& state_tracker_)
+                         ProgramManager& program_manager_, StateTracker& state_tracker_,
+                         VideoCore::ShaderNotify& shader_notify_)
     : VideoCommon::ShaderCache{rasterizer_, gpu_memory_, maxwell3d_, kepler_compute_},
       emu_window{emu_window_}, device{device_}, texture_cache{texture_cache_},
       buffer_cache{buffer_cache_}, program_manager{program_manager_}, state_tracker{state_tracker_},
-      use_asynchronous_shaders{device.UseAsynchronousShaders()},
+      shader_notify{shader_notify_}, use_asynchronous_shaders{device.UseAsynchronousShaders()},
       profile{
           .supported_spirv = 0x00010000,
 
@@ -264,7 +256,7 @@ void ShaderCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
                     env_ptrs.push_back(&env);
                 }
                 ctx->pools.ReleaseContents();
-                auto pipeline{CreateGraphicsPipeline(ctx->pools, key, MakeSpan(env_ptrs))};
+                auto pipeline{CreateGraphicsPipeline(ctx->pools, key, MakeSpan(env_ptrs), false)};
                 std::lock_guard lock{state.mutex};
                 if (pipeline) {
                     graphics_cache.emplace(key, std::move(pipeline));
@@ -311,6 +303,9 @@ GraphicsPipeline* ShaderCache::CurrentGraphicsPipeline() {
     if (is_new) {
         program = CreateGraphicsPipeline();
     }
+    if (!program || !program->IsBuilt()) {
+        return nullptr;
+    }
     return program.get();
 }
 
@@ -339,7 +334,8 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline() {
     GetGraphicsEnvironments(environments, graphics_key.unique_hashes);
 
     main_pools.ReleaseContents();
-    auto pipeline{CreateGraphicsPipeline(main_pools, graphics_key, environments.Span())};
+    auto pipeline{CreateGraphicsPipeline(main_pools, graphics_key, environments.Span(),
+                                         use_asynchronous_shaders)};
     if (!pipeline || shader_cache_filename.empty()) {
         return pipeline;
     }
@@ -354,8 +350,8 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline() {
 }
 
 std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
-    ShaderPools& pools, const GraphicsPipelineKey& key,
-    std::span<Shader::Environment* const> envs) try {
+    ShaderContext::ShaderPools& pools, const GraphicsPipelineKey& key,
+    std::span<Shader::Environment* const> envs, bool build_in_parallel) try {
     LOG_INFO(Render_OpenGL, "0x{:016x}", key.Hash());
     size_t env_index{};
     u32 total_storage_buffers{};
@@ -394,8 +390,7 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
     std::array<const Shader::Info*, Maxwell::MaxShaderStage> infos{};
 
     OGLProgram source_program;
-    std::array<std::string, 5> assembly_sources;
-    std::array<std::string, 5> glsl_sources;
+    std::array<std::string, 5> sources;
     Shader::Backend::Bindings binding;
     const bool use_glasm{device.UseAssemblyShaders()};
     const size_t first_index = uses_vertex_a && uses_vertex_b ? 1 : 0;
@@ -412,14 +407,16 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
         const auto runtime_info{
             MakeRuntimeInfo(key, program, glasm_use_storage_buffers, use_glasm)};
         if (use_glasm) {
-            assembly_sources[stage_index] = EmitGLASM(profile, runtime_info, program, binding);
+            sources[stage_index] = EmitGLASM(profile, runtime_info, program, binding);
         } else {
-            glsl_sources[stage_index] = EmitGLSL(profile, runtime_info, program, binding);
+            sources[stage_index] = EmitGLSL(profile, runtime_info, program, binding);
         }
     }
+    auto* const thread_worker{build_in_parallel ? workers.get() : nullptr};
+    VideoCore::ShaderNotify* const notify{build_in_parallel ? &shader_notify : nullptr};
     return std::make_unique<GraphicsPipeline>(
         device, texture_cache, buffer_cache, gpu_memory, maxwell3d, program_manager, state_tracker,
-        assembly_sources, glsl_sources, infos, key.xfb_enabled != 0 ? &key.xfb_state : nullptr);
+        thread_worker, notify, sources, infos, key.xfb_enabled != 0 ? &key.xfb_state : nullptr);
 
 } catch (Shader::Exception& exception) {
     LOG_ERROR(Render_OpenGL, "{}", exception.what());
@@ -442,9 +439,9 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
     return pipeline;
 }
 
-std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(ShaderPools& pools,
-                                                                    const ComputePipelineKey& key,
-                                                                    Shader::Environment& env) try {
+std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
+    ShaderContext::ShaderPools& pools, const ComputePipelineKey& key,
+    Shader::Environment& env) try {
     LOG_INFO(Render_OpenGL, "0x{:016x}", key.Hash());
 
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
@@ -465,11 +462,10 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(ShaderPools&
     return nullptr;
 }
 
-std::unique_ptr<Common::StatefulThreadWorker<ShaderCache::Context>> ShaderCache::CreateWorkers()
-    const {
-    return std::make_unique<Common::StatefulThreadWorker<Context>>(
-        std::max(std::thread::hardware_concurrency(), 2U) - 1, "yuzu:ShaderBuilder",
-        [this] { return Context{emu_window}; });
+std::unique_ptr<ShaderWorker> ShaderCache::CreateWorkers() const {
+    return std::make_unique<ShaderWorker>(std::max(std::thread::hardware_concurrency(), 2U) - 1,
+                                          "yuzu:ShaderBuilder",
+                                          [this] { return Context{emu_window}; });
 }
 
 } // namespace OpenGL

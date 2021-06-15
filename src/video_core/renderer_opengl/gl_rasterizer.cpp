@@ -70,7 +70,7 @@ RasterizerOpenGL::RasterizerOpenGL(Core::Frontend::EmuWindow& emu_window_, Tegra
       buffer_cache_runtime(device),
       buffer_cache(*this, maxwell3d, kepler_compute, gpu_memory, cpu_memory_, buffer_cache_runtime),
       shader_cache(*this, emu_window_, maxwell3d, kepler_compute, gpu_memory, device, texture_cache,
-                   buffer_cache, program_manager, state_tracker),
+                   buffer_cache, program_manager, state_tracker, gpu.ShaderNotify()),
       query_cache(*this, maxwell3d, gpu_memory),
       fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache) {}
 
