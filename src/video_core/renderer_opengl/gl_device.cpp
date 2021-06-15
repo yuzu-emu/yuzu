@@ -162,6 +162,7 @@ Device::Device() {
     has_amd_shader_half_float = GLAD_GL_AMD_gpu_shader_half_float;
     has_sparse_texture_2 = GLAD_GL_ARB_sparse_texture2;
     warp_size_potentially_larger_than_guest = !is_nvidia && !is_intel;
+    need_fastmath_off = is_nvidia;
 
     // At the moment of writing this, only Nvidia's driver optimizes BufferSubData on exclusive
     // uniform buffers as "push constants"

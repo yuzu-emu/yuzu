@@ -10,6 +10,17 @@
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLSL {
+namespace {
+void InitializeVaryings(EmitContext& ctx) {
+    ctx.Add("gl_Position=vec4(0,0,0,1);");
+    // TODO: Properly resolve attribute issues
+    for (size_t index = 0; index < ctx.info.stores_generics.size() / 2; ++index) {
+        if (!ctx.info.stores_generics[index]) {
+            ctx.Add("out_attr{}=vec4(0,0,0,1);", index);
+        }
+    }
+}
+} // Anonymous namespace
 
 void EmitPhi(EmitContext& ctx, IR::Inst& phi) {
     const size_t num_args{phi.NumArgs()};
@@ -44,14 +55,8 @@ void EmitPhiMove(EmitContext& ctx, const IR::Value& phi_value, const IR::Value& 
 }
 
 void EmitPrologue(EmitContext& ctx) {
-    if (ctx.stage == Stage::VertexA || ctx.stage == Stage::VertexB) {
-        ctx.Add("gl_Position=vec4(0.0f, 0.0f, 0.0f, 1.0f);");
-        // TODO: Properly resolve attribute issues
-        for (size_t index = 0; index < ctx.info.stores_generics.size() / 2; ++index) {
-            if (!ctx.info.stores_generics[index]) {
-                ctx.Add("out_attr{}=vec4(0,0,0,1);", index);
-            }
-        }
+    if (ctx.StageInitializesVaryings()) {
+        InitializeVaryings(ctx);
     }
 }
 
@@ -59,6 +64,7 @@ void EmitEpilogue(EmitContext&) {}
 
 void EmitEmitVertex(EmitContext& ctx, const IR::Value& stream) {
     ctx.Add("EmitStreamVertex(int({}));", ctx.var_alloc.Consume(stream));
+    InitializeVaryings(ctx);
 }
 
 void EmitEndPrimitive(EmitContext& ctx, const IR::Value& stream) {

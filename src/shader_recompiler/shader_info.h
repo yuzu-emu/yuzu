@@ -75,6 +75,7 @@ using TextureBufferDescriptors = boost::container::small_vector<TextureBufferDes
 struct ImageBufferDescriptor {
     ImageFormat format;
     bool is_written;
+    bool is_read;
     u32 cbuf_index;
     u32 cbuf_offset;
     u32 count;
@@ -99,6 +100,7 @@ struct ImageDescriptor {
     TextureType type;
     ImageFormat format;
     bool is_written;
+    bool is_read;
     u32 cbuf_index;
     u32 cbuf_offset;
     u32 count;

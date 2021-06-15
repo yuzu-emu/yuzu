@@ -329,7 +329,7 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
         ctx.Add("gl_BackSecondaryColor.{}={};", swizzle, value);
         break;
     case IR::Attribute::FogCoordinate:
-        ctx.Add("gl_FogFragCoord.x={};", value);
+        ctx.Add("gl_FogFragCoord={};", value);
         break;
     case IR::Attribute::ClipDistance0:
     case IR::Attribute::ClipDistance1:

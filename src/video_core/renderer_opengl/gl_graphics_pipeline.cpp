@@ -132,28 +132,23 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_c
     std::ranges::transform(infos, stage_infos.begin(),
                            [](const Shader::Info* info) { return info ? *info : Shader::Info{}; });
     auto func{[this, device, sources, shader_notify, xfb_state](ShaderContext::Context*) mutable {
-        if (device.UseAssemblyShaders()) {
-            for (size_t stage = 0; stage < 5; ++stage) {
-                const auto code{sources[stage]};
-                if (code.empty()) {
-                    continue;
-                }
+        if (!device.UseAssemblyShaders()) {
+            program.handle = glCreateProgram();
+        }
+        for (size_t stage = 0; stage < 5; ++stage) {
+            const auto code{sources[stage]};
+            if (code.empty()) {
+                continue;
+            }
+            if (device.UseAssemblyShaders()) {
                 assembly_programs[stage] = CompileProgram(code, AssemblyStage(stage));
                 enabled_stages_mask |= (assembly_programs[stage].handle != 0 ? 1 : 0) << stage;
-            }
-        } else {
-            program.handle = glCreateProgram();
-            for (size_t stage = 0; stage < 5; ++stage) {
-                const auto code{sources[stage]};
-                if (code.empty()) {
-                    continue;
-                }
+            } else {
                 AttachShader(Stage(stage), program.handle, code);
             }
-            LinkProgram(program.handle);
         }
-        if (shader_notify) {
-            shader_notify->MarkShaderComplete();
+        if (!device.UseAssemblyShaders()) {
+            LinkProgram(program.handle);
         }
         u32 num_textures{};
         u32 num_images{};
@@ -197,6 +192,9 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_c
 
         if (assembly_shaders && xfb_state) {
             GenerateTransformFeedbackState(*xfb_state);
+        }
+        if (shader_notify) {
+            shader_notify->MarkShaderComplete();
         }
         is_built.store(true, std::memory_order_relaxed);
     }};
