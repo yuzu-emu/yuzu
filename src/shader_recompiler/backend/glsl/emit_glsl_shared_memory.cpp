@@ -20,6 +20,7 @@ void SharedWriteCas(EmitContext& ctx, std::string_view offset, std::string_view 
     ctx.Add(cas_loop, smem, smem, smem, value, bit_offset, num_bits);
 }
 } // Anonymous namespace
+
 void EmitLoadSharedU8(EmitContext& ctx, IR::Inst& inst, std::string_view offset) {
     ctx.AddU32("{}=bitfieldExtract(smem[{}>>2],int({}%4)*8,8);", inst, offset, offset);
 }

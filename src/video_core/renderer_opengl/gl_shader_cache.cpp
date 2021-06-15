@@ -196,6 +196,8 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
           .has_broken_spirv_clamp = true,
           .has_broken_unsigned_image_offsets = true,
           .has_broken_signed_operations = true,
+          .has_gl_component_indexing_bug = device.HasComponentIndexingBug(),
+          .has_gl_precise_bug = device.HasPreciseBug(),
           .ignore_nan_fp_comparisons = true,
       } {
     if (use_asynchronous_shaders) {

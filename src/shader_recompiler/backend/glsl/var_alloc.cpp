@@ -177,8 +177,7 @@ Id VarAlloc::Alloc(GlslVarType type) {
 
 void VarAlloc::Free(Id id) {
     if (id.is_valid == 0) {
-        // throw LogicError("Freeing invalid variable");
-        return;
+        throw LogicError("Freeing invalid variable");
     }
     auto& use_tracker{GetUseTracker(id.type)};
     use_tracker.var_use[id.index] = false;

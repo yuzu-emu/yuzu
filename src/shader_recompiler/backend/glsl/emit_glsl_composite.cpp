@@ -17,8 +17,7 @@ void CompositeInsert(EmitContext& ctx, std::string_view result, std::string_view
         // The result is aliased with the composite
         ctx.Add("{}.{}={};", composite, SWIZZLE[index], object);
     } else {
-        ctx.Add("{}={};", result, composite);
-        ctx.Add("{}.{}={};", result, SWIZZLE[index], object);
+        ctx.Add("{}={};{}.{}={};", result, composite, result, SWIZZLE[index], object);
     }
 }
 } // Anonymous namespace

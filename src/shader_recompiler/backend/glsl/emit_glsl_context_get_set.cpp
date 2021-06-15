@@ -30,7 +30,7 @@ std::string InputVertexIndex(EmitContext& ctx, std::string_view vertex) {
     return IsInputArray(ctx.stage) ? fmt::format("[{}]", vertex) : "";
 }
 
-std::string OutputVertexIndex(EmitContext& ctx) {
+std::string_view OutputVertexIndex(EmitContext& ctx) {
     return ctx.stage == Stage::TessellationControl ? "[gl_InvocationID]" : "";
 }
 
@@ -40,7 +40,7 @@ void GetCbuf(EmitContext& ctx, std::string_view ret, const IR::Value& binding,
     const bool is_immediate{offset.IsImmediate()};
     if (is_immediate) {
         const s32 signed_offset{static_cast<s32>(offset.U32())};
-        static constexpr u32 cbuf_size{4096 * 16};
+        static constexpr u32 cbuf_size{0x10000};
         if (signed_offset < 0 || offset.U32() > cbuf_size) {
             LOG_WARNING(Shader_GLSL, "Immediate constant buffer offset is out of bounds");
             ctx.Add("{}=0u;", ret);
@@ -140,7 +140,7 @@ void EmitGetCbufU32x2(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding
                       const IR::Value& offset) {
     const auto cbuf{fmt::format("{}_cbuf{}", ctx.stage_name, binding.U32())};
     if (offset.IsImmediate()) {
-        static constexpr u32 cbuf_size{4096 * 16};
+        static constexpr u32 cbuf_size{0x10000};
         const u32 u32_offset{offset.U32()};
         const s32 signed_offset{static_cast<s32>(offset.U32())};
         if (signed_offset < 0 || u32_offset > cbuf_size) {
@@ -308,21 +308,13 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, std::string_view val
     case IR::Attribute::ColorFrontDiffuseG:
     case IR::Attribute::ColorFrontDiffuseB:
     case IR::Attribute::ColorFrontDiffuseA:
-        if (ctx.stage == Stage::Fragment) {
-            ctx.Add("gl_Color.{}={};", swizzle, value);
-        } else {
-            ctx.Add("gl_FrontColor.{}={};", swizzle, value);
-        }
+        ctx.Add("gl_FrontColor.{}={};", swizzle, value);
         break;
     case IR::Attribute::ColorFrontSpecularR:
     case IR::Attribute::ColorFrontSpecularG:
     case IR::Attribute::ColorFrontSpecularB:
     case IR::Attribute::ColorFrontSpecularA:
-        if (ctx.stage == Stage::Fragment) {
-            ctx.Add("gl_SecondaryColor.{}={};", swizzle, value);
-        } else {
-            ctx.Add("gl_FrontSecondaryColor.{}={};", swizzle, value);
-        }
+        ctx.Add("gl_FrontSecondaryColor.{}={};", swizzle, value);
         break;
     case IR::Attribute::ColorBackDiffuseR:
     case IR::Attribute::ColorBackDiffuseG:

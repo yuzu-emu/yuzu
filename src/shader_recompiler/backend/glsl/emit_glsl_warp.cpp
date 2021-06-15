@@ -43,7 +43,7 @@ void UseShuffleNv(EmitContext& ctx, IR::Inst& inst, std::string_view shfl_op,
     ctx.AddU32("{}={}({},{},{},shfl_in_bounds);", inst, shfl_op, value, index, width);
     SetInBoundsFlag(ctx, inst);
 }
-} // namespace
+} // Anonymous namespace
 
 void EmitLaneId(EmitContext& ctx, IR::Inst& inst) {
     ctx.AddU32("{}=gl_SubGroupInvocationARB&31u;", inst);
