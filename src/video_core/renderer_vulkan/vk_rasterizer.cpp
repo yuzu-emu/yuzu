@@ -440,6 +440,7 @@ void RasterizerVulkan::WaitForIdle() {
 
 void RasterizerVulkan::FragmentBarrier() {
     // We already put barriers when a render pass finishes
+    scheduler.RequestOutsideRenderPassOperationContext();
 }
 
 void RasterizerVulkan::TiledCacheBarrier() {
