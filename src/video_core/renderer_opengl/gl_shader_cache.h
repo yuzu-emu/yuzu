@@ -13,13 +13,12 @@
 
 #include "common/common_types.h"
 #include "common/thread_worker.h"
-#include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/value.h"
-#include "shader_recompiler/frontend/maxwell/control_flow.h"
 #include "shader_recompiler/object_pool.h"
 #include "video_core/engines/shader_type.h"
 #include "video_core/renderer_opengl/gl_compute_pipeline.h"
 #include "video_core/renderer_opengl/gl_graphics_pipeline.h"
+#include "video_core/renderer_opengl/gl_shader_context.h"
 #include "video_core/shader_cache.h"
 
 namespace Tegra {
@@ -31,29 +30,17 @@ namespace OpenGL {
 class Device;
 class ProgramManager;
 class RasterizerOpenGL;
-
-struct ShaderPools {
-    void ReleaseContents() {
-        flow_block.ReleaseContents();
-        block.ReleaseContents();
-        inst.ReleaseContents();
-    }
-
-    Shader::ObjectPool<Shader::IR::Inst> inst;
-    Shader::ObjectPool<Shader::IR::Block> block;
-    Shader::ObjectPool<Shader::Maxwell::Flow::Block> flow_block;
-};
+using ShaderWorker = Common::StatefulThreadWorker<ShaderContext::Context>;
 
 class ShaderCache : public VideoCommon::ShaderCache {
-    struct Context;
-
 public:
     explicit ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindow& emu_window_,
                          Tegra::Engines::Maxwell3D& maxwell3d_,
                          Tegra::Engines::KeplerCompute& kepler_compute_,
                          Tegra::MemoryManager& gpu_memory_, const Device& device_,
                          TextureCache& texture_cache_, BufferCache& buffer_cache_,
-                         ProgramManager& program_manager_, StateTracker& state_tracker_);
+                         ProgramManager& program_manager_, StateTracker& state_tracker_,
+                         VideoCore::ShaderNotify& shader_notify_);
     ~ShaderCache();
 
     void LoadDiskResources(u64 title_id, std::stop_token stop_loading,
@@ -67,17 +54,17 @@ private:
     std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline();
 
     std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline(
-        ShaderPools& pools, const GraphicsPipelineKey& key,
-        std::span<Shader::Environment* const> envs);
+        ShaderContext::ShaderPools& pools, const GraphicsPipelineKey& key,
+        std::span<Shader::Environment* const> envs, bool build_in_parallel);
 
     std::unique_ptr<ComputePipeline> CreateComputePipeline(const ComputePipelineKey& key,
                                                            const VideoCommon::ShaderInfo* shader);
 
-    std::unique_ptr<ComputePipeline> CreateComputePipeline(ShaderPools& pools,
+    std::unique_ptr<ComputePipeline> CreateComputePipeline(ShaderContext::ShaderPools& pools,
                                                            const ComputePipelineKey& key,
                                                            Shader::Environment& env);
 
-    std::unique_ptr<Common::StatefulThreadWorker<Context>> CreateWorkers() const;
+    std::unique_ptr<ShaderWorker> CreateWorkers() const;
 
     Core::Frontend::EmuWindow& emu_window;
     const Device& device;
@@ -85,17 +72,18 @@ private:
     BufferCache& buffer_cache;
     ProgramManager& program_manager;
     StateTracker& state_tracker;
+    VideoCore::ShaderNotify& shader_notify;
 
     GraphicsPipelineKey graphics_key{};
     const bool use_asynchronous_shaders;
 
-    ShaderPools main_pools;
+    ShaderContext::ShaderPools main_pools;
     std::unordered_map<GraphicsPipelineKey, std::unique_ptr<GraphicsPipeline>> graphics_cache;
     std::unordered_map<ComputePipelineKey, std::unique_ptr<ComputePipeline>> compute_cache;
 
     Shader::Profile profile;
     std::filesystem::path shader_cache_filename;
-    std::unique_ptr<Common::StatefulThreadWorker<Context>> workers;
+    std::unique_ptr<ShaderWorker> workers;
 };
 
 } // namespace OpenGL

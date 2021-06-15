@@ -20,10 +20,15 @@
 
 namespace OpenGL {
 
+namespace ShaderContext {
+struct Context;
+}
+
 class Device;
 class ProgramManager;
 
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
+using ShaderWorker = Common::StatefulThreadWorker<ShaderContext::Context>;
 
 struct GraphicsPipelineKey {
     std::array<u64, 6> unique_hashes;
@@ -65,8 +70,8 @@ public:
                               BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
                               Tegra::Engines::Maxwell3D& maxwell3d_,
                               ProgramManager& program_manager_, StateTracker& state_tracker_,
-                              std::array<std::string, 5> assembly_sources,
-                              std::array<std::string, 5> glsl_sources,
+                              ShaderWorker* thread_worker, VideoCore::ShaderNotify* shader_notify,
+                              std::array<std::string, 5> sources,
                               const std::array<const Shader::Info*, 5>& infos,
                               const VideoCommon::TransformFeedbackState* xfb_state);
 
@@ -80,6 +85,10 @@ public:
 
     [[nodiscard]] bool WritesGlobalMemory() const noexcept {
         return writes_global_memory;
+    }
+
+    [[nodiscard]] bool IsBuilt() const noexcept {
+        return is_built.load(std::memory_order::relaxed);
     }
 
 private:
@@ -108,6 +117,7 @@ private:
 
     bool use_storage_buffers{};
     bool writes_global_memory{};
+    std::atomic_bool is_built{false};
 
     static constexpr std::size_t XFB_ENTRY_STRIDE = 3;
     GLsizei num_xfb_attribs{};

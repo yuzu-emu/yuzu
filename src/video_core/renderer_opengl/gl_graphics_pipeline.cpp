@@ -6,11 +6,13 @@
 #include <cstring>
 
 #include "common/cityhash.h"
+#include "common/thread_worker.h"
 #include "shader_recompiler/shader_info.h"
 #include "video_core/renderer_opengl/gl_graphics_pipeline.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
 #include "video_core/renderer_opengl/gl_shader_util.h"
 #include "video_core/renderer_opengl/gl_state_tracker.h"
+#include "video_core/shader_notify.h"
 #include "video_core/texture_cache/texture_cache.h"
 
 namespace OpenGL {
@@ -117,74 +119,91 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_c
                                    BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
                                    Tegra::Engines::Maxwell3D& maxwell3d_,
                                    ProgramManager& program_manager_, StateTracker& state_tracker_,
-                                   std::array<std::string, 5> assembly_sources,
-                                   std::array<std::string, 5> glsl_sources,
+                                   ShaderWorker* thread_worker,
+                                   VideoCore::ShaderNotify* shader_notify,
+                                   std::array<std::string, 5> sources,
                                    const std::array<const Shader::Info*, 5>& infos,
                                    const VideoCommon::TransformFeedbackState* xfb_state)
     : texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, gpu_memory{gpu_memory_},
       maxwell3d{maxwell3d_}, program_manager{program_manager_}, state_tracker{state_tracker_} {
+    if (shader_notify) {
+        shader_notify->MarkShaderBuilding();
+    }
     std::ranges::transform(infos, stage_infos.begin(),
                            [](const Shader::Info* info) { return info ? *info : Shader::Info{}; });
-    if (device.UseAssemblyShaders()) {
-        for (size_t stage = 0; stage < 5; ++stage) {
-            const auto code{assembly_sources[stage]};
-            if (code.empty()) {
-                continue;
+    auto func{[this, device, sources, shader_notify, xfb_state](ShaderContext::Context*) mutable {
+        if (device.UseAssemblyShaders()) {
+            for (size_t stage = 0; stage < 5; ++stage) {
+                const auto code{sources[stage]};
+                if (code.empty()) {
+                    continue;
+                }
+                assembly_programs[stage] = CompileProgram(code, AssemblyStage(stage));
+                enabled_stages_mask |= (assembly_programs[stage].handle != 0 ? 1 : 0) << stage;
             }
-            assembly_programs[stage] = CompileProgram(code, AssemblyStage(stage));
-            enabled_stages_mask |= (assembly_programs[stage].handle != 0 ? 1 : 0) << stage;
+        } else {
+            program.handle = glCreateProgram();
+            for (size_t stage = 0; stage < 5; ++stage) {
+                const auto code{sources[stage]};
+                if (code.empty()) {
+                    continue;
+                }
+                AttachShader(Stage(stage), program.handle, code);
+            }
+            LinkProgram(program.handle);
         }
+        if (shader_notify) {
+            shader_notify->MarkShaderComplete();
+        }
+        u32 num_textures{};
+        u32 num_images{};
+        u32 num_storage_buffers{};
+        for (size_t stage = 0; stage < base_uniform_bindings.size(); ++stage) {
+            const auto& info{stage_infos[stage]};
+            if (stage < 4) {
+                base_uniform_bindings[stage + 1] = base_uniform_bindings[stage];
+                base_storage_bindings[stage + 1] = base_storage_bindings[stage];
+
+                base_uniform_bindings[stage + 1] +=
+                    AccumulateCount(info.constant_buffer_descriptors);
+                base_storage_bindings[stage + 1] +=
+                    AccumulateCount(info.storage_buffers_descriptors);
+            }
+            enabled_uniform_buffer_masks[stage] = info.constant_buffer_mask;
+            std::ranges::copy(info.constant_buffer_used_sizes, uniform_buffer_sizes[stage].begin());
+
+            const u32 num_tex_buffer_bindings{AccumulateCount(info.texture_buffer_descriptors)};
+            num_texture_buffers[stage] += num_tex_buffer_bindings;
+            num_textures += num_tex_buffer_bindings;
+
+            const u32 num_img_buffers_bindings{AccumulateCount(info.image_buffer_descriptors)};
+            num_image_buffers[stage] += num_img_buffers_bindings;
+            num_images += num_img_buffers_bindings;
+
+            num_textures += AccumulateCount(info.texture_descriptors);
+            num_images += AccumulateCount(info.image_descriptors);
+            num_storage_buffers += AccumulateCount(info.storage_buffers_descriptors);
+
+            writes_global_memory |= std::ranges::any_of(
+                info.storage_buffers_descriptors, [](const auto& desc) { return desc.is_written; });
+        }
+        ASSERT(num_textures <= MAX_TEXTURES);
+        ASSERT(num_images <= MAX_IMAGES);
+
+        const bool assembly_shaders{assembly_programs[0].handle != 0};
+        use_storage_buffers =
+            !assembly_shaders || num_storage_buffers <= device.GetMaxGLASMStorageBufferBlocks();
+        writes_global_memory &= !use_storage_buffers;
+
+        if (assembly_shaders && xfb_state) {
+            GenerateTransformFeedbackState(*xfb_state);
+        }
+        is_built.store(true, std::memory_order_relaxed);
+    }};
+    if (thread_worker) {
+        thread_worker->QueueWork(std::move(func));
     } else {
-        program.handle = glCreateProgram();
-        for (size_t stage = 0; stage < 5; ++stage) {
-            const auto code{glsl_sources[stage]};
-            if (code.empty()) {
-                continue;
-            }
-            AttachShader(Stage(stage), program.handle, code);
-        }
-        LinkProgram(program.handle);
-    }
-    u32 num_textures{};
-    u32 num_images{};
-    u32 num_storage_buffers{};
-    for (size_t stage = 0; stage < base_uniform_bindings.size(); ++stage) {
-        const auto& info{stage_infos[stage]};
-        if (stage < 4) {
-            base_uniform_bindings[stage + 1] = base_uniform_bindings[stage];
-            base_storage_bindings[stage + 1] = base_storage_bindings[stage];
-
-            base_uniform_bindings[stage + 1] += AccumulateCount(info.constant_buffer_descriptors);
-            base_storage_bindings[stage + 1] += AccumulateCount(info.storage_buffers_descriptors);
-        }
-        enabled_uniform_buffer_masks[stage] = info.constant_buffer_mask;
-        std::ranges::copy(info.constant_buffer_used_sizes, uniform_buffer_sizes[stage].begin());
-
-        const u32 num_tex_buffer_bindings{AccumulateCount(info.texture_buffer_descriptors)};
-        num_texture_buffers[stage] += num_tex_buffer_bindings;
-        num_textures += num_tex_buffer_bindings;
-
-        const u32 num_img_buffers_bindings{AccumulateCount(info.image_buffer_descriptors)};
-        num_image_buffers[stage] += num_img_buffers_bindings;
-        num_images += num_img_buffers_bindings;
-
-        num_textures += AccumulateCount(info.texture_descriptors);
-        num_images += AccumulateCount(info.image_descriptors);
-        num_storage_buffers += AccumulateCount(info.storage_buffers_descriptors);
-
-        writes_global_memory |= std::ranges::any_of(
-            info.storage_buffers_descriptors, [](const auto& desc) { return desc.is_written; });
-    }
-    ASSERT(num_textures <= MAX_TEXTURES);
-    ASSERT(num_images <= MAX_IMAGES);
-
-    const bool assembly_shaders{assembly_programs[0].handle != 0};
-    use_storage_buffers =
-        !assembly_shaders || num_storage_buffers <= device.GetMaxGLASMStorageBufferBlocks();
-    writes_global_memory &= !use_storage_buffers;
-
-    if (assembly_shaders && xfb_state) {
-        GenerateTransformFeedbackState(*xfb_state);
+        func(nullptr);
     }
 }
 
