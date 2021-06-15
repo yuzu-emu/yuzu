@@ -216,15 +216,6 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
             fmt::format("shared uint smem[{}];", Common::AlignUp(program.shared_memory_size, 4));
     }
     ctx.header += "void main(){\n";
-    if (program.stage == Stage::VertexA || program.stage == Stage::VertexB) {
-        ctx.header += "gl_Position = vec4(0.0f, 0.0f, 0.0f, 1.0f);";
-        // TODO: Properly resolve attribute issues
-        for (size_t index = 0; index < program.info.stores_generics.size() / 2; ++index) {
-            if (!program.info.stores_generics[index]) {
-                ctx.header += fmt::format("out_attr{}=vec4(0,0,0,1);", index);
-            }
-        }
-    }
     DefineVariables(ctx, ctx.header);
     if (ctx.uses_cc_carry) {
         ctx.header += "uint carry;";

@@ -6,6 +6,7 @@
 
 #include "shader_recompiler/backend/glsl/emit_context.h"
 #include "shader_recompiler/backend/glsl/emit_glsl_instructions.h"
+#include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLSL {
@@ -42,13 +43,19 @@ void EmitPhiMove(EmitContext& ctx, const IR::Value& phi_value, const IR::Value& 
     ctx.Add("{}={};", phi_reg, val_reg);
 }
 
-void EmitPrologue(EmitContext&) {
-    // TODO
+void EmitPrologue(EmitContext& ctx) {
+    if (ctx.stage == Stage::VertexA || ctx.stage == Stage::VertexB) {
+        ctx.Add("gl_Position=vec4(0.0f, 0.0f, 0.0f, 1.0f);");
+        // TODO: Properly resolve attribute issues
+        for (size_t index = 0; index < ctx.info.stores_generics.size() / 2; ++index) {
+            if (!ctx.info.stores_generics[index]) {
+                ctx.Add("out_attr{}=vec4(0,0,0,1);", index);
+            }
+        }
+    }
 }
 
-void EmitEpilogue(EmitContext&) {
-    // TODO
-}
+void EmitEpilogue(EmitContext&) {}
 
 void EmitEmitVertex(EmitContext& ctx, const IR::Value& stream) {
     ctx.Add("EmitStreamVertex(int({}));", ctx.var_alloc.Consume(stream));
