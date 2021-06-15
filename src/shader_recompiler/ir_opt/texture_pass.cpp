@@ -312,11 +312,14 @@ public:
     }
 
     u32 Add(const ImageBufferDescriptor& desc) {
-        return Add(image_buffer_descriptors, desc, [&desc](const auto& existing) {
+        const u32 index{Add(image_buffer_descriptors, desc, [&desc](const auto& existing) {
             return desc.format == existing.format && desc.cbuf_index == existing.cbuf_index &&
                    desc.cbuf_offset == existing.cbuf_offset && desc.count == existing.count &&
                    desc.size_shift == existing.size_shift;
-        });
+        })};
+        image_buffer_descriptors[index].is_written |= desc.is_written;
+        image_buffer_descriptors[index].is_read |= desc.is_read;
+        return index;
     }
 
     u32 Add(const TextureDescriptor& desc) {
@@ -339,6 +342,7 @@ public:
                    desc.size_shift == existing.size_shift;
         })};
         image_descriptors[index].is_written |= desc.is_written;
+        image_descriptors[index].is_read |= desc.is_read;
         return index;
     }
 
@@ -430,10 +434,12 @@ void TexturePass(Environment& env, IR::Program& program) {
                 throw NotImplementedException("Unexpected separate sampler");
             }
             const bool is_written{inst->GetOpcode() != IR::Opcode::ImageRead};
+            const bool is_read{inst->GetOpcode() == IR::Opcode::ImageRead};
             if (flags.type == TextureType::Buffer) {
                 index = descriptors.Add(ImageBufferDescriptor{
                     .format = flags.image_format,
                     .is_written = is_written,
+                    .is_read = is_read,
                     .cbuf_index = cbuf.index,
                     .cbuf_offset = cbuf.offset,
                     .count = cbuf.count,
@@ -444,6 +450,7 @@ void TexturePass(Environment& env, IR::Program& program) {
                     .type = flags.type,
                     .format = flags.image_format,
                     .is_written = is_written,
+                    .is_read = is_read,
                     .cbuf_index = cbuf.index,
                     .cbuf_offset = cbuf.offset,
                     .count = cbuf.count,

@@ -136,6 +136,10 @@ public:
         return warp_size_potentially_larger_than_guest;
     }
 
+    bool NeedsFastmathOff() const {
+        return need_fastmath_off;
+    }
+
 private:
     static bool TestVariableAoffi();
     static bool TestPreciseBug();
@@ -171,6 +175,7 @@ private:
     bool has_amd_shader_half_float{};
     bool has_sparse_texture_2{};
     bool warp_size_potentially_larger_than_guest{};
+    bool need_fastmath_off{};
 };
 
 } // namespace OpenGL

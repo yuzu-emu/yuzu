@@ -193,6 +193,7 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
 
           .lower_left_origin_mode = true,
           .need_declared_frag_colors = true,
+          .need_fastmath_off = device.NeedsFastmathOff(),
 
           .has_broken_spirv_clamp = true,
           .has_broken_unsigned_image_offsets = true,

@@ -148,6 +148,16 @@ std::string_view ImageFormatString(ImageFormat format) {
     }
 }
 
+std::string_view ImageAccessQualifier(bool is_written, bool is_read) {
+    if (is_written && !is_read) {
+        return "writeonly ";
+    }
+    if (is_read && !is_written) {
+        return "readonly ";
+    }
+    return "";
+}
+
 std::string_view GetTessMode(TessPrimitive primitive) {
     switch (primitive) {
     case TessPrimitive::Triangles:
@@ -262,7 +272,9 @@ void SetupLegacyInPerFragment(EmitContext& ctx, std::string& header) {
 EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
                          const RuntimeInfo& runtime_info_)
     : info{program.info}, profile{profile_}, runtime_info{runtime_info_} {
-    header += "#pragma optionNV(fastmath off)\n";
+    if (profile.need_fastmath_off) {
+        header += "#pragma optionNV(fastmath off)\n";
+    }
     SetupExtensions();
     stage = program.stage;
     switch (program.stage) {
@@ -335,7 +347,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     }
     for (size_t index = 0; index < info.stores_generics.size(); ++index) {
         // TODO: Properly resolve attribute issues
-        if (info.stores_generics[index] || stage == Stage::VertexA || stage == Stage::VertexB) {
+        if (info.stores_generics[index] || StageInitializesVaryings()) {
             DefineGenericOutput(index, program.invocations);
         }
     }
@@ -345,6 +357,17 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     SetupTextures(bindings);
     DefineHelperFunctions();
     DefineConstants();
+}
+
+bool EmitContext::StageInitializesVaryings() const noexcept {
+    switch (stage) {
+    case Stage::VertexA:
+    case Stage::VertexB:
+    case Stage::Geometry:
+        return true;
+    default:
+        return false;
+    }
 }
 
 void EmitContext::SetupExtensions() {
@@ -361,7 +384,7 @@ void EmitContext::SetupExtensions() {
         header += "#extension GL_NV_shader_atomic_float : enable\n";
     }
     if (info.uses_atomic_f16x2_add || info.uses_atomic_f16x2_min || info.uses_atomic_f16x2_max) {
-        header += "#extension NV_shader_atomic_fp16_vector : enable\n";
+        header += "#extension GL_NV_shader_atomic_fp16_vector : enable\n";
     }
     if (info.uses_fp16) {
         if (profile.support_gl_nv_gpu_shader_5) {
@@ -392,7 +415,7 @@ void EmitContext::SetupExtensions() {
     if (info.stores_viewport_mask && profile.support_viewport_mask) {
         header += "#extension GL_NV_viewport_array2 : enable\n";
     }
-    if (info.uses_typeless_image_reads || info.uses_typeless_image_writes) {
+    if (info.uses_typeless_image_reads) {
         header += "#extension GL_EXT_shader_image_load_formatted : enable\n";
     }
     if (info.uses_derivatives && profile.support_gl_derivative_control) {
@@ -593,9 +616,9 @@ std::string EmitContext::DefineGlobalMemoryFunctions() {
                     "return uvec4({0}[uint(addr-{1})>>2],{0}[uint(addr-{1}+4)>>2],{0}["
                     "uint(addr-{1}+8)>>2],{0}[uint(addr-{1}+12)>>2]);}}");
     }
-    write_func += "}";
-    write_func_64 += "}";
-    write_func_128 += "}";
+    write_func += '}';
+    write_func_64 += '}';
+    write_func_128 += '}';
     load_func += "return 0u;}";
     load_func_64 += "return uvec2(0);}";
     load_func_128 += "return uvec4(0);}";
@@ -607,9 +630,10 @@ void EmitContext::SetupImages(Bindings& bindings) {
     for (const auto& desc : info.image_buffer_descriptors) {
         image_buffers.push_back({bindings.image, desc.count});
         const auto format{ImageFormatString(desc.format)};
+        const auto qualifier{ImageAccessQualifier(desc.is_written, desc.is_read)};
         const auto array_decorator{desc.count > 1 ? fmt::format("[{}]", desc.count) : ""};
-        header += fmt::format("layout(binding={}{}) uniform uimageBuffer img{}{};", bindings.image,
-                              format, bindings.image, array_decorator);
+        header += fmt::format("layout(binding={}{}) uniform {}uimageBuffer img{}{};",
+                              bindings.image, format, qualifier, bindings.image, array_decorator);
         bindings.image += desc.count;
     }
     images.reserve(info.image_descriptors.size());
@@ -617,7 +641,7 @@ void EmitContext::SetupImages(Bindings& bindings) {
         images.push_back({bindings.image, desc.count});
         const auto format{ImageFormatString(desc.format)};
         const auto image_type{ImageType(desc.type)};
-        const auto qualifier{desc.is_written ? "" : "readonly "};
+        const auto qualifier{ImageAccessQualifier(desc.is_written, desc.is_read)};
         const auto array_decorator{desc.count > 1 ? fmt::format("[{}]", desc.count) : ""};
         header += fmt::format("layout(binding={}{})uniform {}{} img{}{};", bindings.image, format,
                               qualifier, image_type, bindings.image, array_decorator);
