@@ -174,14 +174,12 @@ IR::Program MergeDualVertexPrograms(IR::Program& vertex_a, IR::Program& vertex_b
     Optimization::VertexATransformPass(vertex_a);
     Optimization::VertexBTransformPass(vertex_b);
     for (const auto& term : vertex_a.syntax_list) {
-        if (term.type == IR::AbstractSyntaxNode::Type::Return) {
-            continue;
+        if (term.type != IR::AbstractSyntaxNode::Type::Return) {
+            result.syntax_list.push_back(term);
         }
-        result.syntax_list.push_back(term);
     }
-    for (const auto& term : vertex_b.syntax_list) {
-        result.syntax_list.push_back(term);
-    }
+    result.syntax_list.insert(result.syntax_list.end(), vertex_b.syntax_list.begin(),
+                              vertex_b.syntax_list.end());
     result.blocks = GenerateBlocks(result.syntax_list);
     result.post_order_blocks = vertex_b.post_order_blocks;
     for (const auto& block : vertex_a.post_order_blocks) {
