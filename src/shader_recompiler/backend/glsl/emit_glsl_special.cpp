@@ -8,6 +8,7 @@
 #include "shader_recompiler/backend/glsl/emit_glsl_instructions.h"
 #include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/frontend/ir/value.h"
+#include "shader_recompiler/profile.h"
 
 namespace Shader::Backend::GLSL {
 namespace {
@@ -57,6 +58,14 @@ void EmitPhiMove(EmitContext& ctx, const IR::Value& phi_value, const IR::Value& 
 void EmitPrologue(EmitContext& ctx) {
     if (ctx.StageInitializesVaryings()) {
         InitializeVaryings(ctx);
+    }
+    if (ctx.stage == Stage::Fragment && ctx.profile.need_declared_frag_colors) {
+        for (size_t index = 0; index < ctx.info.stores_frag_color.size(); ++index) {
+            if (ctx.info.stores_frag_color[index]) {
+                continue;
+            }
+            ctx.Add("frag_color{}=vec4(0,0,0,1);", index);
+        }
     }
 }
 
