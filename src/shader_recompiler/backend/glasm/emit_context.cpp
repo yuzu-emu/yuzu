@@ -8,6 +8,7 @@
 #include "shader_recompiler/backend/glasm/emit_context.h"
 #include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/profile.h"
+#include "shader_recompiler/runtime_info.h"
 
 namespace Shader::Backend::GLASM {
 namespace {
