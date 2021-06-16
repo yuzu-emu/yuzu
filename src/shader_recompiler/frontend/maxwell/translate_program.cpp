@@ -192,7 +192,9 @@ IR::Program MergeDualVertexPrograms(IR::Program& vertex_a, IR::Program& vertex_b
     result.local_memory_size = std::max(vertex_a.local_memory_size, vertex_b.local_memory_size);
     for (size_t index = 0; index < 32; ++index) {
         result.info.input_generics[index].used |= vertex_b.info.input_generics[index].used;
-        result.info.stores_generics[index] |= vertex_b.info.stores_generics[index];
+        if (vertex_b.info.stores_generics[index]) {
+            result.info.stores_generics[index] = true;
+        }
     }
     Optimization::JoinTextureInfo(result.info, vertex_b.info);
     Optimization::JoinStorageInfo(result.info, vertex_b.info);

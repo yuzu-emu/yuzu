@@ -140,7 +140,7 @@ struct Info {
     bool stores_sample_mask{};
     bool stores_frag_depth{};
 
-    std::array<bool, 32> stores_generics{};
+    std::bitset<32> stores_generics{};
     bool stores_layer{};
     bool stores_viewport_index{};
     bool stores_point_size{};

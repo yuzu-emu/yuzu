@@ -1209,6 +1209,9 @@ void EmitContext::DefineInputs(const Info& info) {
         tess_coord = DefineInput(*this, F32[3], false, spv::BuiltIn::TessCoord);
     }
     for (size_t index = 0; index < info.input_generics.size(); ++index) {
+        if (!runtime_info.previous_stage_stores_generic[index]) {
+            continue;
+        }
         const InputVarying generic{info.input_generics[index]};
         if (!generic.used) {
             continue;
