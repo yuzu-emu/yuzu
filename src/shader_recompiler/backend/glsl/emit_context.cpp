@@ -340,11 +340,13 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         const auto qualifier{stage == Stage::TessellationControl ? "out" : "in"};
         header += fmt::format("layout(location={})patch {} vec4 patch{};", index, qualifier, index);
     }
-    for (size_t index = 0; index < info.stores_frag_color.size(); ++index) {
-        if (!info.stores_frag_color[index] && !profile.need_declared_frag_colors) {
-            continue;
+    if (stage == Stage::Fragment) {
+        for (size_t index = 0; index < info.stores_frag_color.size(); ++index) {
+            if (!info.stores_frag_color[index] && !profile.need_declared_frag_colors) {
+                continue;
+            }
+            header += fmt::format("layout(location={})out vec4 frag_color{};", index, index);
         }
-        header += fmt::format("layout(location={})out vec4 frag_color{};", index, index);
     }
     for (size_t index = 0; index < info.stores_generics.size(); ++index) {
         // TODO: Properly resolve attribute issues
