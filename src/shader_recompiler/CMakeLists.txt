@@ -226,6 +226,7 @@ add_library(shader_recompiler STATIC
     object_pool.h
     profile.h
     program_header.h
+    runtime_info.h
     shader_info.h
 )
 

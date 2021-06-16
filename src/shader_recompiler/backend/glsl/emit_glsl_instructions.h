@@ -18,9 +18,6 @@ class Value;
 namespace Shader::Backend::GLSL {
 class EmitContext;
 
-inline void EmitSetLoopSafetyVariable(EmitContext&) {}
-inline void EmitGetLoopSafetyVariable(EmitContext&) {}
-
 #define NotImplemented() throw NotImplementedException("GLSL instruction {}", __func__)
 
 // Microinstruction emitters

@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "common/common_types.h"
-#include "shader_recompiler/profile.h"
+#include "shader_recompiler/runtime_info.h"
 #include "video_core/engines/maxwell_3d.h"
 
 namespace VideoCommon {
