@@ -327,11 +327,12 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
 
     for (size_t index = 0; index < info.input_generics.size(); ++index) {
         const auto& generic{info.input_generics[index]};
-        if (generic.used) {
-            header += fmt::format("layout(location={}){}in vec4 in_attr{}{};", index,
-                                  InterpDecorator(generic.interpolation), index,
-                                  InputArrayDecorator(stage));
+        if (!generic.used || !runtime_info.previous_stage_stores_generic[index]) {
+            continue;
         }
+        header +=
+            fmt::format("layout(location={}){}in vec4 in_attr{}{};", index,
+                        InterpDecorator(generic.interpolation), index, InputArrayDecorator(stage));
     }
     for (size_t index = 0; index < info.uses_patches.size(); ++index) {
         if (!info.uses_patches[index]) {
@@ -349,10 +350,10 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         }
     }
     for (size_t index = 0; index < info.stores_generics.size(); ++index) {
-        // TODO: Properly resolve attribute issues
-        if (info.stores_generics[index] || StageInitializesVaryings()) {
-            DefineGenericOutput(index, program.invocations);
+        if (!info.stores_generics[index]) {
+            continue;
         }
+        DefineGenericOutput(index, program.invocations);
     }
     DefineConstantBuffers(bindings);
     DefineStorageBuffers(bindings);
@@ -360,17 +361,6 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     SetupTextures(bindings);
     DefineHelperFunctions();
     DefineConstants();
-}
-
-bool EmitContext::StageInitializesVaryings() const noexcept {
-    switch (stage) {
-    case Stage::VertexA:
-    case Stage::VertexB:
-    case Stage::Geometry:
-        return true;
-    default:
-        return false;
-    }
 }
 
 void EmitContext::SetupExtensions() {

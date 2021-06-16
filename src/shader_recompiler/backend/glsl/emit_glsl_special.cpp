@@ -12,11 +12,12 @@
 
 namespace Shader::Backend::GLSL {
 namespace {
-void InitializeVaryings(EmitContext& ctx) {
-    ctx.Add("gl_Position=vec4(0,0,0,1);");
-    // TODO: Properly resolve attribute issues
-    for (size_t index = 0; index < ctx.info.stores_generics.size() / 2; ++index) {
-        if (!ctx.info.stores_generics[index]) {
+void InitializeOutputVaryings(EmitContext& ctx) {
+    if (ctx.stage == Stage::VertexB || ctx.stage == Stage::Geometry) {
+        ctx.Add("gl_Position=vec4(0,0,0,1);");
+    }
+    for (size_t index = 0; index < 16; ++index) {
+        if (ctx.info.stores_generics[index]) {
             ctx.Add("out_attr{}=vec4(0,0,0,1);", index);
         }
     }
@@ -56,9 +57,8 @@ void EmitPhiMove(EmitContext& ctx, const IR::Value& phi_value, const IR::Value& 
 }
 
 void EmitPrologue(EmitContext& ctx) {
-    if (ctx.StageInitializesVaryings()) {
-        InitializeVaryings(ctx);
-    }
+    InitializeOutputVaryings(ctx);
+
     if (ctx.stage == Stage::Fragment && ctx.profile.need_declared_frag_colors) {
         for (size_t index = 0; index < ctx.info.stores_frag_color.size(); ++index) {
             if (ctx.info.stores_frag_color[index]) {
@@ -73,7 +73,7 @@ void EmitEpilogue(EmitContext&) {}
 
 void EmitEmitVertex(EmitContext& ctx, const IR::Value& stream) {
     ctx.Add("EmitStreamVertex(int({}));", ctx.var_alloc.Consume(stream));
-    InitializeVaryings(ctx);
+    InitializeOutputVaryings(ctx);
 }
 
 void EmitEndPrimitive(EmitContext& ctx, const IR::Value& stream) {

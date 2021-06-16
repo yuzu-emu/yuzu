@@ -286,7 +286,7 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
         const std::optional<AttrInfo> type{AttrTypes(ctx, index)};
-        if (!type) {
+        if (!type || !ctx.runtime_info.previous_stage_stores_generic[index]) {
             // Attribute is disabled
             return ctx.Const(0.0f);
         }

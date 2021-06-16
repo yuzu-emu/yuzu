@@ -136,8 +136,6 @@ public:
         code += '\n';
     }
 
-    [[nodiscard]] bool StageInitializesVaryings() const noexcept;
-
     std::string header;
     std::string code;
     VarAlloc var_alloc;

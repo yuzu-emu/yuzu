@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <bitset>
 #include <optional>
 #include <vector>
 
@@ -59,6 +60,8 @@ struct TransformFeedbackVarying {
 
 struct RuntimeInfo {
     std::array<AttributeType, 32> generic_input_types{};
+    std::bitset<32> previous_stage_stores_generic{};
+
     bool convert_depth_mode{};
     bool force_early_z{};
 
@@ -72,11 +75,12 @@ struct RuntimeInfo {
     std::optional<CompareFunction> alpha_test_func;
     float alpha_test_reference{};
 
-    // Static y negate value
+    /// Static Y negate value
     bool y_negate{};
-    // Use storage buffers instead of global pointers on GLASM
+    /// Use storage buffers instead of global pointers on GLASM
     bool glasm_use_storage_buffers{};
 
+    /// Transform feedback state for each varying
     std::vector<TransformFeedbackVarying> xfb_varyings;
 };
 

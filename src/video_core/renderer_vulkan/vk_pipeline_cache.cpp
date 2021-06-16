@@ -90,7 +90,7 @@ Shader::CompareFunction MaxwellToCompareFunction(Maxwell::ComparisonOp compariso
     return {};
 }
 
-static Shader::AttributeType CastAttributeType(const FixedPipelineState::VertexAttribute& attr) {
+Shader::AttributeType CastAttributeType(const FixedPipelineState::VertexAttribute& attr) {
     if (attr.enabled == 0) {
         return Shader::AttributeType::Disabled;
     }
@@ -124,9 +124,15 @@ Shader::AttributeType AttributeType(const FixedPipelineState& state, size_t inde
 }
 
 Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineCacheKey& key,
-                                    const Shader::IR::Program& program) {
+                                    const Shader::IR::Program& program,
+                                    const Shader::IR::Program* previous_program) {
     Shader::RuntimeInfo info;
-
+    if (previous_program) {
+        info.previous_stage_stores_generic = previous_program->info.stores_generics;
+    } else {
+        // Mark all stores as available
+        info.previous_stage_stores_generic.flip();
+    }
     const Shader::Stage stage{program.stage};
     const bool has_geometry{key.unique_hashes[4] != 0};
     const bool gl_ndc{key.state.ndc_minus_one_to_one != 0};
@@ -499,6 +505,7 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
     std::array<const Shader::Info*, Maxwell::MaxShaderStage> infos{};
     std::array<vk::ShaderModule, Maxwell::MaxShaderStage> modules;
 
+    const Shader::IR::Program* previous_stage{};
     Shader::Backend::Bindings binding;
     for (size_t index = uses_vertex_a && uses_vertex_b ? 1 : 0; index < Maxwell::MaxShaderProgram;
          ++index) {
@@ -511,7 +518,7 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
         const size_t stage_index{index - 1};
         infos[stage_index] = &program.info;
 
-        const Shader::RuntimeInfo runtime_info{MakeRuntimeInfo(key, program)};
+        const Shader::RuntimeInfo runtime_info{MakeRuntimeInfo(key, program, previous_stage)};
         const std::vector<u32> code{EmitSPIRV(profile, runtime_info, program, binding)};
         device.SaveShader(code);
         modules[stage_index] = BuildShader(device, code);
@@ -519,6 +526,7 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
             const std::string name{fmt::format("Shader {:016x}", key.unique_hashes[index])};
             modules[stage_index].SetObjectNameEXT(name.c_str());
         }
+        previous_stage = &program;
     }
     Common::ThreadWorker* const thread_worker{build_in_parallel ? &workers : nullptr};
     VideoCore::ShaderNotify* const notify{build_in_parallel ? &shader_notify : nullptr};

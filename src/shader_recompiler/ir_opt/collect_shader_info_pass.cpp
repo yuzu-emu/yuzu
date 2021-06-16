@@ -79,7 +79,7 @@ void GetAttribute(Info& info, IR::Attribute attr) {
 
 void SetAttribute(Info& info, IR::Attribute attr) {
     if (IR::IsGeneric(attr)) {
-        info.stores_generics.at(IR::GenericAttributeIndex(attr)) = true;
+        info.stores_generics[IR::GenericAttributeIndex(attr)] = true;
         return;
     }
     if (attr >= IR::Attribute::FixedFncTexture0S && attr <= IR::Attribute::FixedFncTexture9Q) {
@@ -956,7 +956,9 @@ void GatherInfoFromHeader(Environment& env, Info& info) {
     }
     if (info.stores_indexed_attributes) {
         for (size_t i = 0; i < info.stores_generics.size(); i++) {
-            info.stores_generics[i] |= header.vtg.IsOutputGenericVectorActive(i);
+            if (header.vtg.IsOutputGenericVectorActive(i)) {
+                info.stores_generics[i] = true;
+            }
         }
         info.stores_clip_distance |= header.vtg.omap_systemc.clip_distances != 0;
         info.stores_position |= header.vtg.omap_systemb.position != 0;

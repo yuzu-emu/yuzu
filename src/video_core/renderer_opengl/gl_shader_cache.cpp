@@ -58,8 +58,15 @@ auto MakeSpan(Container& container) {
 
 Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
                                     const Shader::IR::Program& program,
+                                    const Shader::IR::Program* previous_program,
                                     bool glasm_use_storage_buffers, bool use_assembly_shaders) {
     Shader::RuntimeInfo info;
+    if (previous_program) {
+        info.previous_stage_stores_generic = previous_program->info.stores_generics;
+    } else {
+        // Mark all stores as available
+        info.previous_stage_stores_generic.flip();
+    }
     switch (program.stage) {
     case Shader::Stage::VertexB:
     case Shader::Stage::Geometry:
@@ -400,6 +407,7 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
     OGLProgram source_program;
     std::array<std::string, 5> sources;
     Shader::Backend::Bindings binding;
+    Shader::IR::Program* previous_program{};
     const bool use_glasm{device.UseAssemblyShaders()};
     const size_t first_index = uses_vertex_a && uses_vertex_b ? 1 : 0;
     for (size_t index = first_index; index < Maxwell::MaxShaderProgram; ++index) {
@@ -413,12 +421,13 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
         infos[stage_index] = &program.info;
 
         const auto runtime_info{
-            MakeRuntimeInfo(key, program, glasm_use_storage_buffers, use_glasm)};
+            MakeRuntimeInfo(key, program, previous_program, glasm_use_storage_buffers, use_glasm)};
         if (use_glasm) {
             sources[stage_index] = EmitGLASM(profile, runtime_info, program, binding);
         } else {
             sources[stage_index] = EmitGLSL(profile, runtime_info, program, binding);
         }
+        previous_program = &program;
     }
     auto* const thread_worker{build_in_parallel ? workers.get() : nullptr};
     VideoCore::ShaderNotify* const notify{build_in_parallel ? &shader_notify : nullptr};
