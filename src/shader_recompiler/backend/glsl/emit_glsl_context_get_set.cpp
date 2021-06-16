@@ -37,8 +37,9 @@ std::string_view OutputVertexIndex(EmitContext& ctx) {
 
 void GetCbuf(EmitContext& ctx, std::string_view ret, const IR::Value& binding,
              const IR::Value& offset, u32 num_bits, std::string_view cast = {},
-             bool component_indexing_bug = false, std::string_view bit_offset = {}) {
+             std::string_view bit_offset = {}) {
     const bool is_immediate{offset.IsImmediate()};
+    const bool component_indexing_bug{!is_immediate && ctx.profile.has_gl_component_indexing_bug};
     if (is_immediate) {
         const s32 signed_offset{static_cast<s32>(offset.U32())};
         static constexpr u32 cbuf_size{0x10000};
@@ -77,12 +78,11 @@ void GetCbuf8(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, const 
     const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     if (offset.IsImmediate()) {
         const auto bit_offset{fmt::format("{}", (offset.U32() % 4) * 8)};
-        GetCbuf(ctx, ret, binding, offset, 8, cast, false, bit_offset);
+        GetCbuf(ctx, ret, binding, offset, 8, cast, bit_offset);
     } else {
         const auto offset_var{ctx.var_alloc.Consume(offset)};
         const auto bit_offset{fmt::format("({}%4)*8", offset_var)};
-        GetCbuf(ctx, ret, binding, offset, 8, cast, ctx.profile.has_gl_component_indexing_bug,
-                bit_offset);
+        GetCbuf(ctx, ret, binding, offset, 8, cast, bit_offset);
     }
 }
 
@@ -91,12 +91,11 @@ void GetCbuf16(EmitContext& ctx, IR::Inst& inst, const IR::Value& binding, const
     const auto ret{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     if (offset.IsImmediate()) {
         const auto bit_offset{fmt::format("{}", ((offset.U32() / 2) % 2) * 16)};
-        GetCbuf(ctx, ret, binding, offset, 16, cast, false, bit_offset);
+        GetCbuf(ctx, ret, binding, offset, 16, cast, bit_offset);
     } else {
         const auto offset_var{ctx.var_alloc.Consume(offset)};
         const auto bit_offset{fmt::format("(({}>>1)%2)*16", offset_var)};
-        GetCbuf(ctx, ret, binding, offset, 16, cast, ctx.profile.has_gl_component_indexing_bug,
-                bit_offset);
+        GetCbuf(ctx, ret, binding, offset, 16, cast, bit_offset);
     }
 }
 
