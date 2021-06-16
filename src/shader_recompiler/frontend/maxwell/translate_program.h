@@ -4,13 +4,8 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
-#include <vector>
-
-#include <boost/container/small_vector.hpp>
-
 #include "shader_recompiler/environment.h"
+#include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
 #include "shader_recompiler/object_pool.h"
