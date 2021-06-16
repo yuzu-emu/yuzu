@@ -14,6 +14,7 @@
 #include "common/common_types.h"
 #include "common/thread_worker.h"
 #include "shader_recompiler/frontend/ir/value.h"
+#include "shader_recompiler/host_translate_info.h"
 #include "shader_recompiler/object_pool.h"
 #include "video_core/engines/shader_type.h"
 #include "video_core/renderer_opengl/gl_compute_pipeline.h"
@@ -82,6 +83,8 @@ private:
     std::unordered_map<ComputePipelineKey, std::unique_ptr<ComputePipeline>> compute_cache;
 
     Shader::Profile profile;
+    Shader::HostTranslateInfo host_info;
+
     std::filesystem::path shader_cache_filename;
     std::unique_ptr<ShaderWorker> workers;
 };

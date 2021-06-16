@@ -211,6 +211,7 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/translate.h
     frontend/maxwell/translate_program.cpp
     frontend/maxwell/translate_program.h
+    host_translate_info.h
     ir_opt/collect_shader_info_pass.cpp
     ir_opt/constant_propagation_pass.cpp
     ir_opt/dead_code_elimination_pass.cpp

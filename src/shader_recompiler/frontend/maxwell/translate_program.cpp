@@ -13,6 +13,7 @@
 #include "shader_recompiler/frontend/maxwell/structured_control_flow.h"
 #include "shader_recompiler/frontend/maxwell/translate/translate.h"
 #include "shader_recompiler/frontend/maxwell/translate_program.h"
+#include "shader_recompiler/host_translate_info.h"
 #include "shader_recompiler/ir_opt/passes.h"
 
 namespace Shader::Maxwell {
@@ -120,7 +121,7 @@ void AddNVNStorageBuffers(IR::Program& program) {
 } // Anonymous namespace
 
 IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
-                             Environment& env, Flow::CFG& cfg) {
+                             Environment& env, Flow::CFG& cfg, const HostTranslateInfo& host_info) {
     IR::Program program;
     program.syntax_list = BuildASL(inst_pool, block_pool, env, cfg);
     program.blocks = GenerateBlocks(program.syntax_list);
@@ -150,8 +151,9 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
     RemoveUnreachableBlocks(program);
 
     // Replace instructions before the SSA rewrite
-    Optimization::LowerFp16ToFp32(program);
-
+    if (!host_info.support_float16) {
+        Optimization::LowerFp16ToFp32(program);
+    }
     Optimization::SsaRewritePass(program);
 
     Optimization::GlobalMemoryToStorageBufferPass(program);
