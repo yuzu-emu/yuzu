@@ -201,6 +201,10 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
           .has_gl_component_indexing_bug = device.HasComponentIndexingBug(),
           .has_gl_precise_bug = device.HasPreciseBug(),
           .ignore_nan_fp_comparisons = true,
+      },
+      host_info{
+          .support_float16 = false,
+          .support_int64 = true,
       } {
     if (use_asynchronous_shaders) {
         workers = CreateWorkers();
@@ -373,15 +377,15 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
         Shader::Maxwell::Flow::CFG cfg(env, pools.flow_block, cfg_offset, index == 0);
         if (!uses_vertex_a || index != 1) {
             // Normal path
-            programs[index] = TranslateProgram(pools.inst, pools.block, env, cfg);
+            programs[index] = TranslateProgram(pools.inst, pools.block, env, cfg, host_info);
 
             for (const auto& desc : programs[index].info.storage_buffers_descriptors) {
                 total_storage_buffers += desc.count;
             }
         } else {
             // VertexB path when VertexA is present.
-            Shader::IR::Program& program_va{programs[0]};
-            Shader::IR::Program program_vb{TranslateProgram(pools.inst, pools.block, env, cfg)};
+            auto& program_va{programs[0]};
+            auto program_vb{TranslateProgram(pools.inst, pools.block, env, cfg, host_info)};
             for (const auto& desc : program_vb.info.storage_buffers_descriptors) {
                 total_storage_buffers += desc.count;
             }
@@ -449,7 +453,7 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
     LOG_INFO(Render_OpenGL, "0x{:016x}", key.Hash());
 
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
-    Shader::IR::Program program{TranslateProgram(pools.inst, pools.block, env, cfg)};
+    auto program{TranslateProgram(pools.inst, pools.block, env, cfg, host_info)};
 
     u32 num_storage_buffers{};
     for (const auto& desc : program.info.storage_buffers_descriptors) {

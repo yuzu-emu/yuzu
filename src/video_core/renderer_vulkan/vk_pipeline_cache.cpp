@@ -307,6 +307,10 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxw
         .has_broken_signed_operations = false,
         .ignore_nan_fp_comparisons = false,
     };
+    host_info = Shader::HostTranslateInfo{
+        .support_float16 = device.IsFloat16Supported(),
+        .support_int64 = true,
+    };
 }
 
 PipelineCache::~PipelineCache() = default;
@@ -484,11 +488,11 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
         Shader::Maxwell::Flow::CFG cfg(env, pools.flow_block, cfg_offset, index == 0);
         if (!uses_vertex_a || index != 1) {
             // Normal path
-            programs[index] = TranslateProgram(pools.inst, pools.block, env, cfg);
+            programs[index] = TranslateProgram(pools.inst, pools.block, env, cfg, host_info);
         } else {
             // VertexB path when VertexA is present.
-            Shader::IR::Program& program_va{programs[0]};
-            Shader::IR::Program program_vb{TranslateProgram(pools.inst, pools.block, env, cfg)};
+            auto& program_va{programs[0]};
+            auto program_vb{TranslateProgram(pools.inst, pools.block, env, cfg, host_info)};
             programs[index] = MergeDualVertexPrograms(program_va, program_vb, env);
         }
     }
@@ -575,7 +579,7 @@ std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
     LOG_INFO(Render_Vulkan, "0x{:016x}", key.Hash());
 
     Shader::Maxwell::Flow::CFG cfg{env, pools.flow_block, env.StartAddress()};
-    Shader::IR::Program program{TranslateProgram(pools.inst, pools.block, env, cfg)};
+    auto program{TranslateProgram(pools.inst, pools.block, env, cfg, host_info)};
     const std::vector<u32> code{EmitSPIRV(profile, program)};
     device.SaveShader(code);
     vk::ShaderModule spv_module{BuildShader(device, code)};
