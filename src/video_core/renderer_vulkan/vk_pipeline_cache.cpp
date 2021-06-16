@@ -20,7 +20,7 @@
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
-#include "shader_recompiler/frontend/maxwell/program.h"
+#include "shader_recompiler/frontend/maxwell/translate_program.h"
 #include "shader_recompiler/program_header.h"
 #include "video_core/dirty_flags.h"
 #include "video_core/engines/kepler_compute.h"

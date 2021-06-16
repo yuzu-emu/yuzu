@@ -114,8 +114,6 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/maxwell.inc
     frontend/maxwell/opcodes.cpp
     frontend/maxwell/opcodes.h
-    frontend/maxwell/program.cpp
-    frontend/maxwell/program.h
     frontend/maxwell/structured_control_flow.cpp
     frontend/maxwell/structured_control_flow.h
     frontend/maxwell/translate/impl/atomic_operations_global_memory.cpp
@@ -211,6 +209,8 @@ add_library(shader_recompiler STATIC
     frontend/maxwell/translate/impl/warp_shuffle.cpp
     frontend/maxwell/translate/translate.cpp
     frontend/maxwell/translate/translate.h
+    frontend/maxwell/translate_program.cpp
+    frontend/maxwell/translate_program.h
     ir_opt/collect_shader_info_pass.cpp
     ir_opt/constant_propagation_pass.cpp
     ir_opt/dead_code_elimination_pass.cpp
