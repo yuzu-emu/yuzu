@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include "common/alignment.h"
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/modifiers.h"
 #include "shader_recompiler/frontend/ir/program.h"
@@ -602,7 +603,7 @@ void VisitUsages(Info& info, IR::Inst& inst) {
         }
         u32& size{info.constant_buffer_used_sizes[index.U32()]};
         if (offset.IsImmediate()) {
-            size = std::max(size, offset.U32() + element_size);
+            size = Common::AlignUp(std::max(size, offset.U32() + element_size), 16u);
         } else {
             size = 0x10'000;
         }
