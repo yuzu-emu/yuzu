@@ -144,6 +144,10 @@ Id GetCbuf(EmitContext& ctx, Id result_type, Id UniformDefinitions::*member_ptr,
     return ctx.OpLoad(result_type, access_chain);
 }
 
+Id GetCbufU32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
+    return GetCbuf(ctx, ctx.U32[1], &UniformDefinitions::U32, sizeof(u32), binding, offset);
+}
+
 Id GetCbufU32x4(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
     return GetCbuf(ctx, ctx.U32[4], &UniformDefinitions::U32x4, sizeof(u32[4]), binding, offset);
 }
@@ -203,58 +207,74 @@ void EmitGetLoopSafetyVariable(EmitContext&) {
 }
 
 Id EmitGetCbufU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    if (ctx.profile.support_descriptor_aliasing) {
+    if (ctx.profile.support_descriptor_aliasing && ctx.profile.support_int8) {
         const Id load{GetCbuf(ctx, ctx.U8, &UniformDefinitions::U8, sizeof(u8), binding, offset)};
         return ctx.OpUConvert(ctx.U32[1], load);
+    }
+    Id element{};
+    if (ctx.profile.support_descriptor_aliasing) {
+        element = GetCbufU32(ctx, binding, offset);
     } else {
         const Id vector{GetCbufU32x4(ctx, binding, offset)};
-        const Id element{GetCbufElement(ctx, vector, offset, 0u)};
-        const Id bit_offset{ctx.BitOffset8(offset)};
-        return ctx.OpBitFieldUExtract(ctx.U32[1], element, bit_offset, ctx.Const(8u));
+        element = GetCbufElement(ctx, vector, offset, 0u);
     }
+    const Id bit_offset{ctx.BitOffset8(offset)};
+    return ctx.OpBitFieldUExtract(ctx.U32[1], element, bit_offset, ctx.Const(8u));
 }
 
 Id EmitGetCbufS8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    if (ctx.profile.support_descriptor_aliasing) {
+    if (ctx.profile.support_descriptor_aliasing && ctx.profile.support_int8) {
         const Id load{GetCbuf(ctx, ctx.S8, &UniformDefinitions::S8, sizeof(s8), binding, offset)};
         return ctx.OpSConvert(ctx.U32[1], load);
+    }
+    Id element{};
+    if (ctx.profile.support_descriptor_aliasing) {
+        element = GetCbufU32(ctx, binding, offset);
     } else {
         const Id vector{GetCbufU32x4(ctx, binding, offset)};
-        const Id element{GetCbufElement(ctx, vector, offset, 0u)};
-        const Id bit_offset{ctx.BitOffset8(offset)};
-        return ctx.OpBitFieldSExtract(ctx.U32[1], element, bit_offset, ctx.Const(8u));
+        element = GetCbufElement(ctx, vector, offset, 0u);
     }
+    const Id bit_offset{ctx.BitOffset8(offset)};
+    return ctx.OpBitFieldSExtract(ctx.U32[1], element, bit_offset, ctx.Const(8u));
 }
 
 Id EmitGetCbufU16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    if (ctx.profile.support_descriptor_aliasing) {
+    if (ctx.profile.support_descriptor_aliasing && ctx.profile.support_int16) {
         const Id load{
             GetCbuf(ctx, ctx.U16, &UniformDefinitions::U16, sizeof(u16), binding, offset)};
         return ctx.OpUConvert(ctx.U32[1], load);
+    }
+    Id element{};
+    if (ctx.profile.support_descriptor_aliasing) {
+        element = GetCbufU32(ctx, binding, offset);
     } else {
         const Id vector{GetCbufU32x4(ctx, binding, offset)};
-        const Id element{GetCbufElement(ctx, vector, offset, 0u)};
-        const Id bit_offset{ctx.BitOffset16(offset)};
-        return ctx.OpBitFieldUExtract(ctx.U32[1], element, bit_offset, ctx.Const(16u));
+        element = GetCbufElement(ctx, vector, offset, 0u);
     }
+    const Id bit_offset{ctx.BitOffset16(offset)};
+    return ctx.OpBitFieldUExtract(ctx.U32[1], element, bit_offset, ctx.Const(16u));
 }
 
 Id EmitGetCbufS16(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
-    if (ctx.profile.support_descriptor_aliasing) {
+    if (ctx.profile.support_descriptor_aliasing && ctx.profile.support_int16) {
         const Id load{
             GetCbuf(ctx, ctx.S16, &UniformDefinitions::S16, sizeof(s16), binding, offset)};
         return ctx.OpSConvert(ctx.U32[1], load);
+    }
+    Id element{};
+    if (ctx.profile.support_descriptor_aliasing) {
+        element = GetCbufU32(ctx, binding, offset);
     } else {
         const Id vector{GetCbufU32x4(ctx, binding, offset)};
-        const Id element{GetCbufElement(ctx, vector, offset, 0u)};
-        const Id bit_offset{ctx.BitOffset16(offset)};
-        return ctx.OpBitFieldSExtract(ctx.U32[1], element, bit_offset, ctx.Const(16u));
+        element = GetCbufElement(ctx, vector, offset, 0u);
     }
+    const Id bit_offset{ctx.BitOffset16(offset)};
+    return ctx.OpBitFieldSExtract(ctx.U32[1], element, bit_offset, ctx.Const(16u));
 }
 
 Id EmitGetCbufU32(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
     if (ctx.profile.support_descriptor_aliasing) {
-        return GetCbuf(ctx, ctx.U32[1], &UniformDefinitions::U32, sizeof(u32), binding, offset);
+        return GetCbufU32(ctx, binding, offset);
     } else {
         const Id vector{GetCbufU32x4(ctx, binding, offset)};
         return GetCbufElement(ctx, vector, offset, 0u);

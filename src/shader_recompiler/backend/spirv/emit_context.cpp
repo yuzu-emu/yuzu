@@ -911,37 +911,45 @@ void EmitContext::DefineConstantBuffers(const Info& info, u32& binding) {
     if (info.constant_buffer_descriptors.empty()) {
         return;
     }
-    if (profile.support_descriptor_aliasing) {
-        if (True(info.used_constant_buffer_types & IR::Type::U8)) {
-            DefineConstBuffers(*this, info, &UniformDefinitions::U8, binding, U8, 'u', sizeof(u8));
-            DefineConstBuffers(*this, info, &UniformDefinitions::S8, binding, S8, 's', sizeof(s8));
-        }
-        if (True(info.used_constant_buffer_types & IR::Type::U16)) {
-            DefineConstBuffers(*this, info, &UniformDefinitions::U16, binding, U16, 'u',
-                               sizeof(u16));
-            DefineConstBuffers(*this, info, &UniformDefinitions::S16, binding, S16, 's',
-                               sizeof(s16));
-        }
-        if (True(info.used_constant_buffer_types & IR::Type::U32)) {
-            DefineConstBuffers(*this, info, &UniformDefinitions::U32, binding, U32[1], 'u',
-                               sizeof(u32));
-        }
-        if (True(info.used_constant_buffer_types & IR::Type::F32)) {
-            DefineConstBuffers(*this, info, &UniformDefinitions::F32, binding, F32[1], 'f',
-                               sizeof(f32));
-        }
-        if (True(info.used_constant_buffer_types & IR::Type::U32x2)) {
-            DefineConstBuffers(*this, info, &UniformDefinitions::U32x2, binding, U32[2], 'u',
-                               sizeof(u32[2]));
-        }
-        binding += static_cast<u32>(info.constant_buffer_descriptors.size());
-    } else {
+    IR::Type types{info.used_constant_buffer_types};
+    if (!profile.support_descriptor_aliasing) {
         DefineConstBuffers(*this, info, &UniformDefinitions::U32x4, binding, U32[4], 'u',
                            sizeof(u32[4]));
         for (const ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
             binding += desc.count;
         }
     }
+    if (True(types & IR::Type::U8)) {
+        if (profile.support_int8) {
+            DefineConstBuffers(*this, info, &UniformDefinitions::U8, binding, U8, 'u', sizeof(u8));
+            DefineConstBuffers(*this, info, &UniformDefinitions::S8, binding, S8, 's', sizeof(s8));
+        } else {
+            types |= IR::Type::U32;
+        }
+    }
+    if (True(types & IR::Type::U16)) {
+        if (profile.support_int16) {
+            DefineConstBuffers(*this, info, &UniformDefinitions::U16, binding, U16, 'u',
+                               sizeof(u16));
+            DefineConstBuffers(*this, info, &UniformDefinitions::S16, binding, S16, 's',
+                               sizeof(s16));
+        } else {
+            types |= IR::Type::U32;
+        }
+    }
+    if (True(types & IR::Type::U32)) {
+        DefineConstBuffers(*this, info, &UniformDefinitions::U32, binding, U32[1], 'u',
+                           sizeof(u32));
+    }
+    if (True(types & IR::Type::F32)) {
+        DefineConstBuffers(*this, info, &UniformDefinitions::F32, binding, F32[1], 'f',
+                           sizeof(f32));
+    }
+    if (True(types & IR::Type::U32x2)) {
+        DefineConstBuffers(*this, info, &UniformDefinitions::U32x2, binding, U32[2], 'u',
+                           sizeof(u32[2]));
+    }
+    binding += static_cast<u32>(info.constant_buffer_descriptors.size());
 }
 
 void EmitContext::DefineStorageBuffers(const Info& info, u32& binding) {
