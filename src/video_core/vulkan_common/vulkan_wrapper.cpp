@@ -103,6 +103,7 @@ void Load(VkDevice device, DeviceDispatch& dld) noexcept {
     X(vkCmdFillBuffer);
     X(vkCmdPipelineBarrier);
     X(vkCmdPushConstants);
+    X(vkCmdPushDescriptorSetWithTemplateKHR);
     X(vkCmdSetBlendConstants);
     X(vkCmdSetDepthBias);
     X(vkCmdSetDepthBounds);

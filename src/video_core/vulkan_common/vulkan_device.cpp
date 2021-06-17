@@ -767,6 +767,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         test(khr_uniform_buffer_standard_layout,
              VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME, true);
         test(khr_spirv_1_4, VK_KHR_SPIRV_1_4_EXTENSION_NAME, true);
+        test(khr_push_descriptor, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME, true);
         test(has_khr_shader_float16_int8, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME, false);
         test(ext_depth_range_unrestricted, VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME, true);
         test(ext_index_type_uint8, VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, true);
@@ -931,6 +932,16 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
             extensions.push_back(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
             khr_workgroup_memory_explicit_layout = true;
         }
+    }
+    if (khr_push_descriptor) {
+        VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor;
+        push_descriptor.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR;
+        push_descriptor.pNext = nullptr;
+
+        physical_properties.pNext = &push_descriptor;
+        physical.GetProperties2KHR(physical_properties);
+
+        max_push_descriptors = push_descriptor.maxPushDescriptors;
     }
     return extensions;
 }
