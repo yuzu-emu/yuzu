@@ -16,38 +16,50 @@
 #include "video_core/texture_cache/texture_cache.h"
 #include "video_core/texture_cache/types.h"
 #include "video_core/textures/texture.h"
+#include "video_core/vulkan_common/vulkan_device.h"
 
 namespace Vulkan {
 
 class DescriptorLayoutBuilder {
 public:
-    DescriptorLayoutBuilder(const vk::Device& device_) : device{&device_} {}
+    DescriptorLayoutBuilder(const Device& device_) : device{&device_} {}
 
-    vk::DescriptorSetLayout CreateDescriptorSetLayout() const {
+    bool CanUsePushDescriptor() const noexcept {
+        return device->IsKhrPushDescriptorSupported() &&
+               num_descriptors <= device->MaxPushDescriptors();
+    }
+
+    vk::DescriptorSetLayout CreateDescriptorSetLayout(bool use_push_descriptor) const {
         if (bindings.empty()) {
             return nullptr;
         }
-        return device->CreateDescriptorSetLayout({
+        const VkDescriptorSetLayoutCreateFlags flags =
+            use_push_descriptor ? VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR : 0;
+        return device->GetLogical().CreateDescriptorSetLayout({
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
-            .flags = 0,
+            .flags = flags,
             .bindingCount = static_cast<u32>(bindings.size()),
             .pBindings = bindings.data(),
         });
     }
 
     vk::DescriptorUpdateTemplateKHR CreateTemplate(VkDescriptorSetLayout descriptor_set_layout,
-                                                   VkPipelineLayout pipeline_layout) const {
+                                                   VkPipelineLayout pipeline_layout,
+                                                   bool use_push_descriptor) const {
         if (entries.empty()) {
             return nullptr;
         }
-        return device->CreateDescriptorUpdateTemplateKHR({
+        const VkDescriptorUpdateTemplateType type =
+            use_push_descriptor ? VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR
+                                : VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET_KHR;
+        return device->GetLogical().CreateDescriptorUpdateTemplateKHR({
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO_KHR,
             .pNext = nullptr,
             .flags = 0,
             .descriptorUpdateEntryCount = static_cast<u32>(entries.size()),
             .pDescriptorUpdateEntries = entries.data(),
-            .templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET_KHR,
+            .templateType = type,
             .descriptorSetLayout = descriptor_set_layout,
             .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
             .pipelineLayout = pipeline_layout,
@@ -56,7 +68,7 @@ public:
     }
 
     vk::PipelineLayout CreatePipelineLayout(VkDescriptorSetLayout descriptor_set_layout) const {
-        return device->CreatePipelineLayout({
+        return device->GetLogical().CreatePipelineLayout({
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
@@ -97,14 +109,16 @@ private:
                 .stride = sizeof(DescriptorUpdateEntry),
             });
             ++binding;
+            num_descriptors += descriptors[i].count;
             offset += sizeof(DescriptorUpdateEntry);
         }
     }
 
-    const vk::Device* device{};
+    const Device* device{};
     boost::container::small_vector<VkDescriptorSetLayoutBinding, 32> bindings;
     boost::container::small_vector<VkDescriptorUpdateTemplateEntryKHR, 32> entries;
     u32 binding{};
+    u32 num_descriptors{};
     size_t offset{};
 };
 

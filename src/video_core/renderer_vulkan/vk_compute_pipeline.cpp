@@ -37,15 +37,14 @@ ComputePipeline::ComputePipeline(const Device& device_, DescriptorPool& descript
                 uniform_buffer_sizes.begin());
 
     auto func{[this, &descriptor_pool, shader_notify] {
-        DescriptorLayoutBuilder builder{device.GetLogical()};
+        DescriptorLayoutBuilder builder{device};
         builder.Add(info, VK_SHADER_STAGE_COMPUTE_BIT);
 
-        descriptor_set_layout = builder.CreateDescriptorSetLayout();
+        descriptor_set_layout = builder.CreateDescriptorSetLayout(false);
         pipeline_layout = builder.CreatePipelineLayout(*descriptor_set_layout);
         descriptor_update_template =
-            builder.CreateTemplate(*descriptor_set_layout, *pipeline_layout);
+            builder.CreateTemplate(*descriptor_set_layout, *pipeline_layout, false);
         descriptor_allocator = descriptor_pool.Allocator(*descriptor_set_layout, info);
-
         const VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT subgroup_size_ci{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO_EXT,
             .pNext = nullptr,
@@ -186,7 +185,6 @@ void ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
     const void* const descriptor_data{update_descriptor_queue.UpdateData()};
     scheduler.Record([this, descriptor_data](vk::CommandBuffer cmdbuf) {
         cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline);
-
         if (!descriptor_set_layout) {
             return;
         }

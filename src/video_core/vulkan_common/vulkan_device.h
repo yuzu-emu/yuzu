@@ -154,6 +154,11 @@ public:
         return guest_warp_stages & stage;
     }
 
+    /// Returns the maximum number of push descriptors.
+    u32 MaxPushDescriptors() const {
+        return max_push_descriptors;
+    }
+
     /// Returns true if formatless image load is supported.
     bool IsFormatlessImageLoadSupported() const {
         return is_formatless_image_load_supported;
@@ -192,6 +197,11 @@ public:
     /// Returns true if the device supports VK_KHR_spirv_1_4.
     bool IsKhrSpirv1_4Supported() const {
         return khr_spirv_1_4;
+    }
+
+    /// Returns true if the device supports VK_KHR_push_descriptor.
+    bool IsKhrPushDescriptorSupported() const {
+        return khr_push_descriptor;
     }
 
     /// Returns true if the device supports VK_KHR_workgroup_memory_explicit_layout.
@@ -330,6 +340,7 @@ private:
     VkDriverIdKHR driver_id{};                  ///< Driver ID.
     VkShaderStageFlags guest_warp_stages{};     ///< Stages where the guest warp size can be forced.
     u64 device_access_memory{};                 ///< Total size of device local memory in bytes.
+    u32 max_push_descriptors{};                 ///< Maximum number of push descriptors
     bool is_optimal_astc_supported{};           ///< Support for native ASTC.
     bool is_float16_supported{};                ///< Support for float16 arithmetics.
     bool is_warp_potentially_bigger{};          ///< Host warp size can be bigger than guest.
@@ -345,6 +356,7 @@ private:
     bool khr_uniform_buffer_standard_layout{};  ///< Support for scalar uniform buffer layouts.
     bool khr_spirv_1_4{};                       ///< Support for VK_KHR_spirv_1_4.
     bool khr_workgroup_memory_explicit_layout{}; ///< Support for explicit workgroup layouts.
+    bool khr_push_descriptor{};                  ///< Support for VK_KHR_push_descritor.
     bool ext_index_type_uint8{};                 ///< Support for VK_EXT_index_type_uint8.
     bool ext_sampler_filter_minmax{};            ///< Support for VK_EXT_sampler_filter_minmax.
     bool ext_depth_range_unrestricted{};         ///< Support for VK_EXT_depth_range_unrestricted.
