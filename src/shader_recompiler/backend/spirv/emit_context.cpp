@@ -952,13 +952,13 @@ void EmitContext::DefineStorageBuffers(const Info& info, u32& binding) {
 
     const IR::Type used_types{profile.support_descriptor_aliasing ? info.used_storage_buffer_types
                                                                   : IR::Type::U32};
-    if (True(used_types & IR::Type::U8)) {
+    if (profile.support_int8 && True(used_types & IR::Type::U8)) {
         DefineSsbos(*this, storage_types.U8, &StorageDefinitions::U8, info, binding, U8,
                     sizeof(u8));
         DefineSsbos(*this, storage_types.S8, &StorageDefinitions::S8, info, binding, S8,
                     sizeof(u8));
     }
-    if (True(used_types & IR::Type::U16)) {
+    if (profile.support_int16 && True(used_types & IR::Type::U16)) {
         DefineSsbos(*this, storage_types.U16, &StorageDefinitions::U16, info, binding, U16,
                     sizeof(u16));
         DefineSsbos(*this, storage_types.S16, &StorageDefinitions::S16, info, binding, S16,
