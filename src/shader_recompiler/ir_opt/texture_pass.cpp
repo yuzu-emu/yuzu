@@ -434,7 +434,7 @@ void TexturePass(Environment& env, IR::Program& program) {
                 throw NotImplementedException("Unexpected separate sampler");
             }
             const bool is_written{inst->GetOpcode() != IR::Opcode::ImageRead};
-            const bool is_read{inst->GetOpcode() == IR::Opcode::ImageRead};
+            const bool is_read{inst->GetOpcode() != IR::Opcode::ImageWrite};
             if (flags.type == TextureType::Buffer) {
                 index = descriptors.Add(ImageBufferDescriptor{
                     .format = flags.image_format,
