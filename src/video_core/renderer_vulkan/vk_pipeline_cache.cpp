@@ -529,11 +529,10 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
         previous_stage = &program;
     }
     Common::ThreadWorker* const thread_worker{build_in_parallel ? &workers : nullptr};
-    VideoCore::ShaderNotify* const notify{build_in_parallel ? &shader_notify : nullptr};
-    return std::make_unique<GraphicsPipeline>(maxwell3d, gpu_memory, scheduler, buffer_cache,
-                                              texture_cache, notify, device, descriptor_pool,
-                                              update_descriptor_queue, thread_worker,
-                                              render_pass_cache, key, std::move(modules), infos);
+    return std::make_unique<GraphicsPipeline>(
+        maxwell3d, gpu_memory, scheduler, buffer_cache, texture_cache, &shader_notify, device,
+        descriptor_pool, update_descriptor_queue, thread_worker, render_pass_cache, key,
+        std::move(modules), infos);
 
 } catch (const Shader::Exception& exception) {
     LOG_ERROR(Render_Vulkan, "{}", exception.what());
@@ -596,9 +595,8 @@ std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
         spv_module.SetObjectNameEXT(name.c_str());
     }
     Common::ThreadWorker* const thread_worker{build_in_parallel ? &workers : nullptr};
-    VideoCore::ShaderNotify* const notify{build_in_parallel ? &shader_notify : nullptr};
     return std::make_unique<ComputePipeline>(device, descriptor_pool, update_descriptor_queue,
-                                             thread_worker, notify, program.info,
+                                             thread_worker, &shader_notify, program.info,
                                              std::move(spv_module));
 
 } catch (const Shader::Exception& exception) {

@@ -430,10 +430,10 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
         previous_program = &program;
     }
     auto* const thread_worker{build_in_parallel ? workers.get() : nullptr};
-    VideoCore::ShaderNotify* const notify{build_in_parallel ? &shader_notify : nullptr};
-    return std::make_unique<GraphicsPipeline>(
-        device, texture_cache, buffer_cache, gpu_memory, maxwell3d, program_manager, state_tracker,
-        thread_worker, notify, sources, infos, key.xfb_enabled != 0 ? &key.xfb_state : nullptr);
+    return std::make_unique<GraphicsPipeline>(device, texture_cache, buffer_cache, gpu_memory,
+                                              maxwell3d, program_manager, state_tracker,
+                                              thread_worker, &shader_notify, sources, infos,
+                                              key.xfb_enabled != 0 ? &key.xfb_state : nullptr);
 
 } catch (Shader::Exception& exception) {
     LOG_ERROR(Render_OpenGL, "{}", exception.what());
