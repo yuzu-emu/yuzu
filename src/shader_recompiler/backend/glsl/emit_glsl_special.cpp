@@ -12,13 +12,47 @@
 
 namespace Shader::Backend::GLSL {
 namespace {
+std::string_view OutputVertexIndex(EmitContext& ctx) {
+    return ctx.stage == Stage::TessellationControl ? "[gl_InvocationID]" : "";
+}
+
 void InitializeOutputVaryings(EmitContext& ctx) {
     if (ctx.stage == Stage::VertexB || ctx.stage == Stage::Geometry) {
         ctx.Add("gl_Position=vec4(0,0,0,1);");
     }
-    for (size_t index = 0; index < 16; ++index) {
-        if (ctx.info.stores_generics[index]) {
-            ctx.Add("out_attr{}=vec4(0,0,0,1);", index);
+    for (size_t index = 0; index < ctx.info.stores_generics.size(); ++index) {
+        if (!ctx.info.stores_generics[index]) {
+            continue;
+        }
+        const auto& info_array{ctx.output_generics.at(index)};
+        const auto output_decorator{OutputVertexIndex(ctx)};
+        size_t element{};
+        while (element < info_array.size()) {
+            const auto& info{info_array.at(element)};
+            const auto varying_name{fmt::format("{}{}", info.name, output_decorator)};
+            switch (info.num_components) {
+            case 1: {
+                const char value{element == 3 ? '1' : '0'};
+                ctx.Add("{}={}.f;", varying_name, value);
+                break;
+            }
+            case 2:
+            case 3:
+                if (element + info.num_components < 4) {
+                    ctx.Add("{}=vec{}(0);", varying_name, info.num_components);
+                } else {
+                    // last element is the w component, must be initialized to 1
+                    const auto zeros{info.num_components == 3 ? "0,0," : "0,"};
+                    ctx.Add("{}=vec{}({}1);", varying_name, info.num_components, zeros);
+                }
+                break;
+            case 4:
+                ctx.Add("{}=vec4(0,0,0,1);", varying_name);
+                break;
+            default:
+                break;
+            }
+            element += info.num_components;
         }
     }
 }
