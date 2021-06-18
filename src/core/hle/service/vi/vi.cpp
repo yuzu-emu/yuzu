@@ -32,7 +32,7 @@
 #include "core/hle/service/vi/vi_s.h"
 #include "core/hle/service/vi/vi_u.h"
 
-#include <input_common/tas/tas_input.h>
+#include "input_common/tas/tas_input.h"
 
 namespace Service::VI {
 
@@ -597,7 +597,7 @@ private:
 
             IGBPQueueBufferResponseParcel response{1280, 720};
             ctx.WriteBuffer(response.Serialize());
-            Settings::values.inputSubsystem->GetTas()->UpdateThread();
+            Settings::values.input_subsystem->GetTas()->UpdateThread();
             break;
         }
         case TransactionId::Query: {

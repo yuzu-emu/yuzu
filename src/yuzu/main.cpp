@@ -209,7 +209,7 @@ GMainWindow::GMainWindow()
     : input_subsystem{std::make_shared<InputCommon::InputSubsystem>()},
       config{std::make_unique<Config>()}, vfs{std::make_shared<FileSys::RealVfsFilesystem>()},
       provider{std::make_unique<FileSys::ManualContentProvider>()} {
-    Settings::values.inputSubsystem = input_subsystem;
+    Settings::values.input_subsystem = input_subsystem;
     InitializeLogging();
 
     LoadTranslation();
@@ -854,11 +854,11 @@ void GMainWindow::InitializeWidgets() {
     });
     statusBar()->insertPermanentWidget(0, renderer_status_button);
 
-    TASlabel = new QLabel();
-    TASlabel->setObjectName(QStringLiteral("TASlabel"));
-    TASlabel->setText(tr("TAS not running"));
-    TASlabel->setFocusPolicy(Qt::NoFocus);
-    statusBar()->insertPermanentWidget(0, TASlabel);
+    tas_label = new QLabel();
+    tas_label->setObjectName(QStringLiteral("TASlabel"));
+    tas_label->setText(tr("TAS not running"));
+    tas_label->setFocusPolicy(Qt::NoFocus);
+    statusBar()->insertPermanentWidget(0, tas_label);
 
     statusBar()->setVisible(true);
     setStyleSheet(QStringLiteral("QStatusBar::item{border: none;}"));
@@ -2921,7 +2921,7 @@ void GMainWindow::UpdateStatusBar() {
         return;
     }
 
-    TASlabel->setText(tr(input_subsystem->GetTas()->GetStatusDescription().c_str()));
+    tas_label->setText(tr(input_subsystem->GetTas()->GetStatusDescription().c_str()));
 
     auto results = Core::System::GetInstance().GetAndResetPerfStats();
     auto& shader_notify = Core::System::GetInstance().GPU().ShaderNotify();

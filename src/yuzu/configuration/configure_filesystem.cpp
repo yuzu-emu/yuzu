@@ -78,7 +78,7 @@ void ConfigureFilesystem::applyConfiguration() {
 
     Settings::values.gamecard_inserted = ui->gamecard_inserted->isChecked();
     Settings::values.gamecard_current_game = ui->gamecard_current_game->isChecked();
-    Settings::values.pauseTasOnLoad = ui->tas_pause_on_load->isChecked();
+    Settings::values.pause_tas_on_load = ui->tas_pause_on_load->isChecked();
     Settings::values.dump_exefs = ui->dump_exefs->isChecked();
     Settings::values.dump_nso = ui->dump_nso->isChecked();
 

@@ -121,7 +121,7 @@ void APM_Sys::SetCpuBoostMode(Kernel::HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_APM, "called, mode={:08X}", mode);
 
-    Settings::values.cpuBoosted = (static_cast<u32>(mode) == 1);
+    Settings::values.is_cpu_boosted = (static_cast<u32>(mode) == 1);
     controller.SetFromCpuBoostMode(mode);
 
     IPC::ResponseBuilder rb{ctx, 2};

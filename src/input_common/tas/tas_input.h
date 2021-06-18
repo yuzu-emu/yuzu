@@ -12,11 +12,11 @@
 #include "core/frontend/input.h"
 #include "input_common/main.h"
 
-#define PLAYER_NUMBER 8
-
 namespace TasInput {
 
-using TasAnalog = std::tuple<float, float>;
+constexpr int PLAYER_NUMBER = 8;
+
+using TasAnalog = std::pair<float, float>;
 
 enum class TasButton : u32 {
     BUTTON_A = 0x000001,
@@ -41,29 +41,6 @@ enum class TasButton : u32 {
     BUTTON_CAPTURE = 0x080000,
 };
 
-static const std::array<std::pair<std::string, TasButton>, 20> text_to_tas_button = {
-    std::pair{"KEY_A", TasButton::BUTTON_A},
-    {"KEY_B", TasButton::BUTTON_B},
-    {"KEY_X", TasButton::BUTTON_X},
-    {"KEY_Y", TasButton::BUTTON_Y},
-    {"KEY_LSTICK", TasButton::STICK_L},
-    {"KEY_RSTICK", TasButton::STICK_R},
-    {"KEY_L", TasButton::TRIGGER_L},
-    {"KEY_R", TasButton::TRIGGER_R},
-    {"KEY_PLUS", TasButton::BUTTON_PLUS},
-    {"KEY_MINUS", TasButton::BUTTON_MINUS},
-    {"KEY_DLEFT", TasButton::BUTTON_LEFT},
-    {"KEY_DUP", TasButton::BUTTON_UP},
-    {"KEY_DRIGHT", TasButton::BUTTON_RIGHT},
-    {"KEY_DDOWN", TasButton::BUTTON_DOWN},
-    {"KEY_SL", TasButton::BUTTON_SL},
-    {"KEY_SR", TasButton::BUTTON_SR},
-    {"KEY_CAPTURE", TasButton::BUTTON_CAPTURE},
-    {"KEY_HOME", TasButton::BUTTON_HOME},
-    {"KEY_ZL", TasButton::TRIGGER_ZL},
-    {"KEY_ZR", TasButton::TRIGGER_ZR},
-};
-
 enum class TasAxes : u8 {
     StickX,
     StickY,
@@ -82,7 +59,7 @@ public:
     Tas();
     ~Tas();
 
-    static std::string buttonsToString(u32 button) {
+    static std::string ButtonsToString(u32 button) {
         std::string returns;
         if ((button & static_cast<u32>(TasInput::TasButton::BUTTON_A)) != 0)
             returns += ", A";
@@ -124,12 +101,12 @@ public:
             returns += ", HOME";
         if ((button & static_cast<u32>(TasInput::TasButton::BUTTON_CAPTURE)) != 0)
             returns += ", CAPTURE";
-        return returns.length() != 0 ? returns.substr(2) : "";
+        return returns.empty() ? "" : returns.substr(2);
     }
 
     void RefreshTasFile();
     void LoadTasFiles();
-    void RecordInput(u32 buttons, std::array<std::pair<float, float>, 2> axes);
+    void RecordInput(u32 buttons, const std::array<std::pair<float, float>, 2>& axes);
     void UpdateThread();
     std::string GetStatusDescription();
 
@@ -143,21 +120,20 @@ private:
         TasAnalog l_axis{};
         TasAnalog r_axis{};
     };
-    void LoadTasFile(int playerIndex);
+    void LoadTasFile(int player_index);
     void WriteTasFile();
-    TasAnalog ReadCommandAxis(const std::string line) const;
-    u32 ReadCommandButtons(const std::string line) const;
+    TasAnalog ReadCommandAxis(const std::string& line) const;
+    u32 ReadCommandButtons(const std::string& line) const;
     std::string WriteCommandButtons(u32 data) const;
     std::string WriteCommandAxis(TasAnalog data) const;
-    std::pair<float, float> flipY(std::pair<float, float> old) const;
 
-    size_t scriptLength{0};
+    size_t script_length{0};
     std::array<TasData, PLAYER_NUMBER> tas_data;
     bool update_thread_running{true};
     bool refresh_tas_fle{false};
-    std::array<std::vector<TASCommand>, PLAYER_NUMBER> newCommands{};
-    std::vector<TASCommand> recordCommands{};
+    std::array<std::vector<TASCommand>, PLAYER_NUMBER> commands{};
+    std::vector<TASCommand> record_commands{};
     std::size_t current_command{0};
-    TASCommand lastInput{}; // only used for recording
+    TASCommand last_input{}; // only used for recording
 };
 } // namespace TasInput
