@@ -18,6 +18,12 @@ constexpr int PLAYER_NUMBER = 8;
 
 using TasAnalog = std::pair<float, float>;
 
+enum class TasState {
+    RUNNING,
+    RECORDING,
+    STOPPED,
+};
+
 enum class TasButton : u32 {
     BUTTON_A = 0x000001,
     BUTTON_B = 0x000002,
@@ -108,7 +114,7 @@ public:
     void LoadTasFiles();
     void RecordInput(u32 buttons, const std::array<std::pair<float, float>, 2>& axes);
     void UpdateThread();
-    std::string GetStatusDescription();
+    std::tuple<TasState, size_t, size_t> GetStatus();
 
     InputCommon::ButtonMapping GetButtonMappingForDevice(const Common::ParamPackage& params) const;
     InputCommon::AnalogMapping GetAnalogMappingForDevice(const Common::ParamPackage& params) const;
@@ -120,7 +126,7 @@ private:
         TasAnalog l_axis{};
         TasAnalog r_axis{};
     };
-    void LoadTasFile(int player_index);
+    void LoadTasFile(size_t player_index);
     void WriteTasFile();
     TasAnalog ReadCommandAxis(const std::string& line) const;
     u32 ReadCommandButtons(const std::string& line) const;

@@ -2915,13 +2915,27 @@ void GMainWindow::UpdateWindowTitle(std::string_view title_name, std::string_vie
     }
 }
 
+static std::string GetTasStateDescription(TasInput::TasState state) {
+    switch (state) {
+        case TasInput::TasState::RUNNING:
+            return "Running";
+        case TasInput::TasState::RECORDING:
+            return "Recording";
+        case TasInput::TasState::STOPPED:
+            return "Stopped";
+        default:
+            return "INVALID STATE";
+    }
+}
+
 void GMainWindow::UpdateStatusBar() {
     if (emu_thread == nullptr) {
         status_bar_update_timer.stop();
         return;
     }
 
-    tas_label->setText(tr(input_subsystem->GetTas()->GetStatusDescription().c_str()));
+    auto [tas_status, current_tas_frame, total_tas_frames] = input_subsystem->GetTas()->GetStatus();
+    tas_label->setText(tr("%1 TAS %2/%3").arg(tr(GetTasStateDescription(tas_status).c_str())).arg(current_tas_frame).arg(total_tas_frames));
 
     auto results = Core::System::GetInstance().GetAndResetPerfStats();
     auto& shader_notify = Core::System::GetInstance().GPU().ShaderNotify();
