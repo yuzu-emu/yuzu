@@ -358,8 +358,6 @@ private:
     u32 written_compute_texture_buffers = 0;
     u32 image_compute_texture_buffers = 0;
 
-    std::array<u32, NUM_STAGES> fast_bound_uniform_buffers{};
-
     std::array<u32, 16> uniform_cache_hits{};
     std::array<u32, 16> uniform_cache_shots{};
 
@@ -369,6 +367,10 @@ private:
 
     std::conditional_t<HAS_PERSISTENT_UNIFORM_BUFFER_BINDINGS, std::array<u32, NUM_STAGES>, Empty>
         dirty_uniform_buffers{};
+    std::conditional_t<IS_OPENGL, std::array<u32, NUM_STAGES>, Empty> fast_bound_uniform_buffers{};
+    std::conditional_t<HAS_PERSISTENT_UNIFORM_BUFFER_BINDINGS,
+                       std::array<std::array<u32, NUM_GRAPHICS_UNIFORM_BUFFERS>, NUM_STAGES>, Empty>
+        uniform_buffer_binding_sizes{};
 
     std::vector<BufferId> cached_write_buffer_ids;
 
@@ -541,6 +543,7 @@ void BufferCache<P>::SetUniformBuffersState(const std::array<u32, NUM_STAGES>& m
                 fast_bound_uniform_buffers.fill(0);
             }
             dirty_uniform_buffers.fill(~u32{0});
+            uniform_buffer_binding_sizes.fill({});
         }
     }
     enabled_uniform_buffer_masks = mask;
@@ -794,14 +797,18 @@ void BufferCache<P>::BindHostGraphicsUniformBuffer(size_t stage, u32 index, u32 
     TouchBuffer(buffer);
     const bool use_fast_buffer = binding.buffer_id != NULL_BUFFER_ID &&
                                  size <= uniform_buffer_skip_cache_size &&
-                                 !buffer.IsRegionGpuModified(cpu_addr, size);
+                                 !buffer.IsRegionGpuModified(cpu_addr, size) && false;
     if (use_fast_buffer) {
         if constexpr (IS_OPENGL) {
             if (runtime.HasFastBufferSubData()) {
                 // Fast path for Nvidia
-                if (!HasFastUniformBufferBound(stage, binding_index)) {
+                const bool should_fast_bind =
+                    !HasFastUniformBufferBound(stage, binding_index) ||
+                    uniform_buffer_binding_sizes[stage][binding_index] != size;
+                if (should_fast_bind) {
                     // We only have to bind when the currently bound buffer is not the fast version
                     fast_bound_uniform_buffers[stage] |= 1U << binding_index;
+                    uniform_buffer_binding_sizes[stage][binding_index] = size;
                     runtime.BindFastUniformBuffer(stage, binding_index, size);
                 }
                 const auto span = ImmediateBufferWithData(cpu_addr, size);
@@ -811,6 +818,7 @@ void BufferCache<P>::BindHostGraphicsUniformBuffer(size_t stage, u32 index, u32 
         }
         if constexpr (IS_OPENGL) {
             fast_bound_uniform_buffers[stage] |= 1U << binding_index;
+            uniform_buffer_binding_sizes[stage][binding_index] = size;
         }
         // Stream buffer path to avoid stalling on non-Nvidia drivers or Vulkan
         const std::span<u8> span = runtime.BindMappedUniformBuffer(stage, binding_index, size);
@@ -824,9 +832,13 @@ void BufferCache<P>::BindHostGraphicsUniformBuffer(size_t stage, u32 index, u32 
     }
     ++uniform_cache_shots[0];
 
-    if (!needs_bind && !HasFastUniformBufferBound(stage, binding_index)) {
-        // Skip binding if it's not needed and if the bound buffer is not the fast version
-        // This exists to avoid instances where the fast buffer is bound and a GPU write happens
+    // Skip binding if it's not needed and if the bound buffer is not the fast version
+    // This exists to avoid instances where the fast buffer is bound and a GPU write happens
+    needs_bind |= HasFastUniformBufferBound(stage, binding_index);
+    if constexpr (HAS_PERSISTENT_UNIFORM_BUFFER_BINDINGS) {
+        needs_bind |= uniform_buffer_binding_sizes[stage][binding_index] != size;
+    }
+    if (!needs_bind) {
         return;
     }
     const u32 offset = buffer.Offset(cpu_addr);
@@ -837,6 +849,9 @@ void BufferCache<P>::BindHostGraphicsUniformBuffer(size_t stage, u32 index, u32 
         // Mark the index as dirty if offset doesn't match
         const bool is_copy_bind = offset != 0 && !runtime.SupportsNonZeroUniformOffset();
         dirty_uniform_buffers[stage] |= (is_copy_bind ? 1U : 0U) << index;
+    }
+    if constexpr (HAS_PERSISTENT_UNIFORM_BUFFER_BINDINGS) {
+        uniform_buffer_binding_sizes[stage][binding_index] = size;
     }
     if constexpr (NEEDS_BIND_UNIFORM_INDEX) {
         runtime.BindUniformBuffer(stage, binding_index, buffer, offset, size);
@@ -1501,6 +1516,7 @@ template <class P>
 void BufferCache<P>::NotifyBufferDeletion() {
     if constexpr (HAS_PERSISTENT_UNIFORM_BUFFER_BINDINGS) {
         dirty_uniform_buffers.fill(~u32{0});
+        uniform_buffer_binding_sizes.fill({});
     }
     auto& flags = maxwell3d.dirty.flags;
     flags[Dirty::IndexBuffer] = true;
