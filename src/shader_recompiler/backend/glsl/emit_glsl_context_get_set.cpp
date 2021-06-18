@@ -409,7 +409,7 @@ void EmitSetFragColor(EmitContext& ctx, u32 index, u32 component, std::string_vi
 }
 
 void EmitSetSampleMask(EmitContext& ctx, std::string_view value) {
-    ctx.Add("gl_SampleMask[0]=int({})", value);
+    ctx.Add("gl_SampleMask[0]=int({});", value);
 }
 
 void EmitSetFragDepth(EmitContext& ctx, std::string_view value) {
