@@ -218,13 +218,29 @@ void PlayerControlPreview::UpdateInput() {
         }
     }
 
+    ControllerInput input{};
     if (input_changed) {
         update();
+        input.changed = true;
+    }
+    input.axis_values[Settings::NativeAnalog::LStick] = {
+        axis_values[Settings::NativeAnalog::LStick].value.x(),
+        axis_values[Settings::NativeAnalog::LStick].value.y()};
+    input.axis_values[Settings::NativeAnalog::RStick] = {
+        axis_values[Settings::NativeAnalog::RStick].value.x(),
+        axis_values[Settings::NativeAnalog::RStick].value.y()};
+    input.button_values = button_values;
+    if (controller_callback.input != NULL) {
+        controller_callback.input(std::move(input));
     }
 
     if (mapping_active) {
         blink_counter = (blink_counter + 1) % 50;
     }
+}
+
+void PlayerControlPreview::SetCallBack(ControllerCallback callback_) {
+    controller_callback = callback_;
 }
 
 void PlayerControlPreview::paintEvent(QPaintEvent* event) {

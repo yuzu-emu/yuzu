@@ -207,6 +207,7 @@ GMainWindow::GMainWindow()
     : input_subsystem{std::make_shared<InputCommon::InputSubsystem>()},
       config{std::make_unique<Config>()}, vfs{std::make_shared<FileSys::RealVfsFilesystem>()},
       provider{std::make_unique<FileSys::ManualContentProvider>()} {
+    Settings::values.inputSubsystem = input_subsystem;
     InitializeLogging();
 
     LoadTranslation();
@@ -869,7 +870,7 @@ void GMainWindow::InitializeDebugWidgets() {
     waitTreeWidget->hide();
     debug_menu->addAction(waitTreeWidget->toggleViewAction());
 
-    controller_dialog = new ControllerDialog(this);
+    controller_dialog = new ControllerDialog(this, input_subsystem.get());
     controller_dialog->hide();
     debug_menu->addAction(controller_dialog->toggleViewAction());
 

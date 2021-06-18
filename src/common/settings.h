@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include <input_common/main.h>
 #include "common/common_types.h"
 #include "common/settings_input.h"
 #include "input_common/udp/client.h"
@@ -355,6 +356,7 @@ struct Values {
 
     // Controls
     InputSetting<std::array<PlayerInput, 10>> players;
+    std::shared_ptr<InputCommon::InputSubsystem> inputSubsystem = NULL;
 
     Setting<bool> use_docked_mode{true, "use_docked_mode"};
 
@@ -367,9 +369,14 @@ struct Values {
     BasicSetting<std::string> udp_input_servers{InputCommon::CemuhookUDP::DEFAULT_SRV,
                                                 "udp_input_servers"};
 
+    BasicSetting<bool> tas_enable{false, "tas_enable"};
+    BasicSetting<bool> tas_reset{ false, "tas_reset" };
+    BasicSetting<bool> tas_record{ false, "tas_record" };
+
     BasicSetting<bool> mouse_panning{false, "mouse_panning"};
     BasicSetting<float> mouse_panning_sensitivity{1.0f, "mouse_panning_sensitivity"};
     BasicSetting<bool> mouse_enabled{false, "mouse_enabled"};
+
     std::string mouse_device;
     MouseButtonsRaw mouse_buttons;
 

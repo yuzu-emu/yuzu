@@ -9,6 +9,7 @@
 #include <QPointer>
 #include "common/settings.h"
 #include "core/frontend/input.h"
+#include "yuzu/debugger/controller.h"
 
 class QLabel;
 
@@ -33,6 +34,7 @@ public:
     void BeginMappingAnalog(std::size_t button_id);
     void EndMapping();
     void UpdateInput();
+    void SetCallBack(ControllerCallback callback_);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -177,6 +179,7 @@ private:
     using StickArray =
         std::array<std::unique_ptr<Input::AnalogDevice>, Settings::NativeAnalog::NUM_STICKS_HID>;
 
+    ControllerCallback controller_callback;
     bool is_enabled{};
     bool mapping_active{};
     int blink_counter{};

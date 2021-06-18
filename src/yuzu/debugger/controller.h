@@ -4,18 +4,36 @@
 
 #pragma once
 
+#include <QFileSystemWatcher>
 #include <QWidget>
+#include "common/settings.h"
 
 class QAction;
 class QHideEvent;
 class QShowEvent;
 class PlayerControlPreview;
 
+namespace InputCommon {
+class InputSubsystem;
+}
+
+struct ControllerInput {
+    std::array<std::pair<float, float>, Settings::NativeAnalog::NUM_STICKS_HID> axis_values{};
+    std::array<bool, Settings::NativeButton::NumButtons> button_values{};
+    bool changed{};
+};
+
+struct ControllerCallback {
+    std::function<void(ControllerInput)> input;
+    std::function<void()> update;
+};
+
 class ControllerDialog : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ControllerDialog(QWidget* parent = nullptr);
+    explicit ControllerDialog(QWidget* parent = nullptr,
+                              InputCommon::InputSubsystem* input_subsystem_ = nullptr);
 
     /// Returns a QAction that can be used to toggle visibility of this dialog.
     QAction* toggleViewAction();
@@ -26,6 +44,10 @@ protected:
     void hideEvent(QHideEvent* ev) override;
 
 private:
+    void RefreshTasFile();
+    void InputController(ControllerInput input);
     QAction* toggle_view_action = nullptr;
+    QFileSystemWatcher* watcher = nullptr;
     PlayerControlPreview* widget;
+    InputCommon::InputSubsystem* input_subsystem;
 };
