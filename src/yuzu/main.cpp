@@ -1043,6 +1043,19 @@ void GMainWindow::InitializeHotkeys() {
                     render_window->setAttribute(Qt::WA_Hover, true);
                 }
             });
+    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("TAS Start/Stop"), this),
+            &QShortcut::activated, this, [&] {
+                Settings::values.tas_enable = !Settings::values.tas_enable;
+                LOG_INFO(Frontend, "Tas enabled {}", Settings::values.tas_enable);
+            });
+
+    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("TAS Reset"), this),
+            &QShortcut::activated, this, [&] { Settings::values.tas_reset = true; });
+    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("TAS Record"), this),
+            &QShortcut::activated, this, [&] {
+                Settings::values.tas_record = !Settings::values.tas_record;
+                LOG_INFO(Frontend, "Tas recording {}", Settings::values.tas_record);
+            });
 }
 
 void GMainWindow::SetDefaultUIGeometry() {

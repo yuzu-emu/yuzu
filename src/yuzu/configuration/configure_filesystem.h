@@ -32,6 +32,7 @@ private:
         Gamecard,
         Dump,
         Load,
+        TAS,
     };
 
     void SetDirectory(DirectoryTarget target, QLineEdit* edit);

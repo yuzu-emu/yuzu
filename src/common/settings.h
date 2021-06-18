@@ -405,6 +405,9 @@ struct Values {
     BasicSetting<bool> gamecard_current_game{false, "gamecard_current_game"};
     BasicSetting<std::string> gamecard_path{std::string(), "gamecard_path"};
 
+    // TAS
+    bool pauseTasOnLoad;
+
     // Debugging
     bool record_frame_times;
     BasicSetting<bool> use_gdbstub{false, "use_gdbstub"};

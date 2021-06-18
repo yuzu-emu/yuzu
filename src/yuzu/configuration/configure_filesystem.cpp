@@ -26,6 +26,8 @@ ConfigureFilesystem::ConfigureFilesystem(QWidget* parent)
             [this] { SetDirectory(DirectoryTarget::Dump, ui->dump_path_edit); });
     connect(ui->load_path_button, &QToolButton::pressed, this,
             [this] { SetDirectory(DirectoryTarget::Load, ui->load_path_edit); });
+    connect(ui->tas_path_button, &QToolButton::pressed, this,
+            [this] { SetDirectory(DirectoryTarget::TAS, ui->tas_path_edit); });
 
     connect(ui->reset_game_list_cache, &QPushButton::pressed, this,
             &ConfigureFilesystem::ResetMetadata);
@@ -49,9 +51,12 @@ void ConfigureFilesystem::setConfiguration() {
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::DumpDir)));
     ui->load_path_edit->setText(
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::LoadDir)));
+    ui->tas_path_edit->setText(
+        QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::TASFile)));
 
     ui->gamecard_inserted->setChecked(Settings::values.gamecard_inserted.GetValue());
     ui->gamecard_current_game->setChecked(Settings::values.gamecard_current_game.GetValue());
+    ui->tas_pause_on_load->setChecked(Settings::values.pauseTasOnLoad);
     ui->dump_exefs->setChecked(Settings::values.dump_exefs.GetValue());
     ui->dump_nso->setChecked(Settings::values.dump_nso.GetValue());
 
@@ -69,9 +74,11 @@ void ConfigureFilesystem::applyConfiguration() {
                             ui->dump_path_edit->text().toStdString());
     Common::FS::SetYuzuPath(Common::FS::YuzuPath::LoadDir,
                             ui->load_path_edit->text().toStdString());
+    Common::FS::SetYuzuPath(Common::FS::YuzuPath::TASFile, ui->tas_path_edit->text().toStdString());
 
     Settings::values.gamecard_inserted = ui->gamecard_inserted->isChecked();
     Settings::values.gamecard_current_game = ui->gamecard_current_game->isChecked();
+    Settings::values.pauseTasOnLoad = ui->tas_pause_on_load->isChecked();
     Settings::values.dump_exefs = ui->dump_exefs->isChecked();
     Settings::values.dump_nso = ui->dump_nso->isChecked();
 
@@ -96,6 +103,9 @@ void ConfigureFilesystem::SetDirectory(DirectoryTarget target, QLineEdit* edit) 
         break;
     case DirectoryTarget::Load:
         caption = tr("Select Mod Load Directory...");
+        break;
+    case DirectoryTarget::TAS:
+        caption = tr("Select TAS Directory...");
         break;
     }
 

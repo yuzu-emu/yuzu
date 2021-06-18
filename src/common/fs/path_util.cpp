@@ -116,6 +116,8 @@ private:
         GenerateYuzuPath(YuzuPath::ScreenshotsDir, yuzu_path / SCREENSHOTS_DIR);
         GenerateYuzuPath(YuzuPath::SDMCDir, yuzu_path / SDMC_DIR);
         GenerateYuzuPath(YuzuPath::ShaderDir, yuzu_path / SHADER_DIR);
+
+        GenerateYuzuPath(YuzuPath::TASFile, fs::path{""});
     }
 
     ~PathManagerImpl() = default;
