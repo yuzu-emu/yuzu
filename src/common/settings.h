@@ -372,6 +372,7 @@ struct Values {
     BasicSetting<bool> tas_enable{false, "tas_enable"};
     BasicSetting<bool> tas_reset{ false, "tas_reset" };
     BasicSetting<bool> tas_record{ false, "tas_record" };
+    BasicSetting<bool> cpuBoosted{ false, "cpuBoosted" };
 
     BasicSetting<bool> mouse_panning{false, "mouse_panning"};
     BasicSetting<float> mouse_panning_sensitivity{1.0f, "mouse_panning_sensitivity"};
