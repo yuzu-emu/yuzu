@@ -18,6 +18,7 @@
 #include "common/settings.h"
 #include "common/swap.h"
 #include "core/core_timing.h"
+#include "core/frontend/input.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_thread.h"
@@ -31,8 +32,6 @@
 #include "core/hle/service/vi/vi_m.h"
 #include "core/hle/service/vi/vi_s.h"
 #include "core/hle/service/vi/vi_u.h"
-
-#include "input_common/tas/tas_input.h"
 
 namespace Service::VI {
 

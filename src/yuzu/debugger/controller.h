@@ -43,7 +43,6 @@ protected:
     void hideEvent(QHideEvent* ev) override;
 
 private:
-    void RefreshTasFile();
     void InputController(ControllerInput input);
     QAction* toggle_view_action = nullptr;
     QFileSystemWatcher* watcher = nullptr;

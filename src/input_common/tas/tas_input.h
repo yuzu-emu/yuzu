@@ -5,8 +5,6 @@
 #pragma once
 
 #include <array>
-#include <mutex>
-#include <thread>
 
 #include "common/common_types.h"
 #include "core/frontend/input.h"
@@ -65,53 +63,6 @@ public:
     Tas();
     ~Tas();
 
-    static std::string ButtonsToString(u32 button) {
-        std::string returns;
-        if ((button & static_cast<u32>(TasInput::TasButton::BUTTON_A)) != 0)
-            returns += ", A";
-        if ((button & static_cast<u32>(TasInput::TasButton::BUTTON_B)) != 0)
-            returns += ", B";
-        if ((button & static_cast<u32>(TasInput::TasButton::BUTTON_X)) != 0)
-            returns += ", X";
-        if ((button & static_cast<u32>(TasInput::TasButton::BUTTON_Y)) != 0)
-            returns += ", Y";
-        if ((button & static_cast<u32>(TasInput::TasButton::STICK_L)) != 0)
-            returns += ", STICK_L";
-        if ((button & static_cast<u32>(TasInput::TasButton::STICK_R)) != 0)
-            returns += ", STICK_R";
-        if ((button & static_cast<u32>(TasInput::TasButton::TRIGGER_L)) != 0)
-            returns += ", TRIGGER_L";
-        if ((button & static_cast<u32>(TasInput::TasButton::TRIGGER_R)) != 0)
-            returns += ", TRIGGER_R";
-        if ((button & static_cast<u32>(TasInput::TasButton::TRIGGER_ZL)) != 0)
-            returns += ", TRIGGER_ZL";
-        if ((button & static_cast<u32>(TasInput::TasButton::TRIGGER_ZR)) != 0)
-            returns += ", TRIGGER_ZR";
-        if ((button & static_cast<u32>(TasInput::TasButton::BUTTON_PLUS)) != 0)
-            returns += ", PLUS";
-        if ((button & static_cast<u32>(TasInput::TasButton::BUTTON_MINUS)) != 0)
-            returns += ", MINUS";
-        if ((button & static_cast<u32>(TasInput::TasButton::BUTTON_LEFT)) != 0)
-            returns += ", LEFT";
-        if ((button & static_cast<u32>(TasInput::TasButton::BUTTON_UP)) != 0)
-            returns += ", UP";
-        if ((button & static_cast<u32>(TasInput::TasButton::BUTTON_RIGHT)) != 0)
-            returns += ", RIGHT";
-        if ((button & static_cast<u32>(TasInput::TasButton::BUTTON_DOWN)) != 0)
-            returns += ", DOWN";
-        if ((button & static_cast<u32>(TasInput::TasButton::BUTTON_SL)) != 0)
-            returns += ", SL";
-        if ((button & static_cast<u32>(TasInput::TasButton::BUTTON_SR)) != 0)
-            returns += ", SR";
-        if ((button & static_cast<u32>(TasInput::TasButton::BUTTON_HOME)) != 0)
-            returns += ", HOME";
-        if ((button & static_cast<u32>(TasInput::TasButton::BUTTON_CAPTURE)) != 0)
-            returns += ", CAPTURE";
-        return returns.empty() ? "" : returns.substr(2);
-    }
-
-    void RefreshTasFile();
-    void LoadTasFiles();
     void RecordInput(u32 buttons, const std::array<std::pair<float, float>, 2>& axes);
     void UpdateThread();
 
@@ -137,6 +88,7 @@ private:
         TasAnalog l_axis{};
         TasAnalog r_axis{};
     };
+    void LoadTasFiles();
     void LoadTasFile(size_t player_index);
     void WriteTasFile();
     TasAnalog ReadCommandAxis(const std::string& line) const;
@@ -144,9 +96,16 @@ private:
     std::string WriteCommandButtons(u32 data) const;
     std::string WriteCommandAxis(TasAnalog data) const;
 
+    std::pair<float, float> FlipAxisY(std::pair<float, float> old);
+
+    std::string DebugButtons(u32 buttons) const;
+    std::string DebugJoystick(float x, float y) const;
+    std::string DebugInput(const TasData& data) const;
+    std::string DebugInputs(const std::array<TasData, PLAYER_NUMBER>& arr) const;
+    std::string ButtonsToString(u32 button) const;
+
     size_t script_length{0};
     std::array<TasData, PLAYER_NUMBER> tas_data;
-    bool update_thread_running{true};
     bool refresh_tas_fle{false};
     bool is_recording{false};
     bool is_running{false};

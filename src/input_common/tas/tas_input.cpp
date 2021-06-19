@@ -2,13 +2,8 @@
 // Licensed under GPLv2+
 // Refer to the license.txt file included.
 
-#include <chrono>
 #include <cstring>
-#include <functional>
-#include <random>
 #include <regex>
-#include <thread>
-#include <boost/asio.hpp>
 
 #include "common/fs/file.h"
 #include "common/fs/fs_types.h"
@@ -43,27 +38,25 @@ constexpr std::array<std::pair<std::string_view, TasButton>, 20> text_to_tas_but
 };
 
 Tas::Tas() {
+    if (!Settings::values.tas_enable) {
+        return;
+    }
     LoadTasFiles();
 }
 
-Tas::~Tas() {
-    update_thread_running = false;
-}
+Tas::~Tas() = default;
 
-void Tas::RefreshTasFile() {
-    refresh_tas_fle = true;
-}
 void Tas::LoadTasFiles() {
     script_length = 0;
-    for (size_t i = 0; i < PLAYER_NUMBER; i++) {
+    for (size_t i = 0; i < commands.size(); i++) {
         LoadTasFile(i);
         if (commands[i].size() > script_length) {
             script_length = commands[i].size();
         }
     }
 }
+
 void Tas::LoadTasFile(size_t player_index) {
-    LOG_DEBUG(Input, "LoadTasFile()");
     if (!commands[player_index].empty()) {
         commands[player_index].clear();
     }
@@ -110,7 +103,6 @@ void Tas::LoadTasFile(size_t player_index) {
 }
 
 void Tas::WriteTasFile() {
-    LOG_DEBUG(Input, "WriteTasFile()");
     std::string output_text;
     for (size_t frame = 0; frame < record_commands.size(); frame++) {
         if (!output_text.empty()) {
@@ -131,13 +123,13 @@ void Tas::WriteTasFile() {
     }
 }
 
-static std::pair<float, float> FlipY(std::pair<float, float> old) {
+std::pair<float, float> Tas::FlipAxisY(std::pair<float, float> old) {
     auto [x, y] = old;
     return {x, -y};
 }
 
 void Tas::RecordInput(u32 buttons, const std::array<std::pair<float, float>, 2>& axes) {
-    last_input = {buttons, FlipY(axes[0]), FlipY(axes[1])};
+    last_input = {buttons, FlipAxisY(axes[0]), FlipAxisY(axes[1])};
 }
 
 std::tuple<TasState, size_t, size_t> Tas::GetStatus() const {
@@ -155,21 +147,21 @@ std::tuple<TasState, size_t, size_t> Tas::GetStatus() const {
     return {state, current_command, script_length};
 }
 
-static std::string DebugButtons(u32 buttons) {
+std::string Tas::DebugButtons(u32 buttons) const {
     return fmt::format("{{ {} }}", TasInput::Tas::ButtonsToString(buttons));
 }
 
-static std::string DebugJoystick(float x, float y) {
+std::string Tas::DebugJoystick(float x, float y) const {
     return fmt::format("[ {} , {} ]", std::to_string(x), std::to_string(y));
 }
 
-static std::string DebugInput(const TasData& data) {
+std::string Tas::DebugInput(const TasData& data) const {
     return fmt::format("{{ {} , {} , {} }}", DebugButtons(data.buttons),
                        DebugJoystick(data.axis[0], data.axis[1]),
                        DebugJoystick(data.axis[2], data.axis[3]));
 }
 
-static std::string DebugInputs(const std::array<TasData, PLAYER_NUMBER>& arr) {
+std::string Tas::DebugInputs(const std::array<TasData, PLAYER_NUMBER>& arr) const {
     std::string returns = "[ ";
     for (size_t i = 0; i < arr.size(); i++) {
         returns += DebugInput(arr[i]);
@@ -180,8 +172,17 @@ static std::string DebugInputs(const std::array<TasData, PLAYER_NUMBER>& arr) {
     return returns + "]";
 }
 
+std::string Tas::ButtonsToString(u32 button) const {
+    std::string returns;
+    for (auto [text_button, tas_button] : text_to_tas_button) {
+        if ((button & static_cast<u32>(tas_button)) != 0)
+            returns += fmt::format(", {}", text_button.substr(4));
+    }
+    return returns.empty() ? "" : returns.substr(2);
+}
+
 void Tas::UpdateThread() {
-    if (!update_thread_running) {
+    if (!Settings::values.tas_enable) {
         return;
     }
 
@@ -210,9 +211,9 @@ void Tas::UpdateThread() {
     }
     if (is_running) {
         if (current_command < script_length) {
-            LOG_INFO(Input, "Playing TAS {}/{}", current_command, script_length);
+            LOG_DEBUG(Input, "Playing TAS {}/{}", current_command, script_length);
             size_t frame = current_command++;
-            for (size_t i = 0; i < PLAYER_NUMBER; i++) {
+            for (size_t i = 0; i < commands.size(); i++) {
                 if (frame < commands[i].size()) {
                     TASCommand command = commands[i][frame];
                     tas_data[i].buttons = command.buttons;

@@ -299,6 +299,7 @@ private:
     void OpenURL(const QUrl& url);
     void LoadTranslation();
     void OpenPerGameConfiguration(u64 title_id, const std::string& file_name);
+    QString GetTasStateDescription() const;
 
     Ui::MainWindow ui;
 

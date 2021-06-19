@@ -74,10 +74,6 @@ void ControllerDialog::hideEvent(QHideEvent* ev) {
     QWidget::hideEvent(ev);
 }
 
-void ControllerDialog::RefreshTasFile() {
-    input_subsystem->GetTas()->RefreshTasFile();
-}
-
 void ControllerDialog::InputController(ControllerInput input) {
     u32 buttons = 0;
     int index = 0;

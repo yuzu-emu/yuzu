@@ -2924,16 +2924,17 @@ void GMainWindow::UpdateWindowTitle(std::string_view title_name, std::string_vie
     }
 }
 
-static std::string GetTasStateDescription(TasInput::TasState state) {
-    switch (state) {
+QString GMainWindow::GetTasStateDescription() const {
+    auto [tas_status, current_tas_frame, total_tas_frames] = input_subsystem->GetTas()->GetStatus();
+    switch (tas_status) {
     case TasInput::TasState::Running:
-        return "Running";
+        return tr("TAS state: Running %1/%2").arg(current_tas_frame).arg(total_tas_frames);
     case TasInput::TasState::Recording:
-        return "Recording";
+        return tr("TAS state: Recording %1").arg(total_tas_frames);
     case TasInput::TasState::Stopped:
-        return "Stopped";
+        return tr("TAS state: Idle %1/%2").arg(current_tas_frame).arg(total_tas_frames);
     default:
-        return "INVALID STATE";
+        return tr("INVALID TAS STATE");
     }
 }
 
@@ -2944,12 +2945,7 @@ void GMainWindow::UpdateStatusBar() {
     }
 
     if (Settings::values.tas_enable) {
-        auto [tas_status, current_tas_frame, total_tas_frames] =
-            input_subsystem->GetTas()->GetStatus();
-        tas_label->setText(tr("%1 TAS %2/%3")
-                               .arg(tr(GetTasStateDescription(tas_status).c_str()))
-                               .arg(current_tas_frame)
-                               .arg(total_tas_frames));
+        tas_label->setText(GetTasStateDescription());
     } else {
         tas_label->clear();
     }
