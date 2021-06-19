@@ -766,6 +766,11 @@ void GMainWindow::InitializeWidgets() {
         statusBar()->addPermanentWidget(label);
     }
 
+    tas_label = new QLabel();
+    tas_label->setObjectName(QStringLiteral("TASlabel"));
+    tas_label->setFocusPolicy(Qt::NoFocus);
+    statusBar()->insertPermanentWidget(0, tas_label);
+
     // Setup Dock button
     dock_status_button = new QPushButton();
     dock_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
@@ -854,12 +859,6 @@ void GMainWindow::InitializeWidgets() {
         Core::System::GetInstance().ApplySettings();
     });
     statusBar()->insertPermanentWidget(0, renderer_status_button);
-
-    tas_label = new QLabel();
-    tas_label->setObjectName(QStringLiteral("TASlabel"));
-    tas_label->setText(tr("TAS not running"));
-    tas_label->setFocusPolicy(Qt::NoFocus);
-    statusBar()->insertPermanentWidget(0, tas_label);
 
     statusBar()->setVisible(true);
     setStyleSheet(QStringLiteral("QStatusBar::item{border: none;}"));
@@ -1053,18 +1052,11 @@ void GMainWindow::InitializeHotkeys() {
                 }
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("TAS Start/Stop"), this),
-            &QShortcut::activated, this, [&] {
-                Settings::values.tas_enable = !Settings::values.tas_enable;
-                LOG_INFO(Frontend, "Tas enabled {}", Settings::values.tas_enable);
-            });
-
+            &QShortcut::activated, this, [&] { input_subsystem->GetTas()->StartStop(); });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("TAS Reset"), this),
-            &QShortcut::activated, this, [&] { Settings::values.tas_reset = true; });
+            &QShortcut::activated, this, [&] { input_subsystem->GetTas()->Reset(); });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("TAS Record"), this),
-            &QShortcut::activated, this, [&] {
-                Settings::values.tas_record = !Settings::values.tas_record;
-                LOG_INFO(Frontend, "Tas recording {}", Settings::values.tas_record);
-            });
+            &QShortcut::activated, this, [&] { input_subsystem->GetTas()->Record(); });
 }
 
 void GMainWindow::SetDefaultUIGeometry() {
@@ -2949,11 +2941,16 @@ void GMainWindow::UpdateStatusBar() {
         return;
     }
 
-    auto [tas_status, current_tas_frame, total_tas_frames] = input_subsystem->GetTas()->GetStatus();
-    tas_label->setText(tr("%1 TAS %2/%3")
-                           .arg(tr(GetTasStateDescription(tas_status).c_str()))
-                           .arg(current_tas_frame)
-                           .arg(total_tas_frames));
+    if (Settings::values.tas_enable) {
+        auto [tas_status, current_tas_frame, total_tas_frames] =
+            input_subsystem->GetTas()->GetStatus();
+        tas_label->setText(tr("%1 TAS %2/%3")
+                               .arg(tr(GetTasStateDescription(tas_status).c_str()))
+                               .arg(current_tas_frame)
+                               .arg(total_tas_frames));
+    } else {
+        tas_label->clear();
+    }
 
     auto results = Core::System::GetInstance().GetAndResetPerfStats();
     auto& shader_notify = Core::System::GetInstance().GPU().ShaderNotify();

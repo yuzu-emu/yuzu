@@ -5,6 +5,7 @@
 #include <memory>
 #include <thread>
 #include "common/param_package.h"
+#include "common/settings.h"
 #include "input_common/analog_from_button.h"
 #include "input_common/gcadapter/gc_adapter.h"
 #include "input_common/gcadapter/gc_poller.h"
@@ -114,8 +115,11 @@ struct InputSubsystem::Impl {
         std::vector<Common::ParamPackage> devices = {
             Common::ParamPackage{{"display", "Any"}, {"class", "any"}},
             Common::ParamPackage{{"display", "Keyboard/Mouse"}, {"class", "keyboard"}},
-            Common::ParamPackage{{"display", "TAS"}, {"class", "tas"}},
         };
+        if (Settings::values.tas_enable) {
+            devices.push_back(
+                Common::ParamPackage{{"display", "TAS Controller"}, {"class", "tas"}});
+        }
 #ifdef HAVE_SDL2
         auto sdl_devices = sdl->GetInputDevices();
         devices.insert(devices.end(), sdl_devices.begin(), sdl_devices.end());

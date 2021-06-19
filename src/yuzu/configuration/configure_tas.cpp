@@ -30,11 +30,17 @@ ConfigureTasDialog::~ConfigureTasDialog() = default;
 void ConfigureTasDialog::LoadConfiguration() {
     ui->tas_path_edit->setText(
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::TASDir)));
+    ui->tas_enable->setChecked(Settings::values.tas_enable);
+    ui->tas_control_swap->setChecked(Settings::values.tas_swap_controllers);
+    ui->tas_loop_script->setChecked(Settings::values.tas_loop);
     ui->tas_pause_on_load->setChecked(Settings::values.pause_tas_on_load);
 }
 
 void ConfigureTasDialog::ApplyConfiguration() {
     Common::FS::SetYuzuPath(Common::FS::YuzuPath::TASDir, ui->tas_path_edit->text().toStdString());
+    Settings::values.tas_enable = ui->tas_enable->isChecked();
+    Settings::values.tas_swap_controllers = ui->tas_control_swap->isChecked();
+    Settings::values.tas_loop = ui->tas_loop_script->isChecked();
     Settings::values.pause_tas_on_load = ui->tas_pause_on_load->isChecked();
 }
 

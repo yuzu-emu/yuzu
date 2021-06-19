@@ -240,7 +240,7 @@ void PlayerControlPreview::UpdateInput() {
 }
 
 void PlayerControlPreview::SetCallBack(ControllerCallback callback_) {
-    controller_callback = callback_;
+    controller_callback = std::move(callback_);
 }
 
 void PlayerControlPreview::paintEvent(QPaintEvent* event) {

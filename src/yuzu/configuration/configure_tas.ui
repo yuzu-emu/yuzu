@@ -24,9 +24,6 @@
               <layout class="QGridLayout" name="gridLayout">
                 <item row="0" column="0" colspan="4">
                   <widget class="QCheckBox" name="tas_enable">
-                    <property name="enabled">
-                      <bool>false</bool>
-                    </property>
                     <property name="text">
                       <string>Enable TAS features</string>
                     </property>
@@ -44,9 +41,6 @@
                 </item>
                 <item row="2" column="0" colspan="4">
                   <widget class="QCheckBox" name="tas_loop_script">
-                    <property name="enabled">
-                      <bool>false</bool>
-                    </property>
                     <property name="text">
                       <string>Loop script</string>
                     </property>

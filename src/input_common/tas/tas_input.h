@@ -115,6 +115,10 @@ public:
     void RecordInput(u32 buttons, const std::array<std::pair<float, float>, 2>& axes);
     void UpdateThread();
 
+    void StartStop();
+    void Reset();
+    void Record();
+
     /**
      * Returns the current status values of TAS playback/recording
      * @return Tuple of
@@ -144,6 +148,9 @@ private:
     std::array<TasData, PLAYER_NUMBER> tas_data;
     bool update_thread_running{true};
     bool refresh_tas_fle{false};
+    bool is_recording{false};
+    bool is_running{false};
+    bool needs_reset{false};
     std::array<std::vector<TASCommand>, PLAYER_NUMBER> commands{};
     std::vector<TASCommand> record_commands{};
     size_t current_command{0};

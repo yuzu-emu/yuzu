@@ -142,9 +142,11 @@ void Tas::RecordInput(u32 buttons, const std::array<std::pair<float, float>, 2>&
 
 std::tuple<TasState, size_t, size_t> Tas::GetStatus() const {
     TasState state;
-    if (Settings::values.tas_record) {
+    if (is_recording) {
         return {TasState::Recording, record_commands.size(), record_commands.size()};
-    } else if (Settings::values.tas_enable) {
+    }
+
+    if (is_running) {
         state = TasState::Running;
     } else {
         state = TasState::Stopped;
@@ -187,26 +189,26 @@ void Tas::UpdateThread() {
         tas_data.fill({});
     }
 
-    if (Settings::values.tas_record) {
+    if (is_recording) {
         record_commands.push_back(last_input);
     }
-    if (!Settings::values.tas_record && !record_commands.empty()) {
+    if (!is_recording && !record_commands.empty()) {
         WriteTasFile();
-        Settings::values.tas_reset = true;
+        needs_reset = true;
         refresh_tas_fle = true;
         record_commands.clear();
     }
-    if (Settings::values.tas_reset) {
+    if (needs_reset) {
         current_command = 0;
         if (refresh_tas_fle) {
             LoadTasFiles();
             refresh_tas_fle = false;
         }
-        Settings::values.tas_reset = false;
+        needs_reset = false;
         LoadTasFiles();
         LOG_DEBUG(Input, "tas_reset done");
     }
-    if (Settings::values.tas_enable) {
+    if (is_running) {
         if (current_command < script_length) {
             LOG_INFO(Input, "Playing TAS {}/{}", current_command, script_length);
             size_t frame = current_command++;
@@ -225,7 +227,7 @@ void Tas::UpdateThread() {
                 }
             }
         } else {
-            Settings::values.tas_enable = false;
+            is_running = Settings::values.tas_loop;
             current_command = 0;
             tas_data.fill({});
         }
@@ -297,6 +299,18 @@ std::string Tas::WriteCommandButtons(u32 data) const {
         data >>= 1;
     }
     return line;
+}
+
+void Tas::StartStop() {
+    is_running = !is_running;
+}
+
+void Tas::Reset() {
+    needs_reset = true;
+}
+
+void Tas::Record() {
+    is_recording = !is_recording;
 }
 
 InputCommon::ButtonMapping Tas::GetButtonMappingForDevice(
