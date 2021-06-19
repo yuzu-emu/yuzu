@@ -73,8 +73,7 @@ void Tas::LoadTasFile(size_t player_index) {
                                        Common::FS::FileType::BinaryFile);
     std::stringstream command_line(file);
     std::string line;
-    int frameNo = 0;
-    TASCommand empty = {.buttons = 0, .l_axis = {0.f, 0.f}, .r_axis = {0.f, 0.f}};
+    int frame_no = 0;
     while (std::getline(command_line, line, '\n')) {
         if (line.empty()) {
             continue;
@@ -94,9 +93,9 @@ void Tas::LoadTasFile(size_t player_index) {
             continue;
         }
 
-        while (frameNo < std::stoi(seglist.at(0))) {
-            commands[player_index].push_back(empty);
-            frameNo++;
+        while (frame_no < std::stoi(seglist.at(0))) {
+            commands[player_index].push_back({});
+            frame_no++;
         }
 
         TASCommand command = {
@@ -105,29 +104,29 @@ void Tas::LoadTasFile(size_t player_index) {
             .r_axis = ReadCommandAxis(seglist.at(3)),
         };
         commands[player_index].push_back(command);
-        frameNo++;
+        frame_no++;
     }
-    LOG_INFO(Input, "TAS file loaded! {} frames", frameNo);
+    LOG_INFO(Input, "TAS file loaded! {} frames", frame_no);
 }
 
 void Tas::WriteTasFile() {
     LOG_DEBUG(Input, "WriteTasFile()");
-    std::string output_text = "";
-    for (int frame = 0; frame < (signed)record_commands.size(); frame++) {
+    std::string output_text;
+    for (size_t frame = 0; frame < record_commands.size(); frame++) {
         if (!output_text.empty()) {
             output_text += "\n";
         }
-        TASCommand line = record_commands.at(frame);
+        const TASCommand& line = record_commands[frame];
         output_text += std::to_string(frame) + " " + WriteCommandButtons(line.buttons) + " " +
                        WriteCommandAxis(line.l_axis) + " " + WriteCommandAxis(line.r_axis);
     }
-    size_t bytesWritten = Common::FS::WriteStringToFile(
+    const size_t bytes_written = Common::FS::WriteStringToFile(
         Common::FS::GetYuzuPathString(Common::FS::YuzuPath::TASDir) + "record.txt",
         Common::FS::FileType::TextFile, output_text);
-    if (bytesWritten == output_text.size()) {
+    if (bytes_written == output_text.size()) {
         LOG_INFO(Input, "TAS file written to file!");
     } else {
-        LOG_ERROR(Input, "Writing the TAS-file has failed! {} / {} bytes written", bytesWritten,
+        LOG_ERROR(Input, "Writing the TAS-file has failed! {} / {} bytes written", bytes_written,
                   output_text.size());
     }
 }
@@ -141,30 +140,31 @@ void Tas::RecordInput(u32 buttons, const std::array<std::pair<float, float>, 2>&
     last_input = {buttons, FlipY(axes[0]), FlipY(axes[1])};
 }
 
-std::tuple<TasState, size_t, size_t> Tas::GetStatus() {
+std::tuple<TasState, size_t, size_t> Tas::GetStatus() const {
     TasState state;
     if (Settings::values.tas_record) {
-        return {TasState::RECORDING, record_commands.size(), record_commands.size()};
+        return {TasState::Recording, record_commands.size(), record_commands.size()};
     } else if (Settings::values.tas_enable) {
-        state = TasState::RUNNING;
+        state = TasState::Running;
     } else {
-        state = TasState::STOPPED;
+        state = TasState::Stopped;
     }
 
     return {state, current_command, script_length};
 }
 
 static std::string DebugButtons(u32 buttons) {
-    return "{ " + TasInput::Tas::ButtonsToString(buttons) + " }";
+    return fmt::format("{{ {} }}", TasInput::Tas::ButtonsToString(buttons));
 }
 
 static std::string DebugJoystick(float x, float y) {
-    return "[ " + std::to_string(x) + "," + std::to_string(y) + " ]";
+    return fmt::format("[ {} , {} ]", std::to_string(x), std::to_string(y));
 }
 
 static std::string DebugInput(const TasData& data) {
-    return "{ " + DebugButtons(data.buttons) + " , " + DebugJoystick(data.axis[0], data.axis[1]) +
-           " , " + DebugJoystick(data.axis[2], data.axis[3]) + " }";
+    return fmt::format("{{ {} , {} , {} }}", DebugButtons(data.buttons),
+                       DebugJoystick(data.axis[0], data.axis[1]),
+                       DebugJoystick(data.axis[2], data.axis[3]));
 }
 
 static std::string DebugInputs(const std::array<TasData, PLAYER_NUMBER>& arr) {
@@ -179,66 +179,58 @@ static std::string DebugInputs(const std::array<TasData, PLAYER_NUMBER>& arr) {
 }
 
 void Tas::UpdateThread() {
-    if (update_thread_running) {
-        if (Settings::values.pause_tas_on_load && Settings::values.is_cpu_boosted) {
-            for (size_t i = 0; i < PLAYER_NUMBER; i++) {
-                tas_data[i].buttons = 0;
-                tas_data[i].axis = {};
-            }
-        }
+    if (!update_thread_running) {
+        return;
+    }
 
-        if (Settings::values.tas_record) {
-            record_commands.push_back(last_input);
-        }
-        if (!Settings::values.tas_record && !record_commands.empty()) {
-            WriteTasFile();
-            Settings::values.tas_reset = true;
-            refresh_tas_fle = true;
-            record_commands.clear();
-        }
-        if (Settings::values.tas_reset) {
-            current_command = 0;
-            if (refresh_tas_fle) {
-                LoadTasFiles();
-                refresh_tas_fle = false;
-            }
-            Settings::values.tas_reset = false;
+    if (Settings::values.pause_tas_on_load && Settings::values.is_cpu_boosted) {
+        tas_data.fill({});
+    }
+
+    if (Settings::values.tas_record) {
+        record_commands.push_back(last_input);
+    }
+    if (!Settings::values.tas_record && !record_commands.empty()) {
+        WriteTasFile();
+        Settings::values.tas_reset = true;
+        refresh_tas_fle = true;
+        record_commands.clear();
+    }
+    if (Settings::values.tas_reset) {
+        current_command = 0;
+        if (refresh_tas_fle) {
             LoadTasFiles();
-            LOG_DEBUG(Input, "tas_reset done");
+            refresh_tas_fle = false;
         }
-        if (Settings::values.tas_enable) {
-            if ((signed)current_command < script_length) {
-                LOG_INFO(Input, "Playing TAS {}/{}", current_command, script_length);
-                size_t frame = current_command++;
-                for (size_t i = 0; i < PLAYER_NUMBER; i++) {
-                    if (frame < commands[i].size()) {
-                        TASCommand command = commands[i][frame];
-                        tas_data[i].buttons = command.buttons;
-                        auto [l_axis_x, l_axis_y] = command.l_axis;
-                        tas_data[i].axis[0] = l_axis_x;
-                        tas_data[i].axis[1] = l_axis_y;
-                        auto [r_axis_x, r_axis_y] = command.r_axis;
-                        tas_data[i].axis[2] = r_axis_x;
-                        tas_data[i].axis[3] = r_axis_y;
-                    } else {
-                        tas_data[i].buttons = 0;
-                        tas_data[i].axis = {};
-                    }
-                }
-            } else {
-                Settings::values.tas_enable = false;
-                current_command = 0;
-                for (size_t i = 0; i < PLAYER_NUMBER; i++) {
-                    tas_data[i].buttons = 0;
-                    tas_data[i].axis = {};
+        Settings::values.tas_reset = false;
+        LoadTasFiles();
+        LOG_DEBUG(Input, "tas_reset done");
+    }
+    if (Settings::values.tas_enable) {
+        if ((signed)current_command < script_length) {
+            LOG_INFO(Input, "Playing TAS {}/{}", current_command, script_length);
+            size_t frame = current_command++;
+            for (size_t i = 0; i < PLAYER_NUMBER; i++) {
+                if (frame < commands[i].size()) {
+                    TASCommand command = commands[i][frame];
+                    tas_data[i].buttons = command.buttons;
+                    auto [l_axis_x, l_axis_y] = command.l_axis;
+                    tas_data[i].axis[0] = l_axis_x;
+                    tas_data[i].axis[1] = l_axis_y;
+                    auto [r_axis_x, r_axis_y] = command.r_axis;
+                    tas_data[i].axis[2] = r_axis_x;
+                    tas_data[i].axis[3] = r_axis_y;
+                } else {
+                    tas_data[i] = {};
                 }
             }
         } else {
-            for (size_t i = 0; i < PLAYER_NUMBER; i++) {
-                tas_data[i].buttons = 0;
-                tas_data[i].axis = {};
-            }
+            Settings::values.tas_enable = false;
+            current_command = 0;
+            tas_data.fill({});
         }
+    } else {
+        tas_data.fill({});
     }
     LOG_DEBUG(Input, "TAS inputs: {}", DebugInputs(tas_data));
 }
@@ -283,8 +275,9 @@ std::string Tas::WriteCommandAxis(TasAnalog data) const {
 }
 
 std::string Tas::WriteCommandButtons(u32 data) const {
-    if (data == 0)
+    if (data == 0) {
         return "NONE";
+    }
 
     std::string line;
     u32 index = 0;

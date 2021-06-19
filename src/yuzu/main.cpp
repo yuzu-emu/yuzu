@@ -2932,11 +2932,11 @@ void GMainWindow::UpdateWindowTitle(std::string_view title_name, std::string_vie
 
 static std::string GetTasStateDescription(TasInput::TasState state) {
     switch (state) {
-    case TasInput::TasState::RUNNING:
+    case TasInput::TasState::Running:
         return "Running";
-    case TasInput::TasState::RECORDING:
+    case TasInput::TasState::Recording:
         return "Recording";
-    case TasInput::TasState::STOPPED:
+    case TasInput::TasState::Stopped:
         return "Stopped";
     default:
         return "INVALID STATE";
