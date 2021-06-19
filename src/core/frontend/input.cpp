@@ -8,11 +8,11 @@ namespace Input {
 
 std::function<void(void)> tas_update_callback;
 
-void Input::SetTASUpdateCallback(std::function<void(void)> callback) {
+void SetTASUpdateCallback(std::function<void(void)> callback) {
     tas_update_callback = callback;
 }
 
-void Input::RequestTASUpdate() {
+void RequestTASUpdate() {
     if (tas_update_callback != nullptr) {
         tas_update_callback();
     }
