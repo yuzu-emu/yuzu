@@ -13,7 +13,6 @@
 #include <utility>
 #include <vector>
 
-#include <input_common/main.h>
 #include "common/common_types.h"
 #include "common/settings_input.h"
 #include "input_common/udp/client.h"
@@ -370,9 +369,9 @@ struct Values {
 
     BasicSetting<bool> pause_tas_on_load { false, "pause_tas_on_load" };
     BasicSetting<bool> tas_enable{ false, "tas_enable" };
-    BasicSetting<bool> tas_reset{ false, "tas_reset" };
-    BasicSetting<bool> tas_record{ false, "tas_record" };
-    BasicSetting<bool> is_cpu_boxted{ false, "    BasicSetting<bool> is_cpu_boxted{ false, "cpuBoosted" };
+    BasicSetting<bool> tas_loop{ false, "tas_loop" };
+    BasicSetting<bool> tas_swap_controllers{ false, "tas_swap_controllers" };
+    BasicSetting<bool> is_cpu_boosted{ false,  "is_cpu_boosted" };
 " };
 
     BasicSetting<bool> mouse_panning{false, "mouse_panning"};

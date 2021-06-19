@@ -597,7 +597,8 @@ private:
 
             IGBPQueueBufferResponseParcel response{1280, 720};
             ctx.WriteBuffer(response.Serialize());
-            Settings::values.input_subsystem->GetTas()->UpdateThread();
+            // Send update request for TAS input sync
+            Input::RequestTASUpdate();
             break;
         }
         case TransactionId::Query: {

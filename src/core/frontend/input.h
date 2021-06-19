@@ -214,4 +214,7 @@ using TouchDevice = InputDevice<TouchStatus>;
  */
 using MouseDevice = InputDevice<std::tuple<float, float, s32, s32>>;
 
+void SetTASUpdateCallback(std::function<void(void)> callback);
+void RequestTASUpdate();
+
 } // namespace Input
