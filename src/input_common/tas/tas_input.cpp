@@ -67,10 +67,10 @@ void Tas::LoadTasFile(size_t player_index) {
     if (!commands[player_index].empty()) {
         commands[player_index].clear();
     }
-    std::string file = Common::FS::ReadStringFromFile(
-        Common::FS::GetYuzuPathString(Common::FS::YuzuPath::TASFile) + "script0-" +
-            std::to_string(player_index + 1) + ".txt",
-        Common::FS::FileType::BinaryFile);
+    std::string file =
+        Common::FS::ReadStringFromFile(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::TASDir) +
+                                           "script0-" + std::to_string(player_index + 1) + ".txt",
+                                       Common::FS::FileType::BinaryFile);
     std::stringstream command_line(file);
     std::string line;
     int frameNo = 0;
@@ -122,12 +122,11 @@ void Tas::WriteTasFile() {
                        WriteCommandAxis(line.l_axis) + " " + WriteCommandAxis(line.r_axis);
     }
     size_t bytesWritten = Common::FS::WriteStringToFile(
-        Common::FS::GetYuzuPathString(Common::FS::YuzuPath::TASFile) + "record.txt",
+        Common::FS::GetYuzuPathString(Common::FS::YuzuPath::TASDir) + "record.txt",
         Common::FS::FileType::TextFile, output_text);
     if (bytesWritten == output_text.size()) {
         LOG_INFO(Input, "TAS file written to file!");
-    }
-    else {
+    } else {
         LOG_ERROR(Input, "Writing the TAS-file has failed! {} / {} bytes written", bytesWritten,
                   output_text.size());
     }

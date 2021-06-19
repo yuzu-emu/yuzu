@@ -23,8 +23,7 @@ enum class YuzuPath {
     ScreenshotsDir, // Where yuzu screenshots are stored.
     SDMCDir,        // Where the emulated SDMC is stored.
     ShaderDir,      // Where shaders are stored.
-
-    TASFile, // Where the current script file is stored.
+    TASDir,         // Where the current script file is stored.
 };
 
 /**

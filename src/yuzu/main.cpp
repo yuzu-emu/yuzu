@@ -19,6 +19,7 @@
 #include "common/nvidia_flags.h"
 #include "configuration/configure_input.h"
 #include "configuration/configure_per_game.h"
+#include "configuration/configure_tas.h"
 #include "configuration/configure_vibration.h"
 #include "core/file_sys/vfs.h"
 #include "core/file_sys/vfs_real.h"
@@ -1182,6 +1183,7 @@ void GMainWindow::ConnectMenuEvents() {
     connect(ui.action_Open_FAQ, &QAction::triggered, this, &GMainWindow::OnOpenFAQ);
     connect(ui.action_Restart, &QAction::triggered, this, [this] { BootGame(QString(game_path)); });
     connect(ui.action_Configure, &QAction::triggered, this, &GMainWindow::OnConfigure);
+    connect(ui.action_Configure_Tas, &QAction::triggered, this, &GMainWindow::OnConfigureTas);
     connect(ui.action_Configure_Current_Game, &QAction::triggered, this,
             &GMainWindow::OnConfigurePerGame);
 
@@ -2736,6 +2738,19 @@ void GMainWindow::OnConfigure() {
     UpdateStatusButtons();
 }
 
+void GMainWindow::OnConfigureTas() {
+    const auto& system = Core::System::GetInstance();
+    ConfigureTasDialog dialog(this);
+    const auto result = dialog.exec();
+
+    if (result != QDialog::Accepted && !UISettings::values.configuration_applied) {
+        Settings::RestoreGlobalState(system.IsPoweredOn());
+        return;
+    } else if (result == QDialog::Accepted) {
+        dialog.ApplyConfiguration();
+    }
+}
+
 void GMainWindow::OnConfigurePerGame() {
     const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
     OpenPerGameConfiguration(title_id, game_path.toStdString());
@@ -2917,14 +2932,14 @@ void GMainWindow::UpdateWindowTitle(std::string_view title_name, std::string_vie
 
 static std::string GetTasStateDescription(TasInput::TasState state) {
     switch (state) {
-        case TasInput::TasState::RUNNING:
-            return "Running";
-        case TasInput::TasState::RECORDING:
-            return "Recording";
-        case TasInput::TasState::STOPPED:
-            return "Stopped";
-        default:
-            return "INVALID STATE";
+    case TasInput::TasState::RUNNING:
+        return "Running";
+    case TasInput::TasState::RECORDING:
+        return "Recording";
+    case TasInput::TasState::STOPPED:
+        return "Stopped";
+    default:
+        return "INVALID STATE";
     }
 }
 
@@ -2935,7 +2950,10 @@ void GMainWindow::UpdateStatusBar() {
     }
 
     auto [tas_status, current_tas_frame, total_tas_frames] = input_subsystem->GetTas()->GetStatus();
-    tas_label->setText(tr("%1 TAS %2/%3").arg(tr(GetTasStateDescription(tas_status).c_str())).arg(current_tas_frame).arg(total_tas_frames));
+    tas_label->setText(tr("%1 TAS %2/%3")
+                           .arg(tr(GetTasStateDescription(tas_status).c_str()))
+                           .arg(current_tas_frame)
+                           .arg(total_tas_frames));
 
     auto results = Core::System::GetInstance().GetAndResetPerfStats();
     auto& shader_notify = Core::System::GetInstance().GPU().ShaderNotify();
