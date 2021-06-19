@@ -207,7 +207,7 @@ void Tas::UpdateThread() {
         LOG_DEBUG(Input, "tas_reset done");
     }
     if (Settings::values.tas_enable) {
-        if ((signed)current_command < script_length) {
+        if (current_command < script_length) {
             LOG_INFO(Input, "Playing TAS {}/{}", current_command, script_length);
             size_t frame = current_command++;
             for (size_t i = 0; i < PLAYER_NUMBER; i++) {

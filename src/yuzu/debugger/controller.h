@@ -25,7 +25,6 @@ struct ControllerInput {
 
 struct ControllerCallback {
     std::function<void(ControllerInput)> input;
-    std::function<void()> update;
 };
 
 class ControllerDialog : public QWidget {
