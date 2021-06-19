@@ -797,7 +797,7 @@ void BufferCache<P>::BindHostGraphicsUniformBuffer(size_t stage, u32 index, u32 
     TouchBuffer(buffer);
     const bool use_fast_buffer = binding.buffer_id != NULL_BUFFER_ID &&
                                  size <= uniform_buffer_skip_cache_size &&
-                                 !buffer.IsRegionGpuModified(cpu_addr, size) && false;
+                                 !buffer.IsRegionGpuModified(cpu_addr, size);
     if (use_fast_buffer) {
         if constexpr (IS_OPENGL) {
             if (runtime.HasFastBufferSubData()) {
