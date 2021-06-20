@@ -75,7 +75,9 @@ public:
                               const std::array<const Shader::Info*, 5>& infos,
                               const VideoCommon::TransformFeedbackState* xfb_state);
 
-    void Configure(bool is_indexed);
+    void Configure(bool is_indexed) {
+        configure_func(this, is_indexed);
+    }
 
     void ConfigureTransformFeedback() const {
         if (num_xfb_attribs != 0) {
@@ -91,10 +93,20 @@ public:
         return is_built.load(std::memory_order::relaxed);
     }
 
+    template <typename Spec>
+    static auto MakeConfigureSpecFunc() {
+        return [](GraphicsPipeline* pipeline, bool is_indexed) {
+            pipeline->ConfigureImpl<Spec>(is_indexed);
+        };
+    }
+
 private:
-    void GenerateTransformFeedbackState(const VideoCommon::TransformFeedbackState& xfb_state);
+    template <typename Spec>
+    void ConfigureImpl(bool is_indexed);
 
     void ConfigureTransformFeedbackImpl() const;
+
+    void GenerateTransformFeedbackState(const VideoCommon::TransformFeedbackState& xfb_state);
 
     TextureCache& texture_cache;
     BufferCache& buffer_cache;
@@ -102,6 +114,8 @@ private:
     Tegra::Engines::Maxwell3D& maxwell3d;
     ProgramManager& program_manager;
     StateTracker& state_tracker;
+
+    void (*configure_func)(GraphicsPipeline*, bool){};
 
     OGLProgram program;
     std::array<OGLAssemblyProgram, 5> assembly_programs;

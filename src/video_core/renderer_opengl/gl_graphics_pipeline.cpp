@@ -15,6 +15,12 @@
 #include "video_core/shader_notify.h"
 #include "video_core/texture_cache/texture_cache.h"
 
+#if defined(_MSC_VER) && defined(NDEBUG)
+#define LAMBDA_FORCEINLINE [[msvc::forceinline]]
+#else
+#define LAMBDA_FORCEINLINE
+#endif
+
 namespace OpenGL {
 namespace {
 using Shader::ImageBufferDescriptor;
@@ -98,13 +104,76 @@ std::pair<GLint, GLint> TransformFeedbackEnum(u8 location) {
     return {GL_POSITION, 0};
 }
 
-struct Spec {
+template <typename Spec>
+bool Passes(const std::array<Shader::Info, 5>& stage_infos, u32 enabled_mask) {
+    for (size_t stage = 0; stage < stage_infos.size(); ++stage) {
+        if (!Spec::enabled_stages[stage] && ((enabled_mask >> stage) & 1) != 0) {
+            return false;
+        }
+        const auto& info{stage_infos[stage]};
+        if constexpr (!Spec::has_storage_buffers) {
+            if (!info.storage_buffers_descriptors.empty()) {
+                return false;
+            }
+        }
+        if constexpr (!Spec::has_texture_buffers) {
+            if (!info.texture_buffer_descriptors.empty()) {
+                return false;
+            }
+        }
+        if constexpr (!Spec::has_image_buffers) {
+            if (!info.image_buffer_descriptors.empty()) {
+                return false;
+            }
+        }
+        if constexpr (!Spec::has_images) {
+            if (!info.image_descriptors.empty()) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+using ConfigureFuncPtr = void (*)(GraphicsPipeline*, bool);
+
+template <typename Spec, typename... Specs>
+ConfigureFuncPtr FindSpec(const std::array<Shader::Info, 5>& stage_infos, u32 enabled_mask) {
+    if constexpr (sizeof...(Specs) > 0) {
+        if (!Passes<Spec>(stage_infos, enabled_mask)) {
+            return FindSpec<Specs...>(stage_infos, enabled_mask);
+        }
+    }
+    return GraphicsPipeline::MakeConfigureSpecFunc<Spec>();
+}
+
+struct SimpleVertexFragmentSpec {
+    static constexpr std::array<bool, 5> enabled_stages{true, false, false, false, true};
+    static constexpr bool has_storage_buffers = false;
+    static constexpr bool has_texture_buffers = false;
+    static constexpr bool has_image_buffers = false;
+    static constexpr bool has_images = false;
+};
+
+struct SimpleVertexSpec {
+    static constexpr std::array<bool, 5> enabled_stages{true, false, false, false, false};
+    static constexpr bool has_storage_buffers = false;
+    static constexpr bool has_texture_buffers = false;
+    static constexpr bool has_image_buffers = false;
+    static constexpr bool has_images = false;
+};
+
+struct DefaultSpec {
     static constexpr std::array<bool, 5> enabled_stages{true, true, true, true, true};
     static constexpr bool has_storage_buffers = true;
     static constexpr bool has_texture_buffers = true;
     static constexpr bool has_image_buffers = true;
     static constexpr bool has_images = true;
 };
+
+ConfigureFuncPtr ConfigureFunc(const std::array<Shader::Info, 5>& infos, u32 enabled_mask) {
+    return FindSpec<SimpleVertexSpec, SimpleVertexFragmentSpec, DefaultSpec>(infos, enabled_mask);
+}
 } // Anonymous namespace
 
 size_t GraphicsPipelineKey::Hash() const noexcept {
@@ -129,8 +198,52 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_c
     if (shader_notify) {
         shader_notify->MarkShaderBuilding();
     }
-    std::ranges::transform(infos, stage_infos.begin(),
-                           [](const Shader::Info* info) { return info ? *info : Shader::Info{}; });
+    u32 num_textures{};
+    u32 num_images{};
+    u32 num_storage_buffers{};
+    for (size_t stage = 0; stage < base_uniform_bindings.size(); ++stage) {
+        auto& info{stage_infos[stage]};
+        if (infos[stage]) {
+            info = *infos[stage];
+            enabled_stages_mask |= 1u << stage;
+        }
+        if (stage < 4) {
+            base_uniform_bindings[stage + 1] = base_uniform_bindings[stage];
+            base_storage_bindings[stage + 1] = base_storage_bindings[stage];
+
+            base_uniform_bindings[stage + 1] += AccumulateCount(info.constant_buffer_descriptors);
+            base_storage_bindings[stage + 1] += AccumulateCount(info.storage_buffers_descriptors);
+        }
+        enabled_uniform_buffer_masks[stage] = info.constant_buffer_mask;
+        std::ranges::copy(info.constant_buffer_used_sizes, uniform_buffer_sizes[stage].begin());
+
+        const u32 num_tex_buffer_bindings{AccumulateCount(info.texture_buffer_descriptors)};
+        num_texture_buffers[stage] += num_tex_buffer_bindings;
+        num_textures += num_tex_buffer_bindings;
+
+        const u32 num_img_buffers_bindings{AccumulateCount(info.image_buffer_descriptors)};
+        num_image_buffers[stage] += num_img_buffers_bindings;
+        num_images += num_img_buffers_bindings;
+
+        num_textures += AccumulateCount(info.texture_descriptors);
+        num_images += AccumulateCount(info.image_descriptors);
+        num_storage_buffers += AccumulateCount(info.storage_buffers_descriptors);
+
+        writes_global_memory |= std::ranges::any_of(
+            info.storage_buffers_descriptors, [](const auto& desc) { return desc.is_written; });
+    }
+    ASSERT(num_textures <= MAX_TEXTURES);
+    ASSERT(num_images <= MAX_IMAGES);
+
+    const bool assembly_shaders{assembly_programs[0].handle != 0};
+    use_storage_buffers =
+        !assembly_shaders || num_storage_buffers <= device.GetMaxGLASMStorageBufferBlocks();
+    writes_global_memory &= !use_storage_buffers;
+    configure_func = ConfigureFunc(stage_infos, enabled_stages_mask);
+
+    if (assembly_shaders && xfb_state) {
+        GenerateTransformFeedbackState(*xfb_state);
+    }
     auto func{[this, device, sources, shader_notify, xfb_state](ShaderContext::Context*) mutable {
         if (!device.UseAssemblyShaders()) {
             program.handle = glCreateProgram();
@@ -142,56 +255,12 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_c
             }
             if (device.UseAssemblyShaders()) {
                 assembly_programs[stage] = CompileProgram(code, AssemblyStage(stage));
-                enabled_stages_mask |= (assembly_programs[stage].handle != 0 ? 1 : 0) << stage;
             } else {
                 AttachShader(Stage(stage), program.handle, code);
             }
         }
         if (!device.UseAssemblyShaders()) {
             LinkProgram(program.handle);
-        }
-        u32 num_textures{};
-        u32 num_images{};
-        u32 num_storage_buffers{};
-        for (size_t stage = 0; stage < base_uniform_bindings.size(); ++stage) {
-            const auto& info{stage_infos[stage]};
-            if (stage < 4) {
-                base_uniform_bindings[stage + 1] = base_uniform_bindings[stage];
-                base_storage_bindings[stage + 1] = base_storage_bindings[stage];
-
-                base_uniform_bindings[stage + 1] +=
-                    AccumulateCount(info.constant_buffer_descriptors);
-                base_storage_bindings[stage + 1] +=
-                    AccumulateCount(info.storage_buffers_descriptors);
-            }
-            enabled_uniform_buffer_masks[stage] = info.constant_buffer_mask;
-            std::ranges::copy(info.constant_buffer_used_sizes, uniform_buffer_sizes[stage].begin());
-
-            const u32 num_tex_buffer_bindings{AccumulateCount(info.texture_buffer_descriptors)};
-            num_texture_buffers[stage] += num_tex_buffer_bindings;
-            num_textures += num_tex_buffer_bindings;
-
-            const u32 num_img_buffers_bindings{AccumulateCount(info.image_buffer_descriptors)};
-            num_image_buffers[stage] += num_img_buffers_bindings;
-            num_images += num_img_buffers_bindings;
-
-            num_textures += AccumulateCount(info.texture_descriptors);
-            num_images += AccumulateCount(info.image_descriptors);
-            num_storage_buffers += AccumulateCount(info.storage_buffers_descriptors);
-
-            writes_global_memory |= std::ranges::any_of(
-                info.storage_buffers_descriptors, [](const auto& desc) { return desc.is_written; });
-        }
-        ASSERT(num_textures <= MAX_TEXTURES);
-        ASSERT(num_images <= MAX_IMAGES);
-
-        const bool assembly_shaders{assembly_programs[0].handle != 0};
-        use_storage_buffers =
-            !assembly_shaders || num_storage_buffers <= device.GetMaxGLASMStorageBufferBlocks();
-        writes_global_memory &= !use_storage_buffers;
-
-        if (assembly_shaders && xfb_state) {
-            GenerateTransformFeedbackState(*xfb_state);
         }
         if (shader_notify) {
             shader_notify->MarkShaderComplete();
@@ -205,7 +274,8 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_c
     }
 }
 
-void GraphicsPipeline::Configure(bool is_indexed) {
+template <typename Spec>
+void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
     std::array<ImageId, MAX_TEXTURES + MAX_IMAGES> image_view_ids;
     std::array<u32, MAX_TEXTURES + MAX_IMAGES> image_view_indices;
     std::array<GLuint, MAX_TEXTURES> samplers;
@@ -221,7 +291,7 @@ void GraphicsPipeline::Configure(bool is_indexed) {
 
     const auto& regs{maxwell3d.regs};
     const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};
-    const auto config_stage{[&](size_t stage) {
+    const auto config_stage{[&](size_t stage) LAMBDA_FORCEINLINE {
         const Shader::Info& info{stage_infos[stage]};
         buffer_cache.UnbindGraphicsStorageBuffers(stage);
         if constexpr (Spec::has_storage_buffers) {
@@ -311,7 +381,7 @@ void GraphicsPipeline::Configure(bool is_indexed) {
     state_tracker.BindFramebuffer(texture_cache.GetFramebuffer()->Handle());
 
     ImageId* texture_buffer_index{image_view_ids.data()};
-    const auto bind_stage_info{[&](size_t stage) {
+    const auto bind_stage_info{[&](size_t stage) LAMBDA_FORCEINLINE {
         size_t index{};
         const auto add_buffer{[&](const auto& desc) {
             constexpr bool is_image = std::is_same_v<decltype(desc), const ImageBufferDescriptor&>;
@@ -430,6 +500,11 @@ void GraphicsPipeline::Configure(bool is_indexed) {
     }
 }
 
+void GraphicsPipeline::ConfigureTransformFeedbackImpl() const {
+    glTransformFeedbackStreamAttribsNV(num_xfb_attribs, xfb_attribs.data(), num_xfb_strides,
+                                       xfb_streams.data(), GL_INTERLEAVED_ATTRIBS);
+}
+
 void GraphicsPipeline::GenerateTransformFeedbackState(
     const VideoCommon::TransformFeedbackState& xfb_state) {
     // TODO(Rodrigo): Inject SKIP_COMPONENTS*_NV when required. An unimplemented message will signal
@@ -473,11 +548,6 @@ void GraphicsPipeline::GenerateTransformFeedbackState(
     }
     num_xfb_attribs = static_cast<GLsizei>((cursor - xfb_attribs.data()) / XFB_ENTRY_STRIDE);
     num_xfb_strides = static_cast<GLsizei>(current_stream - xfb_streams.data());
-}
-
-void GraphicsPipeline::ConfigureTransformFeedbackImpl() const {
-    glTransformFeedbackStreamAttribsNV(num_xfb_attribs, xfb_attribs.data(), num_xfb_strides,
-                                       xfb_streams.data(), GL_INTERLEAVED_ATTRIBS);
 }
 
 } // namespace OpenGL
