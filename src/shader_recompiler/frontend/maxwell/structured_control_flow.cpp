@@ -751,7 +751,7 @@ private:
                     IR::Block* const init_block{block_pool.Create(inst_pool)};
                     IR::IREmitter ir{*init_block};
 
-                    static constexpr u32 SAFETY_THRESHOLD = 0x2000;
+                    static constexpr u32 SAFETY_THRESHOLD = 0x1000;
                     ir.SetLoopSafetyVariable(this_loop_id, ir.Imm32(SAFETY_THRESHOLD));
 
                     if (current_block) {
