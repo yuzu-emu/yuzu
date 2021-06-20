@@ -157,6 +157,14 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, ScalarF32 value,
                         "Viewport stored outside of geometry shader not supported by device");
         }
         break;
+    case IR::Attribute::ViewportMask:
+        // NV_viewport_array2 is required to access result.viewportmask, regardless of shader stage.
+        if (ctx.profile.support_viewport_index_layer_non_geometry) {
+            ctx.Add("MOV.F result.viewportmask[0].x,{};", value);
+        } else {
+            LOG_WARNING(Shader_GLASM, "Device does not support storing to ViewportMask");
+        }
+        break;
     case IR::Attribute::PointSize:
         ctx.Add("MOV.F result.pointsize.x,{};", value);
         break;
