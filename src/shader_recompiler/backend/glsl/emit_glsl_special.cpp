@@ -92,15 +92,6 @@ void EmitPhiMove(EmitContext& ctx, const IR::Value& phi_value, const IR::Value& 
 
 void EmitPrologue(EmitContext& ctx) {
     InitializeOutputVaryings(ctx);
-
-    if (ctx.stage == Stage::Fragment && ctx.profile.need_declared_frag_colors) {
-        for (size_t index = 1; index < ctx.info.stores_frag_color.size(); ++index) {
-            if (ctx.info.stores_frag_color[index]) {
-                continue;
-            }
-            ctx.Add("frag_color{}=vec4(0,0,0,1);", index);
-        }
-    }
 }
 
 void EmitEpilogue(EmitContext&) {}
