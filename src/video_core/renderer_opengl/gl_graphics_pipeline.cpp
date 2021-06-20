@@ -229,7 +229,7 @@ GraphicsPipeline::GraphicsPipeline(
     writes_global_memory &= !use_storage_buffers;
     configure_func = ConfigureFunc(stage_infos, enabled_stages_mask);
 
-    if (assembly_shaders && key.xfb_enabled) {
+    if (key.xfb_enabled && device.UseAssemblyShaders()) {
         GenerateTransformFeedbackState();
     }
     auto func{[this, device, sources, shader_notify](ShaderContext::Context*) mutable {
