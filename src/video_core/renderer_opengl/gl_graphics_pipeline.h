@@ -5,10 +5,12 @@
 #pragma once
 
 #include <array>
+#include <cstring>
 #include <type_traits>
 #include <utility>
 
 #include "common/bit_field.h"
+#include "common/cityhash.h"
 #include "common/common_types.h"
 #include "shader_recompiler/shader_info.h"
 #include "video_core/engines/maxwell_3d.h"
@@ -44,9 +46,13 @@ struct GraphicsPipelineKey {
     std::array<u32, 3> padding;
     VideoCommon::TransformFeedbackState xfb_state;
 
-    size_t Hash() const noexcept;
+    size_t Hash() const noexcept {
+        return static_cast<size_t>(Common::CityHash64(reinterpret_cast<const char*>(this), Size()));
+    }
 
-    bool operator==(const GraphicsPipelineKey&) const noexcept;
+    bool operator==(const GraphicsPipelineKey& rhs) const noexcept {
+        return std::memcmp(this, &rhs, Size()) == 0;
+    }
 
     bool operator!=(const GraphicsPipelineKey& rhs) const noexcept {
         return !operator==(rhs);

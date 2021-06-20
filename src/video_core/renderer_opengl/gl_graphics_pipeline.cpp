@@ -3,9 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
-#include <cstring>
 
-#include "common/cityhash.h"
 #include "common/thread_worker.h"
 #include "shader_recompiler/shader_info.h"
 #include "video_core/renderer_opengl/gl_graphics_pipeline.h"
@@ -175,14 +173,6 @@ ConfigureFuncPtr ConfigureFunc(const std::array<Shader::Info, 5>& infos, u32 ena
     return FindSpec<SimpleVertexSpec, SimpleVertexFragmentSpec, DefaultSpec>(infos, enabled_mask);
 }
 } // Anonymous namespace
-
-size_t GraphicsPipelineKey::Hash() const noexcept {
-    return static_cast<size_t>(Common::CityHash64(reinterpret_cast<const char*>(this), Size()));
-}
-
-bool GraphicsPipelineKey::operator==(const GraphicsPipelineKey& rhs) const noexcept {
-    return std::memcmp(this, &rhs, Size()) == 0;
-}
 
 GraphicsPipeline::GraphicsPipeline(
     const Device& device, TextureCache& texture_cache_, BufferCache& buffer_cache_,
