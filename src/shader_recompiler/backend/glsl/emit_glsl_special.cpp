@@ -94,7 +94,7 @@ void EmitPrologue(EmitContext& ctx) {
     InitializeOutputVaryings(ctx);
 
     if (ctx.stage == Stage::Fragment && ctx.profile.need_declared_frag_colors) {
-        for (size_t index = 0; index < ctx.info.stores_frag_color.size(); ++index) {
+        for (size_t index = 1; index < ctx.info.stores_frag_color.size(); ++index) {
             if (ctx.info.stores_frag_color[index]) {
                 continue;
             }
