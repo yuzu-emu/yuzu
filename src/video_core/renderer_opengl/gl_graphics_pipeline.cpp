@@ -184,17 +184,15 @@ bool GraphicsPipelineKey::operator==(const GraphicsPipelineKey& rhs) const noexc
     return std::memcmp(this, &rhs, Size()) == 0;
 }
 
-GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_cache_,
-                                   BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
-                                   Tegra::Engines::Maxwell3D& maxwell3d_,
-                                   ProgramManager& program_manager_, StateTracker& state_tracker_,
-                                   ShaderWorker* thread_worker,
-                                   VideoCore::ShaderNotify* shader_notify,
-                                   std::array<std::string, 5> sources,
-                                   const std::array<const Shader::Info*, 5>& infos,
-                                   const VideoCommon::TransformFeedbackState* xfb_state)
-    : texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, gpu_memory{gpu_memory_},
-      maxwell3d{maxwell3d_}, program_manager{program_manager_}, state_tracker{state_tracker_} {
+GraphicsPipeline::GraphicsPipeline(
+    const Device& device, TextureCache& texture_cache_, BufferCache& buffer_cache_,
+    Tegra::MemoryManager& gpu_memory_, Tegra::Engines::Maxwell3D& maxwell3d_,
+    ProgramManager& program_manager_, StateTracker& state_tracker_, ShaderWorker* thread_worker,
+    VideoCore::ShaderNotify* shader_notify, std::array<std::string, 5> sources,
+    const std::array<const Shader::Info*, 5>& infos, const GraphicsPipelineKey& key_)
+    : texture_cache{texture_cache_}, buffer_cache{buffer_cache_},
+      gpu_memory{gpu_memory_}, maxwell3d{maxwell3d_}, program_manager{program_manager_},
+      state_tracker{state_tracker_}, key{key_} {
     if (shader_notify) {
         shader_notify->MarkShaderBuilding();
     }
@@ -241,10 +239,10 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_c
     writes_global_memory &= !use_storage_buffers;
     configure_func = ConfigureFunc(stage_infos, enabled_stages_mask);
 
-    if (assembly_shaders && xfb_state) {
-        GenerateTransformFeedbackState(*xfb_state);
+    if (assembly_shaders && key.xfb_enabled) {
+        GenerateTransformFeedbackState();
     }
-    auto func{[this, device, sources, shader_notify, xfb_state](ShaderContext::Context*) mutable {
+    auto func{[this, device, sources, shader_notify](ShaderContext::Context*) mutable {
         if (!device.UseAssemblyShaders()) {
             program.handle = glCreateProgram();
         }
@@ -505,15 +503,14 @@ void GraphicsPipeline::ConfigureTransformFeedbackImpl() const {
                                        xfb_streams.data(), GL_INTERLEAVED_ATTRIBS);
 }
 
-void GraphicsPipeline::GenerateTransformFeedbackState(
-    const VideoCommon::TransformFeedbackState& xfb_state) {
+void GraphicsPipeline::GenerateTransformFeedbackState() {
     // TODO(Rodrigo): Inject SKIP_COMPONENTS*_NV when required. An unimplemented message will signal
     // when this is required.
     GLint* cursor{xfb_attribs.data()};
     GLint* current_stream{xfb_streams.data()};
 
     for (size_t feedback = 0; feedback < Maxwell::NumTransformFeedbackBuffers; ++feedback) {
-        const auto& layout = xfb_state.layouts[feedback];
+        const auto& layout = key.xfb_state.layouts[feedback];
         UNIMPLEMENTED_IF_MSG(layout.stride != layout.varying_count * 4, "Stride padding");
         if (layout.varying_count == 0) {
             continue;
@@ -528,7 +525,7 @@ void GraphicsPipeline::GenerateTransformFeedbackState(
         }
         ++current_stream;
 
-        const auto& locations = xfb_state.varyings[feedback];
+        const auto& locations = key.xfb_state.varyings[feedback];
         std::optional<u8> current_index;
         for (u32 offset = 0; offset < layout.varying_count; ++offset) {
             const u8 location = locations[offset];

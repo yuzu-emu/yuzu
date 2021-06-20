@@ -298,6 +298,7 @@ void ShaderCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
 
 GraphicsPipeline* ShaderCache::CurrentGraphicsPipeline() {
     if (!RefreshStages(graphics_key.unique_hashes)) {
+        current_pipeline = nullptr;
         return nullptr;
     }
     const auto& regs{maxwell3d.regs};
@@ -313,15 +314,23 @@ GraphicsPipeline* ShaderCache::CurrentGraphicsPipeline() {
     if (graphics_key.xfb_enabled) {
         SetXfbState(graphics_key.xfb_state, regs);
     }
-    const auto [pair, is_new]{graphics_cache.try_emplace(graphics_key)};
-    auto& program{pair->second};
-    if (is_new) {
-        program = CreateGraphicsPipeline();
+    if (current_pipeline && graphics_key == current_pipeline->Key()) {
+        return current_pipeline->IsBuilt() ? current_pipeline : nullptr;
     }
-    if (!program || !program->IsBuilt()) {
+    return CurrentGraphicsPipelineSlowPath();
+}
+
+GraphicsPipeline* ShaderCache::CurrentGraphicsPipelineSlowPath() {
+    const auto [pair, is_new]{graphics_cache.try_emplace(graphics_key)};
+    auto& pipeline{pair->second};
+    if (is_new) {
+        pipeline = CreateGraphicsPipeline();
+    }
+    current_pipeline = pipeline.get();
+    if (!pipeline || !pipeline->IsBuilt()) {
         return nullptr;
     }
-    return program.get();
+    return pipeline.get();
 }
 
 ComputePipeline* ShaderCache::CurrentComputePipeline() {
@@ -432,8 +441,7 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
     auto* const thread_worker{build_in_parallel ? workers.get() : nullptr};
     return std::make_unique<GraphicsPipeline>(device, texture_cache, buffer_cache, gpu_memory,
                                               maxwell3d, program_manager, state_tracker,
-                                              thread_worker, &shader_notify, sources, infos,
-                                              key.xfb_enabled != 0 ? &key.xfb_state : nullptr);
+                                              thread_worker, &shader_notify, sources, infos, key);
 
 } catch (Shader::Exception& exception) {
     LOG_ERROR(Render_OpenGL, "{}", exception.what());
