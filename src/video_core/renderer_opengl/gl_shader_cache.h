@@ -53,6 +53,8 @@ public:
     [[nodiscard]] ComputePipeline* CurrentComputePipeline();
 
 private:
+    GraphicsPipeline* CurrentGraphicsPipelineSlowPath();
+
     std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline();
 
     std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline(
@@ -75,9 +77,10 @@ private:
     ProgramManager& program_manager;
     StateTracker& state_tracker;
     VideoCore::ShaderNotify& shader_notify;
+    const bool use_asynchronous_shaders;
 
     GraphicsPipelineKey graphics_key{};
-    const bool use_asynchronous_shaders;
+    GraphicsPipeline* current_pipeline{};
 
     ShaderContext::ShaderPools main_pools;
     std::unordered_map<GraphicsPipelineKey, std::unique_ptr<GraphicsPipeline>> graphics_cache;

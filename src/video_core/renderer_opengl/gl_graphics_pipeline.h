@@ -73,7 +73,7 @@ public:
                               ShaderWorker* thread_worker, VideoCore::ShaderNotify* shader_notify,
                               std::array<std::string, 5> sources,
                               const std::array<const Shader::Info*, 5>& infos,
-                              const VideoCommon::TransformFeedbackState* xfb_state);
+                              const GraphicsPipelineKey& key_);
 
     void Configure(bool is_indexed) {
         configure_func(this, is_indexed);
@@ -83,6 +83,10 @@ public:
         if (num_xfb_attribs != 0) {
             ConfigureTransformFeedbackImpl();
         }
+    }
+
+    [[nodiscard]] const GraphicsPipelineKey& Key() const noexcept {
+        return key;
     }
 
     [[nodiscard]] bool WritesGlobalMemory() const noexcept {
@@ -106,7 +110,7 @@ private:
 
     void ConfigureTransformFeedbackImpl() const;
 
-    void GenerateTransformFeedbackState(const VideoCommon::TransformFeedbackState& xfb_state);
+    void GenerateTransformFeedbackState();
 
     TextureCache& texture_cache;
     BufferCache& buffer_cache;
@@ -114,6 +118,7 @@ private:
     Tegra::Engines::Maxwell3D& maxwell3d;
     ProgramManager& program_manager;
     StateTracker& state_tracker;
+    const GraphicsPipelineKey key;
 
     void (*configure_func)(GraphicsPipeline*, bool){};
 
