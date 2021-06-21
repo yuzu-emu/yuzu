@@ -147,14 +147,6 @@ void IREmitter::SetIndirectBranchVariable(const U32& value) {
     Inst(Opcode::SetIndirectBranchVariable, value);
 }
 
-U32 IREmitter::GetLoopSafetyVariable(u32 id) {
-    return Inst<U32>(Opcode::GetLoopSafetyVariable, id);
-}
-
-void IREmitter::SetLoopSafetyVariable(u32 id, const U32& counter) {
-    Inst(Opcode::SetLoopSafetyVariable, id, counter);
-}
-
 U32 IREmitter::GetCbuf(const U32& binding, const U32& byte_offset) {
     return Inst<U32>(Opcode::GetCbufU32, binding, byte_offset);
 }

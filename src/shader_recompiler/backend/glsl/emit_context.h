@@ -151,6 +151,8 @@ public:
     std::vector<TextureImageDefinition> images;
     std::array<std::array<GenericElementInfo, 4>, 32> output_generics{};
 
+    u32 num_safety_loop_vars{};
+
     bool uses_y_direction{};
     bool uses_cc_carry{};
 

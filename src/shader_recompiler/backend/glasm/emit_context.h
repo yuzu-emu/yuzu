@@ -71,6 +71,7 @@ public:
     std::string_view stage_name = "invalid";
     std::string_view attrib_name = "invalid";
 
+    u32 num_safety_loop_vars{};
     bool uses_y_direction{};
 };
 
