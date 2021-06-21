@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "common/settings.h"
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 #include "shader_recompiler/backend/spirv/emit_spirv_instructions.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
@@ -151,9 +152,25 @@ void Traverse(EmitContext& ctx, IR::Program& program) {
             }
             break;
         case IR::AbstractSyntaxNode::Type::Repeat: {
+            Id cond{ctx.Def(node.data.repeat.cond)};
+            if (!Settings::values.disable_shader_loop_safety_checks) {
+                const Id pointer_type{ctx.TypePointer(spv::StorageClass::Private, ctx.U32[1])};
+                const Id safety_counter{ctx.AddGlobalVariable(
+                    pointer_type, spv::StorageClass::Private, ctx.Const(0x2000u))};
+                if (ctx.profile.supported_spirv >= 0x00010400) {
+                    ctx.interfaces.push_back(safety_counter);
+                }
+                const Id old_counter{ctx.OpLoad(ctx.U32[1], safety_counter)};
+                const Id new_counter{ctx.OpISub(ctx.U32[1], old_counter, ctx.Const(1u))};
+                ctx.OpStore(safety_counter, new_counter);
+
+                const Id safety_cond{
+                    ctx.OpSGreaterThanEqual(ctx.U1, new_counter, ctx.u32_zero_value)};
+                cond = ctx.OpLogicalAnd(ctx.U1, cond, safety_cond);
+            }
             const Id loop_header_label{node.data.repeat.loop_header->Definition<Id>()};
             const Id merge_label{node.data.repeat.merge->Definition<Id>()};
-            ctx.OpBranchConditional(ctx.Def(node.data.repeat.cond), loop_header_label, merge_label);
+            ctx.OpBranchConditional(cond, loop_header_label, merge_label);
             break;
         }
         case IR::AbstractSyntaxNode::Type::Return:

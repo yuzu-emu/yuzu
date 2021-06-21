@@ -55,9 +55,6 @@ public:
     [[nodiscard]] U32 GetIndirectBranchVariable();
     void SetIndirectBranchVariable(const U32& value);
 
-    [[nodiscard]] U32 GetLoopSafetyVariable(u32 id);
-    void SetLoopSafetyVariable(u32 id, const U32& counter);
-
     [[nodiscard]] U32 GetCbuf(const U32& binding, const U32& byte_offset);
     [[nodiscard]] Value GetCbuf(const U32& binding, const U32& byte_offset, size_t bitsize,
                                 bool is_signed);

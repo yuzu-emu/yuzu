@@ -198,14 +198,6 @@ void EmitGetIndirectBranchVariable(EmitContext&) {
     throw LogicError("Unreachable instruction");
 }
 
-void EmitSetLoopSafetyVariable(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
-void EmitGetLoopSafetyVariable(EmitContext&) {
-    throw LogicError("Unreachable instruction");
-}
-
 Id EmitGetCbufU8(EmitContext& ctx, const IR::Value& binding, const IR::Value& offset) {
     if (ctx.profile.support_descriptor_aliasing && ctx.profile.support_int8) {
         const Id load{GetCbuf(ctx, ctx.U8, &UniformDefinitions::U8, sizeof(u8), binding, offset)};

@@ -6,6 +6,8 @@
 #include <string>
 #include <tuple>
 
+#include "common/div_ceil.h"
+#include "common/settings.h"
 #include "shader_recompiler/backend/bindings.h"
 #include "shader_recompiler/backend/glasm/emit_context.h"
 #include "shader_recompiler/backend/glasm/emit_glasm.h"
@@ -222,6 +224,14 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
             ctx.Add("REP;");
             break;
         case IR::AbstractSyntaxNode::Type::Repeat:
+            if (!Settings::values.disable_shader_loop_safety_checks) {
+                const u32 loop_index{ctx.num_safety_loop_vars++};
+                const u32 vector_index{loop_index / 4};
+                const char component{"xyzw"[loop_index % 4]};
+                ctx.Add("SUB.S.CC loop{}.{},loop{}.{},1;"
+                        "BRK(LT.{});",
+                        vector_index, component, vector_index, component, component);
+            }
             if (node.data.repeat.cond.IsImmediate()) {
                 if (node.data.repeat.cond.U1()) {
                     ctx.Add("ENDREP;");
@@ -425,6 +435,10 @@ std::string EmitGLASM(const Profile& profile, const RuntimeInfo& runtime_info, I
     if (program.info.uses_fswzadd) {
         header += "FSWZA[4],FSWZB[4],";
     }
+    const u32 num_safety_loop_vectors{Common::DivCeil(ctx.num_safety_loop_vars, 4u)};
+    for (u32 index = 0; index < num_safety_loop_vectors; ++index) {
+        header += fmt::format("loop{},", index);
+    }
     header += "RC;"
               "LONG TEMP ";
     for (size_t index = 0; index < ctx.reg_alloc.NumUsedLongRegisters(); ++index) {
@@ -440,6 +454,9 @@ std::string EmitGLASM(const Profile& profile, const RuntimeInfo& runtime_info, I
                   "MOV.F FSWZB[1],-1;"
                   "MOV.F FSWZB[2],1;"
                   "MOV.F FSWZB[3],-1;";
+    }
+    for (u32 index = 0; index < num_safety_loop_vectors; ++index) {
+        header += fmt::format("MOV.S loop{},{{0x2000,0x2000,0x2000,0x2000}};", index);
     }
     if (ctx.uses_y_direction) {
         header += "PARAM y_direction[1]={state.material.front.ambient};";

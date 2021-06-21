@@ -15,7 +15,6 @@
 
 #include <boost/intrusive/list.hpp>
 
-#include "common/settings.h"
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
@@ -663,7 +662,7 @@ public:
         Visit(root_stmt, nullptr, nullptr);
 
         IR::Block& first_block{*syntax_list.front().data.block};
-        IR::IREmitter ir = IR::IREmitter(first_block, first_block.begin());
+        IR::IREmitter ir(first_block, first_block.begin());
         ir.Prologue();
     }
 
@@ -741,27 +740,8 @@ private:
             }
             case StatementType::Loop: {
                 IR::Block* const loop_header_block{block_pool.Create(inst_pool)};
-                const u32 this_loop_id{loop_id++};
-
-                if (Settings::values.disable_shader_loop_safety_checks) {
-                    if (current_block) {
-                        current_block->AddBranch(loop_header_block);
-                    }
-                } else {
-                    IR::Block* const init_block{block_pool.Create(inst_pool)};
-                    IR::IREmitter ir{*init_block};
-
-                    static constexpr u32 SAFETY_THRESHOLD = 0x1000;
-                    ir.SetLoopSafetyVariable(this_loop_id, ir.Imm32(SAFETY_THRESHOLD));
-
-                    if (current_block) {
-                        current_block->AddBranch(init_block);
-                    }
-                    init_block->AddBranch(loop_header_block);
-
-                    auto& init_node{syntax_list.emplace_back()};
-                    init_node.type = IR::AbstractSyntaxNode::Type::Block;
-                    init_node.data.block = init_block;
+                if (current_block) {
+                    current_block->AddBranch(loop_header_block);
                 }
                 auto& header_node{syntax_list.emplace_back()};
                 header_node.type = IR::AbstractSyntaxNode::Type::Block;
@@ -779,16 +759,7 @@ private:
 
                 // The continue block is located at the end of the loop
                 IR::IREmitter ir{*continue_block};
-                IR::U1 cond{VisitExpr(ir, *stmt.cond)};
-                if (!Settings::values.disable_shader_loop_safety_checks) {
-                    const IR::U32 old_counter{ir.GetLoopSafetyVariable(this_loop_id)};
-                    const IR::U32 new_counter{ir.ISub(old_counter, ir.Imm32(1))};
-                    ir.SetLoopSafetyVariable(this_loop_id, new_counter);
-
-                    const IR::U1 safety_cond{ir.INotEqual(new_counter, ir.Imm32(0))};
-                    cond = ir.LogicalAnd(cond, safety_cond);
-                }
-                cond = ir.ConditionRef(cond);
+                const IR::U1 cond{ir.ConditionRef(VisitExpr(ir, *stmt.cond))};
 
                 IR::Block* const body_block{syntax_list.at(body_block_index).data.block};
                 loop_header_block->AddBranch(body_block);

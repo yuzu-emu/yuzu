@@ -6,6 +6,7 @@
 #include <string>
 
 #include "common/alignment.h"
+#include "common/settings.h"
 #include "shader_recompiler/backend/glsl/emit_context.h"
 #include "shader_recompiler/backend/glsl/emit_glsl.h"
 #include "shader_recompiler/backend/glsl/emit_glsl_instructions.h"
@@ -156,7 +157,12 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
             ctx.Add("for(;;){{");
             break;
         case IR::AbstractSyntaxNode::Type::Repeat:
-            ctx.Add("if(!{}){{break;}}}}", ctx.var_alloc.Consume(node.data.repeat.cond));
+            if (Settings::values.disable_shader_loop_safety_checks) {
+                ctx.Add("if(!{}){{break;}}}}", ctx.var_alloc.Consume(node.data.repeat.cond));
+            } else {
+                ctx.Add("if(--loop{}<0 || !{}){{break;}}}}", ctx.num_safety_loop_vars++,
+                        ctx.var_alloc.Consume(node.data.repeat.cond));
+            }
             break;
         default:
             throw NotImplementedException("AbstractSyntaxNode Type {}", node.type);
@@ -197,6 +203,9 @@ void DefineVariables(const EmitContext& ctx, std::string& header) {
             header += fmt::format("{}{} {}={}(0);", precise, type_name,
                                   ctx.var_alloc.Representation(index, type), type_name);
         }
+    }
+    for (u32 i = 0; i < ctx.num_safety_loop_vars; ++i) {
+        header += fmt::format("int loop{}=0x2000;", i);
     }
 }
 } // Anonymous namespace
