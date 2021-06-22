@@ -42,14 +42,10 @@ enum class Half : u64 {
     }
 }
 
-void IADD3(TranslatorVisitor& v, u64 insn, IR::U32 op_b, IR::U32 op_c) {
+void IADD3(TranslatorVisitor& v, u64 insn, IR::U32 op_a, IR::U32 op_b, IR::U32 op_c) {
     union {
         u64 insn;
         BitField<0, 8, IR::Reg> dest_reg;
-        BitField<8, 8, IR::Reg> src_a;
-        BitField<31, 2, Half> half_c;
-        BitField<33, 2, Half> half_b;
-        BitField<35, 2, Half> half_a;
         BitField<37, 2, Shift> shift;
         BitField<47, 1, u64> cc;
         BitField<48, 1, u64> x;
@@ -57,11 +53,6 @@ void IADD3(TranslatorVisitor& v, u64 insn, IR::U32 op_b, IR::U32 op_c) {
         BitField<50, 1, u64> neg_b;
         BitField<51, 1, u64> neg_a;
     } iadd3{insn};
-
-    IR::U32 op_a{v.X(iadd3.src_a)};
-    op_a = IntegerHalf(v.ir, op_a, iadd3.half_a);
-    op_b = IntegerHalf(v.ir, op_b, iadd3.half_b);
-    op_c = IntegerHalf(v.ir, op_c, iadd3.half_c);
 
     if (iadd3.neg_a != 0) {
         op_a = v.ir.INeg(op_a);
@@ -72,7 +63,6 @@ void IADD3(TranslatorVisitor& v, u64 insn, IR::U32 op_b, IR::U32 op_c) {
     if (iadd3.neg_c != 0) {
         op_c = v.ir.INeg(op_c);
     }
-
     IR::U32 lhs_1{v.ir.IAdd(op_a, op_b)};
     if (iadd3.x != 0) {
         const IR::U32 carry{v.ir.Select(v.ir.GetCFlag(), v.ir.Imm32(1), v.ir.Imm32(0))};
@@ -97,15 +87,24 @@ void IADD3(TranslatorVisitor& v, u64 insn, IR::U32 op_b, IR::U32 op_c) {
 } // Anonymous namespace
 
 void TranslatorVisitor::IADD3_reg(u64 insn) {
-    IADD3(*this, insn, GetReg20(insn), GetReg39(insn));
+    union {
+        u64 insn;
+        BitField<35, 2, Half> half_a;
+        BitField<31, 2, Half> half_c;
+        BitField<33, 2, Half> half_b;
+    } iadd3{insn};
+    const auto op_a{IntegerHalf(ir, GetReg8(insn), iadd3.half_a)};
+    const auto op_b{IntegerHalf(ir, GetReg20(insn), iadd3.half_b)};
+    const auto op_c{IntegerHalf(ir, GetReg39(insn), iadd3.half_c)};
+    IADD3(*this, insn, op_a, op_b, op_c);
 }
 
 void TranslatorVisitor::IADD3_cbuf(u64 insn) {
-    IADD3(*this, insn, GetCbuf(insn), GetReg39(insn));
+    IADD3(*this, insn, GetReg8(insn), GetCbuf(insn), GetReg39(insn));
 }
 
 void TranslatorVisitor::IADD3_imm(u64 insn) {
-    IADD3(*this, insn, GetImm20(insn), GetReg39(insn));
+    IADD3(*this, insn, GetReg8(insn), GetImm20(insn), GetReg39(insn));
 }
 
 } // namespace Shader::Maxwell
