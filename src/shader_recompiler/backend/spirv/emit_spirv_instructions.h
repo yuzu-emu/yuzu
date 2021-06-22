@@ -284,7 +284,6 @@ Id EmitIMul32(EmitContext& ctx, Id a, Id b);
 Id EmitINeg32(EmitContext& ctx, Id value);
 Id EmitINeg64(EmitContext& ctx, Id value);
 Id EmitIAbs32(EmitContext& ctx, Id value);
-Id EmitIAbs64(EmitContext& ctx, Id value);
 Id EmitShiftLeftLogical32(EmitContext& ctx, Id base, Id shift);
 Id EmitShiftLeftLogical64(EmitContext& ctx, Id base, Id shift);
 Id EmitShiftRightLogical32(EmitContext& ctx, Id base, Id shift);

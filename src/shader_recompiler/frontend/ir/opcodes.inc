@@ -289,7 +289,6 @@ OPCODE(IMul32,                                              U32,            U32,
 OPCODE(INeg32,                                              U32,            U32,                                                                            )
 OPCODE(INeg64,                                              U64,            U64,                                                                            )
 OPCODE(IAbs32,                                              U32,            U32,                                                                            )
-OPCODE(IAbs64,                                              U64,            U64,                                                                            )
 OPCODE(ShiftLeftLogical32,                                  U32,            U32,            U32,                                                            )
 OPCODE(ShiftLeftLogical64,                                  U64,            U64,            U32,                                                            )
 OPCODE(ShiftRightLogical32,                                 U32,            U32,            U32,                                                            )
