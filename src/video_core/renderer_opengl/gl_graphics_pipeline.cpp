@@ -3,7 +3,11 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#include <array>
+#include <string>
+#include <vector>
 
+#include "common/settings.h" // for enum class Settings::ShaderBackend
 #include "common/thread_worker.h"
 #include "shader_recompiler/shader_info.h"
 #include "video_core/renderer_opengl/gl_graphics_pipeline.h"
@@ -179,7 +183,8 @@ GraphicsPipeline::GraphicsPipeline(
     Tegra::MemoryManager& gpu_memory_, Tegra::Engines::Maxwell3D& maxwell3d_,
     ProgramManager& program_manager_, StateTracker& state_tracker_, ShaderWorker* thread_worker,
     VideoCore::ShaderNotify* shader_notify, std::array<std::string, 5> sources,
-    const std::array<const Shader::Info*, 5>& infos, const GraphicsPipelineKey& key_)
+    std::array<std::vector<u32>, 5> sources_spirv, const std::array<const Shader::Info*, 5>& infos,
+    const GraphicsPipelineKey& key_)
     : texture_cache{texture_cache_}, buffer_cache{buffer_cache_},
       gpu_memory{gpu_memory_}, maxwell3d{maxwell3d_}, program_manager{program_manager_},
       state_tracker{state_tracker_}, key{key_} {
@@ -232,29 +237,44 @@ GraphicsPipeline::GraphicsPipeline(
     if (key.xfb_enabled && device.UseAssemblyShaders()) {
         GenerateTransformFeedbackState();
     }
-    auto func{[this, device, sources, shader_notify](ShaderContext::Context*) mutable {
-        if (!device.UseAssemblyShaders()) {
-            program.handle = glCreateProgram();
-        }
-        for (size_t stage = 0; stage < 5; ++stage) {
-            const auto code{sources[stage]};
-            if (code.empty()) {
-                continue;
+    auto func{
+        [this, device, sources, sources_spirv, shader_notify](ShaderContext::Context*) mutable {
+            if (!device.UseAssemblyShaders()) {
+                program.handle = glCreateProgram();
             }
-            if (device.UseAssemblyShaders()) {
-                assembly_programs[stage] = CompileProgram(code, AssemblyStage(stage));
-            } else {
-                AttachShader(Stage(stage), program.handle, code);
+            for (size_t stage = 0; stage < 5; ++stage) {
+                switch (device.GetShaderBackend()) {
+                case Settings::ShaderBackend::GLSL: {
+                    const auto code{sources[stage]};
+                    if (code.empty()) {
+                        continue;
+                    }
+                    AttachShader(Stage(stage), program.handle, code);
+                } break;
+                case Settings::ShaderBackend::GLASM: {
+                    const auto code{sources[stage]};
+                    if (code.empty()) {
+                        continue;
+                    }
+                    assembly_programs[stage] = CompileProgram(code, AssemblyStage(stage));
+                } break;
+                case Settings::ShaderBackend::SPIRV: {
+                    const auto code{sources_spirv[stage]};
+                    if (code.empty()) {
+                        continue;
+                    }
+                    AttachShader(Stage(stage), program.handle, code);
+                } break;
+                }
             }
-        }
-        if (!device.UseAssemblyShaders()) {
-            LinkProgram(program.handle);
-        }
-        if (shader_notify) {
-            shader_notify->MarkShaderComplete();
-        }
-        is_built.store(true, std::memory_order_relaxed);
-    }};
+            if (!device.UseAssemblyShaders()) {
+                LinkProgram(program.handle);
+            }
+            if (shader_notify) {
+                shader_notify->MarkShaderComplete();
+            }
+            is_built.store(true, std::memory_order_relaxed);
+        }};
     if (thread_worker) {
         thread_worker->QueueWork(std::move(func));
     } else {

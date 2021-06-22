@@ -15,6 +15,7 @@
 #include "common/fs/path_util.h"
 #include "common/logging/log.h"
 #include "common/scope_exit.h"
+#include "common/settings.h"
 #include "common/thread_worker.h"
 #include "core/core.h"
 #include "shader_recompiler/backend/glasm/emit_glasm.h"
@@ -415,6 +416,7 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
 
     OGLProgram source_program;
     std::array<std::string, 5> sources;
+    std::array<std::vector<u32>, 5> sources_spirv;
     Shader::Backend::Bindings binding;
     Shader::IR::Program* previous_program{};
     const bool use_glasm{device.UseAssemblyShaders()};
@@ -431,17 +433,23 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
 
         const auto runtime_info{
             MakeRuntimeInfo(key, program, previous_program, glasm_use_storage_buffers, use_glasm)};
-        if (use_glasm) {
-            sources[stage_index] = EmitGLASM(profile, runtime_info, program, binding);
-        } else {
+        switch (device.GetShaderBackend()) {
+        case Settings::ShaderBackend::GLSL:
             sources[stage_index] = EmitGLSL(profile, runtime_info, program, binding);
+            break;
+        case Settings::ShaderBackend::GLASM:
+            sources[stage_index] = EmitGLASM(profile, runtime_info, program, binding);
+            break;
+        case Settings::ShaderBackend::SPIRV:
+            sources_spirv[stage_index] = EmitSPIRV(profile, runtime_info, program, binding);
+            break;
         }
         previous_program = &program;
     }
     auto* const thread_worker{build_in_parallel ? workers.get() : nullptr};
-    return std::make_unique<GraphicsPipeline>(device, texture_cache, buffer_cache, gpu_memory,
-                                              maxwell3d, program_manager, state_tracker,
-                                              thread_worker, &shader_notify, sources, infos, key);
+    return std::make_unique<GraphicsPipeline>(
+        device, texture_cache, buffer_cache, gpu_memory, maxwell3d, program_manager, state_tracker,
+        thread_worker, &shader_notify, sources, sources_spirv, infos, key);
 
 } catch (Shader::Exception& exception) {
     LOG_ERROR(Render_OpenGL, "{}", exception.what());
@@ -478,10 +486,24 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
     }
     Shader::RuntimeInfo info;
     info.glasm_use_storage_buffers = num_storage_buffers <= device.GetMaxGLASMStorageBufferBlocks();
-    const std::string code{device.UseAssemblyShaders() ? EmitGLASM(profile, info, program)
-                                                       : EmitGLSL(profile, program)};
+
+    std::string code{};
+    std::vector<u32> code_spirv;
+    switch (device.GetShaderBackend()) {
+    case Settings::ShaderBackend::GLSL:
+        code = EmitGLSL(profile, program);
+        break;
+    case Settings::ShaderBackend::GLASM:
+        code = EmitGLASM(profile, info, program);
+        break;
+    case Settings::ShaderBackend::SPIRV:
+        code_spirv = EmitSPIRV(profile, program);
+        break;
+    }
+
     return std::make_unique<ComputePipeline>(device, texture_cache, buffer_cache, gpu_memory,
-                                             kepler_compute, program_manager, program.info, code);
+                                             kepler_compute, program_manager, program.info, code,
+                                             code_spirv);
 } catch (Shader::Exception& exception) {
     LOG_ERROR(Render_OpenGL, "{}", exception.what());
     return nullptr;

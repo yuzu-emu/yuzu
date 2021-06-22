@@ -78,6 +78,7 @@ public:
                               ProgramManager& program_manager_, StateTracker& state_tracker_,
                               ShaderWorker* thread_worker, VideoCore::ShaderNotify* shader_notify,
                               std::array<std::string, 5> sources,
+                              std::array<std::vector<u32>, 5> sources_spirv,
                               const std::array<const Shader::Info*, 5>& infos,
                               const GraphicsPipelineKey& key_);
 
