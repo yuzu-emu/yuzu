@@ -23,7 +23,7 @@
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
-         <widget class="QWidget" name="api_layout" native="true">
+         <widget class="QWidget" name="api_widget" native="true">
           <layout class="QGridLayout" name="gridLayout">
            <property name="leftMargin">
             <number>0</number>
@@ -40,36 +40,106 @@
            <property name="horizontalSpacing">
             <number>6</number>
            </property>
+           <item row="4" column="0">
+            <widget class="QWidget" name="backend_widget" native="true">
+             <layout class="QHBoxLayout" name="backend_layout">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="backend_label">
+                <property name="text">
+                 <string>Shader Backend:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="backend"/>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QWidget" name="device_widget" native="true">
+             <layout class="QHBoxLayout" name="device_layout">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="device_label">
+                <property name="text">
+                 <string>Device:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="device"/>
+              </item>
+             </layout>
+            </widget>
+           </item>
            <item row="0" column="0">
-            <widget class="QLabel" name="api_label">
-             <property name="text">
-              <string>API:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QComboBox" name="api">
-             <item>
-              <property name="text">
-               <string notr="true">OpenGL</string>
+            <widget class="QWidget" name="api_layout_2" native="true">
+             <layout class="QHBoxLayout" name="api_layout">
+              <property name="leftMargin">
+               <number>0</number>
               </property>
-             </item>
-             <item>
-              <property name="text">
-               <string notr="true">Vulkan</string>
+              <property name="topMargin">
+               <number>0</number>
               </property>
-             </item>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="api_label">
+                <property name="text">
+                 <string>API:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="api">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <item>
+                 <property name="text">
+                  <string notr="true">OpenGL</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string notr="true">Vulkan</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
             </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="device_label">
-             <property name="text">
-              <string>Device:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QComboBox" name="device"/>
            </item>
           </layout>
          </widget>

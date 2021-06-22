@@ -172,9 +172,10 @@ Device::Device() {
     // uniform buffers as "push constants"
     has_fast_buffer_sub_data = is_nvidia && !disable_fast_buffer_sub_data;
 
-    use_assembly_shaders = Settings::values.use_assembly_shaders.GetValue() &&
-                           GLAD_GL_NV_gpu_program5 && GLAD_GL_NV_compute_program5 &&
-                           GLAD_GL_NV_transform_feedback && GLAD_GL_NV_transform_feedback2;
+    use_assembly_shaders =
+        Settings::values.shader_backend.GetValue() == Settings::ShaderBackend::GLASM &&
+        GLAD_GL_NV_gpu_program5 && GLAD_GL_NV_compute_program5 && GLAD_GL_NV_transform_feedback &&
+        GLAD_GL_NV_transform_feedback2;
 
     // Blocks AMD and Intel OpenGL drivers on Windows from using asynchronous shader compilation.
     use_asynchronous_shaders = Settings::values.use_asynchronous_shaders.GetValue() &&
@@ -187,7 +188,8 @@ Device::Device() {
     LOG_INFO(Render_OpenGL, "Renderer_BrokenTextureViewFormats: {}",
              has_broken_texture_view_formats);
 
-    if (Settings::values.use_assembly_shaders.GetValue() && !use_assembly_shaders) {
+    if (Settings::values.shader_backend.GetValue() == Settings::ShaderBackend::GLASM &&
+        !use_assembly_shaders) {
         LOG_ERROR(Render_OpenGL, "Assembly shaders enabled but not supported");
     }
 

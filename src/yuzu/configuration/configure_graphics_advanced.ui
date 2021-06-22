@@ -95,16 +95,6 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="use_assembly_shaders">
-          <property name="toolTip">
-           <string>Enabling this reduces shader stutter. Enables OpenGL assembly shaders on supported Nvidia devices (NV_gpu_program5 is required). This feature is experimental.</string>
-          </property>
-          <property name="text">
-           <string>Use assembly shaders (experimental, Nvidia OpenGL only)</string>
-          </property>
-         </widget>
-        </item>
-        <item>
          <widget class="QCheckBox" name="use_asynchronous_shaders">
           <property name="toolTip">
            <string>Enables asynchronous shader compilation, which may reduce shader stutter. This feature is experimental.</string>
@@ -162,22 +152,22 @@
              </item>
              <item>
               <property name="text">
-               <string>2x</string>
+               <string>2x (WILL BREAK THINGS)</string>
               </property>
              </item>
              <item>
               <property name="text">
-               <string>4x</string>
+               <string>4x (WILL BREAK THINGS)</string>
               </property>
              </item>
              <item>
               <property name="text">
-               <string>8x</string>
+               <string>8x (WILL BREAK THINGS)</string>
               </property>
              </item>
              <item>
               <property name="text">
-               <string>16x</string>
+               <string>16x (WILL BREAK THINGS)</string>
               </property>
              </item>
             </widget>

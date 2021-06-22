@@ -26,19 +26,25 @@ ConfigureGraphics::ConfigureGraphics(QWidget* parent)
 
     ui->setupUi(this);
 
+    ui->backend->addItem(QStringLiteral("GLSL"));
+    ui->backend->addItem(tr("GLASM (NVIDIA Only)"));
+    ui->backend->addItem(QStringLiteral("SPIR-V"));
+
     SetupPerGameUI();
 
     SetConfiguration();
 
     connect(ui->api, qOverload<int>(&QComboBox::currentIndexChanged), this, [this] {
-        UpdateDeviceComboBox();
+        UpdateAPILayout();
         if (!Settings::IsConfiguringGlobal()) {
             ConfigurationShared::SetHighlight(
-                ui->api_layout, ui->api->currentIndex() != ConfigurationShared::USE_GLOBAL_INDEX);
+                ui->api_widget, ui->api->currentIndex() != ConfigurationShared::USE_GLOBAL_INDEX);
         }
     });
     connect(ui->device, qOverload<int>(&QComboBox::activated), this,
             [this](int device) { UpdateDeviceSelection(device); });
+    connect(ui->backend, qOverload<int>(&QComboBox::activated), this,
+            [this](int backend) { UpdateShaderBackendSelection(backend); });
 
     connect(ui->bg_button, &QPushButton::clicked, this, [this] {
         const QColor new_bg_color = QColorDialog::getColor(bg_color);
@@ -47,6 +53,10 @@ ConfigureGraphics::ConfigureGraphics(QWidget* parent)
         }
         UpdateBackgroundColorButton(new_bg_color);
     });
+
+    for (const auto& device : vulkan_devices) {
+        ui->device->addItem(device);
+    }
 
     ui->bg_label->setVisible(Settings::IsConfiguringGlobal());
     ui->bg_combobox->setVisible(!Settings::IsConfiguringGlobal());
@@ -61,12 +71,21 @@ void ConfigureGraphics::UpdateDeviceSelection(int device) {
     }
 }
 
+void ConfigureGraphics::UpdateShaderBackendSelection(int backend) {
+    if (backend == -1) {
+        return;
+    }
+    if (GetCurrentGraphicsBackend() == Settings::RendererBackend::OpenGL) {
+        shader_backend = static_cast<Settings::ShaderBackend>(backend);
+    }
+}
+
 ConfigureGraphics::~ConfigureGraphics() = default;
 
 void ConfigureGraphics::SetConfiguration() {
     const bool runtime_lock = !Core::System::GetInstance().IsPoweredOn();
 
-    ui->api->setEnabled(runtime_lock);
+    ui->api_widget->setEnabled(runtime_lock);
     ui->use_asynchronous_gpu_emulation->setEnabled(runtime_lock);
     ui->use_disk_shader_cache->setEnabled(runtime_lock);
     ui->use_nvdec_emulation->setEnabled(runtime_lock);
@@ -83,7 +102,7 @@ void ConfigureGraphics::SetConfiguration() {
         ui->aspect_ratio_combobox->setCurrentIndex(Settings::values.aspect_ratio.GetValue());
     } else {
         ConfigurationShared::SetPerGameSetting(ui->api, &Settings::values.renderer_backend);
-        ConfigurationShared::SetHighlight(ui->api_layout,
+        ConfigurationShared::SetHighlight(ui->api_widget,
                                           !Settings::values.renderer_backend.UsingGlobal());
 
         ConfigurationShared::SetPerGameSetting(ui->fullscreen_mode_combobox,
@@ -104,7 +123,7 @@ void ConfigureGraphics::SetConfiguration() {
     UpdateBackgroundColorButton(QColor::fromRgbF(Settings::values.bg_red.GetValue(),
                                                  Settings::values.bg_green.GetValue(),
                                                  Settings::values.bg_blue.GetValue()));
-    UpdateDeviceComboBox();
+    UpdateAPILayout();
 }
 
 void ConfigureGraphics::ApplyConfiguration() {
@@ -128,6 +147,9 @@ void ConfigureGraphics::ApplyConfiguration() {
         if (Settings::values.renderer_backend.UsingGlobal()) {
             Settings::values.renderer_backend.SetValue(GetCurrentGraphicsBackend());
         }
+        if (Settings::values.shader_backend.UsingGlobal()) {
+            Settings::values.shader_backend.SetValue(shader_backend);
+        }
         if (Settings::values.vulkan_device.UsingGlobal()) {
             Settings::values.vulkan_device.SetValue(vulkan_device);
         }
@@ -139,15 +161,22 @@ void ConfigureGraphics::ApplyConfiguration() {
     } else {
         if (ui->api->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
             Settings::values.renderer_backend.SetGlobal(true);
+            Settings::values.shader_backend.SetGlobal(true);
             Settings::values.vulkan_device.SetGlobal(true);
         } else {
             Settings::values.renderer_backend.SetGlobal(false);
             Settings::values.renderer_backend.SetValue(GetCurrentGraphicsBackend());
-            if (GetCurrentGraphicsBackend() == Settings::RendererBackend::Vulkan) {
+            switch (GetCurrentGraphicsBackend()) {
+            case Settings::RendererBackend::OpenGL:
+                Settings::values.shader_backend.SetGlobal(false);
+                Settings::values.vulkan_device.SetGlobal(true);
+                Settings::values.shader_backend.SetValue(shader_backend);
+                break;
+            case Settings::RendererBackend::Vulkan:
+                Settings::values.shader_backend.SetGlobal(true);
                 Settings::values.vulkan_device.SetGlobal(false);
                 Settings::values.vulkan_device.SetValue(vulkan_device);
-            } else {
-                Settings::values.vulkan_device.SetGlobal(true);
+                break;
             }
         }
 
@@ -188,32 +217,32 @@ void ConfigureGraphics::UpdateBackgroundColorButton(QColor color) {
     ui->bg_button->setIcon(color_icon);
 }
 
-void ConfigureGraphics::UpdateDeviceComboBox() {
-    ui->device->clear();
-
-    bool enabled = false;
-
+void ConfigureGraphics::UpdateAPILayout() {
     if (!Settings::IsConfiguringGlobal() &&
         ui->api->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
+        vulkan_device = Settings::values.vulkan_device.GetValue(true);
+        shader_backend = Settings::values.shader_backend.GetValue(true);
+        ui->device_widget->setEnabled(false);
+        ui->backend_widget->setEnabled(false);
+    } else {
         vulkan_device = Settings::values.vulkan_device.GetValue();
+        shader_backend = Settings::values.shader_backend.GetValue();
+        ui->device_widget->setEnabled(true);
+        ui->backend_widget->setEnabled(true);
     }
+
     switch (GetCurrentGraphicsBackend()) {
     case Settings::RendererBackend::OpenGL:
-        ui->device->addItem(tr("OpenGL Graphics Device"));
-        enabled = false;
+        ui->backend->setCurrentIndex(static_cast<u32>(shader_backend));
+        ui->device_widget->setVisible(false);
+        ui->backend_widget->setVisible(true);
         break;
     case Settings::RendererBackend::Vulkan:
-        for (const auto& device : vulkan_devices) {
-            ui->device->addItem(device);
-        }
         ui->device->setCurrentIndex(vulkan_device);
-        enabled = !vulkan_devices.empty();
+        ui->device_widget->setVisible(true);
+        ui->backend_widget->setVisible(false);
         break;
     }
-    // If in per-game config and use global is selected, don't enable.
-    enabled &= !(!Settings::IsConfiguringGlobal() &&
-                 ui->api->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX);
-    ui->device->setEnabled(enabled && !Core::System::GetInstance().IsPoweredOn());
 }
 
 void ConfigureGraphics::RetrieveVulkanDevices() try {

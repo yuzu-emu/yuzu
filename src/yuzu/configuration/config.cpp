@@ -820,8 +820,7 @@ void Config::ReadRendererValues() {
     ReadSettingGlobal(Settings::values.use_vsync, QStringLiteral("use_vsync"), true);
     ReadSettingGlobal(Settings::values.disable_fps_limit, QStringLiteral("disable_fps_limit"),
                       false);
-    ReadSettingGlobal(Settings::values.use_assembly_shaders, QStringLiteral("use_assembly_shaders"),
-                      false);
+    ReadSettingGlobal(Settings::values.shader_backend, QStringLiteral("shader_backend"), 0);
     ReadSettingGlobal(Settings::values.use_asynchronous_shaders,
                       QStringLiteral("use_asynchronous_shaders"), false);
     ReadSettingGlobal(Settings::values.use_fast_gpu_time, QStringLiteral("use_fast_gpu_time"),
@@ -1413,8 +1412,9 @@ void Config::SaveRendererValues() {
     WriteSettingGlobal(QStringLiteral("use_vsync"), Settings::values.use_vsync, true);
     WriteSettingGlobal(QStringLiteral("disable_fps_limit"), Settings::values.disable_fps_limit,
                        false);
-    WriteSettingGlobal(QStringLiteral("use_assembly_shaders"),
-                       Settings::values.use_assembly_shaders, false);
+    WriteSettingGlobal(QStringLiteral("shader_backend"),
+                       static_cast<u32>(Settings::values.shader_backend.GetValue(global)),
+                       Settings::values.shader_backend.UsingGlobal(), 1);
     WriteSettingGlobal(QStringLiteral("use_asynchronous_shaders"),
                        Settings::values.use_asynchronous_shaders, false);
     WriteSettingGlobal(QStringLiteral("use_fast_gpu_time"), Settings::values.use_fast_gpu_time,
