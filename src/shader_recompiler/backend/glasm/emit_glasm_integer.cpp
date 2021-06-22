@@ -82,10 +82,6 @@ void EmitIAbs32(EmitContext& ctx, IR::Inst& inst, ScalarS32 value) {
     ctx.Add("ABS.S {},{};", inst, value);
 }
 
-void EmitIAbs64(EmitContext& ctx, IR::Inst& inst, Register value) {
-    ctx.LongAdd("MOV.S64 {},|{}|;", inst, value);
-}
-
 void EmitShiftLeftLogical32(EmitContext& ctx, IR::Inst& inst, ScalarU32 base, ScalarU32 shift) {
     ctx.Add("SHL.U {}.x,{},{};", inst, base, shift);
 }

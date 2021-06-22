@@ -1152,15 +1152,8 @@ U32U64 IREmitter::INeg(const U32U64& value) {
     }
 }
 
-U32U64 IREmitter::IAbs(const U32U64& value) {
-    switch (value.Type()) {
-    case Type::U32:
-        return Inst<U32>(Opcode::IAbs32, value);
-    case Type::U64:
-        return Inst<U64>(Opcode::IAbs64, value);
-    default:
-        ThrowInvalidType(value.Type());
-    }
+U32 IREmitter::IAbs(const U32& value) {
+    return Inst<U32>(Opcode::IAbs32, value);
 }
 
 U32U64 IREmitter::ShiftLeftLogical(const U32U64& base, const U32& shift) {
