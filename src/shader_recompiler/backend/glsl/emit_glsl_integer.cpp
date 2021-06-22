@@ -33,8 +33,8 @@ void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::strin
     const auto result{ctx.var_alloc.Define(inst, GlslVarType::U32)};
     if (IR::Inst* const carry{inst.GetAssociatedPseudoOperation(IR::Opcode::GetCarryFromOp)}) {
         ctx.uses_cc_carry = true;
-        ctx.Add("{}=uaddCarry({},{},carry);", result, a, b);
-        ctx.AddU1("{}=carry!=0;", *carry, result);
+        ctx.Add("iadd_op_b={};{}=uaddCarry({},{},carry);", b, result, a, b);
+        ctx.AddU1("{}=carry!=0;", *carry);
         carry->Invalidate();
     } else {
         ctx.Add("{}={}+{};", result, a, b);
@@ -44,8 +44,10 @@ void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::strin
     if (IR::Inst * overflow{inst.GetAssociatedPseudoOperation(IR::Opcode::GetOverflowFromOp)}) {
         // https://stackoverflow.com/questions/55468823/how-to-detect-integer-overflow-in-c
         constexpr u32 s32_max{static_cast<u32>(std::numeric_limits<s32>::max())};
-        ctx.AddU1("{}=int({})>=0?int({})>int({}-{}):int({})<int({}-{});", *overflow, a, b, s32_max,
-                  a, b, s32_max, a);
+        const auto sub_a{fmt::format("{}u-{}", s32_max, a)};
+        const auto op_b{ctx.uses_cc_carry ? "iadd_op_b" : b};
+        ctx.AddU1("{}=int({})>=0?int({})>int({}):int({})<int({});", *overflow, a, op_b, sub_a, op_b,
+                  sub_a);
         overflow->Invalidate();
     }
 }
