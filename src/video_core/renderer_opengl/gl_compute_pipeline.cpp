@@ -5,6 +5,7 @@
 #include <cstring>
 
 #include "common/cityhash.h"
+#include "common/settings.h" // for enum class Settings::ShaderBackend
 #include "video_core/renderer_opengl/gl_compute_pipeline.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
 #include "video_core/renderer_opengl/gl_shader_util.h"
@@ -40,15 +41,23 @@ ComputePipeline::ComputePipeline(const Device& device, TextureCache& texture_cac
                                  BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
                                  Tegra::Engines::KeplerCompute& kepler_compute_,
                                  ProgramManager& program_manager_, const Shader::Info& info_,
-                                 std::string code)
+                                 std::string code, std::vector<u32> code_v)
     : texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, gpu_memory{gpu_memory_},
       kepler_compute{kepler_compute_}, program_manager{program_manager_}, info{info_} {
-    if (device.UseAssemblyShaders()) {
-        assembly_program = CompileProgram(code, GL_COMPUTE_PROGRAM_NV);
-    } else {
+    switch (device.GetShaderBackend()) {
+    case Settings::ShaderBackend::GLSL:
         source_program.handle = glCreateProgram();
         AttachShader(GL_COMPUTE_SHADER, source_program.handle, code);
         LinkProgram(source_program.handle);
+        break;
+    case Settings::ShaderBackend::GLASM:
+        assembly_program = CompileProgram(code, GL_COMPUTE_PROGRAM_NV);
+        break;
+    case Settings::ShaderBackend::SPIRV:
+        source_program.handle = glCreateProgram();
+        AttachShader(GL_COMPUTE_SHADER, source_program.handle, code_v);
+        LinkProgram(source_program.handle);
+        break;
     }
     std::copy_n(info.constant_buffer_used_sizes.begin(), uniform_buffer_sizes.size(),
                 uniform_buffer_sizes.begin());
