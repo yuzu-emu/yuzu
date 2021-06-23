@@ -227,7 +227,7 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
     ctx.header += "void main(){\n";
     DefineVariables(ctx, ctx.header);
     if (ctx.uses_cc_carry) {
-        ctx.header += "uint carry;uint iadd_op_b;";
+        ctx.header += "uint carry;";
     }
     if (program.info.uses_subgroup_shuffles) {
         ctx.header += "bool shfl_in_bounds;";
