@@ -124,6 +124,10 @@ public:
         return has_nv_gpu_shader_5;
     }
 
+    bool HasShaderInt64() const {
+        return has_shader_int64;
+    }
+
     bool HasAmdShaderHalfFloat() const {
         return has_amd_shader_half_float;
     }
@@ -172,6 +176,7 @@ private:
     bool use_driver_cache{};
     bool has_depth_buffer_float{};
     bool has_nv_gpu_shader_5{};
+    bool has_shader_int64{};
     bool has_amd_shader_half_float{};
     bool has_sparse_texture_2{};
     bool warp_size_potentially_larger_than_guest{};

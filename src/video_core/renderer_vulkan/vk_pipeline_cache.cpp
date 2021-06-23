@@ -315,7 +315,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxw
     };
     host_info = Shader::HostTranslateInfo{
         .support_float16 = device.IsFloat16Supported(),
-        .support_int64 = true,
+        .support_int64 = device.IsShaderInt64Supported(),
     };
 }
 
