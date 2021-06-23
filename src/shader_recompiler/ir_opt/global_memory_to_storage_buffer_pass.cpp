@@ -253,12 +253,12 @@ struct LowAddrInfo {
 /// Tries to track the first 32-bits of a global memory instruction
 std::optional<LowAddrInfo> TrackLowAddress(IR::Inst* inst) {
     // The first argument is the low level GPU pointer to the global memory instruction
-    const IR::U64 addr{inst->Arg(0)};
+    const IR::Value addr{inst->Arg(0)};
     if (addr.IsImmediate()) {
         // Not much we can do if it's an immediate
         return std::nullopt;
     }
-    // This address is expected to either be a PackUint2x32 or a IAdd64
+    // This address is expected to either be a PackUint2x32, a IAdd64, or a CompositeConstructU32x2
     IR::Inst* addr_inst{addr.InstRecursive()};
     s32 imm_offset{0};
     if (addr_inst->GetOpcode() == IR::Opcode::IAdd64) {
@@ -274,25 +274,24 @@ std::optional<LowAddrInfo> TrackLowAddress(IR::Inst* inst) {
         if (iadd_addr.IsImmediate()) {
             return std::nullopt;
         }
-        addr_inst = iadd_addr.Inst();
+        addr_inst = iadd_addr.InstRecursive();
     }
-    // With IAdd64 handled, now PackUint2x32 is expected without exceptions
-    if (addr_inst->GetOpcode() != IR::Opcode::PackUint2x32) {
-        return std::nullopt;
+    // With IAdd64 handled, now PackUint2x32 is expected
+    if (addr_inst->GetOpcode() == IR::Opcode::PackUint2x32) {
+        // PackUint2x32 is expected to be generated from a vector
+        const IR::Value vector{addr_inst->Arg(0)};
+        if (vector.IsImmediate()) {
+            return std::nullopt;
+        }
+        addr_inst = vector.InstRecursive();
     }
-    // PackUint2x32 is expected to be generated from a vector
-    const IR::Value vector{addr_inst->Arg(0)};
-    if (vector.IsImmediate()) {
-        return std::nullopt;
-    }
-    // This vector is expected to be a CompositeConstructU32x2
-    IR::Inst* const vector_inst{vector.InstRecursive()};
-    if (vector_inst->GetOpcode() != IR::Opcode::CompositeConstructU32x2) {
+    // The vector is expected to be a CompositeConstructU32x2
+    if (addr_inst->GetOpcode() != IR::Opcode::CompositeConstructU32x2) {
         return std::nullopt;
     }
     // Grab the first argument from the CompositeConstructU32x2, this is the low address.
     return LowAddrInfo{
-        .value{IR::U32{vector_inst->Arg(0)}},
+        .value{IR::U32{addr_inst->Arg(0)}},
         .imm_offset = imm_offset,
     };
 }
