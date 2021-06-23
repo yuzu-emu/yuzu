@@ -5,6 +5,7 @@
 #pragma once
 
 #include "common/common_types.h"
+#include "shader_recompiler/stage.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/surface.h"
 #include "video_core/textures/texture.h"
@@ -45,7 +46,7 @@ struct FormatInfo {
 [[nodiscard]] FormatInfo SurfaceFormat(const Device& device, FormatType format_type, bool with_srgb,
                                        PixelFormat pixel_format);
 
-VkShaderStageFlagBits ShaderStage(Tegra::Engines::ShaderType stage);
+VkShaderStageFlagBits ShaderStage(Shader::Stage stage);
 
 VkPrimitiveTopology PrimitiveTopology(const Device& device, Maxwell::PrimitiveTopology topology);
 

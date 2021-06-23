@@ -23,7 +23,6 @@
 #include "core/memory.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
-#include "video_core/engines/shader_type.h"
 #include "video_core/memory_manager.h"
 #include "video_core/renderer_opengl/gl_device.h"
 #include "video_core/renderer_opengl/gl_query_cache.h"
@@ -40,7 +39,6 @@ namespace OpenGL {
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 using GLvec4 = std::array<GLfloat, 4>;
 
-using Tegra::Engines::ShaderType;
 using VideoCore::Surface::PixelFormat;
 using VideoCore::Surface::SurfaceTarget;
 using VideoCore::Surface::SurfaceType;

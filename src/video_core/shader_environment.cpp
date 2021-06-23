@@ -22,7 +22,7 @@
 namespace VideoCommon {
 
 constexpr std::array<char, 8> MAGIC_NUMBER{'y', 'u', 'z', 'u', 'c', 'a', 'c', 'h'};
-constexpr u32 CACHE_VERSION = 3;
+constexpr u32 CACHE_VERSION = 4;
 
 constexpr size_t INST_SIZE = sizeof(u64);
 
