@@ -7,6 +7,7 @@
 #include <ranges>
 #include <vector>
 
+#include "common/settings.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/post_order.h"
@@ -164,7 +165,9 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
 
     Optimization::ConstantPropagationPass(program);
     Optimization::DeadCodeEliminationPass(program);
-    Optimization::VerificationPass(program);
+    if (Settings::values.renderer_debug) {
+        Optimization::VerificationPass(program);
+    }
     Optimization::CollectShaderInfoPass(env, program);
     CollectInterpolationInfo(env, program);
     AddNVNStorageBuffers(program);
@@ -200,7 +203,9 @@ IR::Program MergeDualVertexPrograms(IR::Program& vertex_a, IR::Program& vertex_b
     Optimization::JoinTextureInfo(result.info, vertex_b.info);
     Optimization::JoinStorageInfo(result.info, vertex_b.info);
     Optimization::DeadCodeEliminationPass(result);
-    Optimization::VerificationPass(result);
+    if (Settings::values.renderer_debug) {
+        Optimization::VerificationPass(result);
+    }
     Optimization::CollectShaderInfoPass(env_vertex_b, result);
     return result;
 }
