@@ -6,7 +6,7 @@
 
 #include <cstddef>
 #include "common/common_types.h"
-#include "video_core/engines/shader_type.h"
+#include "shader_recompiler/stage.h"
 
 namespace OpenGL {
 
@@ -16,8 +16,8 @@ public:
 
     [[nodiscard]] std::string GetVendorName() const;
 
-    u32 GetMaxUniformBuffers(Tegra::Engines::ShaderType shader_type) const noexcept {
-        return max_uniform_buffers[static_cast<std::size_t>(shader_type)];
+    u32 GetMaxUniformBuffers(Shader::Stage stage) const noexcept {
+        return max_uniform_buffers[static_cast<size_t>(stage)];
     }
 
     size_t GetUniformBufferAlignment() const {
@@ -148,8 +148,7 @@ private:
     static bool TestVariableAoffi();
     static bool TestPreciseBug();
 
-    std::string vendor_name;
-    std::array<u32, Tegra::Engines::MaxShaderTypes> max_uniform_buffers{};
+    std::array<u32, Shader::MaxStageTypes> max_uniform_buffers{};
     size_t uniform_buffer_alignment{};
     size_t shader_storage_alignment{};
     u32 max_vertex_attributes{};
@@ -181,6 +180,8 @@ private:
     bool has_sparse_texture_2{};
     bool warp_size_potentially_larger_than_guest{};
     bool need_fastmath_off{};
+
+    std::string vendor_name;
 };
 
 } // namespace OpenGL

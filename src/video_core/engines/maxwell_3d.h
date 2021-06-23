@@ -20,7 +20,6 @@
 #include "video_core/engines/const_buffer_info.h"
 #include "video_core/engines/engine_interface.h"
 #include "video_core/engines/engine_upload.h"
-#include "video_core/engines/shader_type.h"
 #include "video_core/gpu.h"
 #include "video_core/macro/macro.h"
 #include "video_core/textures/texture.h"

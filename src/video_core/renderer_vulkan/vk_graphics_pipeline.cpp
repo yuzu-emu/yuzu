@@ -737,7 +737,7 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                 .pNext = nullptr,
                 .flags = 0,
-                .stage = MaxwellToVK::ShaderStage(static_cast<Tegra::Engines::ShaderType>(stage)),
+                .stage = MaxwellToVK::ShaderStage(Shader::StageFromIndex(stage)),
                 .module = *spv_modules[stage],
                 .pName = "main",
                 .pSpecializationInfo = nullptr,

@@ -17,6 +17,7 @@
 #include "common/logging/log.h"
 #include "common/scope_exit.h"
 #include "common/settings.h"
+#include "shader_recompiler/stage.h"
 #include "video_core/renderer_opengl/gl_device.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 
@@ -59,16 +60,18 @@ bool HasExtension(std::span<const std::string_view> extensions, std::string_view
     return std::ranges::find(extensions, extension) != extensions.end();
 }
 
-std::array<u32, Tegra::Engines::MaxShaderTypes> BuildMaxUniformBuffers() noexcept {
-    std::array<u32, Tegra::Engines::MaxShaderTypes> max;
-    std::ranges::transform(LIMIT_UBOS, max.begin(),
-                           [](GLenum pname) { return GetInteger<u32>(pname); });
+std::array<u32, Shader::MaxStageTypes> BuildMaxUniformBuffers() noexcept {
+    std::array<u32, Shader::MaxStageTypes> max;
+    std::ranges::transform(LIMIT_UBOS, max.begin(), &GetInteger<u32>);
     return max;
 }
 
 bool IsASTCSupported() {
-    static constexpr std::array targets = {GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY};
-    static constexpr std::array formats = {
+    static constexpr std::array targets{
+        GL_TEXTURE_2D,
+        GL_TEXTURE_2D_ARRAY,
+    };
+    static constexpr std::array formats{
         GL_COMPRESSED_RGBA_ASTC_4x4_KHR,           GL_COMPRESSED_RGBA_ASTC_5x4_KHR,
         GL_COMPRESSED_RGBA_ASTC_5x5_KHR,           GL_COMPRESSED_RGBA_ASTC_6x5_KHR,
         GL_COMPRESSED_RGBA_ASTC_6x6_KHR,           GL_COMPRESSED_RGBA_ASTC_8x5_KHR,
@@ -84,11 +87,10 @@ bool IsASTCSupported() {
         GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR,  GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR,
         GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR, GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR,
     };
-    static constexpr std::array required_support = {
+    static constexpr std::array required_support{
         GL_VERTEX_TEXTURE,   GL_TESS_CONTROL_TEXTURE, GL_TESS_EVALUATION_TEXTURE,
         GL_GEOMETRY_TEXTURE, GL_FRAGMENT_TEXTURE,     GL_COMPUTE_TEXTURE,
     };
-
     for (const GLenum target : targets) {
         for (const GLenum format : formats) {
             for (const GLenum support : required_support) {

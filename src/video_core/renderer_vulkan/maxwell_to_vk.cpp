@@ -266,19 +266,20 @@ FormatInfo SurfaceFormat(const Device& device, FormatType format_type, bool with
     return {device.GetSupportedFormat(tuple.format, usage, format_type), attachable, storage};
 }
 
-VkShaderStageFlagBits ShaderStage(Tegra::Engines::ShaderType stage) {
+VkShaderStageFlagBits ShaderStage(Shader::Stage stage) {
     switch (stage) {
-    case Tegra::Engines::ShaderType::Vertex:
+    case Shader::Stage::VertexA:
+    case Shader::Stage::VertexB:
         return VK_SHADER_STAGE_VERTEX_BIT;
-    case Tegra::Engines::ShaderType::TesselationControl:
+    case Shader::Stage::TessellationControl:
         return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    case Tegra::Engines::ShaderType::TesselationEval:
+    case Shader::Stage::TessellationEval:
         return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    case Tegra::Engines::ShaderType::Geometry:
+    case Shader::Stage::Geometry:
         return VK_SHADER_STAGE_GEOMETRY_BIT;
-    case Tegra::Engines::ShaderType::Fragment:
+    case Shader::Stage::Fragment:
         return VK_SHADER_STAGE_FRAGMENT_BIT;
-    case Tegra::Engines::ShaderType::Compute:
+    case Shader::Stage::Compute:
         return VK_SHADER_STAGE_COMPUTE_BIT;
     }
     UNIMPLEMENTED_MSG("Unimplemented shader stage={}", stage);
