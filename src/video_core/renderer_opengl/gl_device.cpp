@@ -159,6 +159,7 @@ Device::Device() {
     has_debugging_tool_attached = IsDebugToolAttached(extensions);
     has_depth_buffer_float = HasExtension(extensions, "GL_NV_depth_buffer_float");
     has_nv_gpu_shader_5 = GLAD_GL_NV_gpu_shader5;
+    has_shader_int64 = HasExtension(extensions, "GL_ARB_gpu_shader_int64");
     has_amd_shader_half_float = GLAD_GL_AMD_gpu_shader_half_float;
     has_sparse_texture_2 = GLAD_GL_ARB_sparse_texture2;
     warp_size_potentially_larger_than_guest = !is_nvidia && !is_intel;

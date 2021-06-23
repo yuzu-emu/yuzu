@@ -164,6 +164,11 @@ public:
         return is_formatless_image_load_supported;
     }
 
+    /// Returns true if shader int64 is supported.
+    bool IsShaderInt64Supported() const {
+        return is_shader_int64_supported;
+    }
+
     /// Returns true if shader int16 is supported.
     bool IsShaderInt16Supported() const {
         return is_shader_int16_supported;

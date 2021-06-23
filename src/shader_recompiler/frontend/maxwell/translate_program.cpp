@@ -154,6 +154,9 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
     if (!host_info.support_float16) {
         Optimization::LowerFp16ToFp32(program);
     }
+    if (!host_info.support_int64) {
+        Optimization::LowerInt64ToInt32(program);
+    }
     Optimization::SsaRewritePass(program);
 
     Optimization::GlobalMemoryToStorageBufferPass(program);
