@@ -563,6 +563,15 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
             return (base & ~(~(~0u << bits) << offset)) | (insert << offset);
         });
         return;
+    case IR::Opcode::CompositeExtractU32x2:
+        return FoldCompositeExtract(inst, IR::Opcode::CompositeConstructU32x2,
+                                    IR::Opcode::CompositeInsertU32x2);
+    case IR::Opcode::CompositeExtractU32x3:
+        return FoldCompositeExtract(inst, IR::Opcode::CompositeConstructU32x3,
+                                    IR::Opcode::CompositeInsertU32x3);
+    case IR::Opcode::CompositeExtractU32x4:
+        return FoldCompositeExtract(inst, IR::Opcode::CompositeConstructU32x4,
+                                    IR::Opcode::CompositeInsertU32x4);
     case IR::Opcode::CompositeExtractF32x2:
         return FoldCompositeExtract(inst, IR::Opcode::CompositeConstructF32x2,
                                     IR::Opcode::CompositeInsertF32x2);
