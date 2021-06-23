@@ -412,6 +412,10 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         LOG_INFO(Render_Vulkan, "Device doesn't support extended dynamic state");
     }
 
+    if (!ext_conservative_rasterization) {
+        LOG_INFO(Render_Vulkan, "Device doesn't support conservative rasterization");
+    }
+
     VkPhysicalDeviceProvokingVertexFeaturesEXT provoking_vertex;
     if (ext_provoking_vertex) {
         provoking_vertex = {
@@ -776,6 +780,8 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
              true);
         test(ext_tooling_info, VK_EXT_TOOLING_INFO_EXTENSION_NAME, true);
         test(ext_shader_stencil_export, VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME, true);
+        test(ext_conservative_rasterization, VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME,
+             true);
         test(has_ext_transform_feedback, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME, false);
         test(has_ext_custom_border_color, VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME, false);
         test(has_ext_extended_dynamic_state, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, false);

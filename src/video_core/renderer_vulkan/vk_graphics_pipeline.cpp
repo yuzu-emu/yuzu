@@ -599,16 +599,9 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .pScissors = nullptr,
     };
 
-    const VkPipelineRasterizationProvokingVertexStateCreateInfoEXT provoking_vertex{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT,
-        .pNext = nullptr,
-        .provokingVertexMode = key.state.provoking_vertex_last != 0
-                                   ? VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT
-                                   : VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT,
-    };
-    const VkPipelineRasterizationStateCreateInfo rasterization_ci{
+    VkPipelineRasterizationStateCreateInfo rasterization_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-        .pNext = device.IsExtProvokingVertexSupported() ? &provoking_vertex : nullptr,
+        .pNext = nullptr,
         .flags = 0,
         .depthClampEnable =
             static_cast<VkBool32>(key.state.depth_clamp_disabled == 0 ? VK_TRUE : VK_FALSE),
@@ -625,6 +618,28 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .depthBiasSlopeFactor = 0.0f,
         .lineWidth = 1.0f,
     };
+    VkPipelineRasterizationConservativeStateCreateInfoEXT conservative_raster{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT,
+        .pNext = nullptr,
+        .flags = 0,
+        .conservativeRasterizationMode = key.state.conservative_raster_enable != 0
+                                             ? VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT
+                                             : VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT,
+        .extraPrimitiveOverestimationSize = 0.0f,
+    };
+    VkPipelineRasterizationProvokingVertexStateCreateInfoEXT provoking_vertex{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT,
+        .pNext = nullptr,
+        .provokingVertexMode = key.state.provoking_vertex_last != 0
+                                   ? VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT
+                                   : VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT,
+    };
+    if (device.IsExtConservativeRasterizationSupported()) {
+        conservative_raster.pNext = std::exchange(rasterization_ci.pNext, &conservative_raster);
+    }
+    if (device.IsExtProvokingVertexSupported()) {
+        provoking_vertex.pNext = std::exchange(rasterization_ci.pNext, &provoking_vertex);
+    }
 
     const VkPipelineMultisampleStateCreateInfo multisample_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
