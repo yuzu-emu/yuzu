@@ -910,7 +910,11 @@ public:
 
                 u32 fill_rectangle;
 
-                INSERT_PADDING_WORDS_NOINIT(0x8);
+                INSERT_PADDING_WORDS_NOINIT(0x2);
+
+                u32 conservative_raster_enable;
+
+                INSERT_PADDING_WORDS_NOINIT(0x5);
 
                 std::array<VertexAttribute, NumVertexAttributes> vertex_attrib_format;
 
@@ -1615,6 +1619,7 @@ ASSERT_REG_POSITION(zeta, 0x3F8);
 ASSERT_REG_POSITION(render_area, 0x3FD);
 ASSERT_REG_POSITION(clear_flags, 0x43E);
 ASSERT_REG_POSITION(fill_rectangle, 0x44F);
+ASSERT_REG_POSITION(conservative_raster_enable, 0x452);
 ASSERT_REG_POSITION(vertex_attrib_format, 0x458);
 ASSERT_REG_POSITION(multisample_sample_locations, 0x478);
 ASSERT_REG_POSITION(multisample_coverage_to_color, 0x47E);
