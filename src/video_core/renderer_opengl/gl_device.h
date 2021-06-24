@@ -120,6 +120,10 @@ public:
         return has_depth_buffer_float;
     }
 
+    bool HasGeometryShaderPassthrough() const {
+        return has_geometry_shader_passthrough;
+    }
+
     bool HasNvGpuShader5() const {
         return has_nv_gpu_shader_5;
     }
@@ -174,6 +178,7 @@ private:
     bool use_asynchronous_shaders{};
     bool use_driver_cache{};
     bool has_depth_buffer_float{};
+    bool has_geometry_shader_passthrough{};
     bool has_nv_gpu_shader_5{};
     bool has_shader_int64{};
     bool has_amd_shader_half_float{};

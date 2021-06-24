@@ -304,6 +304,9 @@ void SetupOptions(const IR::Program& program, const Profile& profile,
             header += "OPTION NV_viewport_array2;";
         }
     }
+    if (program.is_geometry_passthrough && profile.support_geometry_shader_passthrough) {
+        header += "OPTION NV_geometry_shader_passthrough;";
+    }
     if (info.uses_typeless_image_reads && profile.support_typeless_image_loads) {
         header += "OPTION EXT_shader_image_load_formatted;";
     }
@@ -410,11 +413,26 @@ std::string EmitGLASM(const Profile& profile, const RuntimeInfo& runtime_info, I
                               runtime_info.tess_clockwise ? "CW" : "CCW");
         break;
     case Stage::Geometry:
-        header += fmt::format("PRIMITIVE_IN {};"
-                              "PRIMITIVE_OUT {};"
-                              "VERTICES_OUT {};",
-                              InputPrimitive(runtime_info.input_topology),
-                              OutputPrimitive(program.output_topology), program.output_vertices);
+        header += fmt::format("PRIMITIVE_IN {};", InputPrimitive(runtime_info.input_topology));
+        if (program.is_geometry_passthrough) {
+            if (profile.support_geometry_shader_passthrough) {
+                for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
+                    if (program.info.passthrough.Generic(index)) {
+                        header += fmt::format("PASSTHROUGH result.attrib[{}];", index);
+                    }
+                }
+                if (program.info.passthrough.AnyComponent(IR::Attribute::PositionX)) {
+                    header += "PASSTHROUGH result.position;";
+                }
+            } else {
+                LOG_WARNING(Shader_GLASM, "Passthrough geometry program used but not supported");
+            }
+        } else {
+            header +=
+                fmt::format("VERTICES_OUT {};"
+                            "PRIMITIVE_OUT {};",
+                            program.output_vertices, OutputPrimitive(program.output_topology));
+        }
         break;
     case Stage::Compute:
         header += fmt::format("GROUP_SIZE {} {} {};", program.workgroup_size[0],
