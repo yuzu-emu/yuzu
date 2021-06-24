@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#include <bit>
 #include <memory>
 #include <ranges>
 #include <vector>
@@ -142,8 +143,8 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
         program.invocations = sph.common2.threads_per_input_primitive;
         program.is_geometry_passthrough = sph.common0.geometry_passthrough != 0;
         if (program.is_geometry_passthrough) {
-            const auto mask{env.GpPassthroughMask()};
-            program.info.passthrough.mask |= ~Common::BitCast<std::bitset<256>>(mask);
+            const auto& mask{env.GpPassthroughMask()};
+            program.info.passthrough.mask |= ~std::bit_cast<std::bitset<256>>(mask);
         }
         break;
     }
