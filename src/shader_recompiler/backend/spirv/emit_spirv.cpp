@@ -281,11 +281,19 @@ void DefineEntryPoint(const IR::Program& program, EmitContext& ctx, Id main) {
             ctx.AddExecutionMode(main, spv::ExecutionMode::OutputTriangleStrip);
             break;
         }
-        if (program.info.stores_point_size) {
+        if (program.info.stores[IR::Attribute::PointSize]) {
             ctx.AddCapability(spv::Capability::GeometryPointSize);
         }
         ctx.AddExecutionMode(main, spv::ExecutionMode::OutputVertices, program.output_vertices);
         ctx.AddExecutionMode(main, spv::ExecutionMode::Invocations, program.invocations);
+        if (program.is_geometry_passthrough) {
+            if (ctx.profile.support_geometry_shader_passthrough) {
+                ctx.AddExtension("SPV_NV_geometry_shader_passthrough");
+                ctx.AddCapability(spv::Capability::GeometryShaderPassthroughNV);
+            } else {
+                LOG_WARNING(Shader_SPIRV, "Geometry shader passthrough used with no support");
+            }
+        }
         break;
     case Stage::Fragment:
         execution_model = spv::ExecutionModel::Fragment;
@@ -377,20 +385,21 @@ void SetupCapabilities(const Profile& profile, const Info& info, EmitContext& ct
         ctx.AddExtension("SPV_EXT_demote_to_helper_invocation");
         ctx.AddCapability(spv::Capability::DemoteToHelperInvocationEXT);
     }
-    if (info.stores_viewport_index) {
+    if (info.stores[IR::Attribute::ViewportIndex]) {
         ctx.AddCapability(spv::Capability::MultiViewport);
     }
-    if (info.stores_viewport_mask && profile.support_viewport_mask) {
+    if (info.stores[IR::Attribute::ViewportMask] && profile.support_viewport_mask) {
         ctx.AddExtension("SPV_NV_viewport_array2");
         ctx.AddCapability(spv::Capability::ShaderViewportMaskNV);
     }
-    if (info.stores_layer || info.stores_viewport_index) {
+    if (info.stores[IR::Attribute::Layer] || info.stores[IR::Attribute::ViewportIndex]) {
         if (profile.support_viewport_index_layer_non_geometry && ctx.stage != Stage::Geometry) {
             ctx.AddExtension("SPV_EXT_shader_viewport_index_layer");
             ctx.AddCapability(spv::Capability::ShaderViewportIndexLayerEXT);
         }
     }
-    if (!profile.support_vertex_instance_id && (info.loads_instance_id || info.loads_vertex_id)) {
+    if (!profile.support_vertex_instance_id &&
+        (info.loads[IR::Attribute::InstanceId] || info.loads[IR::Attribute::VertexId])) {
         ctx.AddExtension("SPV_KHR_shader_draw_parameters");
         ctx.AddCapability(spv::Capability::DrawParameters);
     }

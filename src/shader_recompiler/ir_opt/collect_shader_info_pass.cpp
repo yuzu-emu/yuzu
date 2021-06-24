@@ -29,130 +29,6 @@ void AddConstantBufferDescriptor(Info& info, u32 index, u32 count) {
                  });
 }
 
-void GetAttribute(Info& info, IR::Attribute attr) {
-    if (IR::IsGeneric(attr)) {
-        info.input_generics.at(IR::GenericAttributeIndex(attr)).used = true;
-        return;
-    }
-    if (attr >= IR::Attribute::FixedFncTexture0S && attr <= IR::Attribute::FixedFncTexture9Q) {
-        info.loads_fixed_fnc_textures = true;
-        info.loads_legacy_varyings = true;
-        return;
-    }
-    switch (attr) {
-    case IR::Attribute::PrimitiveId:
-        info.loads_primitive_id = true;
-        break;
-    case IR::Attribute::PositionX:
-    case IR::Attribute::PositionY:
-    case IR::Attribute::PositionZ:
-    case IR::Attribute::PositionW:
-        info.loads_position = true;
-        break;
-    case IR::Attribute::ColorFrontDiffuseR:
-    case IR::Attribute::ColorFrontDiffuseG:
-    case IR::Attribute::ColorFrontDiffuseB:
-    case IR::Attribute::ColorFrontDiffuseA:
-        info.loads_color_front_diffuse = true;
-        info.loads_legacy_varyings = true;
-        break;
-    case IR::Attribute::PointSpriteS:
-    case IR::Attribute::PointSpriteT:
-        info.loads_point_coord = true;
-        break;
-    case IR::Attribute::TessellationEvaluationPointU:
-    case IR::Attribute::TessellationEvaluationPointV:
-        info.loads_tess_coord = true;
-        break;
-    case IR::Attribute::InstanceId:
-        info.loads_instance_id = true;
-        break;
-    case IR::Attribute::VertexId:
-        info.loads_vertex_id = true;
-        break;
-    case IR::Attribute::FrontFace:
-        info.loads_front_face = true;
-        break;
-    default:
-        throw NotImplementedException("Get attribute {}", attr);
-    }
-}
-
-void SetAttribute(Info& info, IR::Attribute attr) {
-    if (IR::IsGeneric(attr)) {
-        info.stores_generics[IR::GenericAttributeIndex(attr)] = true;
-        return;
-    }
-    if (attr >= IR::Attribute::FixedFncTexture0S && attr <= IR::Attribute::FixedFncTexture9Q) {
-        info.stores_fixed_fnc_textures = true;
-        info.stores_legacy_varyings = true;
-        return;
-    }
-    switch (attr) {
-    case IR::Attribute::Layer:
-        info.stores_layer = true;
-        break;
-    case IR::Attribute::ViewportIndex:
-        info.stores_viewport_index = true;
-        break;
-    case IR::Attribute::PointSize:
-        info.stores_point_size = true;
-        break;
-    case IR::Attribute::PositionX:
-    case IR::Attribute::PositionY:
-    case IR::Attribute::PositionZ:
-    case IR::Attribute::PositionW:
-        info.stores_position = true;
-        break;
-    case IR::Attribute::ColorFrontDiffuseR:
-    case IR::Attribute::ColorFrontDiffuseG:
-    case IR::Attribute::ColorFrontDiffuseB:
-    case IR::Attribute::ColorFrontDiffuseA:
-        info.stores_color_front_diffuse = true;
-        info.stores_legacy_varyings = true;
-        break;
-    case IR::Attribute::ColorFrontSpecularR:
-    case IR::Attribute::ColorFrontSpecularG:
-    case IR::Attribute::ColorFrontSpecularB:
-    case IR::Attribute::ColorFrontSpecularA:
-        info.stores_color_front_specular = true;
-        info.stores_legacy_varyings = true;
-        break;
-    case IR::Attribute::ColorBackDiffuseR:
-    case IR::Attribute::ColorBackDiffuseG:
-    case IR::Attribute::ColorBackDiffuseB:
-    case IR::Attribute::ColorBackDiffuseA:
-        info.stores_color_back_diffuse = true;
-        info.stores_legacy_varyings = true;
-        break;
-    case IR::Attribute::ColorBackSpecularR:
-    case IR::Attribute::ColorBackSpecularG:
-    case IR::Attribute::ColorBackSpecularB:
-    case IR::Attribute::ColorBackSpecularA:
-        info.stores_color_back_specular = true;
-        info.stores_legacy_varyings = true;
-        break;
-    case IR::Attribute::ClipDistance0:
-    case IR::Attribute::ClipDistance1:
-    case IR::Attribute::ClipDistance2:
-    case IR::Attribute::ClipDistance3:
-    case IR::Attribute::ClipDistance4:
-    case IR::Attribute::ClipDistance5:
-    case IR::Attribute::ClipDistance6:
-    case IR::Attribute::ClipDistance7:
-        info.stores_clip_distance = true;
-        break;
-    case IR::Attribute::FogCoordinate:
-        info.stores_fog_coordinate = true;
-        break;
-    case IR::Attribute::ViewportMask:
-        info.stores_viewport_mask = true;
-        break;
-    default:
-        throw NotImplementedException("Set attribute {}", attr);
-    }
-}
-
 void GetPatch(Info& info, IR::Patch patch) {
     if (!IR::IsGeneric(patch)) {
         throw NotImplementedException("Reading non-generic patch {}", patch);
@@ -511,10 +387,10 @@ void VisitUsages(Info& info, IR::Inst& inst) {
         info.uses_demote_to_helper_invocation = true;
         break;
     case IR::Opcode::GetAttribute:
-        GetAttribute(info, inst.Arg(0).Attribute());
+        info.loads.mask[static_cast<size_t>(inst.Arg(0).Attribute())] = true;
         break;
     case IR::Opcode::SetAttribute:
-        SetAttribute(info, inst.Arg(0).Attribute());
+        info.stores.mask[static_cast<size_t>(inst.Arg(0).Attribute())] = true;
         break;
     case IR::Opcode::GetPatch:
         GetPatch(info, inst.Arg(0).Patch());
@@ -943,26 +819,78 @@ void GatherInfoFromHeader(Environment& env, Info& info) {
         if (!info.loads_indexed_attributes) {
             return;
         }
-        for (size_t i = 0; i < info.input_generics.size(); i++) {
-            info.input_generics[i].used |= header.ps.IsGenericVectorActive(i);
+        for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
+            const size_t offset{static_cast<size_t>(IR::Attribute::Generic0X) + index * 4};
+            const auto vector{header.ps.imap_generic_vector[index]};
+            info.loads.mask[offset + 0] = vector.x != PixelImap::Unused;
+            info.loads.mask[offset + 1] = vector.y != PixelImap::Unused;
+            info.loads.mask[offset + 2] = vector.z != PixelImap::Unused;
+            info.loads.mask[offset + 3] = vector.w != PixelImap::Unused;
         }
-        info.loads_position |= header.ps.imap_systemb.position != 0;
         return;
     }
     if (info.loads_indexed_attributes) {
-        for (size_t i = 0; i < info.input_generics.size(); i++) {
-            info.input_generics[i].used |= header.vtg.IsInputGenericVectorActive(i);
-        }
-        info.loads_position |= header.vtg.imap_systemb.position != 0;
-    }
-    if (info.stores_indexed_attributes) {
-        for (size_t i = 0; i < info.stores_generics.size(); i++) {
-            if (header.vtg.IsOutputGenericVectorActive(i)) {
-                info.stores_generics[i] = true;
+        for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
+            const IR::Attribute attribute{IR::Attribute::Generic0X + index * 4};
+            const auto mask = header.vtg.InputGeneric(index);
+            for (size_t i = 0; i < 4; ++i) {
+                info.loads.Set(attribute + i, mask[i]);
             }
         }
-        info.stores_clip_distance |= header.vtg.omap_systemc.clip_distances != 0;
-        info.stores_position |= header.vtg.omap_systemb.position != 0;
+        for (size_t index = 0; index < 8; ++index) {
+            const u16 mask{header.vtg.clip_distances};
+            info.loads.Set(IR::Attribute::ClipDistance0 + index, ((mask >> index) & 1) != 0);
+        }
+        info.loads.Set(IR::Attribute::PrimitiveId, header.vtg.imap_systemb.primitive_array_id != 0);
+        info.loads.Set(IR::Attribute::Layer, header.vtg.imap_systemb.rt_array_index != 0);
+        info.loads.Set(IR::Attribute::ViewportIndex, header.vtg.imap_systemb.viewport_index != 0);
+        info.loads.Set(IR::Attribute::PointSize, header.vtg.imap_systemb.point_size != 0);
+        info.loads.Set(IR::Attribute::PositionX, header.vtg.imap_systemb.position_x != 0);
+        info.loads.Set(IR::Attribute::PositionY, header.vtg.imap_systemb.position_y != 0);
+        info.loads.Set(IR::Attribute::PositionZ, header.vtg.imap_systemb.position_z != 0);
+        info.loads.Set(IR::Attribute::PositionW, header.vtg.imap_systemb.position_w != 0);
+        info.loads.Set(IR::Attribute::PointSpriteS, header.vtg.point_sprite_s != 0);
+        info.loads.Set(IR::Attribute::PointSpriteT, header.vtg.point_sprite_t != 0);
+        info.loads.Set(IR::Attribute::FogCoordinate, header.vtg.fog_coordinate != 0);
+        info.loads.Set(IR::Attribute::TessellationEvaluationPointU,
+                       header.vtg.tessellation_eval_point_u != 0);
+        info.loads.Set(IR::Attribute::TessellationEvaluationPointV,
+                       header.vtg.tessellation_eval_point_v != 0);
+        info.loads.Set(IR::Attribute::InstanceId, header.vtg.instance_id != 0);
+        info.loads.Set(IR::Attribute::VertexId, header.vtg.vertex_id != 0);
+        // TODO: Legacy varyings
+    }
+    if (info.stores_indexed_attributes) {
+        for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
+            const IR::Attribute attribute{IR::Attribute::Generic0X + index * 4};
+            const auto mask{header.vtg.OutputGeneric(index)};
+            for (size_t i = 0; i < 4; ++i) {
+                info.stores.Set(attribute + i, mask[i]);
+            }
+        }
+        for (size_t index = 0; index < 8; ++index) {
+            const u16 mask{header.vtg.omap_systemc.clip_distances};
+            info.stores.Set(IR::Attribute::ClipDistance0 + index, ((mask >> index) & 1) != 0);
+        }
+        info.stores.Set(IR::Attribute::PrimitiveId,
+                        header.vtg.omap_systemb.primitive_array_id != 0);
+        info.stores.Set(IR::Attribute::Layer, header.vtg.omap_systemb.rt_array_index != 0);
+        info.stores.Set(IR::Attribute::ViewportIndex, header.vtg.omap_systemb.viewport_index != 0);
+        info.stores.Set(IR::Attribute::PointSize, header.vtg.omap_systemb.point_size != 0);
+        info.stores.Set(IR::Attribute::PositionX, header.vtg.omap_systemb.position_x != 0);
+        info.stores.Set(IR::Attribute::PositionY, header.vtg.omap_systemb.position_y != 0);
+        info.stores.Set(IR::Attribute::PositionZ, header.vtg.omap_systemb.position_z != 0);
+        info.stores.Set(IR::Attribute::PositionW, header.vtg.omap_systemb.position_w != 0);
+        info.stores.Set(IR::Attribute::PointSpriteS, header.vtg.omap_systemc.point_sprite_s != 0);
+        info.stores.Set(IR::Attribute::PointSpriteT, header.vtg.omap_systemc.point_sprite_t != 0);
+        info.stores.Set(IR::Attribute::FogCoordinate, header.vtg.omap_systemc.fog_coordinate != 0);
+        info.stores.Set(IR::Attribute::TessellationEvaluationPointU,
+                        header.vtg.omap_systemc.tessellation_eval_point_u != 0);
+        info.stores.Set(IR::Attribute::TessellationEvaluationPointV,
+                        header.vtg.omap_systemc.tessellation_eval_point_v != 0);
+        info.stores.Set(IR::Attribute::InstanceId, header.vtg.omap_systemc.instance_id != 0);
+        info.stores.Set(IR::Attribute::VertexId, header.vtg.omap_systemc.vertex_id != 0);
+        // TODO: Legacy varyings
     }
 }
 } // Anonymous namespace

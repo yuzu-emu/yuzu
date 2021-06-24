@@ -171,7 +171,7 @@ void EmitCode(EmitContext& ctx, const IR::Program& program) {
 }
 
 std::string GlslVersionSpecifier(const EmitContext& ctx) {
-    if (ctx.uses_y_direction || ctx.info.stores_legacy_varyings || ctx.info.loads_legacy_varyings) {
+    if (ctx.uses_y_direction || ctx.info.stores.Legacy() || ctx.info.loads.Legacy()) {
         return " compatibility";
     }
     return "";

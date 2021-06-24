@@ -20,8 +20,8 @@ void InitializeOutputVaryings(EmitContext& ctx) {
     if (ctx.stage == Stage::VertexB || ctx.stage == Stage::Geometry) {
         ctx.Add("gl_Position=vec4(0,0,0,1);");
     }
-    for (size_t index = 0; index < ctx.info.stores_generics.size(); ++index) {
-        if (!ctx.info.stores_generics[index]) {
+    for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
+        if (!ctx.info.stores.Generic(index)) {
             continue;
         }
         const auto& info_array{ctx.output_generics.at(index)};

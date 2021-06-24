@@ -487,10 +487,9 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
     static_vector<VkVertexInputBindingDivisorDescriptionEXT, 32> vertex_binding_divisors;
     static_vector<VkVertexInputAttributeDescription, 32> vertex_attributes;
     if (key.state.dynamic_vertex_input) {
-        const auto& input_attributes = stage_infos[0].input_generics;
         for (size_t index = 0; index < key.state.attributes.size(); ++index) {
             const u32 type = key.state.DynamicAttributeType(index);
-            if (!input_attributes[index].used || type == 0) {
+            if (!stage_infos[0].loads.Generic(index) || type == 0) {
                 continue;
             }
             vertex_attributes.push_back({
@@ -526,10 +525,9 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
                 });
             }
         }
-        const auto& input_attributes = stage_infos[0].input_generics;
         for (size_t index = 0; index < key.state.attributes.size(); ++index) {
             const auto& attribute = key.state.attributes[index];
-            if (!attribute.enabled || !input_attributes[index].used) {
+            if (!attribute.enabled || !stage_infos[0].loads.Generic(index)) {
                 continue;
             }
             vertex_attributes.push_back({

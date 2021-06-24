@@ -46,7 +46,7 @@ void CollectInterpolationInfo(Environment& env, IR::Program& program) {
         return;
     }
     const ProgramHeader& sph{env.SPH()};
-    for (size_t index = 0; index < program.info.input_generics.size(); ++index) {
+    for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
         std::optional<PixelImap> imap;
         for (const PixelImap value : sph.ps.GenericInputMap(static_cast<u32>(index))) {
             if (value == PixelImap::Unused) {
@@ -60,7 +60,7 @@ void CollectInterpolationInfo(Environment& env, IR::Program& program) {
         if (!imap) {
             continue;
         }
-        program.info.input_generics[index].interpolation = [&] {
+        program.info.interpolation[index] = [&] {
             switch (*imap) {
             case PixelImap::Unused:
             case PixelImap::Perspective:
@@ -140,6 +140,11 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
         program.output_topology = sph.common3.output_topology;
         program.output_vertices = sph.common4.max_output_vertices;
         program.invocations = sph.common2.threads_per_input_primitive;
+        program.is_geometry_passthrough = sph.common0.geometry_passthrough != 0;
+        if (program.is_geometry_passthrough) {
+            const auto mask{env.GpPassthroughMask()};
+            program.info.passthrough.mask |= ~Common::BitCast<std::bitset<256>>(mask);
+        }
         break;
     }
     case Stage::Compute:
@@ -194,12 +199,9 @@ IR::Program MergeDualVertexPrograms(IR::Program& vertex_a, IR::Program& vertex_b
     result.stage = Stage::VertexB;
     result.info = vertex_a.info;
     result.local_memory_size = std::max(vertex_a.local_memory_size, vertex_b.local_memory_size);
-    for (size_t index = 0; index < 32; ++index) {
-        result.info.input_generics[index].used |= vertex_b.info.input_generics[index].used;
-        if (vertex_b.info.stores_generics[index]) {
-            result.info.stores_generics[index] = true;
-        }
-    }
+    result.info.loads.mask |= vertex_b.info.loads.mask;
+    result.info.stores.mask |= vertex_b.info.stores.mask;
+
     Optimization::JoinTextureInfo(result.info, vertex_b.info);
     Optimization::JoinStorageInfo(result.info, vertex_b.info);
     Optimization::DeadCodeEliminationPass(result);

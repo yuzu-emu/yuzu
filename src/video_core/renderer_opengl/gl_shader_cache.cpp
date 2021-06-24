@@ -61,10 +61,10 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
                                     bool glasm_use_storage_buffers, bool use_assembly_shaders) {
     Shader::RuntimeInfo info;
     if (previous_program) {
-        info.previous_stage_stores_generic = previous_program->info.stores_generics;
+        info.previous_stage_stores = previous_program->info.stores;
     } else {
-        // Mark all stores as available
-        info.previous_stage_stores_generic.flip();
+        // Mark all stores as available for vertex shaders
+        info.previous_stage_stores.mask.set();
     }
     switch (program.stage) {
     case Shader::Stage::VertexB:
@@ -187,6 +187,7 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
           .support_demote_to_helper_invocation = false,
           .support_int64_atomics = false,
           .support_derivative_control = device.HasDerivativeControl(),
+          .support_geometry_shader_passthrough = false, // TODO
           .support_gl_nv_gpu_shader_5 = device.HasNvGpuShader5(),
           .support_gl_amd_gpu_shader_half_float = device.HasAmdShaderHalfFloat(),
           .support_gl_texture_shadow_lod = device.HasTextureShadowLod(),

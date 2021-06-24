@@ -212,22 +212,22 @@ std::string_view OutputPrimitive(OutputTopology topology) {
 }
 
 void SetupLegacyOutPerVertex(EmitContext& ctx, std::string& header) {
-    if (!ctx.info.stores_legacy_varyings) {
+    if (!ctx.info.stores.Legacy()) {
         return;
     }
-    if (ctx.info.stores_fixed_fnc_textures) {
+    if (ctx.info.stores.FixedFunctionTexture()) {
         header += "vec4 gl_TexCoord[8];";
     }
-    if (ctx.info.stores_color_front_diffuse) {
+    if (ctx.info.stores.AnyComponent(IR::Attribute::ColorFrontDiffuseR)) {
         header += "vec4 gl_FrontColor;";
     }
-    if (ctx.info.stores_color_front_specular) {
+    if (ctx.info.stores.AnyComponent(IR::Attribute::ColorFrontSpecularR)) {
         header += "vec4 gl_FrontSecondaryColor;";
     }
-    if (ctx.info.stores_color_back_diffuse) {
+    if (ctx.info.stores.AnyComponent(IR::Attribute::ColorBackDiffuseR)) {
         header += "vec4 gl_BackColor;";
     }
-    if (ctx.info.stores_color_back_specular) {
+    if (ctx.info.stores.AnyComponent(IR::Attribute::ColorBackSpecularR)) {
         header += "vec4 gl_BackSecondaryColor;";
     }
 }
@@ -237,32 +237,32 @@ void SetupOutPerVertex(EmitContext& ctx, std::string& header) {
         return;
     }
     header += "out gl_PerVertex{vec4 gl_Position;";
-    if (ctx.info.stores_point_size) {
+    if (ctx.info.stores[IR::Attribute::PointSize]) {
         header += "float gl_PointSize;";
     }
-    if (ctx.info.stores_clip_distance) {
+    if (ctx.info.stores.ClipDistances()) {
         header += "float gl_ClipDistance[];";
     }
-    if (ctx.info.stores_viewport_index && ctx.profile.support_viewport_index_layer_non_geometry &&
-        ctx.stage != Stage::Geometry) {
+    if (ctx.info.stores[IR::Attribute::ViewportIndex] &&
+        ctx.profile.support_viewport_index_layer_non_geometry && ctx.stage != Stage::Geometry) {
         header += "int gl_ViewportIndex;";
     }
     SetupLegacyOutPerVertex(ctx, header);
     header += "};";
-    if (ctx.info.stores_viewport_index && ctx.stage == Stage::Geometry) {
+    if (ctx.info.stores[IR::Attribute::ViewportIndex] && ctx.stage == Stage::Geometry) {
         header += "out int gl_ViewportIndex;";
     }
 }
 
 void SetupLegacyInPerFragment(EmitContext& ctx, std::string& header) {
-    if (!ctx.info.loads_legacy_varyings) {
+    if (!ctx.info.loads.Legacy()) {
         return;
     }
     header += "in gl_PerFragment{";
-    if (ctx.info.loads_fixed_fnc_textures) {
+    if (ctx.info.loads.FixedFunctionTexture()) {
         header += "vec4 gl_TexCoord[8];";
     }
-    if (ctx.info.loads_color_front_diffuse) {
+    if (ctx.info.loads.AnyComponent(IR::Attribute::ColorFrontDiffuseR)) {
         header += "vec4 gl_Color;";
     }
     header += "};";
@@ -325,14 +325,13 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     SetupOutPerVertex(*this, header);
     SetupLegacyInPerFragment(*this, header);
 
-    for (size_t index = 0; index < info.input_generics.size(); ++index) {
-        const auto& generic{info.input_generics[index]};
-        if (!generic.used || !runtime_info.previous_stage_stores_generic[index]) {
+    for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
+        if (!info.loads.Generic(index) || !runtime_info.previous_stage_stores.Generic(index)) {
             continue;
         }
-        header +=
-            fmt::format("layout(location={}){}in vec4 in_attr{}{};", index,
-                        InterpDecorator(generic.interpolation), index, InputArrayDecorator(stage));
+        header += fmt::format("layout(location={}){}in vec4 in_attr{}{};", index,
+                              InterpDecorator(info.interpolation[index]), index,
+                              InputArrayDecorator(stage));
     }
     for (size_t index = 0; index < info.uses_patches.size(); ++index) {
         if (!info.uses_patches[index]) {
@@ -349,11 +348,10 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
             header += fmt::format("layout(location={})out vec4 frag_color{};", index, index);
         }
     }
-    for (size_t index = 0; index < info.stores_generics.size(); ++index) {
-        if (!info.stores_generics[index]) {
-            continue;
+    for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
+        if (info.stores.Generic(index)) {
+            DefineGenericOutput(index, program.invocations);
         }
-        DefineGenericOutput(index, program.invocations);
     }
     DefineConstantBuffers(bindings);
     DefineStorageBuffers(bindings);
@@ -398,14 +396,14 @@ void EmitContext::SetupExtensions() {
             header += "#extension GL_NV_shader_thread_shuffle : enable\n";
         }
     }
-    if ((info.stores_viewport_index || info.stores_layer) &&
+    if ((info.stores[IR::Attribute::ViewportIndex] || info.stores[IR::Attribute::Layer]) &&
         profile.support_viewport_index_layer_non_geometry && stage != Stage::Geometry) {
         header += "#extension GL_ARB_shader_viewport_layer_array : enable\n";
     }
     if (info.uses_sparse_residency && profile.support_gl_sparse_textures) {
         header += "#extension GL_ARB_sparse_texture2 : enable\n";
     }
-    if (info.stores_viewport_mask && profile.support_viewport_mask) {
+    if (info.stores[IR::Attribute::ViewportMask] && profile.support_viewport_mask) {
         header += "#extension GL_NV_viewport_array2 : enable\n";
     }
     if (info.uses_typeless_image_reads) {
@@ -535,20 +533,20 @@ void EmitContext::DefineHelperFunctions() {
             fmt::format("float IndexedAttrLoad(int offset{}){{int base_index=offset>>2;uint "
                         "masked_index=uint(base_index)&3u;switch(base_index>>2){{",
                         vertex_arg)};
-        if (info.loads_position) {
+        if (info.loads.AnyComponent(IR::Attribute::PositionX)) {
             const auto position_idx{is_array ? "gl_in[vertex]." : ""};
             func += fmt::format("case {}:return {}{}[masked_index];",
                                 static_cast<u32>(IR::Attribute::PositionX) >> 2, position_idx,
                                 position_name);
         }
         const u32 base_attribute_value = static_cast<u32>(IR::Attribute::Generic0X) >> 2;
-        for (u32 i = 0; i < info.input_generics.size(); ++i) {
-            if (!info.input_generics[i].used) {
+        for (u32 index = 0; index < IR::NUM_GENERICS; ++index) {
+            if (!info.loads.Generic(index)) {
                 continue;
             }
             const auto vertex_idx{is_array ? "[vertex]" : ""};
             func += fmt::format("case {}:return in_attr{}{}[masked_index];",
-                                base_attribute_value + i, i, vertex_idx);
+                                base_attribute_value + index, index, vertex_idx);
         }
         func += "default: return 0.0;}}";
         header += func;

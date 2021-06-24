@@ -222,6 +222,8 @@ enum class Attribute : u64 {
     FrontFace = 255,
 };
 
+constexpr size_t NUM_GENERICS = 32;
+
 [[nodiscard]] bool IsGeneric(Attribute attribute) noexcept;
 
 [[nodiscard]] u32 GenericAttributeIndex(Attribute attribute);
@@ -229,6 +231,10 @@ enum class Attribute : u64 {
 [[nodiscard]] u32 GenericAttributeElement(Attribute attribute);
 
 [[nodiscard]] std::string NameOf(Attribute attribute);
+
+[[nodiscard]] constexpr IR::Attribute operator+(IR::Attribute attribute, size_t value) noexcept {
+    return static_cast<IR::Attribute>(static_cast<size_t>(attribute) + value);
+}
 
 } // namespace Shader::IR
 

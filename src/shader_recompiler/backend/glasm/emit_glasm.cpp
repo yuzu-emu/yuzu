@@ -296,8 +296,10 @@ void SetupOptions(const IR::Program& program, const Profile& profile,
     if (info.uses_sparse_residency) {
         header += "OPTION EXT_sparse_texture2;";
     }
-    if (((info.stores_viewport_index || info.stores_layer) && stage != Stage::Geometry) ||
-        info.stores_viewport_mask) {
+    const bool stores_viewport_layer{info.stores[IR::Attribute::ViewportIndex] ||
+                                     info.stores[IR::Attribute::Layer]};
+    if ((stage != Stage::Geometry && stores_viewport_layer) ||
+        info.stores[IR::Attribute::ViewportMask]) {
         if (profile.support_viewport_index_layer_non_geometry) {
             header += "OPTION NV_viewport_array2;";
         }

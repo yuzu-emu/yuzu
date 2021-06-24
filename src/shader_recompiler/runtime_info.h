@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "common/common_types.h"
+#include "shader_recompiler/varying_state.h"
 
 namespace Shader {
 
@@ -60,7 +61,7 @@ struct TransformFeedbackVarying {
 
 struct RuntimeInfo {
     std::array<AttributeType, 32> generic_input_types{};
-    std::bitset<32> previous_stage_stores_generic{};
+    VaryingState previous_stage_stores;
 
     bool convert_depth_mode{};
     bool force_early_z{};

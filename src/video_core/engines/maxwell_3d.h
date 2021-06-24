@@ -961,7 +961,11 @@ public:
 
                 SamplerIndex sampler_index;
 
-                INSERT_PADDING_WORDS_NOINIT(0x25);
+                INSERT_PADDING_WORDS_NOINIT(0x2);
+
+                std::array<u32, 8> gp_passthrough_mask;
+
+                INSERT_PADDING_WORDS_NOINIT(0x1B);
 
                 u32 depth_test_enable;
 
@@ -1628,6 +1632,7 @@ ASSERT_REG_POSITION(zeta_width, 0x48a);
 ASSERT_REG_POSITION(zeta_height, 0x48b);
 ASSERT_REG_POSITION(zeta_depth, 0x48c);
 ASSERT_REG_POSITION(sampler_index, 0x48D);
+ASSERT_REG_POSITION(gp_passthrough_mask, 0x490);
 ASSERT_REG_POSITION(depth_test_enable, 0x4B3);
 ASSERT_REG_POSITION(independent_blend_enable, 0x4B9);
 ASSERT_REG_POSITION(depth_write_enabled, 0x4BA);

@@ -37,7 +37,9 @@ struct ProgramHeader {
         BitField<15, 1, u32> kills_pixels;
         BitField<16, 1, u32> does_global_store;
         BitField<17, 4, u32> sass_version;
-        BitField<21, 5, u32> reserved;
+        BitField<21, 2, u32> reserved1;
+        BitField<24, 1, u32> geometry_passthrough;
+        BitField<25, 1, u32> reserved2;
         BitField<26, 1, u32> does_load_or_store;
         BitField<27, 1, u32> does_fp64;
         BitField<28, 4, u32> stream_out_mask;
@@ -79,24 +81,10 @@ struct ProgramHeader {
                 BitField<5, 1, u8> position_y;
                 BitField<6, 1, u8> position_z;
                 BitField<7, 1, u8> position_w;
-                BitField<0, 4, u8> first;
-                BitField<4, 4, u8> position;
                 u8 raw;
             } imap_systemb;
 
-            union {
-                BitField<0, 1, u8> x;
-                BitField<1, 1, u8> y;
-                BitField<2, 1, u8> z;
-                BitField<3, 1, u8> w;
-                BitField<4, 1, u8> x2;
-                BitField<5, 1, u8> y2;
-                BitField<6, 1, u8> z2;
-                BitField<7, 1, u8> w2;
-                BitField<0, 4, u8> first;
-                BitField<4, 4, u8> second;
-                u8 raw;
-            } imap_generic_vector[16];
+            std::array<u8, 16> imap_generic_vector;
 
             INSERT_PADDING_BYTES_NOINIT(2); // ImapColor
             union {
@@ -122,24 +110,10 @@ struct ProgramHeader {
                 BitField<5, 1, u8> position_y;
                 BitField<6, 1, u8> position_z;
                 BitField<7, 1, u8> position_w;
-                BitField<0, 4, u8> first;
-                BitField<4, 4, u8> position;
                 u8 raw;
             } omap_systemb;
 
-            union {
-                BitField<0, 1, u8> x;
-                BitField<1, 1, u8> y;
-                BitField<2, 1, u8> z;
-                BitField<3, 1, u8> w;
-                BitField<4, 1, u8> x2;
-                BitField<5, 1, u8> y2;
-                BitField<6, 1, u8> z2;
-                BitField<7, 1, u8> w2;
-                BitField<0, 4, u8> first;
-                BitField<4, 4, u8> second;
-                u8 raw;
-            } omap_generic_vector[16];
+            std::array<u8, 16> omap_generic_vector;
 
             INSERT_PADDING_BYTES_NOINIT(2); // OmapColor
 
@@ -157,18 +131,24 @@ struct ProgramHeader {
             INSERT_PADDING_BYTES_NOINIT(5); // OmapFixedFncTexture[10]
             INSERT_PADDING_BYTES_NOINIT(1); // OmapReserved
 
-            [[nodiscard]] bool IsInputGenericVectorActive(size_t index) const {
-                if ((index & 1) == 0) {
-                    return imap_generic_vector[index >> 1].first != 0;
-                }
-                return imap_generic_vector[index >> 1].second != 0;
+            [[nodiscard]] std::array<bool, 4> InputGeneric(size_t index) const noexcept {
+                const int data{imap_generic_vector[index >> 1] >> ((index % 2) * 4)};
+                return {
+                    (data & 1) != 0,
+                    (data & 2) != 0,
+                    (data & 4) != 0,
+                    (data & 8) != 0,
+                };
             }
 
-            [[nodiscard]] bool IsOutputGenericVectorActive(size_t index) const {
-                if ((index & 1) == 0) {
-                    return omap_generic_vector[index >> 1].first != 0;
-                }
-                return omap_generic_vector[index >> 1].second != 0;
+            [[nodiscard]] std::array<bool, 4> OutputGeneric(size_t index) const noexcept {
+                const int data{omap_generic_vector[index >> 1] >> ((index % 2) * 4)};
+                return {
+                    (data & 1) != 0,
+                    (data & 2) != 0,
+                    (data & 4) != 0,
+                    (data & 8) != 0,
+                };
             }
         } vtg;
 

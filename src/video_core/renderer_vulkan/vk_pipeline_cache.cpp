@@ -123,18 +123,21 @@ Shader::AttributeType AttributeType(const FixedPipelineState& state, size_t inde
     return Shader::AttributeType::Disabled;
 }
 
-Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineCacheKey& key,
+Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> programs,
+                                    const GraphicsPipelineCacheKey& key,
                                     const Shader::IR::Program& program,
                                     const Shader::IR::Program* previous_program) {
     Shader::RuntimeInfo info;
     if (previous_program) {
-        info.previous_stage_stores_generic = previous_program->info.stores_generics;
+        info.previous_stage_stores = previous_program->info.stores;
+        if (previous_program->is_geometry_passthrough) {
+            info.previous_stage_stores.mask |= previous_program->info.passthrough.mask;
+        }
     } else {
-        // Mark all stores as available
-        info.previous_stage_stores_generic.flip();
+        info.previous_stage_stores.mask.set();
     }
     const Shader::Stage stage{program.stage};
-    const bool has_geometry{key.unique_hashes[4] != 0};
+    const bool has_geometry{key.unique_hashes[4] != 0 && !programs[4].is_geometry_passthrough};
     const bool gl_ndc{key.state.ndc_minus_one_to_one != 0};
     const float point_size{Common::BitCast<float>(key.state.point_size)};
     switch (stage) {
@@ -302,6 +305,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxw
         .support_demote_to_helper_invocation = true,
         .support_int64_atomics = device.IsExtShaderAtomicInt64Supported(),
         .support_derivative_control = true,
+        .support_geometry_shader_passthrough = device.IsNvGeometryShaderPassthroughSupported(),
 
         .warp_size_potentially_larger_than_guest = device.IsWarpSizePotentiallyBiggerThanGuest(),
 
@@ -518,7 +522,7 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
         const size_t stage_index{index - 1};
         infos[stage_index] = &program.info;
 
-        const Shader::RuntimeInfo runtime_info{MakeRuntimeInfo(key, program, previous_stage)};
+        const auto runtime_info{MakeRuntimeInfo(programs, key, program, previous_stage)};
         const std::vector<u32> code{EmitSPIRV(profile, runtime_info, program, binding)};
         device.SaveShader(code);
         modules[stage_index] = BuildShader(device, code);

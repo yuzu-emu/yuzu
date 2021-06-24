@@ -194,6 +194,11 @@ public:
         return nv_viewport_array2;
     }
 
+    /// Returns true if the device supports VK_NV_geometry_shader_passthrough.
+    bool IsNvGeometryShaderPassthroughSupported() const {
+        return nv_geometry_shader_passthrough;
+    }
+
     /// Returns true if the device supports VK_KHR_uniform_buffer_standard_layout.
     bool IsKhrUniformBufferStandardLayoutSupported() const {
         return khr_uniform_buffer_standard_layout;
@@ -363,6 +368,7 @@ private:
     bool is_blit_depth_stencil_supported{};     ///< Support for blitting from and to depth stencil.
     bool nv_viewport_swizzle{};                 ///< Support for VK_NV_viewport_swizzle.
     bool nv_viewport_array2{};                  ///< Support for VK_NV_viewport_array2.
+    bool nv_geometry_shader_passthrough{};      ///< Support for VK_NV_geometry_shader_passthrough.
     bool khr_uniform_buffer_standard_layout{};  ///< Support for scalar uniform buffer layouts.
     bool khr_spirv_1_4{};                       ///< Support for VK_KHR_spirv_1_4.
     bool khr_workgroup_memory_explicit_layout{}; ///< Support for explicit workgroup layouts.

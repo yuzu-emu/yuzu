@@ -27,6 +27,7 @@ struct Program {
     u32 invocations{};
     u32 local_memory_size{};
     u32 shared_memory_size{};
+    bool is_geometry_passthrough{};
 };
 
 [[nodiscard]] std::string DumpProgram(const Program& program);
