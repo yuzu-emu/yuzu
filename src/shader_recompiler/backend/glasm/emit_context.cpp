@@ -83,13 +83,14 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         break;
     }
     const std::string_view attr_stage{stage == Stage::Fragment ? "fragment" : "vertex"};
+    const VaryingState loads{info.loads.mask | info.passthrough.mask};
     for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
-        if (info.loads.Generic(index)) {
+        if (loads.Generic(index)) {
             Add("{}ATTRIB in_attr{}[]={{{}.attrib[{}..{}]}};",
                 InterpDecorator(info.interpolation[index]), index, attr_stage, index, index);
         }
     }
-    if (IsInputArray(stage) && info.loads.AnyComponent(IR::Attribute::PositionX)) {
+    if (IsInputArray(stage) && loads.AnyComponent(IR::Attribute::PositionX)) {
         Add("ATTRIB vertex_position=vertex.position;");
     }
     if (info.uses_invocation_id) {
