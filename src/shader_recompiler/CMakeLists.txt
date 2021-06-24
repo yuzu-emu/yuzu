@@ -229,6 +229,7 @@ add_library(shader_recompiler STATIC
     program_header.h
     runtime_info.h
     shader_info.h
+    varying_state.h
 )
 
 target_link_libraries(shader_recompiler PUBLIC common fmt::fmt sirit)

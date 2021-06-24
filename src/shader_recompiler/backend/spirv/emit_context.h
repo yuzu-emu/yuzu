@@ -300,7 +300,7 @@ private:
     void DefineAttributeMemAccess(const Info& info);
     void DefineGlobalMemoryFunctions(const Info& info);
 
-    void DefineInputs(const Info& info);
+    void DefineInputs(const IR::Program& program);
     void DefineOutputs(const IR::Program& program);
 };
 

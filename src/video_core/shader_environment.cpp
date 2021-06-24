@@ -22,7 +22,7 @@
 namespace VideoCommon {
 
 constexpr std::array<char, 8> MAGIC_NUMBER{'y', 'u', 'z', 'u', 'c', 'a', 'c', 'h'};
-constexpr u32 CACHE_VERSION = 4;
+constexpr u32 CACHE_VERSION = 5;
 
 constexpr size_t INST_SIZE = sizeof(u64);
 
@@ -155,6 +155,10 @@ void GenericEnvironment::Serialize(std::ofstream& file) const {
             .write(reinterpret_cast<const char*>(&shared_memory_size), sizeof(shared_memory_size));
     } else {
         file.write(reinterpret_cast<const char*>(&sph), sizeof(sph));
+        if (stage == Shader::Stage::Geometry) {
+            file.write(reinterpret_cast<const char*>(&gp_passthrough_mask),
+                       sizeof(gp_passthrough_mask));
+        }
     }
 }
 
@@ -202,6 +206,7 @@ GraphicsEnvironment::GraphicsEnvironment(Tegra::Engines::Maxwell3D& maxwell3d_,
                                          u32 start_address_)
     : GenericEnvironment{gpu_memory_, program_base_, start_address_}, maxwell3d{&maxwell3d_} {
     gpu_memory->ReadBlock(program_base + start_address, &sph, sizeof(sph));
+    gp_passthrough_mask = maxwell3d->regs.gp_passthrough_mask;
     switch (program) {
     case Maxwell::ShaderProgram::VertexA:
         stage = Shader::Stage::VertexA;
@@ -319,6 +324,9 @@ void FileEnvironment::Deserialize(std::ifstream& file) {
             .read(reinterpret_cast<char*>(&shared_memory_size), sizeof(shared_memory_size));
     } else {
         file.read(reinterpret_cast<char*>(&sph), sizeof(sph));
+        if (stage == Shader::Stage::Geometry) {
+            file.read(reinterpret_cast<char*>(&gp_passthrough_mask), sizeof(gp_passthrough_mask));
+        }
     }
 }
 

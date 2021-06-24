@@ -83,14 +83,13 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         break;
     }
     const std::string_view attr_stage{stage == Stage::Fragment ? "fragment" : "vertex"};
-    for (size_t index = 0; index < info.input_generics.size(); ++index) {
-        const auto& generic{info.input_generics[index]};
-        if (generic.used) {
+    for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
+        if (info.loads.Generic(index)) {
             Add("{}ATTRIB in_attr{}[]={{{}.attrib[{}..{}]}};",
-                InterpDecorator(generic.interpolation), index, attr_stage, index, index);
+                InterpDecorator(info.interpolation[index]), index, attr_stage, index, index);
         }
     }
-    if (IsInputArray(stage) && info.loads_position) {
+    if (IsInputArray(stage) && info.loads.AnyComponent(IR::Attribute::PositionX)) {
         Add("ATTRIB vertex_position=vertex.position;");
     }
     if (info.uses_invocation_id) {
@@ -102,7 +101,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
     if (info.stores_tess_level_inner) {
         Add("OUTPUT result_patch_tessinner[]={{result.patch.tessinner[0..1]}};");
     }
-    if (info.stores_clip_distance) {
+    if (info.stores.ClipDistances()) {
         Add("OUTPUT result_clip[]={{result.clip[0..7]}};");
     }
     for (size_t index = 0; index < info.uses_patches.size(); ++index) {
@@ -124,8 +123,8 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
             Add("OUTPUT frag_color{}=result.color[{}];", index, index);
         }
     }
-    for (size_t index = 0; index < info.stores_generics.size(); ++index) {
-        if (info.stores_generics[index]) {
+    for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
+        if (info.stores.Generic(index)) {
             Add("OUTPUT out_attr{}[]={{result.attrib[{}..{}]}};", index, index, index);
         }
     }

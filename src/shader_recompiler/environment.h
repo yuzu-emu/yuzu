@@ -31,6 +31,10 @@ public:
         return sph;
     }
 
+    [[nodiscard]] const std::array<u32, 8>& GpPassthroughMask() const noexcept {
+        return gp_passthrough_mask;
+    }
+
     [[nodiscard]] Stage ShaderStage() const noexcept {
         return stage;
     }
@@ -41,6 +45,7 @@ public:
 
 protected:
     ProgramHeader sph{};
+    std::array<u32, 8> gp_passthrough_mask{};
     Stage stage{};
     u32 start_address{};
 };

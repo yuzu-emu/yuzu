@@ -261,7 +261,7 @@ void EmitGetAttributeIndexed(EmitContext& ctx, IR::Inst& inst, ScalarS32 offset,
                                 fmt::format("{}.z", value), fmt::format("{}.w", value)};
         read(compare_index, values);
     }};
-    if (ctx.info.loads_position) {
+    if (ctx.info.loads.AnyComponent(IR::Attribute::PositionX)) {
         const u32 index{static_cast<u32>(IR::Attribute::PositionX)};
         if (IsInputArray(ctx.stage)) {
             read_swizzled(index, fmt::format("vertex_position{}", VertexIndex(ctx, vertex)));
@@ -269,8 +269,8 @@ void EmitGetAttributeIndexed(EmitContext& ctx, IR::Inst& inst, ScalarS32 offset,
             read_swizzled(index, fmt::format("{}.position", ctx.attrib_name));
         }
     }
-    for (u32 index = 0; index < ctx.info.input_generics.size(); ++index) {
-        if (!ctx.info.input_generics[index].used) {
+    for (u32 index = 0; index < static_cast<u32>(IR::NUM_GENERICS); ++index) {
+        if (!ctx.info.loads.Generic(index)) {
             continue;
         }
         read_swizzled(index, fmt::format("in_attr{}{}[0]", index, VertexIndex(ctx, vertex)));

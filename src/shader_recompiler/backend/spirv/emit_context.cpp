@@ -557,7 +557,7 @@ void EmitContext::DefineCommonConstants() {
 }
 
 void EmitContext::DefineInterfaces(const IR::Program& program) {
-    DefineInputs(program.info);
+    DefineInputs(program);
     DefineOutputs(program);
 }
 
@@ -693,16 +693,16 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
         const Id compare_index{OpShiftRightArithmetic(U32[1], base_index, Const(2U))};
         std::vector<Sirit::Literal> literals;
         std::vector<Id> labels;
-        if (info.loads_position) {
+        if (info.loads.AnyComponent(IR::Attribute::PositionX)) {
             literals.push_back(static_cast<u32>(IR::Attribute::PositionX) >> 2);
             labels.push_back(OpLabel());
         }
         const u32 base_attribute_value = static_cast<u32>(IR::Attribute::Generic0X) >> 2;
-        for (u32 i = 0; i < info.input_generics.size(); ++i) {
-            if (!info.input_generics[i].used) {
+        for (u32 index = 0; index < static_cast<u32>(IR::NUM_GENERICS); ++index) {
+            if (!info.loads.Generic(index)) {
                 continue;
             }
-            literals.push_back(base_attribute_value + i);
+            literals.push_back(base_attribute_value + index);
             labels.push_back(OpLabel());
         }
         OpSelectionMerge(end_block, spv::SelectionControlMask::MaskNone);
@@ -710,7 +710,7 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
         AddLabel(default_label);
         OpReturnValue(Const(0.0f));
         size_t label_index{0};
-        if (info.loads_position) {
+        if (info.loads.AnyComponent(IR::Attribute::PositionX)) {
             AddLabel(labels[label_index]);
             const Id pointer{is_array
                                  ? OpAccessChain(input_f32, input_position, vertex, masked_index)
@@ -719,18 +719,18 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
             OpReturnValue(result);
             ++label_index;
         }
-        for (size_t i = 0; i < info.input_generics.size(); i++) {
-            if (!info.input_generics[i].used) {
+        for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
+            if (!info.loads.Generic(index)) {
                 continue;
             }
             AddLabel(labels[label_index]);
-            const auto type{AttrTypes(*this, static_cast<u32>(i))};
+            const auto type{AttrTypes(*this, static_cast<u32>(index))};
             if (!type) {
                 OpReturnValue(Const(0.0f));
                 ++label_index;
                 continue;
             }
-            const Id generic_id{input_generics.at(i)};
+            const Id generic_id{input_generics.at(index)};
             const Id pointer{is_array
                                  ? OpAccessChain(type->pointer, generic_id, vertex, masked_index)
                                  : OpAccessChain(type->pointer, generic_id, masked_index)};
@@ -758,19 +758,19 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
         const Id compare_index{OpShiftRightArithmetic(U32[1], base_index, Const(2U))};
         std::vector<Sirit::Literal> literals;
         std::vector<Id> labels;
-        if (info.stores_position) {
+        if (info.stores.AnyComponent(IR::Attribute::PositionX)) {
             literals.push_back(static_cast<u32>(IR::Attribute::PositionX) >> 2);
             labels.push_back(OpLabel());
         }
         const u32 base_attribute_value = static_cast<u32>(IR::Attribute::Generic0X) >> 2;
-        for (size_t i = 0; i < info.stores_generics.size(); i++) {
-            if (!info.stores_generics[i]) {
+        for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
+            if (!info.stores.Generic(index)) {
                 continue;
             }
-            literals.push_back(base_attribute_value + static_cast<u32>(i));
+            literals.push_back(base_attribute_value + static_cast<u32>(index));
             labels.push_back(OpLabel());
         }
-        if (info.stores_clip_distance) {
+        if (info.stores.ClipDistances()) {
             literals.push_back(static_cast<u32>(IR::Attribute::ClipDistance0) >> 2);
             labels.push_back(OpLabel());
             literals.push_back(static_cast<u32>(IR::Attribute::ClipDistance4) >> 2);
@@ -781,28 +781,28 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
         AddLabel(default_label);
         OpReturn();
         size_t label_index{0};
-        if (info.stores_position) {
+        if (info.stores.AnyComponent(IR::Attribute::PositionX)) {
             AddLabel(labels[label_index]);
             const Id pointer{OpAccessChain(output_f32, output_position, masked_index)};
             OpStore(pointer, store_value);
             OpReturn();
             ++label_index;
         }
-        for (size_t i = 0; i < info.stores_generics.size(); ++i) {
-            if (!info.stores_generics[i]) {
+        for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
+            if (!info.stores.Generic(index)) {
                 continue;
             }
-            if (output_generics[i][0].num_components != 4) {
+            if (output_generics[index][0].num_components != 4) {
                 throw NotImplementedException("Physical stores and transform feedbacks");
             }
             AddLabel(labels[label_index]);
-            const Id generic_id{output_generics[i][0].id};
+            const Id generic_id{output_generics[index][0].id};
             const Id pointer{OpAccessChain(output_f32, generic_id, masked_index)};
             OpStore(pointer, store_value);
             OpReturn();
             ++label_index;
         }
-        if (info.stores_clip_distance) {
+        if (info.stores.ClipDistances()) {
             AddLabel(labels[label_index]);
             const Id pointer{OpAccessChain(output_f32, clip_distances, masked_index)};
             OpStore(pointer, store_value);
@@ -1146,7 +1146,10 @@ void EmitContext::DefineImages(const Info& info, u32& binding) {
     }
 }
 
-void EmitContext::DefineInputs(const Info& info) {
+void EmitContext::DefineInputs(const IR::Program& program) {
+    const Info& info{program.info};
+    const VaryingState loads{info.loads.mask | info.passthrough.mask};
+
     if (info.uses_workgroup_id) {
         workgroup_id = DefineInput(*this, U32[3], false, spv::BuiltIn::WorkgroupId);
     }
@@ -1183,15 +1186,20 @@ void EmitContext::DefineInputs(const Info& info) {
         fswzadd_lut_b =
             ConstantComposite(F32[4], f32_minus_one, f32_minus_one, f32_one, f32_minus_one);
     }
-    if (info.loads_primitive_id) {
+    if (loads[IR::Attribute::PrimitiveId]) {
         primitive_id = DefineInput(*this, U32[1], false, spv::BuiltIn::PrimitiveId);
     }
-    if (info.loads_position) {
+    if (loads.AnyComponent(IR::Attribute::PositionX)) {
         const bool is_fragment{stage != Stage::Fragment};
         const spv::BuiltIn built_in{is_fragment ? spv::BuiltIn::Position : spv::BuiltIn::FragCoord};
         input_position = DefineInput(*this, F32[4], true, built_in);
+        if (profile.support_geometry_shader_passthrough) {
+            if (info.passthrough.AnyComponent(IR::Attribute::PositionX)) {
+                Decorate(input_position, spv::Decoration::PassthroughNV);
+            }
+        }
     }
-    if (info.loads_instance_id) {
+    if (loads[IR::Attribute::InstanceId]) {
         if (profile.support_vertex_instance_id) {
             instance_id = DefineInput(*this, U32[1], true, spv::BuiltIn::InstanceId);
         } else {
@@ -1199,7 +1207,7 @@ void EmitContext::DefineInputs(const Info& info) {
             base_instance = DefineInput(*this, U32[1], true, spv::BuiltIn::BaseInstance);
         }
     }
-    if (info.loads_vertex_id) {
+    if (loads[IR::Attribute::VertexId]) {
         if (profile.support_vertex_instance_id) {
             vertex_id = DefineInput(*this, U32[1], true, spv::BuiltIn::VertexId);
         } else {
@@ -1207,24 +1215,24 @@ void EmitContext::DefineInputs(const Info& info) {
             base_vertex = DefineInput(*this, U32[1], true, spv::BuiltIn::BaseVertex);
         }
     }
-    if (info.loads_front_face) {
+    if (loads[IR::Attribute::FrontFace]) {
         front_face = DefineInput(*this, U1, true, spv::BuiltIn::FrontFacing);
     }
-    if (info.loads_point_coord) {
+    if (loads[IR::Attribute::PointSpriteS] || loads[IR::Attribute::PointSpriteT]) {
         point_coord = DefineInput(*this, F32[2], true, spv::BuiltIn::PointCoord);
     }
-    if (info.loads_tess_coord) {
+    if (loads[IR::Attribute::TessellationEvaluationPointU] ||
+        loads[IR::Attribute::TessellationEvaluationPointV]) {
         tess_coord = DefineInput(*this, F32[3], false, spv::BuiltIn::TessCoord);
     }
-    for (size_t index = 0; index < info.input_generics.size(); ++index) {
-        if (!runtime_info.previous_stage_stores_generic[index]) {
-            continue;
-        }
-        const InputVarying generic{info.input_generics[index]};
-        if (!generic.used) {
-            continue;
-        }
+    for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
         const AttributeType input_type{runtime_info.generic_input_types[index]};
+        if (!runtime_info.previous_stage_stores.Generic(index)) {
+            continue;
+        }
+        if (!loads.Generic(index)) {
+            continue;
+        }
         if (input_type == AttributeType::Disabled) {
             continue;
         }
@@ -1234,10 +1242,13 @@ void EmitContext::DefineInputs(const Info& info) {
         Name(id, fmt::format("in_attr{}", index));
         input_generics[index] = id;
 
+        if (info.passthrough.Generic(index) && profile.support_geometry_shader_passthrough) {
+            Decorate(id, spv::Decoration::PassthroughNV);
+        }
         if (stage != Stage::Fragment) {
             continue;
         }
-        switch (generic.interpolation) {
+        switch (info.interpolation[index]) {
         case Interpolation::Smooth:
             // Default
             // Decorate(id, spv::Decoration::Smooth);
@@ -1266,42 +1277,42 @@ void EmitContext::DefineInputs(const Info& info) {
 void EmitContext::DefineOutputs(const IR::Program& program) {
     const Info& info{program.info};
     const std::optional<u32> invocations{program.invocations};
-    if (info.stores_position || stage == Stage::VertexB) {
+    if (info.stores.AnyComponent(IR::Attribute::PositionX) || stage == Stage::VertexB) {
         output_position = DefineOutput(*this, F32[4], invocations, spv::BuiltIn::Position);
     }
-    if (info.stores_point_size || runtime_info.fixed_state_point_size) {
+    if (info.stores[IR::Attribute::PointSize] || runtime_info.fixed_state_point_size) {
         if (stage == Stage::Fragment) {
             throw NotImplementedException("Storing PointSize in fragment stage");
         }
         output_point_size = DefineOutput(*this, F32[1], invocations, spv::BuiltIn::PointSize);
     }
-    if (info.stores_clip_distance) {
+    if (info.stores.ClipDistances()) {
         if (stage == Stage::Fragment) {
             throw NotImplementedException("Storing ClipDistance in fragment stage");
         }
         const Id type{TypeArray(F32[1], Const(8U))};
         clip_distances = DefineOutput(*this, type, invocations, spv::BuiltIn::ClipDistance);
     }
-    if (info.stores_layer &&
+    if (info.stores[IR::Attribute::Layer] &&
         (profile.support_viewport_index_layer_non_geometry || stage == Stage::Geometry)) {
         if (stage == Stage::Fragment) {
             throw NotImplementedException("Storing Layer in fragment stage");
         }
         layer = DefineOutput(*this, U32[1], invocations, spv::BuiltIn::Layer);
     }
-    if (info.stores_viewport_index &&
+    if (info.stores[IR::Attribute::ViewportIndex] &&
         (profile.support_viewport_index_layer_non_geometry || stage == Stage::Geometry)) {
         if (stage == Stage::Fragment) {
             throw NotImplementedException("Storing ViewportIndex in fragment stage");
         }
         viewport_index = DefineOutput(*this, U32[1], invocations, spv::BuiltIn::ViewportIndex);
     }
-    if (info.stores_viewport_mask && profile.support_viewport_mask) {
+    if (info.stores[IR::Attribute::ViewportMask] && profile.support_viewport_mask) {
         viewport_mask = DefineOutput(*this, TypeArray(U32[1], Const(1u)), std::nullopt,
                                      spv::BuiltIn::ViewportMaskNV);
     }
-    for (size_t index = 0; index < info.stores_generics.size(); ++index) {
-        if (info.stores_generics[index]) {
+    for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
+        if (info.stores.Generic(index)) {
             DefineGenericOutput(*this, index, invocations);
         }
     }

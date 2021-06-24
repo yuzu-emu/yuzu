@@ -350,6 +350,10 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         LOG_INFO(Render_Vulkan, "Device doesn't support viewport masks");
     }
 
+    if (!nv_geometry_shader_passthrough) {
+        LOG_INFO(Render_Vulkan, "Device doesn't support passthrough geometry shaders");
+    }
+
     VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR std430_layout;
     if (khr_uniform_buffer_standard_layout) {
         std430_layout = {
@@ -768,6 +772,8 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         };
         test(nv_viewport_swizzle, VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME, true);
         test(nv_viewport_array2, VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME, true);
+        test(nv_geometry_shader_passthrough, VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME,
+             true);
         test(khr_uniform_buffer_standard_layout,
              VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME, true);
         test(khr_spirv_1_4, VK_KHR_SPIRV_1_4_EXTENSION_NAME, true);
