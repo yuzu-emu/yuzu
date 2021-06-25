@@ -911,14 +911,15 @@ void EmitContext::DefineConstantBuffers(const Info& info, u32& binding) {
     if (info.constant_buffer_descriptors.empty()) {
         return;
     }
-    IR::Type types{info.used_constant_buffer_types};
     if (!profile.support_descriptor_aliasing) {
         DefineConstBuffers(*this, info, &UniformDefinitions::U32x4, binding, U32[4], 'u',
                            sizeof(u32[4]));
         for (const ConstantBufferDescriptor& desc : info.constant_buffer_descriptors) {
             binding += desc.count;
         }
+        return;
     }
+    IR::Type types{info.used_constant_buffer_types};
     if (True(types & IR::Type::U8)) {
         if (profile.support_int8) {
             DefineConstBuffers(*this, info, &UniformDefinitions::U8, binding, U8, 'u', sizeof(u8));
