@@ -536,6 +536,7 @@ void RasterizerVulkan::UpdateDynamicStates() {
     UpdateBlendConstants(regs);
     UpdateDepthBounds(regs);
     UpdateStencilFaces(regs);
+    UpdateLineWidth(regs);
     if (device.IsExtExtendedDynamicStateSupported()) {
         UpdateCullMode(regs);
         UpdateDepthBoundsTestEnable(regs);
@@ -669,6 +670,14 @@ void RasterizerVulkan::UpdateStencilFaces(Tegra::Engines::Maxwell3D::Regs& regs)
             cmdbuf.SetStencilCompareMask(VK_STENCIL_FACE_FRONT_AND_BACK, test_mask);
         });
     }
+}
+
+void RasterizerVulkan::UpdateLineWidth(Tegra::Engines::Maxwell3D::Regs& regs) {
+    if (!state_tracker.TouchLineWidth()) {
+        return;
+    }
+    const float width = regs.line_smooth_enable ? regs.line_width_smooth : regs.line_width_aliased;
+    scheduler.Record([width](vk::CommandBuffer cmdbuf) { cmdbuf.SetLineWidth(width); });
 }
 
 void RasterizerVulkan::UpdateCullMode(Tegra::Engines::Maxwell3D::Regs& regs) {

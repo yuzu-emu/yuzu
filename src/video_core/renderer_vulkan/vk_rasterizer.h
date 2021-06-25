@@ -123,6 +123,7 @@ private:
     void UpdateBlendConstants(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateDepthBounds(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateStencilFaces(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdateLineWidth(Tegra::Engines::Maxwell3D::Regs& regs);
 
     void UpdateCullMode(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateDepthBoundsTestEnable(Tegra::Engines::Maxwell3D::Regs& regs);

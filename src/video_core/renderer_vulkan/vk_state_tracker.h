@@ -31,6 +31,7 @@ enum : u8 {
     BlendConstants,
     DepthBounds,
     StencilProperties,
+    LineWidth,
 
     CullMode,
     DepthBoundsEnable,
@@ -44,7 +45,7 @@ enum : u8 {
     Blending,
     ViewportSwizzles,
 
-    Last
+    Last,
 };
 static_assert(Last <= std::numeric_limits<u8>::max());
 
@@ -91,6 +92,10 @@ public:
 
     bool TouchStencilProperties() {
         return Exchange(Dirty::StencilProperties, false);
+    }
+
+    bool TouchLineWidth() const {
+        return Exchange(Dirty::LineWidth, false);
     }
 
     bool TouchCullMode() {
