@@ -236,6 +236,9 @@ void SetupOutPerVertex(EmitContext& ctx, std::string& header) {
     if (!StoresPerVertexAttributes(ctx.stage)) {
         return;
     }
+    if (ctx.uses_geometry_passthrough) {
+        return;
+    }
     header += "out gl_PerVertex{vec4 gl_Position;";
     if (ctx.info.stores[IR::Attribute::PointSize]) {
         header += "float gl_PointSize;";
@@ -272,12 +275,13 @@ void SetupLegacyInPerFragment(EmitContext& ctx, std::string& header) {
 
 EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile& profile_,
                          const RuntimeInfo& runtime_info_)
-    : info{program.info}, profile{profile_}, runtime_info{runtime_info_} {
+    : info{program.info}, profile{profile_}, runtime_info{runtime_info_}, stage{program.stage},
+      uses_geometry_passthrough{program.is_geometry_passthrough &&
+                                profile.support_geometry_shader_passthrough} {
     if (profile.need_fastmath_off) {
         header += "#pragma optionNV(fastmath off)\n";
     }
     SetupExtensions();
-    stage = program.stage;
     switch (program.stage) {
     case Stage::VertexA:
     case Stage::VertexB:
@@ -295,10 +299,17 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         break;
     case Stage::Geometry:
         stage_name = "gs";
-        header += fmt::format("layout({})in;layout({},max_vertices={})out;"
-                              "in gl_PerVertex{{vec4 gl_Position;}}gl_in[];",
-                              InputPrimitive(runtime_info.input_topology),
-                              OutputPrimitive(program.output_topology), program.output_vertices);
+        header += fmt::format("layout({})in;", InputPrimitive(runtime_info.input_topology));
+        if (uses_geometry_passthrough) {
+            header += "layout(passthrough)in gl_PerVertex{vec4 gl_Position;};";
+            break;
+        } else if (program.is_geometry_passthrough &&
+                   !profile.support_geometry_shader_passthrough) {
+            LOG_WARNING(Shader_GLSL, "Passthrough geometry program used but not supported");
+        }
+        header += fmt::format(
+            "layout({},max_vertices={})out;in gl_PerVertex{{vec4 gl_Position;}}gl_in[];",
+            OutputPrimitive(program.output_topology), program.output_vertices);
         break;
     case Stage::Fragment:
         stage_name = "fs";
@@ -329,7 +340,9 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         if (!info.loads.Generic(index) || !runtime_info.previous_stage_stores.Generic(index)) {
             continue;
         }
-        header += fmt::format("layout(location={}){}in vec4 in_attr{}{};", index,
+        const auto qualifier{uses_geometry_passthrough ? "passthrough"
+                                                       : fmt::format("location={}", index)};
+        header += fmt::format("layout({}){}in vec4 in_attr{}{};", qualifier,
                               InterpDecorator(info.interpolation[index]), index,
                               InputArrayDecorator(stage));
     }
@@ -411,6 +424,9 @@ void EmitContext::SetupExtensions() {
     }
     if (info.uses_derivatives && profile.support_gl_derivative_control) {
         header += "#extension GL_ARB_derivative_control : enable\n";
+    }
+    if (uses_geometry_passthrough) {
+        header += "#extension GL_NV_geometry_shader_passthrough : enable\n";
     }
 }
 

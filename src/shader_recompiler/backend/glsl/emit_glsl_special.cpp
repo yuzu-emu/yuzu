@@ -17,6 +17,9 @@ std::string_view OutputVertexIndex(EmitContext& ctx) {
 }
 
 void InitializeOutputVaryings(EmitContext& ctx) {
+    if (ctx.uses_geometry_passthrough) {
+        return;
+    }
     if (ctx.stage == Stage::VertexB || ctx.stage == Stage::Geometry) {
         ctx.Add("gl_Position=vec4(0,0,0,1);");
     }

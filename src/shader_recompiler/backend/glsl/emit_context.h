@@ -157,6 +157,7 @@ public:
 
     bool uses_y_direction{};
     bool uses_cc_carry{};
+    bool uses_geometry_passthrough{};
 
 private:
     void SetupExtensions();
