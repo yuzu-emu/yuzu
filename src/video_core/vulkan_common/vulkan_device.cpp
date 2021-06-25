@@ -416,6 +416,23 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         LOG_INFO(Render_Vulkan, "Device doesn't support extended dynamic state");
     }
 
+    VkPhysicalDeviceLineRasterizationFeaturesEXT line_raster;
+    if (ext_line_rasterization) {
+        line_raster = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_EXT,
+            .pNext = nullptr,
+            .rectangularLines = VK_TRUE,
+            .bresenhamLines = VK_FALSE,
+            .smoothLines = VK_TRUE,
+            .stippledRectangularLines = VK_FALSE,
+            .stippledBresenhamLines = VK_FALSE,
+            .stippledSmoothLines = VK_FALSE,
+        };
+        SetNext(next, line_raster);
+    } else {
+        LOG_INFO(Render_Vulkan, "Device doesn't support smooth lines");
+    }
+
     if (!ext_conservative_rasterization) {
         LOG_INFO(Render_Vulkan, "Device doesn't support conservative rasterization");
     }
@@ -757,6 +774,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
     bool has_ext_shader_atomic_int64{};
     bool has_ext_provoking_vertex{};
     bool has_ext_vertex_input_dynamic_state{};
+    bool has_ext_line_rasterization{};
     for (const VkExtensionProperties& extension : physical.EnumerateDeviceExtensionProperties()) {
         const auto test = [&](std::optional<std::reference_wrapper<bool>> status, const char* name,
                               bool push) {
@@ -798,6 +816,7 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         test(has_ext_shader_atomic_int64, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME, false);
         test(has_khr_workgroup_memory_explicit_layout,
              VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME, false);
+        test(has_ext_line_rasterization, VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME, false);
         if (Settings::values.enable_nsight_aftermath) {
             test(nv_device_diagnostics_config, VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME,
                  true);
@@ -918,15 +937,27 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         }
     }
     if (has_ext_extended_dynamic_state) {
-        VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_state;
-        dynamic_state.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
-        dynamic_state.pNext = nullptr;
-        features.pNext = &dynamic_state;
+        VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state;
+        extended_dynamic_state.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+        extended_dynamic_state.pNext = nullptr;
+        features.pNext = &extended_dynamic_state;
         physical.GetFeatures2KHR(features);
 
-        if (dynamic_state.extendedDynamicState) {
+        if (extended_dynamic_state.extendedDynamicState) {
             extensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
             ext_extended_dynamic_state = true;
+        }
+    }
+    if (has_ext_line_rasterization) {
+        VkPhysicalDeviceLineRasterizationFeaturesEXT line_raster;
+        line_raster.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_EXT;
+        line_raster.pNext = nullptr;
+        features.pNext = &line_raster;
+        physical.GetFeatures2KHR(features);
+        if (line_raster.rectangularLines && line_raster.smoothLines) {
+            extensions.push_back(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
+            ext_line_rasterization = true;
         }
     }
     if (has_khr_workgroup_memory_explicit_layout) {

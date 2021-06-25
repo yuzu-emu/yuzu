@@ -259,6 +259,11 @@ public:
         return ext_extended_dynamic_state;
     }
 
+    /// Returns true if the device supports VK_EXT_line_rasterization.
+    bool IsExtLineRasterizationSupported() const {
+        return ext_line_rasterization;
+    }
+
     /// Returns true if the device supports VK_EXT_vertex_input_dynamic_state.
     bool IsExtVertexInputDynamicStateSupported() const {
         return ext_vertex_input_dynamic_state;
@@ -382,6 +387,7 @@ private:
     bool ext_transform_feedback{};          ///< Support for VK_EXT_transform_feedback.
     bool ext_custom_border_color{};         ///< Support for VK_EXT_custom_border_color.
     bool ext_extended_dynamic_state{};      ///< Support for VK_EXT_extended_dynamic_state.
+    bool ext_line_rasterization{};          ///< Support for VK_EXT_line_rasterization.
     bool ext_vertex_input_dynamic_state{};  ///< Support for VK_EXT_vertex_input_dynamic_state.
     bool ext_shader_stencil_export{};       ///< Support for VK_EXT_shader_stencil_export.
     bool ext_shader_atomic_int64{};         ///< Support for VK_KHR_shader_atomic_int64.

@@ -88,6 +88,7 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
     y_negate.Assign(regs.screen_y_control.y_negate != 0 ? 1 : 0);
     provoking_vertex_last.Assign(regs.provoking_vertex_last != 0 ? 1 : 0);
     conservative_raster_enable.Assign(regs.conservative_raster_enable != 0 ? 1 : 0);
+    smooth_lines.Assign(regs.line_smooth_enable != 0 ? 1 : 0);
 
     for (size_t i = 0; i < regs.rt.size(); ++i) {
         color_formats[i] = static_cast<u8>(regs.rt[i].format);
