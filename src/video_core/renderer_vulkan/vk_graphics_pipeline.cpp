@@ -80,6 +80,14 @@ bool SupportsPrimitiveRestart(VkPrimitiveTopology topology) {
     return std::ranges::find(unsupported_topologies, topology) == unsupported_topologies.end();
 }
 
+bool IsLine(VkPrimitiveTopology topology) {
+    static constexpr std::array line_topologies{
+        VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+        // VK_PRIMITIVE_TOPOLOGY_LINE_LOOP_EXT,
+    };
+    return std::ranges::find(line_topologies, topology) == line_topologies.end();
+}
+
 VkViewportSwizzleNV UnpackViewportSwizzle(u16 swizzle) {
     union Swizzle {
         u32 raw;
@@ -616,6 +624,16 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .depthBiasSlopeFactor = 0.0f,
         .lineWidth = 1.0f,
     };
+    VkPipelineRasterizationLineStateCreateInfoEXT line_state{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_EXT,
+        .pNext = nullptr,
+        .lineRasterizationMode = key.state.smooth_lines != 0
+                                     ? VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT
+                                     : VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT,
+        .stippledLineEnable = VK_FALSE, // TODO
+        .lineStippleFactor = 0,
+        .lineStipplePattern = 0,
+    };
     VkPipelineRasterizationConservativeStateCreateInfoEXT conservative_raster{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT,
         .pNext = nullptr,
@@ -632,6 +650,9 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
                                    ? VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT
                                    : VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT,
     };
+    if (IsLine(input_assembly_topology) && device.IsExtLineRasterizationSupported()) {
+        line_state.pNext = std::exchange(rasterization_ci.pNext, &line_state);
+    }
     if (device.IsExtConservativeRasterizationSupported()) {
         conservative_raster.pNext = std::exchange(rasterization_ci.pNext, &conservative_raster);
     }
