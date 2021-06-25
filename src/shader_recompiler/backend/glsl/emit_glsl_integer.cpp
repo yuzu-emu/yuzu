@@ -27,6 +27,14 @@ void SetSignFlag(EmitContext& ctx, IR::Inst& inst, std::string_view result) {
     ctx.AddU1("{}=int({})<0;", *sign, result);
     sign->Invalidate();
 }
+
+void BitwiseLogicalOp(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b,
+                      char lop) {
+    const auto result{ctx.var_alloc.Define(inst, GlslVarType::U32)};
+    ctx.Add("{}={}{}{};", result, a, lop, b);
+    SetZeroFlag(ctx, inst, result);
+    SetSignFlag(ctx, inst, result);
+}
 } // Anonymous namespace
 
 void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
@@ -113,15 +121,15 @@ void EmitShiftRightArithmetic64(EmitContext& ctx, IR::Inst& inst, std::string_vi
 }
 
 void EmitBitwiseAnd32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    ctx.AddU32("{}={}&{};", inst, a, b);
+    BitwiseLogicalOp(ctx, inst, a, b, '&');
 }
 
 void EmitBitwiseOr32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    ctx.AddU32("{}={}|{};", inst, a, b);
+    BitwiseLogicalOp(ctx, inst, a, b, '|');
 }
 
 void EmitBitwiseXor32(EmitContext& ctx, IR::Inst& inst, std::string_view a, std::string_view b) {
-    ctx.AddU32("{}={}^{};", inst, a, b);
+    BitwiseLogicalOp(ctx, inst, a, b, '^');
 }
 
 void EmitBitFieldInsert(EmitContext& ctx, IR::Inst& inst, std::string_view base,
