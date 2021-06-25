@@ -217,14 +217,14 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
     EmitCode(ctx, program);
     const std::string version{fmt::format("#version 450{}\n", GlslVersionSpecifier(ctx))};
     ctx.header.insert(0, version);
-    if (program.local_memory_size > 0) {
-        ctx.header += fmt::format("uint lmem[{}];", Common::AlignUp(program.local_memory_size, 4));
-    }
     if (program.shared_memory_size > 0) {
         ctx.header +=
             fmt::format("shared uint smem[{}];", Common::AlignUp(program.shared_memory_size, 4));
     }
     ctx.header += "void main(){\n";
+    if (program.local_memory_size > 0) {
+        ctx.header += fmt::format("uint lmem[{}];", Common::AlignUp(program.local_memory_size, 4));
+    }
     DefineVariables(ctx, ctx.header);
     if (ctx.uses_cc_carry) {
         ctx.header += "uint carry;";
