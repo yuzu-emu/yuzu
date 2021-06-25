@@ -5,7 +5,7 @@
 #include <ranges>
 #include <string>
 
-#include "common/alignment.h"
+#include "common/div_ceil.h"
 #include "common/settings.h"
 #include "shader_recompiler/backend/glsl/emit_context.h"
 #include "shader_recompiler/backend/glsl/emit_glsl.h"
@@ -219,11 +219,11 @@ std::string EmitGLSL(const Profile& profile, const RuntimeInfo& runtime_info, IR
     ctx.header.insert(0, version);
     if (program.shared_memory_size > 0) {
         ctx.header +=
-            fmt::format("shared uint smem[{}];", Common::AlignUp(program.shared_memory_size, 4));
+            fmt::format("shared uint smem[{}];", Common::DivCeil(program.shared_memory_size, 4U));
     }
     ctx.header += "void main(){\n";
     if (program.local_memory_size > 0) {
-        ctx.header += fmt::format("uint lmem[{}];", Common::AlignUp(program.local_memory_size, 4));
+        ctx.header += fmt::format("uint lmem[{}];", Common::DivCeil(program.local_memory_size, 4U));
     }
     DefineVariables(ctx, ctx.header);
     if (ctx.uses_cc_carry) {
