@@ -29,10 +29,10 @@ using Flags = Maxwell3D::DirtyState::Flags;
 
 Flags MakeInvalidationFlags() {
     static constexpr int INVALIDATION_FLAGS[]{
-        Viewports,       Scissors,          DepthBias,      BlendConstants,
-        DepthBounds,     StencilProperties, CullMode,       DepthBoundsEnable,
-        DepthTestEnable, DepthWriteEnable,  DepthCompareOp, FrontFace,
-        StencilOp,       StencilTestEnable, VertexBuffers,  VertexInput,
+        Viewports,         Scissors,       DepthBias, BlendConstants,    DepthBounds,
+        StencilProperties, LineWidth,      CullMode,  DepthBoundsEnable, DepthTestEnable,
+        DepthWriteEnable,  DepthCompareOp, FrontFace, StencilOp,         StencilTestEnable,
+        VertexBuffers,     VertexInput,
     };
     Flags flags{};
     for (const int flag : INVALIDATION_FLAGS) {
@@ -84,6 +84,11 @@ void SetupDirtyStencilProperties(Tables& tables) {
     table[OFF(stencil_back_func_ref)] = StencilProperties;
     table[OFF(stencil_back_mask)] = StencilProperties;
     table[OFF(stencil_back_func_mask)] = StencilProperties;
+}
+
+void SetupDirtyLineWidth(Tables& tables) {
+    tables[0][OFF(line_width_smooth)] = LineWidth;
+    tables[0][OFF(line_width_aliased)] = LineWidth;
 }
 
 void SetupDirtyCullMode(Tables& tables) {
@@ -180,6 +185,7 @@ StateTracker::StateTracker(Tegra::GPU& gpu)
     SetupDirtyBlendConstants(tables);
     SetupDirtyDepthBounds(tables);
     SetupDirtyStencilProperties(tables);
+    SetupDirtyLineWidth(tables);
     SetupDirtyCullMode(tables);
     SetupDirtyDepthBoundsEnable(tables);
     SetupDirtyDepthTestEnable(tables);

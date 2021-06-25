@@ -231,6 +231,7 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkCmdSetDepthWriteEnableEXT vkCmdSetDepthWriteEnableEXT{};
     PFN_vkCmdSetEvent vkCmdSetEvent{};
     PFN_vkCmdSetFrontFaceEXT vkCmdSetFrontFaceEXT{};
+    PFN_vkCmdSetLineWidth vkCmdSetLineWidth{};
     PFN_vkCmdSetPrimitiveTopologyEXT vkCmdSetPrimitiveTopologyEXT{};
     PFN_vkCmdSetScissor vkCmdSetScissor{};
     PFN_vkCmdSetStencilCompareMask vkCmdSetStencilCompareMask{};
@@ -1196,6 +1197,10 @@ public:
 
     void SetFrontFaceEXT(VkFrontFace front_face) const noexcept {
         dld->vkCmdSetFrontFaceEXT(handle, front_face);
+    }
+
+    void SetLineWidth(float line_width) const noexcept {
+        dld->vkCmdSetLineWidth(handle, line_width);
     }
 
     void SetPrimitiveTopologyEXT(VkPrimitiveTopology primitive_topology) const noexcept {
