@@ -7,6 +7,30 @@
 #include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::Backend::GLASM {
+namespace {
+void BitwiseLogicalOp(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b,
+                      std::string_view lop) {
+    const auto zero = inst.GetAssociatedPseudoOperation(IR::Opcode::GetZeroFromOp);
+    const auto sign = inst.GetAssociatedPseudoOperation(IR::Opcode::GetSignFromOp);
+    if (zero) {
+        zero->Invalidate();
+    }
+    if (sign) {
+        sign->Invalidate();
+    }
+    if (zero || sign) {
+        ctx.reg_alloc.InvalidateConditionCodes();
+    }
+    const auto ret{ctx.reg_alloc.Define(inst)};
+    ctx.Add("{}.S {}.x,{},{};", lop, ret, a, b);
+    if (zero) {
+        ctx.Add("SEQ.S {},{},0;", *zero, ret);
+    }
+    if (sign) {
+        ctx.Add("SLT.S {},{},0;", *sign, ret);
+    }
+}
+} // Anonymous namespace
 
 void EmitIAdd32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
     const std::array flags{
@@ -110,15 +134,15 @@ void EmitShiftRightArithmetic64(EmitContext& ctx, IR::Inst& inst, ScalarRegister
 }
 
 void EmitBitwiseAnd32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
-    ctx.Add("AND.S {}.x,{},{};", inst, a, b);
+    BitwiseLogicalOp(ctx, inst, a, b, "AND");
 }
 
 void EmitBitwiseOr32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
-    ctx.Add("OR.S {}.x,{},{};", inst, a, b);
+    BitwiseLogicalOp(ctx, inst, a, b, "OR");
 }
 
 void EmitBitwiseXor32(EmitContext& ctx, IR::Inst& inst, ScalarS32 a, ScalarS32 b) {
-    ctx.Add("XOR.S {}.x,{},{};", inst, a, b);
+    BitwiseLogicalOp(ctx, inst, a, b, "XOR");
 }
 
 void EmitBitFieldInsert(EmitContext& ctx, IR::Inst& inst, ScalarS32 base, ScalarS32 insert,
