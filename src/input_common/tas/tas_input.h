@@ -68,7 +68,8 @@ public:
 
     void StartStop();
     void Reset();
-    void Record();
+    bool Record();
+    void SaveRecording(bool overwrite_file);
 
     /**
      * Returns the current status values of TAS playback/recording
@@ -90,7 +91,7 @@ private:
     };
     void LoadTasFiles();
     void LoadTasFile(size_t player_index);
-    void WriteTasFile();
+    void WriteTasFile(std::string file_name);
     TasAnalog ReadCommandAxis(const std::string& line) const;
     u32 ReadCommandButtons(const std::string& line) const;
     std::string WriteCommandButtons(u32 data) const;
@@ -106,7 +107,6 @@ private:
 
     size_t script_length{0};
     std::array<TasData, PLAYER_NUMBER> tas_data;
-    bool refresh_tas_fle{false};
     bool is_recording{false};
     bool is_running{false};
     bool needs_reset{false};

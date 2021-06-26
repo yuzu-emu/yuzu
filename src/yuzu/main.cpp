@@ -1055,7 +1055,16 @@ void GMainWindow::InitializeHotkeys() {
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("TAS Reset"), this),
             &QShortcut::activated, this, [&] { input_subsystem->GetTas()->Reset(); });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("TAS Record"), this),
-            &QShortcut::activated, this, [&] { input_subsystem->GetTas()->Record(); });
+            &QShortcut::activated, this, [&] {
+                bool is_recording = input_subsystem->GetTas()->Record();
+                if (!is_recording) {
+                    QMessageBox::StandardButton reply;
+                    reply = QMessageBox::question(this, tr("TAS Recording"),
+                                                  tr("Overwrite file of player 1?"),
+                                                  QMessageBox::Yes | QMessageBox::No);
+                    input_subsystem->GetTas()->SaveRecording(reply == QMessageBox::Yes);
+                }
+            });
 }
 
 void GMainWindow::SetDefaultUIGeometry() {

@@ -102,7 +102,7 @@ void Tas::LoadTasFile(size_t player_index) {
     LOG_INFO(Input, "TAS file loaded! {} frames", frame_no);
 }
 
-void Tas::WriteTasFile() {
+void Tas::WriteTasFile(std::string file_name) {
     std::string output_text;
     for (size_t frame = 0; frame < record_commands.size(); frame++) {
         if (!output_text.empty()) {
@@ -113,7 +113,7 @@ void Tas::WriteTasFile() {
                        WriteCommandAxis(line.l_axis) + " " + WriteCommandAxis(line.r_axis);
     }
     const size_t bytes_written = Common::FS::WriteStringToFile(
-        Common::FS::GetYuzuPathString(Common::FS::YuzuPath::TASDir) + "record.txt",
+        Common::FS::GetYuzuPathString(Common::FS::YuzuPath::TASDir) + file_name,
         Common::FS::FileType::TextFile, output_text);
     if (bytes_written == output_text.size()) {
         LOG_INFO(Input, "TAS file written to file!");
@@ -193,18 +193,8 @@ void Tas::UpdateThread() {
     if (is_recording) {
         record_commands.push_back(last_input);
     }
-    if (!is_recording && !record_commands.empty()) {
-        WriteTasFile();
-        needs_reset = true;
-        refresh_tas_fle = true;
-        record_commands.clear();
-    }
     if (needs_reset) {
         current_command = 0;
-        if (refresh_tas_fle) {
-            LoadTasFiles();
-            refresh_tas_fle = false;
-        }
         needs_reset = false;
         LoadTasFiles();
         LOG_DEBUG(Input, "tas_reset done");
@@ -310,8 +300,20 @@ void Tas::Reset() {
     needs_reset = true;
 }
 
-void Tas::Record() {
+bool Tas::Record() {
     is_recording = !is_recording;
+    return is_recording;
+}
+
+void Tas::SaveRecording(bool overwrite_file) {
+    if (!is_recording && !record_commands.empty()) {
+        WriteTasFile("record.txt");
+        if (overwrite_file) {
+            WriteTasFile("script0-1.txt");
+        }
+        needs_reset = true;
+        record_commands.clear();
+    }
 }
 
 InputCommon::ButtonMapping Tas::GetButtonMappingForDevice(
