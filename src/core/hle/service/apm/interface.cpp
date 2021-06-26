@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include "common/logging/log.h"
-#include "common/settings.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/apm/apm.h"
 #include "core/hle/service/apm/controller.h"
@@ -121,7 +120,6 @@ void APM_Sys::SetCpuBoostMode(Kernel::HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_APM, "called, mode={:08X}", mode);
 
-    Settings::values.is_cpu_boosted = (mode == CpuBoostMode::Full);
     controller.SetFromCpuBoostMode(mode);
 
     IPC::ResponseBuilder rb{ctx, 2};

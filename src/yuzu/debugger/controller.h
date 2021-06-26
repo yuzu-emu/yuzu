@@ -25,6 +25,7 @@ struct ControllerInput {
 
 struct ControllerCallback {
     std::function<void(ControllerInput)> input;
+    std::function<void(bool)> update;
 };
 
 class ControllerDialog : public QWidget {
@@ -44,6 +45,7 @@ protected:
 
 private:
     void InputController(ControllerInput input);
+    void UpdateController(bool update);
     QAction* toggle_view_action = nullptr;
     QFileSystemWatcher* watcher = nullptr;
     PlayerControlPreview* widget;

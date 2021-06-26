@@ -186,7 +186,7 @@ void Tas::UpdateThread() {
         return;
     }
 
-    if (Settings::values.pause_tas_on_load && Settings::values.is_cpu_boosted) {
+    if (Settings::values.pause_tas_on_load) {
         tas_data.fill({});
     }
 

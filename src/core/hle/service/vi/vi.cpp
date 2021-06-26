@@ -18,7 +18,6 @@
 #include "common/settings.h"
 #include "common/swap.h"
 #include "core/core_timing.h"
-#include "core/frontend/input.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_thread.h"
@@ -596,8 +595,6 @@ private:
 
             IGBPQueueBufferResponseParcel response{1280, 720};
             ctx.WriteBuffer(response.Serialize());
-            // Send update request for TAS input sync
-            Input::RequestTASUpdate();
             break;
         }
         case TransactionId::Query: {
