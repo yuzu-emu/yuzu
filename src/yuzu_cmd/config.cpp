@@ -401,10 +401,7 @@ void Config::ReadValues() {
         Settings::values.rng_seed.SetValue(std::nullopt);
     }
 
-    Settings::values.device_name = sdl2_config->GetString("System", "device_name", "Yuzu");
-    if (Settings::values.device_name.length() > 128) {
-        Settings::values.device_name = Settings::values.device_name.substr(0, 127);
-    }
+    Settings::values.device_name.resize(std::min(Settings::values.device_name.size(), size_t{128}));
 
     const auto custom_rtc_enabled = sdl2_config->GetBoolean("System", "custom_rtc_enabled", false);
     if (custom_rtc_enabled) {
