@@ -775,25 +775,30 @@ void RasterizerVulkan::UpdateVertexInput(Tegra::Engines::Maxwell3D::Regs& regs) 
     boost::container::static_vector<VkVertexInputBindingDescription2EXT, 32> bindings;
     boost::container::static_vector<VkVertexInputAttributeDescription2EXT, 32> attributes;
 
+    // There seems to be a bug on Nvidia's driver where updating only higher attributes ends up
+    // generating dirty state. Track the highest dirty attribute and update all attributes until
+    // that one.
+    size_t highest_dirty_attr{};
     for (size_t index = 0; index < Maxwell::NumVertexAttributes; ++index) {
-        if (!dirty[Dirty::VertexAttribute0 + index]) {
-            continue;
+        if (dirty[Dirty::VertexAttribute0 + index]) {
+            highest_dirty_attr = index;
         }
+    }
+    for (size_t index = 0; index < highest_dirty_attr; ++index) {
         const Maxwell::VertexAttribute attribute{regs.vertex_attrib_format[index]};
         const u32 binding{attribute.buffer};
         dirty[Dirty::VertexAttribute0 + index] = false;
         dirty[Dirty::VertexBinding0 + static_cast<size_t>(binding)] = true;
-
-        attributes.push_back({
-            .sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT,
-            .pNext = nullptr,
-            .location = static_cast<u32>(index),
-            .binding = binding,
-            .format = attribute.IsConstant()
-                          ? VK_FORMAT_A8B8G8R8_UNORM_PACK32
-                          : MaxwellToVK::VertexFormat(attribute.type, attribute.size),
-            .offset = attribute.offset,
-        });
+        if (!attribute.constant) {
+            attributes.push_back({
+                .sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT,
+                .pNext = nullptr,
+                .location = static_cast<u32>(index),
+                .binding = binding,
+                .format = MaxwellToVK::VertexFormat(attribute.type, attribute.size),
+                .offset = attribute.offset,
+            });
+        }
     }
     for (size_t index = 0; index < Maxwell::NumVertexAttributes; ++index) {
         if (!dirty[Dirty::VertexBinding0 + index]) {

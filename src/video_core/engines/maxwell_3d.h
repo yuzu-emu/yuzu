@@ -305,10 +305,6 @@ public:
                 return (type == Type::SignedNorm) || (type == Type::UnsignedNorm);
             }
 
-            bool IsConstant() const {
-                return constant;
-            }
-
             bool IsValid() const {
                 return size != Size::Invalid;
             }
