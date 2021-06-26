@@ -140,6 +140,26 @@ RendererOpenGL::RendererOpenGL(Core::TelemetrySession& telemetry_session_,
     }
     AddTelemetryFields();
     InitOpenGLObjects();
+
+    // Initialize default attributes to match hardware's disabled attributes
+    GLint max_attribs{};
+    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &max_attribs);
+    for (GLint attrib = 0; attrib < max_attribs; ++attrib) {
+        glVertexAttrib4f(attrib, 0.0f, 0.0f, 0.0f, 0.0f);
+    }
+    // Enable seamless cubemaps when per texture parameters are not available
+    if (!GLAD_GL_ARB_seamless_cubemap_per_texture && !GLAD_GL_AMD_seamless_cubemap_per_texture) {
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    }
+    // Enable unified vertex attributes and query vertex buffer address when the driver supports it
+    if (device.HasVertexBufferUnifiedMemory()) {
+        glEnableClientState(GL_VERTEX_ATTRIB_ARRAY_UNIFIED_NV);
+        glEnableClientState(GL_ELEMENT_ARRAY_UNIFIED_NV);
+
+        glMakeNamedBufferResidentNV(vertex_buffer.handle, GL_READ_ONLY);
+        glGetNamedBufferParameterui64vNV(vertex_buffer.handle, GL_BUFFER_GPU_ADDRESS_NV,
+                                         &vertex_buffer_address);
+    }
 }
 
 RendererOpenGL::~RendererOpenGL() = default;
@@ -256,21 +276,6 @@ void RendererOpenGL::InitOpenGLObjects() {
 
     // Clear screen to black
     LoadColorToActiveGLTexture(0, 0, 0, 0, screen_info.texture);
-
-    // Enable seamless cubemaps when per texture parameters are not available
-    if (!GLAD_GL_ARB_seamless_cubemap_per_texture && !GLAD_GL_AMD_seamless_cubemap_per_texture) {
-        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-    }
-
-    // Enable unified vertex attributes and query vertex buffer address when the driver supports it
-    if (device.HasVertexBufferUnifiedMemory()) {
-        glEnableClientState(GL_VERTEX_ATTRIB_ARRAY_UNIFIED_NV);
-        glEnableClientState(GL_ELEMENT_ARRAY_UNIFIED_NV);
-
-        glMakeNamedBufferResidentNV(vertex_buffer.handle, GL_READ_ONLY);
-        glGetNamedBufferParameterui64vNV(vertex_buffer.handle, GL_BUFFER_GPU_ADDRESS_NV,
-                                         &vertex_buffer_address);
-    }
 }
 
 void RendererOpenGL::AddTelemetryFields() {

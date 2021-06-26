@@ -298,9 +298,13 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
         const std::optional<AttrInfo> type{AttrTypes(ctx, index)};
-        if (!type || !ctx.runtime_info.previous_stage_stores.Generic(index)) {
+        if (!type) {
             // Attribute is disabled
             return ctx.Const(0.0f);
+        }
+        if (!ctx.runtime_info.previous_stage_stores.Generic(index, element)) {
+            // Varying component is not written
+            return ctx.Const(type && element == 3 ? 1.0f : 0.0f);
         }
         const Id generic_id{ctx.input_generics.at(index)};
         const Id pointer{AttrPointer(ctx, type->pointer, vertex, generic_id, ctx.Const(element))};
