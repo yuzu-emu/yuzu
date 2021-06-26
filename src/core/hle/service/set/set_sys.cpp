@@ -107,7 +107,7 @@ void SET_SYS::SetColorSetId(Kernel::HLERequestContext& ctx) {
 void SET_SYS::GetDeviceNickName(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(RESULT_SUCCESS);
+    rb.Push(ResultSuccess);
     ctx.WriteBuffer(Settings::values.device_name);
 }
 

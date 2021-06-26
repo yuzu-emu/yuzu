@@ -192,7 +192,7 @@ void SET::GetKeyCodeMap2(Kernel::HLERequestContext& ctx) {
 void SET::GetDeviceNickName(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(RESULT_SUCCESS);
+    rb.Push(ResultSuccess);
     ctx.WriteBuffer(Settings::values.device_name);
 }
 
