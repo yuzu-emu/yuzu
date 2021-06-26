@@ -179,8 +179,12 @@ void EmitGetAttribute(EmitContext& ctx, IR::Inst& inst, IR::Attribute attr,
     const char swizzle{"xyzw"[element]};
     if (IR::IsGeneric(attr)) {
         const u32 index{IR::GenericAttributeIndex(attr)};
-        if (!ctx.runtime_info.previous_stage_stores.Generic(index)) {
-            ctx.AddF32("{}=0.f;", inst, attr);
+        if (!ctx.runtime_info.previous_stage_stores.Generic(index, element)) {
+            if (element == 3) {
+                ctx.AddF32("{}=1.f;", inst, attr);
+            } else {
+                ctx.AddF32("{}=0.f;", inst, attr);
+            }
             return;
         }
         ctx.AddF32("{}=in_attr{}{}.{};", inst, index, InputVertexIndex(ctx, vertex), swizzle);
