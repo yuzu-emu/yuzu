@@ -97,7 +97,7 @@ void RasterizerOpenGL::SyncVertexFormats() {
         const auto gl_index = static_cast<GLuint>(index);
 
         // Disable constant attributes.
-        if (attrib.IsConstant()) {
+        if (attrib.constant) {
             glDisableVertexAttribArray(gl_index);
             continue;
         }

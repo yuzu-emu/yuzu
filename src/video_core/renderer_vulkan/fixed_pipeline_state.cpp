@@ -128,7 +128,7 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d,
                 const auto& input = regs.vertex_attrib_format[index];
                 auto& attribute = attributes[index];
                 attribute.raw = 0;
-                attribute.enabled.Assign(input.IsConstant() ? 0 : 1);
+                attribute.enabled.Assign(input.constant ? 0 : 1);
                 attribute.buffer.Assign(input.buffer);
                 attribute.offset.Assign(input.offset);
                 attribute.type.Assign(static_cast<u32>(input.type.Value()));
