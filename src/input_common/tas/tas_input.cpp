@@ -135,7 +135,7 @@ void Tas::RecordInput(u32 buttons, const std::array<std::pair<float, float>, 2>&
 std::tuple<TasState, size_t, size_t> Tas::GetStatus() const {
     TasState state;
     if (is_recording) {
-        return {TasState::Recording, record_commands.size(), record_commands.size()};
+        return {TasState::Recording, 0, record_commands.size()};
     }
 
     if (is_running) {
@@ -184,10 +184,6 @@ std::string Tas::ButtonsToString(u32 button) const {
 void Tas::UpdateThread() {
     if (!Settings::values.tas_enable) {
         return;
-    }
-
-    if (Settings::values.pause_tas_on_load) {
-        tas_data.fill({});
     }
 
     if (is_recording) {
@@ -306,14 +302,18 @@ bool Tas::Record() {
 }
 
 void Tas::SaveRecording(bool overwrite_file) {
-    if (!is_recording && !record_commands.empty()) {
-        WriteTasFile("record.txt");
-        if (overwrite_file) {
-            WriteTasFile("script0-1.txt");
-        }
-        needs_reset = true;
-        record_commands.clear();
+    if (is_recording) {
+        return;
     }
+    if (record_commands.empty()) {
+        return;
+    }
+    WriteTasFile("record.txt");
+    if (overwrite_file) {
+        WriteTasFile("script0-1.txt");
+    }
+    needs_reset = true;
+    record_commands.clear();
 }
 
 InputCommon::ButtonMapping Tas::GetButtonMappingForDevice(

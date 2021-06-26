@@ -48,6 +48,9 @@
                 </item>
                 <item row="3" column="0" colspan="4">
                   <widget class="QCheckBox" name="tas_pause_on_load">
+                    <property name="enabled">
+                      <bool>false</bool>
+                    </property>
                     <property name="text">
                       <string>Pause execution during loads</string>
                     </property>
