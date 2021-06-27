@@ -2940,7 +2940,7 @@ QString GMainWindow::GetTasStateDescription() const {
     case TasInput::TasState::Stopped:
         return tr("TAS state: Idle %1/%2").arg(current_tas_frame).arg(total_tas_frames);
     default:
-        return tr("INVALID TAS STATE");
+        return tr("TAS State: Invalid");
     }
 }
 

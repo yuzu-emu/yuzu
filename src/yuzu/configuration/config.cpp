@@ -1225,6 +1225,11 @@ void Config::SaveControlValues() {
     WriteBasicSetting(Settings::values.emulate_analog_keyboard);
     WriteBasicSetting(Settings::values.mouse_panning_sensitivity);
 
+    WriteSetting(QStringLiteral("enable_tas"), Settings::values.tas_enable, false);
+    WriteSetting(QStringLiteral("loop_tas"), Settings::values.tas_loop, false);
+    WriteSetting(QStringLiteral("swap_tas_controllers"), Settings::values.tas_swap_controllers,
+                 true);
+    WriteSetting(QStringLiteral("tas_pause_on_load"), Settings::values.pause_tas_on_load, true);
     qt_config->endGroup();
 }
 

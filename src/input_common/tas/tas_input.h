@@ -7,6 +7,7 @@
 #include <array>
 
 #include "common/common_types.h"
+#include "common/settings_input.h"
 #include "core/frontend/input.h"
 #include "input_common/main.h"
 
@@ -91,7 +92,7 @@ private:
     };
     void LoadTasFiles();
     void LoadTasFile(size_t player_index);
-    void WriteTasFile(std::string file_name);
+    void WriteTasFile(std::u8string file_name);
     TasAnalog ReadCommandAxis(const std::string& line) const;
     u32 ReadCommandButtons(const std::string& line) const;
     std::string WriteCommandButtons(u32 data) const;
@@ -105,6 +106,9 @@ private:
     std::string DebugInputs(const std::array<TasData, PLAYER_NUMBER>& arr) const;
     std::string ButtonsToString(u32 button) const;
 
+    void SwapToTasController();
+    void SwapToStoredController();
+
     size_t script_length{0};
     std::array<TasData, PLAYER_NUMBER> tas_data;
     bool is_recording{false};
@@ -114,5 +118,8 @@ private:
     std::vector<TASCommand> record_commands{};
     size_t current_command{0};
     TASCommand last_input{}; // only used for recording
+
+    // Old settings for swapping controllers
+    std::array<Settings::PlayerInput, 10> player_mappings;
 };
 } // namespace TasInput

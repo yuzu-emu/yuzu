@@ -173,10 +173,7 @@ void PlayerControlPreview::ResetInputs() {
 }
 
 void PlayerControlPreview::UpdateInput() {
-    if (controller_callback.update != nullptr) {
-        controller_callback.update(std::move(true));
-    }
-    if (!is_enabled && !mapping_active) {
+    if (!is_enabled && !mapping_active && !Settings::values.tas_enable) {
         return;
     }
     bool input_changed = false;
@@ -221,20 +218,25 @@ void PlayerControlPreview::UpdateInput() {
         }
     }
 
-    ControllerInput input{};
     if (input_changed) {
         update();
-        input.changed = true;
+        ControllerInput input{
+            .axis_values =
+                {std::pair<float, float>{axis_values[Settings::NativeAnalog::LStick].value.x(),
+                                         axis_values[Settings::NativeAnalog::LStick].value.y()},
+                 std::pair<float, float>{axis_values[Settings::NativeAnalog::RStick].value.x(),
+                                         axis_values[Settings::NativeAnalog::RStick].value.y()}},
+            .button_values = button_values,
+            .changed = true,
+        };
+
+        if (controller_callback.input != nullptr) {
+            controller_callback.input(std::move(input));
+        }
     }
-    input.axis_values[Settings::NativeAnalog::LStick] = {
-        axis_values[Settings::NativeAnalog::LStick].value.x(),
-        axis_values[Settings::NativeAnalog::LStick].value.y()};
-    input.axis_values[Settings::NativeAnalog::RStick] = {
-        axis_values[Settings::NativeAnalog::RStick].value.x(),
-        axis_values[Settings::NativeAnalog::RStick].value.y()};
-    input.button_values = button_values;
-    if (controller_callback.input != nullptr) {
-        controller_callback.input(std::move(input));
+
+    if (controller_callback.update != nullptr) {
+        controller_callback.update(std::move(true));
     }
 
     if (mapping_active) {

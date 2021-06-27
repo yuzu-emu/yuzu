@@ -61,8 +61,8 @@ void Tas::LoadTasFile(size_t player_index) {
         commands[player_index].clear();
     }
     std::string file =
-        Common::FS::ReadStringFromFile(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::TASDir) +
-                                           "script0-" + std::to_string(player_index + 1) + ".txt",
+        Common::FS::ReadStringFromFile(Common::FS::GetYuzuPath(Common::FS::YuzuPath::TASDir) /
+                                           fmt::format("script0-{}.txt", player_index + 1),
                                        Common::FS::FileType::BinaryFile);
     std::stringstream command_line(file);
     std::string line;
@@ -102,7 +102,7 @@ void Tas::LoadTasFile(size_t player_index) {
     LOG_INFO(Input, "TAS file loaded! {} frames", frame_no);
 }
 
-void Tas::WriteTasFile(std::string file_name) {
+void Tas::WriteTasFile(std::u8string file_name) {
     std::string output_text;
     for (size_t frame = 0; frame < record_commands.size(); frame++) {
         if (!output_text.empty()) {
@@ -112,8 +112,8 @@ void Tas::WriteTasFile(std::string file_name) {
         output_text += std::to_string(frame) + " " + WriteCommandButtons(line.buttons) + " " +
                        WriteCommandAxis(line.l_axis) + " " + WriteCommandAxis(line.r_axis);
     }
-    const size_t bytes_written = Common::FS::WriteStringToFile(
-        Common::FS::GetYuzuPathString(Common::FS::YuzuPath::TASDir) + file_name,
+    const auto bytes_written = Common::FS::WriteStringToFile(
+        Common::FS::GetYuzuPath(Common::FS::YuzuPath::TASDir) / file_name,
         Common::FS::FileType::TextFile, output_text);
     if (bytes_written == output_text.size()) {
         LOG_INFO(Input, "TAS file written to file!");
@@ -217,6 +217,9 @@ void Tas::UpdateThread() {
             is_running = Settings::values.tas_loop;
             current_command = 0;
             tas_data.fill({});
+            if (!is_running) {
+                SwapToStoredController();
+            }
         }
     } else {
         tas_data.fill({});
@@ -290,6 +293,52 @@ std::string Tas::WriteCommandButtons(u32 data) const {
 
 void Tas::StartStop() {
     is_running = !is_running;
+    if (is_running) {
+        SwapToTasController();
+    } else {
+        SwapToStoredController();
+    }
+}
+
+void Tas::SwapToTasController() {
+    if (!Settings::values.tas_swap_controllers) {
+        return;
+    }
+    auto& players = Settings::values.players.GetValue();
+    for (std::size_t index = 0; index < players.size(); index++) {
+        auto& player = players[index];
+        player_mappings[index] = player;
+
+        // Only swap active controllers
+        if (!player.connected) {
+            continue;
+        }
+
+        auto tas_param = Common::ParamPackage{{"pad", static_cast<u8>(index)}};
+        auto button_mapping = GetButtonMappingForDevice(tas_param);
+        auto analog_mapping = GetAnalogMappingForDevice(tas_param);
+        auto& buttons = player.buttons;
+        auto& analogs = player.analogs;
+
+        for (std::size_t i = 0; i < buttons.size(); ++i) {
+            buttons[i] = button_mapping[static_cast<Settings::NativeButton::Values>(i)].Serialize();
+        }
+        for (std::size_t i = 0; i < analogs.size(); ++i) {
+            analogs[i] = analog_mapping[static_cast<Settings::NativeAnalog::Values>(i)].Serialize();
+        }
+    }
+    Settings::values.is_device_reload_pending.store(true);
+}
+
+void Tas::SwapToStoredController() {
+    if (!Settings::values.tas_swap_controllers) {
+        return;
+    }
+    auto& players = Settings::values.players.GetValue();
+    for (std::size_t index = 0; index < players.size(); index++) {
+        players[index] = player_mappings[index];
+    }
+    Settings::values.is_device_reload_pending.store(true);
 }
 
 void Tas::Reset() {
@@ -308,9 +357,9 @@ void Tas::SaveRecording(bool overwrite_file) {
     if (record_commands.empty()) {
         return;
     }
-    WriteTasFile("record.txt");
+    WriteTasFile(u8"record.txt");
     if (overwrite_file) {
-        WriteTasFile("script0-1.txt");
+        WriteTasFile(u8"script0-1.txt");
     }
     needs_reset = true;
     record_commands.clear();

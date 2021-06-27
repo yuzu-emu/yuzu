@@ -318,7 +318,7 @@ private:
     QLabel* emu_speed_label = nullptr;
     QLabel* game_fps_label = nullptr;
     QLabel* emu_frametime_label = nullptr;
-    QLabel* tas_label;
+    QLabel* tas_label = nullptr;
     QPushButton* async_status_button = nullptr;
     QPushButton* multicore_status_button = nullptr;
     QPushButton* renderer_status_button = nullptr;
