@@ -10,6 +10,7 @@
 #include "common/alignment.h"
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "common/scope_exit.h"
 #include "common/settings.h"
 #include "core/core.h"
 #include "core/device_memory.h"
@@ -43,6 +44,8 @@ void SetupMainThread(Core::System& system, KProcess& owner_process, u32 priority
     ASSERT(owner_process.GetResourceLimit()->Reserve(LimitableResource::Threads, 1));
 
     KThread* thread = KThread::Create(system.Kernel());
+    SCOPE_EXIT({ thread->Close(); });
+
     ASSERT(KThread::InitializeUserThread(system, thread, entry_point, 0, stack_top, priority,
                                          owner_process.GetIdealCoreId(), &owner_process)
                .IsSuccess());
