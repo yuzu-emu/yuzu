@@ -61,6 +61,7 @@ struct KernelCore::Impl {
     void Initialize(KernelCore& kernel) {
         global_scheduler_context = std::make_unique<Kernel::GlobalSchedulerContext>(kernel);
         global_handle_table = std::make_unique<Kernel::KHandleTable>(kernel);
+        global_handle_table->Initialize(KHandleTable::MaxTableSize);
 
         is_phantom_mode_for_singlecore = false;
 
