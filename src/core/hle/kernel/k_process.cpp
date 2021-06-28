@@ -409,6 +409,9 @@ void KProcess::Finalize() {
         resource_limit->Close();
     }
 
+    // Finalize the handle table and close any open handles.
+    handle_table.Finalize();
+
     // Perform inherited finalization.
     KAutoObjectWithSlabHeapAndContainer<KProcess, KSynchronizationObject>::Finalize();
 }
