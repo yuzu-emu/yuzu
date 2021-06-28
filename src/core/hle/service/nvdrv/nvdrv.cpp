@@ -39,11 +39,12 @@ void InstallInterfaces(SM::ServiceManager& service_manager, NVFlinger::NVFlinger
     nvflinger.SetNVDrvInstance(module_);
 }
 
-Module::Module(Core::System& system) : syncpoint_manager{system.GPU()} {
+Module::Module(Core::System& system)
+    : syncpoint_manager{system.GPU()}, service_context{system, "nvdrv"} {
     auto& kernel = system.Kernel();
     for (u32 i = 0; i < MaxNvEvents; i++) {
-        events_interface.events[i].event = Kernel::KEvent::Create(kernel);
-        events_interface.events[i].event->Initialize(fmt::format("NVDRV::NvEvent_{}", i));
+        events_interface.events[i].event =
+            service_context.CreateEvent(fmt::format("NVDRV::NvEvent_{}", i));
         events_interface.status[i] = EventState::Free;
         events_interface.registered[i] = false;
     }
@@ -65,8 +66,7 @@ Module::Module(Core::System& system) : syncpoint_manager{system.GPU()} {
 
 Module::~Module() {
     for (u32 i = 0; i < MaxNvEvents; i++) {
-        events_interface.events[i].event->Close();
-        events_interface.events[i].event = nullptr;
+        service_context.CloseEvent(events_interface.events[i].event);
     }
 }
 

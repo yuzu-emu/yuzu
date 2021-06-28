@@ -20,6 +20,10 @@ class KEvent;
 class KReadableEvent;
 } // namespace Kernel
 
+namespace Service::KernelHelpers {
+class ServiceContext;
+}
+
 namespace Service::HID {
 
 constexpr u32 NPAD_HANDHELD = 32;
@@ -27,7 +31,8 @@ constexpr u32 NPAD_UNKNOWN = 16; // TODO(ogniK): What is this?
 
 class Controller_NPad final : public ControllerBase {
 public:
-    explicit Controller_NPad(Core::System& system_);
+    explicit Controller_NPad(Core::System& system_,
+                             KernelHelpers::ServiceContext& service_context_);
     ~Controller_NPad() override;
 
     // Called when the controller is initialized
@@ -566,6 +571,7 @@ private:
         std::array<std::unique_ptr<Input::MotionDevice>, Settings::NativeMotion::NUM_MOTIONS_HID>,
         10>;
 
+    KernelHelpers::ServiceContext& service_context;
     std::mutex mutex;
     ButtonArray buttons;
     StickArray sticks;

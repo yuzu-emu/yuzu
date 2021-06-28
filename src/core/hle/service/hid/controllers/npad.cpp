@@ -18,6 +18,7 @@
 #include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/hid/controllers/npad.h"
+#include "core/hle/service/kernel_helpers.h"
 
 namespace Service::HID {
 constexpr s32 HID_JOYSTICK_MAX = 0x7fff;
@@ -147,7 +148,9 @@ bool Controller_NPad::IsDeviceHandleValid(const DeviceHandle& device_handle) {
            device_handle.device_index < DeviceIndex::MaxDeviceIndex;
 }
 
-Controller_NPad::Controller_NPad(Core::System& system_) : ControllerBase{system_} {
+Controller_NPad::Controller_NPad(Core::System& system_,
+                                 KernelHelpers::ServiceContext& service_context_)
+    : ControllerBase{system_}, service_context{service_context_} {
     latest_vibration_values.fill({DEFAULT_VIBRATION_VALUE, DEFAULT_VIBRATION_VALUE});
 }
 
@@ -253,8 +256,8 @@ void Controller_NPad::InitNewlyAddedController(std::size_t controller_idx) {
 void Controller_NPad::OnInit() {
     auto& kernel = system.Kernel();
     for (std::size_t i = 0; i < styleset_changed_events.size(); ++i) {
-        styleset_changed_events[i] = Kernel::KEvent::Create(kernel);
-        styleset_changed_events[i]->Initialize(fmt::format("npad:NpadStyleSetChanged_{}", i));
+        styleset_changed_events[i] =
+            service_context.CreateEvent(fmt::format("npad:NpadStyleSetChanged_{}", i));
     }
 
     if (!IsControllerActivated()) {
@@ -344,8 +347,7 @@ void Controller_NPad::OnRelease() {
     }
 
     for (std::size_t i = 0; i < styleset_changed_events.size(); ++i) {
-        styleset_changed_events[i]->Close();
-        styleset_changed_events[i] = nullptr;
+        service_context.CloseEvent(styleset_changed_events[i]);
     }
 }
 

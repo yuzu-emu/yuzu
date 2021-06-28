@@ -7,6 +7,7 @@
 #include <chrono>
 
 #include "core/hle/service/hid/controllers/controller_base.h"
+#include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/service.h"
 
 namespace Core::Timing {
@@ -39,7 +40,8 @@ enum class HidController : std::size_t {
 
 class IAppletResource final : public ServiceFramework<IAppletResource> {
 public:
-    explicit IAppletResource(Core::System& system_);
+    explicit IAppletResource(Core::System& system_,
+                             KernelHelpers::ServiceContext& service_context_);
     ~IAppletResource() override;
 
     void ActivateController(HidController controller);
@@ -60,10 +62,17 @@ private:
     void MakeController(HidController controller) {
         controllers[static_cast<std::size_t>(controller)] = std::make_unique<T>(system);
     }
+    template <typename T>
+    void MakeControllerWithServiceContext(HidController controller) {
+        controllers[static_cast<std::size_t>(controller)] =
+            std::make_unique<T>(system, service_context);
+    }
 
     void GetSharedMemoryHandle(Kernel::HLERequestContext& ctx);
     void UpdateControllers(std::uintptr_t user_data, std::chrono::nanoseconds ns_late);
     void UpdateMotion(std::uintptr_t user_data, std::chrono::nanoseconds ns_late);
+
+    KernelHelpers::ServiceContext& service_context;
 
     std::shared_ptr<Core::Timing::EventType> pad_update_event;
     std::shared_ptr<Core::Timing::EventType> motion_update_event;
@@ -176,6 +185,8 @@ private:
     static_assert(sizeof(VibrationDeviceInfo) == 0x8, "VibrationDeviceInfo has incorrect size.");
 
     std::shared_ptr<IAppletResource> applet_resource;
+
+    KernelHelpers::ServiceContext service_context;
 };
 
 /// Reload input devices. Used when input configuration changed

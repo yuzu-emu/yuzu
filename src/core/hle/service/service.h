@@ -96,6 +96,9 @@ protected:
     /// System context that the service operates under.
     Core::System& system;
 
+    /// Identifier string used to connect to the service.
+    std::string service_name;
+
 private:
     template <typename T>
     friend class ServiceFramework;
@@ -117,8 +120,6 @@ private:
     void RegisterHandlersBaseTipc(const FunctionInfoBase* functions, std::size_t n);
     void ReportUnimplementedFunction(Kernel::HLERequestContext& ctx, const FunctionInfoBase* info);
 
-    /// Identifier string used to connect to the service.
-    std::string service_name;
     /// Maximum number of concurrent sessions that this service can handle.
     u32 max_sessions;
 

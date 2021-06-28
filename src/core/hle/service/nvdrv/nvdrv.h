@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "common/common_types.h"
+#include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nvdrv/nvdata.h"
 #include "core/hle/service/nvdrv/syncpoint_manager.h"
 #include "core/hle/service/service.h"
@@ -154,6 +155,8 @@ private:
     std::unordered_map<std::string, std::shared_ptr<Devices::nvdevice>> devices;
 
     EventInterface events_interface;
+
+    KernelHelpers::ServiceContext service_context;
 };
 
 /// Registers all NVDRV services with the specified service manager.
