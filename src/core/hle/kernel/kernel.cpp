@@ -142,6 +142,13 @@ struct KernelCore::Impl {
 
         // Next host thead ID to use, 0-3 IDs represent core threads, >3 represent others
         next_host_thread_id = Core::Hardware::NUM_CPU_CORES;
+
+        // Track kernel objects that were not freed on shutdown
+        if (registered_objects.size()) {
+            LOG_WARNING(Kernel, "{} kernel objects were dangling on shutdown!",
+                        registered_objects.size());
+            registered_objects.clear();
+        }
     }
 
     void InitializePhysicalCores() {
@@ -656,6 +663,7 @@ struct KernelCore::Impl {
     /// the ConnectToPort SVC.
     std::unordered_map<std::string, ServiceInterfaceFactory> service_interface_factory;
     NamedPortTable named_ports;
+    std::unordered_set<KAutoObject*> registered_objects;
 
     std::unique_ptr<Core::ExclusiveMonitor> exclusive_monitor;
     std::vector<Kernel::PhysicalCore> cores;
@@ -850,6 +858,14 @@ KClientPort* KernelCore::CreateNamedServicePort(std::string name) {
         return {};
     }
     return &search->second(impl->system.ServiceManager(), impl->system);
+}
+
+void KernelCore::RegisterKernelObject(KAutoObject* object) {
+    impl->registered_objects.insert(object);
+}
+
+void KernelCore::UnregisterKernelObject(KAutoObject* object) {
+    impl->registered_objects.erase(object);
 }
 
 bool KernelCore::IsValidNamedPort(NamedPortTable::const_iterator port) const {

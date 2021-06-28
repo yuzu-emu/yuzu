@@ -85,8 +85,12 @@ private:
     KERNEL_AUTOOBJECT_TRAITS(KAutoObject, KAutoObject);
 
 public:
-    explicit KAutoObject(KernelCore& kernel_) : kernel(kernel_) {}
-    virtual ~KAutoObject() = default;
+    explicit KAutoObject(KernelCore& kernel_) : kernel(kernel_) {
+        RegisterWithKernel();
+    }
+    virtual ~KAutoObject() {
+        UnregisterWithKernel();
+    }
 
     static KAutoObject* Create(KAutoObject* ptr);
 
@@ -165,6 +169,10 @@ public:
             this->Destroy();
         }
     }
+
+private:
+    void RegisterWithKernel();
+    void UnregisterWithKernel();
 
 protected:
     KernelCore& kernel;

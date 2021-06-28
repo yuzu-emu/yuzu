@@ -185,6 +185,14 @@ public:
     /// Opens a port to a service previously registered with RegisterNamedService.
     KClientPort* CreateNamedServicePort(std::string name);
 
+    /// Registers all kernel objects with the global emulation state, this is purely for tracking
+    /// leaks after emulation has been shutdown.
+    void RegisterKernelObject(KAutoObject* object);
+
+    /// Unregisters a kernel object previously registered with RegisterKernelObject when it was
+    /// destroyed during the current emulation session.
+    void UnregisterKernelObject(KAutoObject* object);
+
     /// Determines whether or not the given port is a valid named port.
     bool IsValidNamedPort(NamedPortTable::const_iterator port) const;
 
