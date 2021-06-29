@@ -194,6 +194,10 @@ max_anisotropy =
 # 0 (default): Off, 1: On
 use_vsync =
 
+# Which shader backend to use with the OpenGL renderer backend.
+# 0 (default): GLSL, 1: GLASM (NVIDIA Only), 2: SPIR-V
+shader_backend =
+
 # Whether to allow asynchronous shader building.
 # 0 (default): Off, 1: On
 use_asynchronous_shaders =

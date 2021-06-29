@@ -449,6 +449,9 @@ void Config::ReadValues() {
         static_cast<u16>(sdl2_config->GetInteger("Renderer", "use_vsync", 1)));
     Settings::values.disable_fps_limit.SetValue(
         sdl2_config->GetBoolean("Renderer", "disable_fps_limit", false));
+    Settings::values.shader_backend.SetValue(
+        static_cast<Settings::ShaderBackend>(sdl2_config->GetInt(
+            "Renderer", "shader_backend", static_cast<long>(Settings::ShaderBackend::GLSL))));
     Settings::values.use_asynchronous_shaders.SetValue(
         sdl2_config->GetBoolean("Renderer", "use_asynchronous_shaders", false));
     Settings::values.use_nvdec_emulation.SetValue(

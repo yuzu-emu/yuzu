@@ -1414,7 +1414,7 @@ void Config::SaveRendererValues() {
                        false);
     WriteSettingGlobal(QStringLiteral("shader_backend"),
                        static_cast<u32>(Settings::values.shader_backend.GetValue(global)),
-                       Settings::values.shader_backend.UsingGlobal(), 1);
+                       Settings::values.shader_backend.UsingGlobal(), 0);
     WriteSettingGlobal(QStringLiteral("use_asynchronous_shaders"),
                        Settings::values.use_asynchronous_shaders, false);
     WriteSettingGlobal(QStringLiteral("use_fast_gpu_time"), Settings::values.use_fast_gpu_time,
