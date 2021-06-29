@@ -511,10 +511,13 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     CollectToolingInfo();
 
     if (ext_extended_dynamic_state && driver_id == VK_DRIVER_ID_MESA_RADV) {
-        LOG_WARNING(
-            Render_Vulkan,
-            "Blacklisting RADV for VK_EXT_extended_dynamic state, likely due to a bug in yuzu");
-        ext_extended_dynamic_state = false;
+        // Mask driver version variant
+        const u32 version = (properties.driverVersion << 3) >> 3;
+        if (version < VK_MAKE_API_VERSION(0, 21, 2, 0)) {
+            LOG_WARNING(Render_Vulkan,
+                        "RADV versions older than 21.2 have broken VK_EXT_extended_dynamic_state");
+            ext_extended_dynamic_state = false;
+        }
     }
     if (ext_vertex_input_dynamic_state && driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS) {
         LOG_WARNING(Render_Vulkan, "Blacklisting Intel for VK_EXT_vertex_input_dynamic_state");
