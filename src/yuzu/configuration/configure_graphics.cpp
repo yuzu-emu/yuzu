@@ -26,6 +26,10 @@ ConfigureGraphics::ConfigureGraphics(QWidget* parent)
 
     ui->setupUi(this);
 
+    for (const auto& device : vulkan_devices) {
+        ui->device->addItem(device);
+    }
+
     ui->backend->addItem(QStringLiteral("GLSL"));
     ui->backend->addItem(tr("GLASM (NVIDIA Only)"));
     ui->backend->addItem(QStringLiteral("SPIR-V"));
@@ -53,10 +57,6 @@ ConfigureGraphics::ConfigureGraphics(QWidget* parent)
         }
         UpdateBackgroundColorButton(new_bg_color);
     });
-
-    for (const auto& device : vulkan_devices) {
-        ui->device->addItem(device);
-    }
 
     ui->bg_label->setVisible(Settings::IsConfiguringGlobal());
     ui->bg_combobox->setVisible(!Settings::IsConfiguringGlobal());
