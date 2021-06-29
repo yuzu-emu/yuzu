@@ -61,14 +61,14 @@ void GetCbuf(EmitContext& ctx, std::string_view ret, const IR::Value& binding,
                                          : fmt ::format("bitfieldExtract({},int({}),{})", cbuf_cast,
                                                         bit_offset, num_bits)};
     if (!component_indexing_bug) {
-        const auto result{fmt::format(extraction, swizzle)};
+        const auto result{fmt::format(fmt::runtime(extraction), swizzle)};
         ctx.Add("{}={};", ret, result);
         return;
     }
     const auto cbuf_offset{fmt::format("{}>>2", offset_var)};
     for (u32 i = 0; i < 4; ++i) {
         const auto swizzle_string{fmt::format(".{}", "xyzw"[i])};
-        const auto result{fmt::format(extraction, swizzle_string)};
+        const auto result{fmt::format(fmt::runtime(extraction), swizzle_string)};
         ctx.Add("if(({}&3)=={}){}={};", cbuf_offset, i, ret, result);
     }
 }

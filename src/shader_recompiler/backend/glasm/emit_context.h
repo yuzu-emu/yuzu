@@ -37,21 +37,23 @@ public:
 
     template <typename... Args>
     void Add(const char* format_str, IR::Inst& inst, Args&&... args) {
-        code += fmt::format(format_str, reg_alloc.Define(inst), std::forward<Args>(args)...);
+        code += fmt::format(fmt::runtime(format_str), reg_alloc.Define(inst),
+                            std::forward<Args>(args)...);
         // TODO: Remove this
         code += '\n';
     }
 
     template <typename... Args>
     void LongAdd(const char* format_str, IR::Inst& inst, Args&&... args) {
-        code += fmt::format(format_str, reg_alloc.LongDefine(inst), std::forward<Args>(args)...);
+        code += fmt::format(fmt::runtime(format_str), reg_alloc.LongDefine(inst),
+                            std::forward<Args>(args)...);
         // TODO: Remove this
         code += '\n';
     }
 
     template <typename... Args>
     void Add(const char* format_str, Args&&... args) {
-        code += fmt::format(format_str, std::forward<Args>(args)...);
+        code += fmt::format(fmt::runtime(format_str), std::forward<Args>(args)...);
         // TODO: Remove this
         code += '\n';
     }
