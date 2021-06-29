@@ -291,7 +291,7 @@ void ShaderCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
     state.has_loaded = true;
     lock.unlock();
 
-    workers->WaitForRequests();
+    workers->WaitForRequests(stop_loading);
     if (!use_asynchronous_shaders) {
         workers.reset();
     }
