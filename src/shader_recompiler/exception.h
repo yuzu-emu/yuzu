@@ -37,21 +37,21 @@ class LogicError : public Exception {
 public:
     template <typename... Args>
     LogicError(const char* message, Args&&... args)
-        : Exception{fmt::format(message, std::forward<Args>(args)...)} {}
+        : Exception{fmt::format(fmt::runtime(message), std::forward<Args>(args)...)} {}
 };
 
 class RuntimeError : public Exception {
 public:
     template <typename... Args>
     RuntimeError(const char* message, Args&&... args)
-        : Exception{fmt::format(message, std::forward<Args>(args)...)} {}
+        : Exception{fmt::format(fmt::runtime(message), std::forward<Args>(args)...)} {}
 };
 
 class NotImplementedException : public Exception {
 public:
     template <typename... Args>
     NotImplementedException(const char* message, Args&&... args)
-        : Exception{fmt::format(message, std::forward<Args>(args)...)} {
+        : Exception{fmt::format(fmt::runtime(message), std::forward<Args>(args)...)} {
         Append(" is not implemented");
     }
 };
@@ -60,7 +60,7 @@ class InvalidArgument : public Exception {
 public:
     template <typename... Args>
     InvalidArgument(const char* message, Args&&... args)
-        : Exception{fmt::format(message, std::forward<Args>(args)...)} {}
+        : Exception{fmt::format(fmt::runtime(message), std::forward<Args>(args)...)} {}
 };
 
 } // namespace Shader

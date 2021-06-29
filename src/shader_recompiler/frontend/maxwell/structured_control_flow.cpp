@@ -174,7 +174,7 @@ std::string DumpTree(const Tree& tree, u32 indentation = 0) {
         switch (stmt->type) {
         case StatementType::Code:
             ret += fmt::format("{}    Block {:04x} -> {:04x} (0x{:016x});\n", indent,
-                               stmt->block->begin, stmt->block->end,
+                               stmt->block->begin.Offset(), stmt->block->end.Offset(),
                                reinterpret_cast<uintptr_t>(stmt->block));
             break;
         case StatementType::Goto:

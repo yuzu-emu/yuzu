@@ -597,7 +597,7 @@ std::string EmitContext::DefineGlobalMemoryFunctions() {
         func += comparison;
 
         const auto ssbo_name{fmt::format("{}_ssbo{}", stage_name, index)};
-        func += fmt::format(return_statement, ssbo_name, ssbo_addr);
+        func += fmt::format(fmt::runtime(return_statement), ssbo_name, ssbo_addr);
     }};
     std::string write_func{"void WriteGlobal32(uint64_t addr,uint data){"};
     std::string write_func_64{"void WriteGlobal64(uint64_t addr,uvec2 data){"};
