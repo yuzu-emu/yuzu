@@ -36,8 +36,12 @@ enum class Half : u64 {
     switch (shift) {
     case Shift::None:
         return value;
-    case Shift::Right:
-        return ir.ShiftRightLogical(value, ir.Imm32(16));
+    case Shift::Right: {
+        // 33-bit RS IADD3 edge case
+        const IR::U1 edge_case{ir.GetCarryFromOp(value)};
+        const IR::U32 shifted{ir.ShiftRightLogical(value, ir.Imm32(16))};
+        return IR::U32{ir.Select(edge_case, ir.IAdd(shifted, ir.Imm32(0x10000)), shifted)};
+    }
     case Shift::Left:
         return ir.ShiftLeftLogical(value, ir.Imm32(16));
     }
@@ -67,6 +71,10 @@ void IADD3(TranslatorVisitor& v, u64 insn, IR::U32 op_a, IR::U32 op_b, IR::U32 o
     }
     IR::U32 lhs_1{v.ir.IAdd(op_a, op_b)};
     if (iadd3.x != 0) {
+        // TODO: How does RS behave when X is set?
+        if (shift == Shift::Right) {
+            throw NotImplementedException("IADD3 X+RS");
+        }
         const IR::U32 carry{v.ir.Select(v.ir.GetCFlag(), v.ir.Imm32(1), v.ir.Imm32(0))};
         lhs_1 = v.ir.IAdd(lhs_1, carry);
     }
