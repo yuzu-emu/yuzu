@@ -22,31 +22,33 @@ enum class Half : u64 {
 [[nodiscard]] IR::U32 IntegerHalf(IR::IREmitter& ir, const IR::U32& value, Half half) {
     constexpr bool is_signed{false};
     switch (half) {
+    case Half::All:
+        return value;
     case Half::Lower:
         return ir.BitFieldExtract(value, ir.Imm32(0), ir.Imm32(16), is_signed);
     case Half::Upper:
         return ir.BitFieldExtract(value, ir.Imm32(16), ir.Imm32(16), is_signed);
-    default:
-        return value;
     }
+    throw NotImplementedException("Invalid half");
 }
 
 [[nodiscard]] IR::U32 IntegerShift(IR::IREmitter& ir, const IR::U32& value, Shift shift) {
     switch (shift) {
+    case Shift::None:
+        return value;
     case Shift::Right:
         return ir.ShiftRightLogical(value, ir.Imm32(16));
     case Shift::Left:
         return ir.ShiftLeftLogical(value, ir.Imm32(16));
-    default:
-        return value;
     }
+    throw NotImplementedException("Invalid shift");
 }
 
-void IADD3(TranslatorVisitor& v, u64 insn, IR::U32 op_a, IR::U32 op_b, IR::U32 op_c) {
+void IADD3(TranslatorVisitor& v, u64 insn, IR::U32 op_a, IR::U32 op_b, IR::U32 op_c,
+           Shift shift = Shift::None) {
     union {
         u64 insn;
         BitField<0, 8, IR::Reg> dest_reg;
-        BitField<37, 2, Shift> shift;
         BitField<47, 1, u64> cc;
         BitField<48, 1, u64> x;
         BitField<49, 1, u64> neg_c;
@@ -68,7 +70,7 @@ void IADD3(TranslatorVisitor& v, u64 insn, IR::U32 op_a, IR::U32 op_b, IR::U32 o
         const IR::U32 carry{v.ir.Select(v.ir.GetCFlag(), v.ir.Imm32(1), v.ir.Imm32(0))};
         lhs_1 = v.ir.IAdd(lhs_1, carry);
     }
-    const IR::U32 lhs_2{IntegerShift(v.ir, lhs_1, iadd3.shift)};
+    const IR::U32 lhs_2{IntegerShift(v.ir, lhs_1, shift)};
     const IR::U32 result{v.ir.IAdd(lhs_2, op_c)};
 
     v.X(iadd3.dest_reg, result);
@@ -89,14 +91,16 @@ void IADD3(TranslatorVisitor& v, u64 insn, IR::U32 op_a, IR::U32 op_b, IR::U32 o
 void TranslatorVisitor::IADD3_reg(u64 insn) {
     union {
         u64 insn;
+        BitField<37, 2, Shift> shift;
         BitField<35, 2, Half> half_a;
-        BitField<31, 2, Half> half_c;
         BitField<33, 2, Half> half_b;
-    } iadd3{insn};
+        BitField<31, 2, Half> half_c;
+    } const iadd3{insn};
+
     const auto op_a{IntegerHalf(ir, GetReg8(insn), iadd3.half_a)};
     const auto op_b{IntegerHalf(ir, GetReg20(insn), iadd3.half_b)};
     const auto op_c{IntegerHalf(ir, GetReg39(insn), iadd3.half_c)};
-    IADD3(*this, insn, op_a, op_b, op_c);
+    IADD3(*this, insn, op_a, op_b, op_c, iadd3.shift);
 }
 
 void TranslatorVisitor::IADD3_cbuf(u64 insn) {
