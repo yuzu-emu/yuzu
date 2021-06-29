@@ -315,6 +315,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxw
         .has_broken_spirv_clamp = driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS_KHR,
         .has_broken_unsigned_image_offsets = false,
         .has_broken_signed_operations = false,
+        .has_broken_fp16_float_controls = driver_id == VK_DRIVER_ID_NVIDIA_PROPRIETARY_KHR,
         .ignore_nan_fp_comparisons = false,
     };
     host_info = Shader::HostTranslateInfo{
