@@ -125,7 +125,7 @@ private:
 
     /// Flag to store if a port was already create/installed to detect multiple install attempts,
     /// which is not supported.
-    bool port_installed = false;
+    bool service_registered = false;
 
     /// Function used to safely up-cast pointers to the derived class before invoking a handler.
     InvokerFn* handler_invoker;
