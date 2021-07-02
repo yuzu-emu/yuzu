@@ -117,6 +117,7 @@ struct KernelCore::Impl {
             current_process = nullptr;
         }
 
+        global_handle_table->Finalize();
         global_handle_table.reset();
 
         preemption_event = nullptr;
