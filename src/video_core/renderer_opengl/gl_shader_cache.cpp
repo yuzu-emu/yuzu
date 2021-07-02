@@ -328,11 +328,32 @@ GraphicsPipeline* ShaderCache::CurrentGraphicsPipelineSlowPath() {
     if (is_new) {
         pipeline = CreateGraphicsPipeline();
     }
-    current_pipeline = pipeline.get();
-    if (!pipeline || !pipeline->IsBuilt()) {
+    if (!pipeline) {
         return nullptr;
     }
-    return pipeline.get();
+    current_pipeline = pipeline.get();
+    return BuiltPipeline(current_pipeline);
+}
+
+GraphicsPipeline* ShaderCache::BuiltPipeline(GraphicsPipeline* pipeline) const noexcept {
+    if (pipeline->IsBuilt()) {
+        return pipeline;
+    }
+    if (!use_asynchronous_shaders) {
+        return pipeline;
+    }
+    // If something is using depth, we can assume that games are not rendering anything which
+    // will be used one time.
+    if (maxwell3d.regs.zeta_enable) {
+        return nullptr;
+    }
+    // If games are using a small index count, we can assume these are full screen quads.
+    // Usually these shaders are only used once for building textures so we can assume they
+    // can't be built async
+    if (maxwell3d.regs.index_array.count <= 6 || maxwell3d.regs.vertex_buffer.count <= 6) {
+        return pipeline;
+    }
+    return nullptr;
 }
 
 ComputePipeline* ShaderCache::CurrentComputePipeline() {

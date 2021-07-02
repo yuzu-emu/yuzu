@@ -54,6 +54,8 @@ public:
 private:
     GraphicsPipeline* CurrentGraphicsPipelineSlowPath();
 
+    [[nodiscard]] GraphicsPipeline* BuiltPipeline(GraphicsPipeline* pipeline) const noexcept;
+
     std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline();
 
     std::unique_ptr<GraphicsPipeline> CreateGraphicsPipeline(
