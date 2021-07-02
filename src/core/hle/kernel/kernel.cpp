@@ -91,6 +91,12 @@ struct KernelCore::Impl {
     }
 
     void Shutdown() {
+        if (current_process) {
+            current_process->Finalize();
+            current_process->Close();
+            current_process = nullptr;
+        }
+
         process_list.clear();
 
         // Ensures all service threads gracefully shutdown
@@ -111,11 +117,6 @@ struct KernelCore::Impl {
         }
 
         cores.clear();
-
-        if (current_process) {
-            current_process->Close();
-            current_process = nullptr;
-        }
 
         global_handle_table->Finalize();
         global_handle_table.reset();
