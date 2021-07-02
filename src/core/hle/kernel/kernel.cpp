@@ -91,15 +91,39 @@ struct KernelCore::Impl {
     }
 
     void Shutdown() {
+        // Shutdown all processes.
         if (current_process) {
             current_process->Finalize();
             current_process->Close();
             current_process = nullptr;
         }
-
         process_list.clear();
 
-        // Ensures all service threads gracefully shutdown
+        // Close all open server ports.
+        std::unordered_set<KServerPort*> server_ports_;
+        {
+            std::lock_guard lk(server_ports_lock);
+            server_ports_ = server_ports;
+            server_ports.clear();
+        }
+        for (auto* server_port : server_ports_) {
+            server_port->Close();
+        }
+        // Close all open server sessions.
+        std::unordered_set<KServerSession*> server_sessions_;
+        {
+            std::lock_guard lk(server_sessions_lock);
+            server_sessions_ = server_sessions;
+            server_sessions.clear();
+        }
+        for (auto* server_session : server_sessions_) {
+            server_session->Close();
+        }
+
+        // Ensure that the object list container is finalized and properly shutdown.
+        object_list_container.Finalize();
+
+        // Ensures all service threads gracefully shutdown.
         service_threads.clear();
 
         next_object_id = 0;
@@ -147,10 +171,13 @@ struct KernelCore::Impl {
         next_host_thread_id = Core::Hardware::NUM_CPU_CORES;
 
         // Track kernel objects that were not freed on shutdown
-        if (registered_objects.size()) {
-            LOG_WARNING(Kernel, "{} kernel objects were dangling on shutdown!",
-                        registered_objects.size());
-            registered_objects.clear();
+        {
+            std::lock_guard lk(registered_objects_lock);
+            if (registered_objects.size()) {
+                LOG_WARNING(Kernel, "{} kernel objects were dangling on shutdown!",
+                            registered_objects.size());
+                registered_objects.clear();
+            }
         }
     }
 
@@ -640,6 +667,21 @@ struct KernelCore::Impl {
             user_slab_heap_size);
     }
 
+    KClientPort* CreateNamedServicePort(std::string name) {
+        auto search = service_interface_factory.find(name);
+        if (search == service_interface_factory.end()) {
+            UNIMPLEMENTED();
+            return {};
+        }
+
+        KClientPort* port = &search->second(system.ServiceManager(), system);
+        {
+            std::lock_guard lk(server_ports_lock);
+            server_ports.insert(&port->GetParent()->GetServerPort());
+        }
+        return port;
+    }
+
     std::atomic<u32> next_object_id{0};
     std::atomic<u64> next_kernel_process_id{KProcess::InitialKIPIDMin};
     std::atomic<u64> next_user_process_id{KProcess::ProcessIDMin};
@@ -666,7 +708,12 @@ struct KernelCore::Impl {
     /// the ConnectToPort SVC.
     std::unordered_map<std::string, ServiceInterfaceFactory> service_interface_factory;
     NamedPortTable named_ports;
+    std::unordered_set<KServerPort*> server_ports;
+    std::unordered_set<KServerSession*> server_sessions;
     std::unordered_set<KAutoObject*> registered_objects;
+    std::mutex server_ports_lock;
+    std::mutex server_sessions_lock;
+    std::mutex registered_objects_lock;
 
     std::unique_ptr<Core::ExclusiveMonitor> exclusive_monitor;
     std::vector<Kernel::PhysicalCore> cores;
@@ -855,19 +902,26 @@ void KernelCore::RegisterNamedService(std::string name, ServiceInterfaceFactory&
 }
 
 KClientPort* KernelCore::CreateNamedServicePort(std::string name) {
-    auto search = impl->service_interface_factory.find(name);
-    if (search == impl->service_interface_factory.end()) {
-        UNIMPLEMENTED();
-        return {};
-    }
-    return &search->second(impl->system.ServiceManager(), impl->system);
+    return impl->CreateNamedServicePort(std::move(name));
+}
+
+void KernelCore::RegisterServerSession(KServerSession* server_session) {
+    std::lock_guard lk(impl->server_sessions_lock);
+    impl->server_sessions.insert(server_session);
+}
+
+void KernelCore::UnregisterServerSession(KServerSession* server_session) {
+    std::lock_guard lk(impl->server_sessions_lock);
+    impl->server_sessions.erase(server_session);
 }
 
 void KernelCore::RegisterKernelObject(KAutoObject* object) {
+    std::lock_guard lk(impl->registered_objects_lock);
     impl->registered_objects.insert(object);
 }
 
 void KernelCore::UnregisterKernelObject(KAutoObject* object) {
+    std::lock_guard lk(impl->registered_objects_lock);
     impl->registered_objects.erase(object);
 }
 
