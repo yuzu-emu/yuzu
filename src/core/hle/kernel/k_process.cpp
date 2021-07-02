@@ -165,7 +165,7 @@ void KProcess::DecrementThreadCount() {
     ASSERT(num_threads > 0);
 
     if (const auto count = --num_threads; count == 0) {
-        UNIMPLEMENTED_MSG("Process termination is not implemented!");
+        LOG_WARNING(Kernel, "Process termination is not fully implemented.");
     }
 }
 
