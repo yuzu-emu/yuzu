@@ -298,6 +298,7 @@ static ResultCode ConnectToNamedPort(Core::System& system, Handle* out, VAddr po
     // Create a session.
     KClientSession* session{};
     R_TRY(port->CreateSession(std::addressof(session)));
+    port->Close();
 
     // Register the session in the table, close the extra reference.
     handle_table.Register(*out, session);
