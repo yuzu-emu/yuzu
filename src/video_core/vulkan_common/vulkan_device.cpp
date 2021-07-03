@@ -194,12 +194,22 @@ std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(vk::Physica
     return format_properties;
 }
 
+std::vector<std::string> GetSupportedExtensions(vk::PhysicalDevice physical) {
+    const std::vector extensions = physical.EnumerateDeviceExtensionProperties();
+    std::vector<std::string> supported_extensions(std::size(extensions));
+    for (const auto& extension : extensions) {
+        supported_extensions.emplace_back(extension.extensionName);
+    }
+    return supported_extensions;
+}
+
 } // Anonymous namespace
 
 Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR surface,
                const vk::InstanceDispatch& dld_)
     : instance{instance_}, dld{dld_}, physical{physical_}, properties{physical.GetProperties()},
-      format_properties{GetFormatProperties(physical)} {
+      supported_extensions{GetSupportedExtensions(physical)},
+      format_properties(GetFormatProperties(physical)) {
     CheckSuitability(surface != nullptr);
     SetupFamilies(surface);
     SetupFeatures();
@@ -510,6 +520,13 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     CollectTelemetryParameters();
     CollectToolingInfo();
 
+    if (driver_id == VK_DRIVER_ID_NVIDIA_PROPRIETARY_KHR && is_float16_supported) {
+        if (std::ranges::find(supported_extensions, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME) !=
+            supported_extensions.end()) {
+            LOG_WARNING(Render_Vulkan, "Blacklisting Ampere devices from float16 math");
+            is_float16_supported = false;
+        }
+    }
     if (ext_extended_dynamic_state && driver_id == VK_DRIVER_ID_MESA_RADV) {
         // Mask driver version variant
         const u32 version = (properties.driverVersion << 3) >> 3;
@@ -778,10 +795,10 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
     bool has_ext_provoking_vertex{};
     bool has_ext_vertex_input_dynamic_state{};
     bool has_ext_line_rasterization{};
-    for (const VkExtensionProperties& extension : physical.EnumerateDeviceExtensionProperties()) {
+    for (const std::string& extension : supported_extensions) {
         const auto test = [&](std::optional<std::reference_wrapper<bool>> status, const char* name,
                               bool push) {
-            if (extension.extensionName != std::string_view(name)) {
+            if (extension != name) {
                 return;
             }
             if (push) {
@@ -1064,12 +1081,6 @@ void Device::CollectTelemetryParameters() {
 
     driver_id = driver.driverID;
     vendor_name = driver.driverName;
-
-    const std::vector extensions = physical.EnumerateDeviceExtensionProperties();
-    reported_extensions.reserve(std::size(extensions));
-    for (const auto& extension : extensions) {
-        reported_extensions.emplace_back(extension.extensionName);
-    }
 }
 
 void Device::CollectPhysicalMemoryInfo() {
