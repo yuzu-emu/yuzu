@@ -254,7 +254,6 @@ void Controller_NPad::InitNewlyAddedController(std::size_t controller_idx) {
 }
 
 void Controller_NPad::OnInit() {
-    auto& kernel = system.Kernel();
     for (std::size_t i = 0; i < styleset_changed_events.size(); ++i) {
         styleset_changed_events[i] =
             service_context.CreateEvent(fmt::format("npad:NpadStyleSetChanged_{}", i));
