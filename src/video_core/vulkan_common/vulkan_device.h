@@ -301,7 +301,7 @@ public:
 
     /// Returns the list of available extensions.
     const std::vector<std::string>& GetAvailableExtensions() const {
-        return reported_extensions;
+        return supported_extensions;
     }
 
     u64 GetDeviceLocalMemory() const {
@@ -398,8 +398,8 @@ private:
     bool has_nsight_graphics{};             ///< Has Nsight Graphics attached
 
     // Telemetry parameters
-    std::string vendor_name;                      ///< Device's driver name.
-    std::vector<std::string> reported_extensions; ///< Reported Vulkan extensions.
+    std::string vendor_name;                       ///< Device's driver name.
+    std::vector<std::string> supported_extensions; ///< Reported Vulkan extensions.
 
     /// Format properties dictionary.
     std::unordered_map<VkFormat, VkFormatProperties> format_properties;
