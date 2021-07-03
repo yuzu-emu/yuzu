@@ -41,7 +41,6 @@ void InstallInterfaces(SM::ServiceManager& service_manager, NVFlinger::NVFlinger
 
 Module::Module(Core::System& system)
     : syncpoint_manager{system.GPU()}, service_context{system, "nvdrv"} {
-    auto& kernel = system.Kernel();
     for (u32 i = 0; i < MaxNvEvents; i++) {
         events_interface.events[i].event =
             service_context.CreateEvent(fmt::format("NVDRV::NvEvent_{}", i));
