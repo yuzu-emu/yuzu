@@ -168,6 +168,7 @@ ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindo
           .support_descriptor_aliasing = false,
           .support_int8 = false,
           .support_int16 = false,
+          .support_int64 = device.HasShaderInt64(),
           .support_vertex_instance_id = true,
           .support_float_controls = false,
           .support_separate_denorm_behavior = false,

@@ -378,7 +378,7 @@ void EmitContext::SetupExtensions() {
     if (info.uses_shadow_lod && profile.support_gl_texture_shadow_lod) {
         header += "#extension GL_EXT_texture_shadow_lod : enable\n";
     }
-    if (info.uses_int64) {
+    if (info.uses_int64 && profile.support_int64) {
         header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
     }
     if (info.uses_int64_bit_atomics) {
@@ -402,7 +402,7 @@ void EmitContext::SetupExtensions() {
         info.uses_subgroup_shuffles || info.uses_fswzadd) {
         header += "#extension GL_ARB_shader_ballot : enable\n"
                   "#extension GL_ARB_shader_group_vote : enable\n";
-        if (!info.uses_int64) {
+        if (!info.uses_int64 && profile.support_int64) {
             header += "#extension GL_ARB_gpu_shader_int64 : enable\n";
         }
         if (profile.support_gl_warp_intrinsics) {
@@ -539,7 +539,7 @@ void EmitContext::DefineHelperFunctions() {
     if (info.uses_atomic_s32_max) {
         header += "uint CasMaxS32(uint op_a,uint op_b){return uint(max(int(op_a),int(op_b)));}";
     }
-    if (info.uses_global_memory) {
+    if (info.uses_global_memory && profile.support_int64) {
         header += DefineGlobalMemoryFunctions();
     }
     if (info.loads_indexed_attributes) {
