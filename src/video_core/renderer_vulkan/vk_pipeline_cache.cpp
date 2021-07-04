@@ -280,6 +280,7 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxw
         .support_descriptor_aliasing = true,
         .support_int8 = true,
         .support_int16 = device.IsShaderInt16Supported(),
+        .support_int64 = device.IsShaderInt64Supported(),
         .support_vertex_instance_id = false,
         .support_float_controls = true,
         .support_separate_denorm_behavior = float_control.denormBehaviorIndependence ==

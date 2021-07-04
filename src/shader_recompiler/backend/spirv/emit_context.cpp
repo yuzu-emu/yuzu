@@ -830,7 +830,7 @@ void EmitContext::DefineAttributeMemAccess(const Info& info) {
 }
 
 void EmitContext::DefineGlobalMemoryFunctions(const Info& info) {
-    if (!info.uses_global_memory) {
+    if (!info.uses_global_memory || !profile.support_int64) {
         return;
     }
     using DefPtr = Id StorageDefinitions::*;
