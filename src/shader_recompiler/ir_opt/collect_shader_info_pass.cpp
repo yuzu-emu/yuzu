@@ -505,10 +505,6 @@ void VisitUsages(Info& info, IR::Inst& inst) {
     case IR::Opcode::BoundImageQueryDimensions:
     case IR::Opcode::BoundImageQueryLod:
     case IR::Opcode::BoundImageGradient:
-    case IR::Opcode::ImageSampleImplicitLod:
-    case IR::Opcode::ImageSampleExplicitLod:
-    case IR::Opcode::ImageSampleDrefImplicitLod:
-    case IR::Opcode::ImageSampleDrefExplicitLod:
     case IR::Opcode::ImageGather:
     case IR::Opcode::ImageGatherDref:
     case IR::Opcode::ImageFetch:
@@ -520,6 +516,10 @@ void VisitUsages(Info& info, IR::Inst& inst) {
             inst.GetAssociatedPseudoOperation(IR::Opcode::GetSparseFromOp) != nullptr;
         break;
     }
+    case IR::Opcode::ImageSampleImplicitLod:
+    case IR::Opcode::ImageSampleExplicitLod:
+    case IR::Opcode::ImageSampleDrefImplicitLod:
+    case IR::Opcode::ImageSampleDrefExplicitLod:
     case IR::Opcode::ImageQueryLod: {
         const auto flags{inst.Flags<IR::TextureInstInfo>()};
         const TextureType type{flags.type};
