@@ -450,7 +450,7 @@ void Config::ReadValues() {
     Settings::values.disable_fps_limit.SetValue(
         sdl2_config->GetBoolean("Renderer", "disable_fps_limit", false));
     Settings::values.shader_backend.SetValue(
-        static_cast<Settings::ShaderBackend>(sdl2_config->GetInt(
+        static_cast<Settings::ShaderBackend>(sdl2_config->GetInteger(
             "Renderer", "shader_backend", static_cast<long>(Settings::ShaderBackend::GLSL))));
     Settings::values.use_asynchronous_shaders.SetValue(
         sdl2_config->GetBoolean("Renderer", "use_asynchronous_shaders", false));
