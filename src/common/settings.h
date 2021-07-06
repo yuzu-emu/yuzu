@@ -367,17 +367,14 @@ struct Values {
     BasicSetting<std::string> udp_input_servers{InputCommon::CemuhookUDP::DEFAULT_SRV,
                                                 "udp_input_servers"};
 
-    BasicSetting<bool> pause_tas_on_load { false, "pause_tas_on_load" };
-    BasicSetting<bool> tas_enable{ false, "tas_enable" };
-    BasicSetting<bool> tas_loop{ false, "tas_loop" };
-    BasicSetting<bool> tas_swap_controllers{ false, "tas_swap_controllers" };
-    BasicSetting<bool> is_cpu_boosted{ false,  "is_cpu_boosted" };
-" };
+    BasicSetting<bool> pause_tas_on_load{true, "pause_tas_on_load"};
+    BasicSetting<bool> tas_enable{false, "tas_enable"};
+    BasicSetting<bool> tas_loop{false, "tas_loop"};
+    BasicSetting<bool> tas_swap_controllers{true, "tas_swap_controllers"};
 
     BasicSetting<bool> mouse_panning{false, "mouse_panning"};
     BasicSetting<float> mouse_panning_sensitivity{1.0f, "mouse_panning_sensitivity"};
     BasicSetting<bool> mouse_enabled{false, "mouse_enabled"};
-
     std::string mouse_device;
     MouseButtonsRaw mouse_buttons;
 

@@ -220,23 +220,23 @@ void PlayerControlPreview::UpdateInput() {
 
     if (input_changed) {
         update();
-        ControllerInput input{
-            .axis_values =
-                {std::pair<float, float>{axis_values[Settings::NativeAnalog::LStick].value.x(),
-                                         axis_values[Settings::NativeAnalog::LStick].value.y()},
-                 std::pair<float, float>{axis_values[Settings::NativeAnalog::RStick].value.x(),
-                                         axis_values[Settings::NativeAnalog::RStick].value.y()}},
-            .button_values = button_values,
-            .changed = true,
-        };
-
         if (controller_callback.input != nullptr) {
+            ControllerInput input{
+                .axis_values = {std::pair<float, float>{
+                                    axis_values[Settings::NativeAnalog::LStick].value.x(),
+                                    axis_values[Settings::NativeAnalog::LStick].value.y()},
+                                std::pair<float, float>{
+                                    axis_values[Settings::NativeAnalog::RStick].value.x(),
+                                    axis_values[Settings::NativeAnalog::RStick].value.y()}},
+                .button_values = button_values,
+                .changed = true,
+            };
             controller_callback.input(std::move(input));
         }
     }
 
     if (controller_callback.update != nullptr) {
-        controller_callback.update(std::move(true));
+        controller_callback.update(true);
     }
 
     if (mapping_active) {

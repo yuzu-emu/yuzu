@@ -592,8 +592,10 @@ void Config::ReadControlValues() {
     Settings::values.mouse_panning = false;
     ReadBasicSetting(Settings::values.mouse_panning_sensitivity);
 
-    ReadBasicSetting(Settings::values.tas_enable = false);
-    ReadBasicSetting(Settings::values.tas_reset = false);
+    ReadBasicSetting(Settings::values.tas_enable);
+    ReadBasicSetting(Settings::values.tas_loop);
+    ReadBasicSetting(Settings::values.tas_swap_controllers);
+    ReadBasicSetting(Settings::values.pause_tas_on_load);
 
     ReadGlobalSetting(Settings::values.use_docked_mode);
 
@@ -692,20 +694,16 @@ void Config::ReadDataStorageValues() {
                     QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::DumpDir)))
             .toString()
             .toStdString());
-    FS::SetYuzuPath(
-        FS::YuzuPath::TASFile,
-        qt_config
-        ->value(QStringLiteral("tas_path"),
-            QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::TASFile)))
-        .toString()
-        .toStdString());
-
-    ReadBasicSetting(Settings::values.pauseTasOnLoad);
+    FS::SetYuzuPath(FS::YuzuPath::TASDir,
+                    qt_config
+                        ->value(QStringLiteral("tas_directory"),
+                                QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::TASDir)))
+                        .toString()
+                        .toStdString());
 
     ReadBasicSetting(Settings::values.gamecard_inserted);
     ReadBasicSetting(Settings::values.gamecard_current_game);
     ReadBasicSetting(Settings::values.gamecard_path);
-  
 
     qt_config->endGroup();
 }
@@ -1225,11 +1223,11 @@ void Config::SaveControlValues() {
     WriteBasicSetting(Settings::values.emulate_analog_keyboard);
     WriteBasicSetting(Settings::values.mouse_panning_sensitivity);
 
-    WriteSetting(QStringLiteral("enable_tas"), Settings::values.tas_enable, false);
-    WriteSetting(QStringLiteral("loop_tas"), Settings::values.tas_loop, false);
-    WriteSetting(QStringLiteral("swap_tas_controllers"), Settings::values.tas_swap_controllers,
-                 true);
-    WriteSetting(QStringLiteral("tas_pause_on_load"), Settings::values.pause_tas_on_load, true);
+    WriteBasicSetting(Settings::values.tas_enable);
+    WriteBasicSetting(Settings::values.tas_loop);
+    WriteBasicSetting(Settings::values.tas_swap_controllers);
+    WriteBasicSetting(Settings::values.pause_tas_on_load);
+
     qt_config->endGroup();
 }
 
@@ -1257,10 +1255,9 @@ void Config::SaveDataStorageValues() {
     WriteSetting(QStringLiteral("dump_directory"),
                  QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::DumpDir)),
                  QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::DumpDir)));
-    WriteSetting(QStringLiteral("tas_path"),
-        QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::TASFile)),
-        QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::TASFile)));
-    WriteSetting(QStringLiteral("tas_pause_on_load"), Settings::values.pauseTasOnLoad, true);
+    WriteSetting(QStringLiteral("tas_directory"),
+                 QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::TASDir)),
+                 QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::TASDir)));
 
     WriteBasicSetting(Settings::values.gamecard_inserted);
     WriteBasicSetting(Settings::values.gamecard_current_game);

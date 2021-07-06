@@ -14,6 +14,7 @@
 
 namespace TasInput {
 
+// Supported keywords and buttons from a TAS file
 constexpr std::array<std::pair<std::string_view, TasButton>, 20> text_to_tas_button = {
     std::pair{"KEY_A", TasButton::BUTTON_A},
     {"KEY_B", TasButton::BUTTON_B},
@@ -214,7 +215,7 @@ void Tas::UpdateThread() {
                 }
             }
         } else {
-            is_running = Settings::values.tas_loop;
+            is_running = Settings::values.tas_loop.GetValue();
             current_command = 0;
             tas_data.fill({});
             if (!is_running) {

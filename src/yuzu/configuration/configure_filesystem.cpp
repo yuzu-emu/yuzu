@@ -52,7 +52,6 @@ void ConfigureFilesystem::setConfiguration() {
 
     ui->gamecard_inserted->setChecked(Settings::values.gamecard_inserted.GetValue());
     ui->gamecard_current_game->setChecked(Settings::values.gamecard_current_game.GetValue());
-    ui->tas_pause_on_load->setChecked(Settings::values.pauseTasOnLoad);
     ui->dump_exefs->setChecked(Settings::values.dump_exefs.GetValue());
     ui->dump_nso->setChecked(Settings::values.dump_nso.GetValue());
 

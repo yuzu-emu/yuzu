@@ -11,7 +11,7 @@
 namespace InputCommon {
 
 /**
- * A button device factory representing a mouse. It receives mouse events and forward them
+ * A button device factory representing a tas bot. It receives tas events and forward them
  * to all button devices it created.
  */
 class TasButtonFactory final : public Input::Factory<Input::ButtonDevice> {
@@ -29,7 +29,7 @@ private:
     std::shared_ptr<TasInput::Tas> tas_input;
 };
 
-/// An analog device factory that creates analog devices from mouse
+/// An analog device factory that creates analog devices from tas
 class TasAnalogFactory final : public Input::Factory<Input::AnalogDevice> {
 public:
     explicit TasAnalogFactory(std::shared_ptr<TasInput::Tas> tas_input_);
