@@ -157,7 +157,7 @@ struct FormatTuple {
     {VK_FORMAT_R32_SFLOAT, Attachable | Storage},              // R32_FLOAT
     {VK_FORMAT_R16_SFLOAT, Attachable | Storage},              // R16_FLOAT
     {VK_FORMAT_R16_UNORM, Attachable | Storage},               // R16_UNORM
-    {VK_FORMAT_UNDEFINED},                                     // R16_SNORM
+    {VK_FORMAT_R16_SNORM, Attachable | Storage},               // R16_SNORM
     {VK_FORMAT_R16_UINT, Attachable | Storage},                // R16_UINT
     {VK_FORMAT_UNDEFINED},                                     // R16_SINT
     {VK_FORMAT_R16G16_UNORM, Attachable | Storage},            // R16G16_UNORM
