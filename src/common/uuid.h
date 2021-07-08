@@ -20,12 +20,11 @@ struct UUID {
     constexpr explicit UUID(const u64 lo, const u64 hi) : uuid{{lo, hi}} {}
 
     [[nodiscard]] constexpr explicit operator bool() const {
-        return uuid[0] != INVALID_UUID[0] && uuid[1] != INVALID_UUID[1];
+        return uuid != INVALID_UUID;
     }
 
     [[nodiscard]] constexpr bool operator==(const UUID& rhs) const {
-        // TODO(DarkLordZach): Replace with uuid == rhs.uuid with C++20
-        return uuid[0] == rhs.uuid[0] && uuid[1] == rhs.uuid[1];
+        return uuid == rhs.uuid;
     }
 
     [[nodiscard]] constexpr bool operator!=(const UUID& rhs) const {
