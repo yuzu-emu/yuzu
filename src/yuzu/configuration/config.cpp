@@ -893,6 +893,9 @@ void Config::ReadSystemValues() {
         }
     }
 
+    Settings::values.device_name =
+        ReadSetting(QStringLiteral("device_name"), QStringLiteral("Yuzu")).toString().toStdString();
+
     if (global) {
         const auto custom_rtc_enabled =
             ReadSetting(QStringLiteral("custom_rtc_enabled"), false).toBool();
@@ -1462,6 +1465,8 @@ void Config::SaveSystemValues() {
     WriteSettingGlobal(QStringLiteral("rng_seed_enabled"),
                        Settings::values.rng_seed.GetValue(global).has_value(),
                        Settings::values.rng_seed.UsingGlobal(), false);
+    WriteSetting(QStringLiteral("device_name"),
+                 QString::fromUtf8(Settings::values.device_name.c_str()), QStringLiteral("Yuzu"));
     WriteSettingGlobal(QStringLiteral("rng_seed"),
                        Settings::values.rng_seed.GetValue(global).value_or(0),
                        Settings::values.rng_seed.UsingGlobal(), 0);

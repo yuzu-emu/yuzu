@@ -327,6 +327,10 @@ custom_rtc =
 # yuzu (default)
 username = yuzu
 
+# The devices nickname, max length is 128 characters
+# Yuzu (default)
+device_name = Yuzu
+
 # Sets the systems language index
 # 0: Japanese, 1: English (default), 2: French, 3: German, 4: Italian, 5: Spanish, 6: Chinese,
 # 7: Korean, 8: Dutch, 9: Portuguese, 10: Russian, 11: Taiwanese, 12: British English, 13: Canadian French,
