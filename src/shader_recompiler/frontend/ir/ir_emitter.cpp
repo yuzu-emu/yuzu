@@ -125,6 +125,12 @@ U1 IREmitter::GetPred(IR::Pred pred, bool is_negated) {
     }
 }
 
+void IREmitter::SetPred(IR::Pred pred, const U1& value) {
+    if (pred != IR::Pred::PT) {
+        Inst(Opcode::SetPred, pred, value);
+    }
+}
+
 U1 IREmitter::GetGotoVariable(u32 id) {
     return Inst<U1>(Opcode::GetGotoVariable, id);
 }
@@ -141,8 +147,12 @@ void IREmitter::SetIndirectBranchVariable(const U32& value) {
     Inst(Opcode::SetIndirectBranchVariable, value);
 }
 
-void IREmitter::SetPred(IR::Pred pred, const U1& value) {
-    Inst(Opcode::SetPred, pred, value);
+U32 IREmitter::GetLoopSafetyVariable(u32 id) {
+    return Inst<U32>(Opcode::GetLoopSafetyVariable, id);
+}
+
+void IREmitter::SetLoopSafetyVariable(u32 id, const U32& counter) {
+    Inst(Opcode::SetLoopSafetyVariable, id, counter);
 }
 
 U32 IREmitter::GetCbuf(const U32& binding, const U32& byte_offset) {

@@ -308,6 +308,9 @@ struct Values {
     // Renderer
     Setting<RendererBackend> renderer_backend{RendererBackend::OpenGL, "backend"};
     BasicSetting<bool> renderer_debug{false, "debug"};
+    BasicSetting<bool> enable_nsight_aftermath{false, "nsight_aftermath"};
+    BasicSetting<bool> disable_shader_loop_safety_checks{false,
+                                                         "disable_shader_loop_safety_checks"};
     Setting<int> vulkan_device{0, "vulkan_device"};
 
     Setting<u16> resolution_factor{1, "resolution_factor"};

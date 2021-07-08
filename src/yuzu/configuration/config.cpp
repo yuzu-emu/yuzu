@@ -824,6 +824,8 @@ void Config::ReadRendererValues() {
 
     if (global) {
         ReadBasicSetting(Settings::values.renderer_debug);
+        ReadBasicSetting(Settings::values.enable_nsight_aftermath);
+        ReadBasicSetting(Settings::values.disable_shader_loop_safety_checks);
     }
 
     qt_config->endGroup();
@@ -1353,6 +1355,8 @@ void Config::SaveRendererValues() {
 
     if (global) {
         WriteBasicSetting(Settings::values.renderer_debug);
+        WriteBasicSetting(Settings::values.enable_nsight_aftermath);
+        WriteBasicSetting(Settings::values.disable_shader_loop_safety_checks);
     }
 
     qt_config->endGroup();

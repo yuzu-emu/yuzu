@@ -9,11 +9,13 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <version>
 
 #include <fmt/format.h>
 
 #include <boost/intrusive/list.hpp>
 
+#include "common/settings.h"
 #include "shader_recompiler/environment.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
@@ -739,8 +741,25 @@ private:
             }
             case StatementType::Loop: {
                 IR::Block* const loop_header_block{block_pool.Create(inst_pool)};
-                if (current_block) {
-                    current_block->AddBranch(loop_header_block);
+                const u32 this_loop_id{loop_id++};
+
+                if (Settings::values.disable_shader_loop_safety_checks) {
+                    if (current_block) {
+                        current_block->AddBranch(loop_header_block);
+                    }
+                } else {
+                    IR::Block* const init_block{block_pool.Create(inst_pool)};
+                    IR::IREmitter ir{*init_block};
+                    ir.SetLoopSafetyVariable(this_loop_id, ir.Imm32(0x2000));
+
+                    if (current_block) {
+                        current_block->AddBranch(init_block);
+                    }
+                    init_block->AddBranch(loop_header_block);
+
+                    auto& init_node{syntax_list.emplace_back()};
+                    init_node.type = IR::AbstractSyntaxNode::Type::Block;
+                    init_node.data.block = init_block;
                 }
                 auto& header_node{syntax_list.emplace_back()};
                 header_node.type = IR::AbstractSyntaxNode::Type::Block;
@@ -758,7 +777,16 @@ private:
 
                 // The continue block is located at the end of the loop
                 IR::IREmitter ir{*continue_block};
-                const IR::U1 cond{ir.ConditionRef(VisitExpr(ir, *stmt.cond))};
+                IR::U1 cond{VisitExpr(ir, *stmt.cond)};
+                if (!Settings::values.disable_shader_loop_safety_checks) {
+                    const IR::U32 old_counter{ir.GetLoopSafetyVariable(this_loop_id)};
+                    const IR::U32 new_counter{ir.ISub(old_counter, ir.Imm32(1))};
+                    ir.SetLoopSafetyVariable(this_loop_id, new_counter);
+
+                    const IR::U1 safety_cond{ir.INotEqual(new_counter, ir.Imm32(0))};
+                    cond = ir.LogicalAnd(cond, safety_cond);
+                }
+                cond = ir.ConditionRef(cond);
 
                 IR::Block* const body_block{syntax_list.at(body_block_index).data.block};
                 loop_header_block->AddBranch(body_block);
@@ -863,8 +891,14 @@ private:
     ObjectPool<IR::Block>& block_pool;
     Environment& env;
     IR::AbstractSyntaxList& syntax_list;
-    // TODO: Make this constexpr when std::vector is constexpr
+    u32 loop_id{};
+
+// TODO: C++20 Remove this when all compilers support constexpr std::vector
+#if __cpp_lib_constexpr_vector >= 201907
+    static constexpr Flow::Block dummy_flow_block;
+#else
     const Flow::Block dummy_flow_block;
+#endif
 };
 } // Anonymous namespace
 
