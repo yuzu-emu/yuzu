@@ -39,7 +39,7 @@ public:
         const auto lambda = [this, func](std::stop_token stop_token) {
             Common::SetCurrentThreadName(thread_name.c_str());
             {
-                std::conditional_t<with_state, StateType, int> state{func()};
+                [[maybe_unused]] std::conditional_t<with_state, StateType, int> state{func()};
                 while (!stop_token.stop_requested()) {
                     Task task;
                     {
