@@ -5,7 +5,7 @@
 // This file implements the SSA rewriting algorithm proposed in
 //
 //      Simple and Efficient Construction of Static Single Assignment Form.
-//      Braun M., Buchwald S., Hack S., Leiﬂa R., Mallon C., Zwinkau A. (2013)
+//      Braun M., Buchwald S., Hack S., Leiba R., Mallon C., Zwinkau A. (2013)
 //      In: Jhala R., De Bosschere K. (eds)
 //      Compiler Construction. CC 2013.
 //      Lecture Notes in Computer Science, vol 7791.
