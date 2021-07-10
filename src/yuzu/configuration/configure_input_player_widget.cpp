@@ -235,10 +235,6 @@ void PlayerControlPreview::UpdateInput() {
         }
     }
 
-    if (controller_callback.update != nullptr) {
-        controller_callback.update(true);
-    }
-
     if (mapping_active) {
         blink_counter = (blink_counter + 1) % 50;
     }
