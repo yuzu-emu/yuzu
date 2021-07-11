@@ -282,7 +282,8 @@ private:
     void RemoveBaseContent(u64 program_id, const QString& entry_type);
     void RemoveUpdateContent(u64 program_id, const QString& entry_type);
     void RemoveAddOnContent(u64 program_id, const QString& entry_type);
-    void RemoveTransferableShaderCache(u64 program_id);
+    void RemoveTransferableShaderCache(u64 program_id, GameListRemoveTarget target);
+    void RemoveAllTransferableShaderCaches(u64 program_id);
     void RemoveCustomConfiguration(u64 program_id, const std::string& game_path);
     std::optional<u64> SelectRomFSDumpTarget(const FileSys::ContentProvider&, u64 program_id);
     InstallResult InstallNSPXCI(const QString& filename);
