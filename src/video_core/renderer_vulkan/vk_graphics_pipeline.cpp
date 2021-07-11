@@ -503,9 +503,8 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
             vertex_attributes.push_back({
                 .location = static_cast<u32>(index),
                 .binding = 0,
-                .format = type == 1   ? VK_FORMAT_R32_SFLOAT
-                          : type == 2 ? VK_FORMAT_R32_SINT
-                                      : VK_FORMAT_R32_UINT,
+                .format = type == 1 ? VK_FORMAT_R32_SFLOAT
+                                    : type == 2 ? VK_FORMAT_R32_SINT : VK_FORMAT_R32_UINT,
                 .offset = 0,
             });
         }

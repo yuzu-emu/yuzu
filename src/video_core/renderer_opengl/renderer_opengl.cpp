@@ -24,8 +24,8 @@
 #include "video_core/host_shaders/opengl_present_frag.h"
 #include "video_core/host_shaders/opengl_present_vert.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
-#include "video_core/renderer_opengl/gl_shader_util.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
+#include "video_core/renderer_opengl/gl_shader_util.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
 #include "video_core/textures/decoders.h"
 
