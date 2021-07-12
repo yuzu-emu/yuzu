@@ -318,7 +318,7 @@ GraphicsPipeline* ShaderCache::CurrentGraphicsPipeline() {
         SetXfbState(graphics_key.xfb_state, regs);
     }
     if (current_pipeline && graphics_key == current_pipeline->Key()) {
-        return current_pipeline->IsBuilt() ? current_pipeline : nullptr;
+        return BuiltPipeline(current_pipeline);
     }
     return CurrentGraphicsPipelineSlowPath();
 }
