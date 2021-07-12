@@ -86,7 +86,7 @@ struct ScalarF64 : Value {};
 
 class RegAlloc {
 public:
-    RegAlloc(EmitContext& ctx_) : ctx{ctx_} {}
+    RegAlloc() = default;
 
     Register Define(IR::Inst& inst);
 
@@ -142,7 +142,6 @@ private:
 
     void Free(Id id);
 
-    EmitContext& ctx;
     size_t num_used_registers{};
     size_t num_used_long_registers{};
     std::bitset<NUM_REGS> register_use{};

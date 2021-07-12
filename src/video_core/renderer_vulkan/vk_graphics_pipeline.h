@@ -104,9 +104,7 @@ public:
 
     template <typename Spec>
     static auto MakeConfigureSpecFunc() {
-        return [](GraphicsPipeline* pipeline, bool is_indexed) {
-            pipeline->ConfigureImpl<Spec>(is_indexed);
-        };
+        return [](GraphicsPipeline* pl, bool is_indexed) { pl->ConfigureImpl<Spec>(is_indexed); };
     }
 
 private:

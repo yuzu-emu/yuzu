@@ -22,7 +22,7 @@ void Compare(EmitContext& ctx, IR::Inst& inst, std::string_view lhs, std::string
 }
 
 bool IsPrecise(const IR::Inst& inst) {
-    return {inst.Flags<IR::FpControl>().no_contraction};
+    return inst.Flags<IR::FpControl>().no_contraction;
 }
 } // Anonymous namespace
 

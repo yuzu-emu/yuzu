@@ -80,10 +80,10 @@ void TranslatorVisitor::ALD(u64 insn) {
         for (u32 element = 0; element < num_elements; ++element) {
             if (ald.patch != 0) {
                 const IR::Patch patch{offset / 4 + element};
-                F(ald.dest_reg + element, ir.GetPatch(patch));
+                F(ald.dest_reg + static_cast<int>(element), ir.GetPatch(patch));
             } else {
                 const IR::Attribute attr{offset / 4 + element};
-                F(ald.dest_reg + element, ir.GetAttribute(attr, vertex));
+                F(ald.dest_reg + static_cast<int>(element), ir.GetAttribute(attr, vertex));
             }
         }
         return;
@@ -92,7 +92,7 @@ void TranslatorVisitor::ALD(u64 insn) {
         throw NotImplementedException("Indirect patch read");
     }
     HandleIndexed(*this, ald.index_reg, num_elements, [&](u32 element, IR::U32 final_offset) {
-        F(ald.dest_reg + element, ir.GetAttributeIndexed(final_offset, vertex));
+        F(ald.dest_reg + static_cast<int>(element), ir.GetAttributeIndexed(final_offset, vertex));
     });
 }
 
@@ -121,10 +121,10 @@ void TranslatorVisitor::AST(u64 insn) {
         for (u32 element = 0; element < num_elements; ++element) {
             if (ast.patch != 0) {
                 const IR::Patch patch{offset / 4 + element};
-                ir.SetPatch(patch, F(ast.src_reg + element));
+                ir.SetPatch(patch, F(ast.src_reg + static_cast<int>(element)));
             } else {
                 const IR::Attribute attr{offset / 4 + element};
-                ir.SetAttribute(attr, F(ast.src_reg + element), vertex);
+                ir.SetAttribute(attr, F(ast.src_reg + static_cast<int>(element)), vertex);
             }
         }
         return;
@@ -133,7 +133,7 @@ void TranslatorVisitor::AST(u64 insn) {
         throw NotImplementedException("Indexed tessellation patch store");
     }
     HandleIndexed(*this, ast.index_reg, num_elements, [&](u32 element, IR::U32 final_offset) {
-        ir.SetAttributeIndexed(final_offset, F(ast.src_reg + element), vertex);
+        ir.SetAttributeIndexed(final_offset, F(ast.src_reg + static_cast<int>(element)), vertex);
     });
 }
 

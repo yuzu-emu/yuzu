@@ -59,14 +59,14 @@ IR::U32U64 ApplyIntegerAtomOp(IR::IREmitter& ir, const IR::U32U64& offset, const
 IR::Value ApplyFpAtomOp(IR::IREmitter& ir, const IR::U64& offset, const IR::Value& op_b, AtomOp op,
                         AtomSize size) {
     static constexpr IR::FpControl f16_control{
-        .no_contraction{false},
-        .rounding{IR::FpRounding::RN},
-        .fmz_mode{IR::FmzMode::DontCare},
+        .no_contraction = false,
+        .rounding = IR::FpRounding::RN,
+        .fmz_mode = IR::FmzMode::DontCare,
     };
     static constexpr IR::FpControl f32_control{
-        .no_contraction{false},
-        .rounding{IR::FpRounding::RN},
-        .fmz_mode{IR::FmzMode::FTZ},
+        .no_contraction = false,
+        .rounding = IR::FpRounding::RN,
+        .fmz_mode = IR::FmzMode::FTZ,
     };
     switch (op) {
     case AtomOp::ADD:

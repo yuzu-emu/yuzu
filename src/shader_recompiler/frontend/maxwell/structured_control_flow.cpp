@@ -313,9 +313,7 @@ bool NeedsLift(Node goto_stmt, Node label_stmt) noexcept {
 
 class GotoPass {
 public:
-    explicit GotoPass(Flow::CFG& cfg, ObjectPool<IR::Inst>& inst_pool_,
-                      ObjectPool<IR::Block>& block_pool_, ObjectPool<Statement>& stmt_pool)
-        : inst_pool{inst_pool_}, block_pool{block_pool_}, pool{stmt_pool} {
+    explicit GotoPass(Flow::CFG& cfg, ObjectPool<Statement>& stmt_pool) : pool{stmt_pool} {
         std::vector gotos{BuildTree(cfg)};
         for (const Node& goto_stmt : gotos | std::views::reverse) {
             RemoveGoto(goto_stmt);
@@ -616,8 +614,6 @@ private:
         return parent_tree.insert(std::next(loop), *new_goto);
     }
 
-    ObjectPool<IR::Inst>& inst_pool;
-    ObjectPool<IR::Block>& block_pool;
     ObjectPool<Statement>& pool;
     Statement root_stmt{FunctionTag{}};
 };
@@ -864,7 +860,6 @@ private:
     ObjectPool<IR::Block>& block_pool;
     Environment& env;
     IR::AbstractSyntaxList& syntax_list;
-    u32 loop_id{};
 
 // TODO: C++20 Remove this when all compilers support constexpr std::vector
 #if __cpp_lib_constexpr_vector >= 201907
@@ -878,7 +873,7 @@ private:
 IR::AbstractSyntaxList BuildASL(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Block>& block_pool,
                                 Environment& env, Flow::CFG& cfg) {
     ObjectPool<Statement> stmt_pool{64};
-    GotoPass goto_pass{cfg, inst_pool, block_pool, stmt_pool};
+    GotoPass goto_pass{cfg, stmt_pool};
     Statement& root{goto_pass.RootStatement()};
     IR::AbstractSyntaxList syntax_list;
     TranslatePass{inst_pool, block_pool, stmt_pool, env, root, syntax_list};

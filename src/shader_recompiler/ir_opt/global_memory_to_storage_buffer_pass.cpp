@@ -314,8 +314,8 @@ std::optional<StorageBufferAddr> Track(const IR::Value& value, const Bias* bias)
             return std::nullopt;
         }
         const StorageBufferAddr storage_buffer{
-            .index{index.U32()},
-            .offset{offset.U32()},
+            .index = index.U32(),
+            .offset = offset.U32(),
         };
         if (!Common::IsAligned(storage_buffer.offset, 16)) {
             // The SSBO pointer has to be aligned
@@ -484,7 +484,7 @@ void GlobalMemoryToStorageBufferPass(IR::Program& program) {
             .cbuf_index = storage_buffer.index,
             .cbuf_offset = storage_buffer.offset,
             .count = 1,
-            .is_written{info.writes.contains(storage_buffer)},
+            .is_written = info.writes.contains(storage_buffer),
         });
     }
     for (const StorageInst& storage_inst : info.to_replace) {

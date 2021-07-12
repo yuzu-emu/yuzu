@@ -160,10 +160,10 @@ unsigned SwizzleMask(u64 swizzle) {
 IR::Value MakeColor(IR::IREmitter& ir, IR::Reg reg, int num_regs) {
     std::array<IR::U32, 4> colors;
     for (int i = 0; i < num_regs; ++i) {
-        colors[i] = ir.GetReg(reg + i);
+        colors[static_cast<size_t>(i)] = ir.GetReg(reg + i);
     }
     for (int i = num_regs; i < 4; ++i) {
-        colors[i] = ir.Imm32(0);
+        colors[static_cast<size_t>(i)] = ir.Imm32(0);
     }
     return ir.CompositeConstruct(colors[0], colors[1], colors[2], colors[3]);
 }
@@ -211,12 +211,12 @@ void TranslatorVisitor::SULD(u64 insn) {
     if (is_typed) {
         const int num_regs{SizeInRegs(suld.size)};
         for (int i = 0; i < num_regs; ++i) {
-            X(dest_reg + i, IR::U32{ir.CompositeExtract(result, i)});
+            X(dest_reg + i, IR::U32{ir.CompositeExtract(result, static_cast<size_t>(i))});
         }
     } else {
         const unsigned mask{SwizzleMask(suld.swizzle)};
         const int bits{std::popcount(mask)};
-        if (!IR::IsAligned(dest_reg, bits == 3 ? 4 : bits)) {
+        if (!IR::IsAligned(dest_reg, bits == 3 ? 4 : static_cast<size_t>(bits))) {
             throw NotImplementedException("Unaligned destination register");
         }
         for (unsigned component = 0; component < 4; ++component) {

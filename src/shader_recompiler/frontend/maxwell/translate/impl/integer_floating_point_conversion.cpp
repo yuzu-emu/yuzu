@@ -104,7 +104,9 @@ void I2F(TranslatorVisitor& v, u64 insn, IR::U32U64 src) {
         .rounding = CastFpRounding(i2f.fp_rounding),
         .fmz_mode = IR::FmzMode::DontCare,
     };
-    auto value{v.ir.ConvertIToF(dst_bitsize, conversion_src_bitsize, is_signed, src, fp_control)};
+    auto value{v.ir.ConvertIToF(static_cast<size_t>(dst_bitsize),
+                                static_cast<size_t>(conversion_src_bitsize), is_signed, src,
+                                fp_control)};
     if (i2f.neg != 0) {
         if (i2f.abs != 0 || !is_signed) {
             // We know the value is positive

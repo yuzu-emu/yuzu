@@ -69,9 +69,6 @@ TextureType GetType(Type type) {
 }
 
 IR::Value MakeCoords(TranslatorVisitor& v, IR::Reg reg, Type type) {
-    const auto array{[&](int index) {
-        return v.ir.BitFieldExtract(v.X(reg + index), v.ir.Imm32(0), v.ir.Imm32(16));
-    }};
     switch (type) {
     case Type::_1D:
     case Type::BUFFER_1D:

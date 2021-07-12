@@ -67,7 +67,8 @@ constexpr OpcodeMeta META_TABLE[]{
 };
 constexpr size_t CalculateNumArgsOf(Opcode op) {
     const auto& arg_types{META_TABLE[static_cast<size_t>(op)].arg_types};
-    return std::distance(arg_types.begin(), std::ranges::find(arg_types, Type::Void));
+    return static_cast<size_t>(
+        std::distance(arg_types.begin(), std::ranges::find(arg_types, Type::Void)));
 }
 
 constexpr u8 NUM_ARGS[]{
