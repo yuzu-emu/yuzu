@@ -11,6 +11,10 @@ namespace Shader::Maxwell {
 [[nodiscard]] IR::U1 IntegerCompare(IR::IREmitter& ir, const IR::U32& operand_1,
                                     const IR::U32& operand_2, CompareOp compare_op, bool is_signed);
 
+[[nodiscard]] IR::U1 ExtendedIntegerCompare(IR::IREmitter& ir, const IR::U32& operand_1,
+                                            const IR::U32& operand_2, CompareOp compare_op,
+                                            bool is_signed);
+
 [[nodiscard]] IR::U1 PredicateCombine(IR::IREmitter& ir, const IR::U1& predicate_1,
                                       const IR::U1& predicate_2, BooleanOp bop);
 

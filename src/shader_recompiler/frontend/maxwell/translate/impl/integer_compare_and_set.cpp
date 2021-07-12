@@ -9,49 +9,6 @@
 
 namespace Shader::Maxwell {
 namespace {
-IR::U1 ExtendedIntegerCompare(IR::IREmitter& ir, const IR::U32& operand_1, const IR::U32& operand_2,
-                              CompareOp compare_op, bool is_signed) {
-    const IR::U32 zero{ir.Imm32(0)};
-    const IR::U32 carry{ir.Select(ir.GetCFlag(), ir.Imm32(1), zero)};
-    const IR::U1 z_flag{ir.GetZFlag()};
-    const IR::U32 intermediate{ir.IAdd(ir.IAdd(operand_1, ir.BitwiseNot(operand_2)), carry)};
-    const IR::U1 flip_logic{is_signed ? ir.Imm1(false)
-                                      : ir.LogicalXor(ir.ILessThan(operand_1, zero, true),
-                                                      ir.ILessThan(operand_2, zero, true))};
-    switch (compare_op) {
-    case CompareOp::False:
-        return ir.Imm1(false);
-    case CompareOp::LessThan:
-        return IR::U1{ir.Select(flip_logic, ir.IGreaterThanEqual(intermediate, zero, true),
-                                ir.ILessThan(intermediate, zero, true))};
-    case CompareOp::Equal:
-        return ir.LogicalAnd(ir.IEqual(intermediate, zero), z_flag);
-    case CompareOp::LessThanEqual: {
-        const IR::U1 base_cmp{ir.Select(flip_logic, ir.IGreaterThanEqual(intermediate, zero, true),
-                                        ir.ILessThan(intermediate, zero, true))};
-        return ir.LogicalOr(base_cmp, ir.LogicalAnd(ir.IEqual(intermediate, zero), z_flag));
-    }
-    case CompareOp::GreaterThan: {
-        const IR::U1 base_cmp{ir.Select(flip_logic, ir.ILessThanEqual(intermediate, zero, true),
-                                        ir.IGreaterThan(intermediate, zero, true))};
-        const IR::U1 not_z{ir.LogicalNot(z_flag)};
-        return ir.LogicalOr(base_cmp, ir.LogicalAnd(ir.IEqual(intermediate, zero), not_z));
-    }
-    case CompareOp::NotEqual:
-        return ir.LogicalOr(ir.INotEqual(intermediate, zero),
-                            ir.LogicalAnd(ir.IEqual(intermediate, zero), ir.LogicalNot(z_flag)));
-    case CompareOp::GreaterThanEqual: {
-        const IR::U1 base_cmp{ir.Select(flip_logic, ir.ILessThan(intermediate, zero, true),
-                                        ir.IGreaterThanEqual(intermediate, zero, true))};
-        return ir.LogicalOr(base_cmp, ir.LogicalAnd(ir.IEqual(intermediate, zero), z_flag));
-    }
-    case CompareOp::True:
-        return ir.Imm1(true);
-    default:
-        throw NotImplementedException("Invalid compare op {}", compare_op);
-    }
-}
-
 IR::U1 IsetCompare(IR::IREmitter& ir, const IR::U32& operand_1, const IR::U32& operand_2,
                    CompareOp compare_op, bool is_signed, bool x) {
     return x ? ExtendedIntegerCompare(ir, operand_1, operand_2, compare_op, is_signed)
