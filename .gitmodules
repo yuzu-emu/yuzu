@@ -42,7 +42,8 @@
 	url = https://git.ffmpeg.org/ffmpeg.git
 [submodule "SDL"]
 	path = externals/SDL
-	url = https://github.com/libsdl-org/SDL.git
+	url = https://github.com/german77/SDL.git
+	branch = hd_rumble
 [submodule "externals/cpp-httplib"]
 	path = externals/cpp-httplib
 	url = https://github.com/yhirose/cpp-httplib.git

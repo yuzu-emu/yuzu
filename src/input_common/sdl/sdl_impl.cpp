@@ -77,6 +77,14 @@ public:
         }
     }
 
+    bool HasHDRumble() {
+        if (sdl_controller) {
+            return (SDL_GameControllerGetType(sdl_controller.get()) ==
+                    SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO);
+        }
+        return false;
+    }
+
     void SetButton(int button, bool value) {
         std::lock_guard lock{mutex};
         state.buttons.insert_or_assign(button, value);
@@ -125,8 +133,13 @@ public:
         return static_cast<float>(state.axes.at(axis)) / (32767.0f * range);
     }
 
-    bool RumblePlay(u16 amp_low, u16 amp_high) {
+    bool RumblePlay(u16 amp_low, u16 amp_high, u16 freq_low, u16 freq_high) {
         constexpr u32 rumble_max_duration_ms = 1000;
+
+        if (HasHDRumble()) {
+            return SDL_GameControllerHDRumble(sdl_controller.get(), amp_low, amp_high, freq_low,
+                                              freq_high, rumble_max_duration_ms) == 0;
+        }
 
         if (sdl_controller) {
             return SDL_GameControllerRumble(sdl_controller.get(), amp_low, amp_high,
@@ -517,20 +530,24 @@ public:
         : joystick(std::move(joystick_)) {}
 
     u8 GetStatus() const override {
-        joystick->RumblePlay(1, 1);
-        return joystick->RumblePlay(0, 0);
+        joystick->RumblePlay(1, 1, 160, 320);
+        return joystick->RumblePlay(0, 0, 160, 320);
     }
 
-    bool SetRumblePlay(f32 amp_low, [[maybe_unused]] f32 freq_low, f32 amp_high,
-                       [[maybe_unused]] f32 freq_high) const override {
-        const auto process_amplitude = [](f32 amplitude) {
+    bool SetRumblePlay(f32 amp_low, f32 freq_low, f32 amp_high, f32 freq_high) const override {
+        const bool has_hd_rumble = joystick->HasHDRumble();
+        const auto process_amplitude = [has_hd_rumble](f32 amplitude) {
+            if (has_hd_rumble) {
+                return static_cast<u16>(amplitude * 0xFFFF);
+            }
+            // Adjust amplitude for non HD controllers
             return static_cast<u16>((amplitude + std::pow(amplitude, 0.3f)) * 0.5f * 0xFFFF);
         };
-
         const auto processed_amp_low = process_amplitude(amp_low);
         const auto processed_amp_high = process_amplitude(amp_high);
 
-        return joystick->RumblePlay(processed_amp_low, processed_amp_high);
+        return joystick->RumblePlay(processed_amp_low, processed_amp_high,
+                                    static_cast<u16>(freq_low), static_cast<u16>(freq_high));
     }
 
 private:
