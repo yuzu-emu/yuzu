@@ -67,6 +67,8 @@ struct Profile {
     bool has_gl_precise_bug{};
     /// Ignores SPIR-V ordered vs unordered using GLSL semantics
     bool ignore_nan_fp_comparisons{};
+
+    u32 gl_max_compute_smem_size{};
 };
 
 } // namespace Shader
