@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <memory>
-#include <ranges>
 #include <vector>
 
 #include "common/settings.h"
@@ -20,12 +19,19 @@
 namespace Shader::Maxwell {
 namespace {
 IR::BlockList GenerateBlocks(const IR::AbstractSyntaxList& syntax_list) {
-    auto syntax_blocks{syntax_list | std::views::filter([](const auto& node) {
-                           return node.type == IR::AbstractSyntaxNode::Type::Block;
-                       })};
-    IR::BlockList blocks(std::ranges::distance(syntax_blocks));
-    std::ranges::transform(syntax_blocks, blocks.begin(),
-                           [](const IR::AbstractSyntaxNode& node) { return node.data.block; });
+    size_t num_syntax_blocks{};
+    for (const auto& node : syntax_list) {
+        if (node.type == IR::AbstractSyntaxNode::Type::Block) {
+            ++num_syntax_blocks;
+        }
+    }
+    IR::BlockList blocks;
+    blocks.reserve(num_syntax_blocks);
+    for (const auto& node : syntax_list) {
+        if (node.type == IR::AbstractSyntaxNode::Type::Block) {
+            blocks.push_back(node.data.block);
+        }
+    }
     return blocks;
 }
 

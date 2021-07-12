@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <memory>
-#include <ranges>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -167,7 +166,7 @@ std::string DumpExpr(const Statement* stmt) {
     }
 }
 
-std::string DumpTree(const Tree& tree, u32 indentation = 0) {
+[[maybe_unused]] std::string DumpTree(const Tree& tree, u32 indentation = 0) {
     std::string ret;
     std::string indent(indentation, ' ');
     for (auto stmt = tree.begin(); stmt != tree.end(); ++stmt) {
@@ -315,8 +314,9 @@ class GotoPass {
 public:
     explicit GotoPass(Flow::CFG& cfg, ObjectPool<Statement>& stmt_pool) : pool{stmt_pool} {
         std::vector gotos{BuildTree(cfg)};
-        for (const Node& goto_stmt : gotos | std::views::reverse) {
-            RemoveGoto(goto_stmt);
+        const auto end{gotos.rend()};
+        for (auto goto_stmt = gotos.rbegin(); goto_stmt != end; ++goto_stmt) {
+            RemoveGoto(*goto_stmt);
         }
     }
 

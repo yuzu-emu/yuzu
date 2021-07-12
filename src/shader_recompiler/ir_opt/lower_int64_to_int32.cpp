@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <ranges>
 #include <utility>
 
 #include "shader_recompiler/exception.h"
@@ -207,7 +206,9 @@ void Lower(IR::Block& block, IR::Inst& inst) {
 } // Anonymous namespace
 
 void LowerInt64ToInt32(IR::Program& program) {
-    for (IR::Block* const block : program.post_order_blocks | std::views::reverse) {
+    const auto end{program.post_order_blocks.rend()};
+    for (auto it = program.post_order_blocks.rbegin(); it != end; ++it) {
+        IR::Block* const block{*it};
         for (IR::Inst& inst : block->Instructions()) {
             Lower(*block, inst);
         }

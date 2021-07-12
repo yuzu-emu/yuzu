@@ -2,7 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <ranges>
+#include <algorithm>
 #include <string>
 #include <tuple>
 
@@ -196,7 +196,10 @@ void PrecolorInst(IR::Inst& phi) {
 
 void Precolor(const IR::Program& program) {
     for (IR::Block* const block : program.blocks) {
-        for (IR::Inst& phi : block->Instructions() | std::views::take_while(IR::IsPhi)) {
+        for (IR::Inst& phi : block->Instructions()) {
+            if (!IR::IsPhi(phi)) {
+                break;
+            }
             PrecolorInst(phi);
         }
     }

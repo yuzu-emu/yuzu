@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <array>
 #include <optional>
-#include <ranges>
 #include <string>
 #include <utility>
 
@@ -151,18 +150,18 @@ std::pair<Location, Stack> Stack::Pop(Token token) const {
 }
 
 std::optional<Location> Stack::Peek(Token token) const {
-    const auto reverse_entries{entries | std::views::reverse};
-    const auto it{std::ranges::find(reverse_entries, token, &StackEntry::token)};
-    if (it == reverse_entries.end()) {
+    const auto it{std::find_if(entries.rbegin(), entries.rend(),
+                               [token](const auto& entry) { return entry.token == token; })};
+    if (it == entries.rend()) {
         return std::nullopt;
     }
     return it->target;
 }
 
 Stack Stack::Remove(Token token) const {
-    const auto reverse_entries{entries | std::views::reverse};
-    const auto it{std::ranges::find(reverse_entries, token, &StackEntry::token)};
-    const auto pos{std::distance(reverse_entries.begin(), it)};
+    const auto it{std::find_if(entries.rbegin(), entries.rend(),
+                               [token](const auto& entry) { return entry.token == token; })};
+    const auto pos{std::distance(entries.rbegin(), it)};
     Stack result;
     result.entries.insert(result.entries.end(), entries.begin(), entries.end() - pos - 1);
     return result;

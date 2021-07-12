@@ -2,12 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <algorithm>
-#include <ranges>
-
-#include "common/bit_cast.h"
-#include "common/bit_util.h"
-#include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
 #include "shader_recompiler/ir_opt/passes.h"
 

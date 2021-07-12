@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
-#include <ranges>
 #include <tuple>
 #include <type_traits>
 
@@ -599,7 +598,9 @@ void ConstantPropagation(IR::Block& block, IR::Inst& inst) {
 } // Anonymous namespace
 
 void ConstantPropagationPass(IR::Program& program) {
-    for (IR::Block* const block : program.post_order_blocks | std::views::reverse) {
+    const auto end{program.post_order_blocks.rend()};
+    for (auto it = program.post_order_blocks.rbegin(); it != end; ++it) {
+        IR::Block* const block{*it};
         for (IR::Inst& inst : block->Instructions()) {
             ConstantPropagation(*block, inst);
         }

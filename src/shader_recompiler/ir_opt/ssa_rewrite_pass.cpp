@@ -14,7 +14,6 @@
 //      https://link.springer.com/chapter/10.1007/978-3-642-37051-9_6
 //
 
-#include <ranges>
 #include <span>
 #include <variant>
 #include <vector>
@@ -243,7 +242,9 @@ public:
     void SealBlock(IR::Block* block) {
         const auto it{incomplete_phis.find(block)};
         if (it != incomplete_phis.end()) {
-            for (auto& [variant, phi] : it->second) {
+            for (auto& pair : it->second) {
+                auto& variant{pair.first};
+                auto& phi{pair.second};
                 std::visit([&](auto& variable) { AddPhiOperands(variable, *phi, block); }, variant);
             }
         }
@@ -373,8 +374,9 @@ void VisitBlock(Pass& pass, IR::Block* block) {
 
 void SsaRewritePass(IR::Program& program) {
     Pass pass;
-    for (IR::Block* const block : program.post_order_blocks | std::views::reverse) {
-        VisitBlock(pass, block);
+    const auto end{program.post_order_blocks.rend()};
+    for (auto block = program.post_order_blocks.rbegin(); block != end; ++block) {
+        VisitBlock(pass, *block);
     }
 }
 

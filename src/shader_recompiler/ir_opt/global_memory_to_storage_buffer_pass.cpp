@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <compare>
 #include <optional>
-#include <ranges>
 #include <queue>
 
 #include <boost/container/flat_set.hpp>
