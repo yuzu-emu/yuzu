@@ -196,34 +196,35 @@ void Tas::UpdateThread() {
         LoadTasFiles();
         LOG_DEBUG(Input, "tas_reset done");
     }
-    if (is_running) {
-        if (current_command < script_length) {
-            LOG_DEBUG(Input, "Playing TAS {}/{}", current_command, script_length);
-            size_t frame = current_command++;
-            for (size_t i = 0; i < commands.size(); i++) {
-                if (frame < commands[i].size()) {
-                    TASCommand command = commands[i][frame];
-                    tas_data[i].buttons = command.buttons;
-                    auto [l_axis_x, l_axis_y] = command.l_axis;
-                    tas_data[i].axis[0] = l_axis_x;
-                    tas_data[i].axis[1] = l_axis_y;
-                    auto [r_axis_x, r_axis_y] = command.r_axis;
-                    tas_data[i].axis[2] = r_axis_x;
-                    tas_data[i].axis[3] = r_axis_y;
-                } else {
-                    tas_data[i] = {};
-                }
-            }
-        } else {
-            is_running = Settings::values.tas_loop.GetValue();
-            current_command = 0;
-            tas_data.fill({});
-            if (!is_running) {
-                SwapToStoredController();
+
+    if (!is_running) {
+        tas_data.fill({});
+        return;
+    }
+    if (current_command < script_length) {
+        LOG_DEBUG(Input, "Playing TAS {}/{}", current_command, script_length);
+        size_t frame = current_command++;
+        for (size_t i = 0; i < commands.size(); i++) {
+            if (frame < commands[i].size()) {
+                TASCommand command = commands[i][frame];
+                tas_data[i].buttons = command.buttons;
+                auto [l_axis_x, l_axis_y] = command.l_axis;
+                tas_data[i].axis[0] = l_axis_x;
+                tas_data[i].axis[1] = l_axis_y;
+                auto [r_axis_x, r_axis_y] = command.r_axis;
+                tas_data[i].axis[2] = r_axis_x;
+                tas_data[i].axis[3] = r_axis_y;
+            } else {
+                tas_data[i] = {};
             }
         }
     } else {
+        is_running = Settings::values.tas_loop.GetValue();
+        current_command = 0;
         tas_data.fill({});
+        if (!is_running) {
+            SwapToStoredController();
+        }
     }
     LOG_DEBUG(Input, "TAS inputs: {}", DebugInputs(tas_data));
 }
@@ -237,8 +238,8 @@ TasAnalog Tas::ReadCommandAxis(const std::string& line) const {
         seglist.push_back(segment);
     }
 
-    const float x = std::stof(seglist.at(0)) / 32767.f;
-    const float y = std::stof(seglist.at(1)) / 32767.f;
+    const float x = std::stof(seglist.at(0)) / 32767.0f;
+    const float y = std::stof(seglist.at(1)) / 32767.0f;
 
     return {x, y};
 }

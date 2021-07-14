@@ -78,7 +78,7 @@ void ControllerDialog::InputController(ControllerInput input) {
     u32 buttons = 0;
     int index = 0;
     for (bool btn : input.button_values) {
-        buttons += (btn ? 1 : 0) << index;
+        buttons |= (btn ? 1U : 0U) << index;
         index++;
     }
     input_subsystem->GetTas()->RecordInput(buttons, input.axis_values);

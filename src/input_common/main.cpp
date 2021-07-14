@@ -117,7 +117,7 @@ struct InputSubsystem::Impl {
             Common::ParamPackage{{"display", "Keyboard/Mouse"}, {"class", "keyboard"}},
         };
         if (Settings::values.tas_enable) {
-            devices.push_back(
+            devices.emplace_back(
                 Common::ParamPackage{{"display", "TAS Controller"}, {"class", "tas"}});
         }
 #ifdef HAVE_SDL2
