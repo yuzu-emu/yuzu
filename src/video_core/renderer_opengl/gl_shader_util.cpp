@@ -13,6 +13,33 @@
 
 namespace OpenGL {
 
+static OGLProgram LinkSeparableProgram(GLuint shader) {
+    OGLProgram program;
+    program.handle = glCreateProgram();
+    glProgramParameteri(program.handle, GL_PROGRAM_SEPARABLE, GL_TRUE);
+    glAttachShader(program.handle, shader);
+    glLinkProgram(program.handle);
+    if (!Settings::values.renderer_debug) {
+        return program;
+    }
+    GLint link_status{};
+    glGetProgramiv(program.handle, GL_LINK_STATUS, &link_status);
+
+    GLint log_length{};
+    glGetProgramiv(program.handle, GL_INFO_LOG_LENGTH, &log_length);
+    if (log_length == 0) {
+        return program;
+    }
+    std::string log(log_length, 0);
+    glGetProgramInfoLog(program.handle, log_length, nullptr, log.data());
+    if (link_status == GL_FALSE) {
+        LOG_ERROR(Render_OpenGL, "{}", log);
+    } else {
+        LOG_WARNING(Render_OpenGL, "{}", log);
+    }
+    return program;
+}
+
 static void LogShader(GLuint shader, std::string_view code = {}) {
     GLint shader_status{};
     glGetShaderiv(shader, GL_COMPILE_STATUS, &shader_status);
@@ -36,7 +63,7 @@ static void LogShader(GLuint shader, std::string_view code = {}) {
     }
 }
 
-void AttachShader(GLenum stage, GLuint program, std::string_view code) {
+OGLProgram CreateProgram(std::string_view code, GLenum stage) {
     OGLShader shader;
     shader.handle = glCreateShader(stage);
 
@@ -44,45 +71,23 @@ void AttachShader(GLenum stage, GLuint program, std::string_view code) {
     const GLchar* const code_ptr = code.data();
     glShaderSource(shader.handle, 1, &code_ptr, &length);
     glCompileShader(shader.handle);
-    glAttachShader(program, shader.handle);
     if (Settings::values.renderer_debug) {
         LogShader(shader.handle, code);
     }
+    return LinkSeparableProgram(shader.handle);
 }
 
-void AttachShader(GLenum stage, GLuint program, std::span<const u32> code) {
+OGLProgram CreateProgram(std::span<const u32> code, GLenum stage) {
     OGLShader shader;
     shader.handle = glCreateShader(stage);
 
     glShaderBinary(1, &shader.handle, GL_SHADER_BINARY_FORMAT_SPIR_V_ARB, code.data(),
                    static_cast<GLsizei>(code.size_bytes()));
     glSpecializeShader(shader.handle, "main", 0, nullptr, nullptr);
-    glAttachShader(program, shader.handle);
     if (Settings::values.renderer_debug) {
         LogShader(shader.handle);
     }
-}
-
-void LinkProgram(GLuint program) {
-    glLinkProgram(program);
-    if (!Settings::values.renderer_debug) {
-        return;
-    }
-    GLint link_status{};
-    glGetProgramiv(program, GL_LINK_STATUS, &link_status);
-
-    GLint log_length{};
-    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_length);
-    if (log_length == 0) {
-        return;
-    }
-    std::string log(log_length, 0);
-    glGetProgramInfoLog(program, log_length, nullptr, log.data());
-    if (link_status == GL_FALSE) {
-        LOG_ERROR(Render_OpenGL, "{}", log);
-    } else {
-        LOG_WARNING(Render_OpenGL, "{}", log);
-    }
+    return LinkSeparableProgram(shader.handle);
 }
 
 OGLAssemblyProgram CompileProgram(std::string_view code, GLenum target) {

@@ -129,7 +129,7 @@ private:
 
     void (*configure_func)(GraphicsPipeline*, bool){};
 
-    OGLProgram program;
+    std::array<OGLProgram, 5> source_programs;
     std::array<OGLAssemblyProgram, 5> assembly_programs;
     u32 enabled_stages_mask{};
 

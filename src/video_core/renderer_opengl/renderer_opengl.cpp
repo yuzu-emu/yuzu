@@ -251,10 +251,8 @@ void RendererOpenGL::LoadColorToActiveGLTexture(u8 color_r, u8 color_g, u8 color
 
 void RendererOpenGL::InitOpenGLObjects() {
     // Create shader programs
-    present_program.handle = glCreateProgram();
-    AttachShader(GL_VERTEX_SHADER, present_program.handle, HostShaders::OPENGL_PRESENT_VERT);
-    AttachShader(GL_FRAGMENT_SHADER, present_program.handle, HostShaders::OPENGL_PRESENT_FRAG);
-    LinkProgram(present_program.handle);
+    present_vertex = CreateProgram(HostShaders::OPENGL_PRESENT_VERT, GL_VERTEX_SHADER);
+    present_fragment = CreateProgram(HostShaders::OPENGL_PRESENT_FRAG, GL_FRAGMENT_SHADER);
 
     // Generate presentation sampler
     present_sampler.Create();
@@ -339,8 +337,9 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     // Set projection matrix
     const std::array ortho_matrix =
         MakeOrthographicMatrix(static_cast<float>(layout.width), static_cast<float>(layout.height));
-    program_manager.BindProgram(present_program.handle);
-    glUniformMatrix3x2fv(ModelViewMatrixLocation, 1, GL_FALSE, ortho_matrix.data());
+    program_manager.BindPresentPrograms(present_vertex.handle, present_fragment.handle);
+    glProgramUniformMatrix3x2fv(present_vertex.handle, ModelViewMatrixLocation, 1, GL_FALSE,
+                                ortho_matrix.data());
 
     const auto& texcoords = screen_info.display_texcoords;
     auto left = texcoords.left;

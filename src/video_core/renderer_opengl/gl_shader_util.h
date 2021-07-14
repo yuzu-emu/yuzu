@@ -17,11 +17,9 @@
 
 namespace OpenGL {
 
-void AttachShader(GLenum stage, GLuint program, std::string_view code);
+OGLProgram CreateProgram(std::string_view code, GLenum stage);
 
-void AttachShader(GLenum stage, GLuint program, std::span<const u32> code);
-
-void LinkProgram(GLuint program);
+OGLProgram CreateProgram(std::span<const u32> code, GLenum stage);
 
 OGLAssemblyProgram CompileProgram(std::string_view code, GLenum target);
 

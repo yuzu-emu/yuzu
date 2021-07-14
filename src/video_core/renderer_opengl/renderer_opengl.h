@@ -110,7 +110,8 @@ private:
     // OpenGL object IDs
     OGLSampler present_sampler;
     OGLBuffer vertex_buffer;
-    OGLProgram present_program;
+    OGLProgram present_vertex;
+    OGLProgram present_fragment;
     OGLFramebuffer screenshot_framebuffer;
 
     // GPU address of the vertex buffer

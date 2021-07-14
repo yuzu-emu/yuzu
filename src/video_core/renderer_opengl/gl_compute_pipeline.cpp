@@ -46,17 +46,13 @@ ComputePipeline::ComputePipeline(const Device& device, TextureCache& texture_cac
       kepler_compute{kepler_compute_}, program_manager{program_manager_}, info{info_} {
     switch (device.GetShaderBackend()) {
     case Settings::ShaderBackend::GLSL:
-        source_program.handle = glCreateProgram();
-        AttachShader(GL_COMPUTE_SHADER, source_program.handle, code);
-        LinkProgram(source_program.handle);
+        source_program = CreateProgram(code, GL_COMPUTE_SHADER);
         break;
     case Settings::ShaderBackend::GLASM:
         assembly_program = CompileProgram(code, GL_COMPUTE_PROGRAM_NV);
         break;
     case Settings::ShaderBackend::SPIRV:
-        source_program.handle = glCreateProgram();
-        AttachShader(GL_COMPUTE_SHADER, source_program.handle, code_v);
-        LinkProgram(source_program.handle);
+        source_program = CreateProgram(code_v, GL_COMPUTE_SHADER);
         break;
     }
     std::copy_n(info.constant_buffer_used_sizes.begin(), uniform_buffer_sizes.size(),
@@ -154,7 +150,7 @@ void ComputePipeline::Configure() {
     if (assembly_program.handle != 0) {
         program_manager.BindComputeAssemblyProgram(assembly_program.handle);
     } else {
-        program_manager.BindProgram(source_program.handle);
+        program_manager.BindComputeProgram(source_program.handle);
     }
     buffer_cache.UnbindComputeTextureBuffers();
     size_t texbuf_index{};

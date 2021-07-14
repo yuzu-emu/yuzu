@@ -237,44 +237,32 @@ GraphicsPipeline::GraphicsPipeline(
     if (key.xfb_enabled && device.UseAssemblyShaders()) {
         GenerateTransformFeedbackState();
     }
-    auto func{
-        [this, device, sources, sources_spirv, shader_notify](ShaderContext::Context*) mutable {
-            if (!device.UseAssemblyShaders()) {
-                program.handle = glCreateProgram();
-            }
-            for (size_t stage = 0; stage < 5; ++stage) {
-                switch (device.GetShaderBackend()) {
-                case Settings::ShaderBackend::GLSL: {
-                    const auto code{sources[stage]};
-                    if (code.empty()) {
-                        continue;
-                    }
-                    AttachShader(Stage(stage), program.handle, code);
-                } break;
-                case Settings::ShaderBackend::GLASM: {
-                    const auto code{sources[stage]};
-                    if (code.empty()) {
-                        continue;
-                    }
-                    assembly_programs[stage] = CompileProgram(code, AssemblyStage(stage));
-                } break;
-                case Settings::ShaderBackend::SPIRV: {
-                    const auto code{sources_spirv[stage]};
-                    if (code.empty()) {
-                        continue;
-                    }
-                    AttachShader(Stage(stage), program.handle, code);
-                } break;
+    auto func{[this, device, sources, sources_spirv,
+               shader_notify](ShaderContext::Context*) mutable {
+        for (size_t stage = 0; stage < 5; ++stage) {
+            switch (device.GetShaderBackend()) {
+            case Settings::ShaderBackend::GLSL:
+                if (!sources[stage].empty()) {
+                    source_programs[stage] = CreateProgram(sources[stage], Stage(stage));
                 }
+                break;
+            case Settings::ShaderBackend::GLASM:
+                if (!sources[stage].empty()) {
+                    assembly_programs[stage] = CompileProgram(sources[stage], AssemblyStage(stage));
+                }
+                break;
+            case Settings::ShaderBackend::SPIRV:
+                if (!sources_spirv[stage].empty()) {
+                    source_programs[stage] = CreateProgram(sources_spirv[stage], Stage(stage));
+                }
+                break;
             }
-            if (!device.UseAssemblyShaders()) {
-                LinkProgram(program.handle);
-            }
-            if (shader_notify) {
-                shader_notify->MarkShaderComplete();
-            }
-            is_built.store(true, std::memory_order_relaxed);
-        }};
+        }
+        if (shader_notify) {
+            shader_notify->MarkShaderComplete();
+        }
+        is_built = true;
+    }};
     if (thread_worker) {
         thread_worker->QueueWork(std::move(func));
     } else {
@@ -449,7 +437,7 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
     if (assembly_programs[0].handle != 0) {
         program_manager.BindAssemblyPrograms(assembly_programs, enabled_stages_mask);
     } else {
-        program_manager.BindProgram(program.handle);
+        program_manager.BindSourcePrograms(source_programs);
     }
     const ImageId* views_it{image_view_ids.data()};
     GLsizei texture_binding = 0;
