@@ -19,12 +19,19 @@ namespace Dirty {
 enum : u8 {
     First = VideoCommon::Dirty::LastCommonEntry,
 
+    VertexInput,
+    VertexAttribute0,
+    VertexAttribute31 = VertexAttribute0 + 31,
+    VertexBinding0,
+    VertexBinding31 = VertexBinding0 + 31,
+
     Viewports,
     Scissors,
     DepthBias,
     BlendConstants,
     DepthBounds,
     StencilProperties,
+    LineWidth,
 
     CullMode,
     DepthBoundsEnable,
@@ -36,11 +43,9 @@ enum : u8 {
     StencilTestEnable,
 
     Blending,
-    InstanceDivisors,
-    VertexAttributes,
     ViewportSwizzles,
 
-    Last
+    Last,
 };
 static_assert(Last <= std::numeric_limits<u8>::max());
 
@@ -87,6 +92,10 @@ public:
 
     bool TouchStencilProperties() {
         return Exchange(Dirty::StencilProperties, false);
+    }
+
+    bool TouchLineWidth() const {
+        return Exchange(Dirty::LineWidth, false);
     }
 
     bool TouchCullMode() {

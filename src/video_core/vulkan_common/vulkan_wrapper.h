@@ -193,15 +193,16 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkBeginCommandBuffer vkBeginCommandBuffer{};
     PFN_vkBindBufferMemory vkBindBufferMemory{};
     PFN_vkBindImageMemory vkBindImageMemory{};
+    PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT{};
     PFN_vkCmdBeginQuery vkCmdBeginQuery{};
     PFN_vkCmdBeginRenderPass vkCmdBeginRenderPass{};
     PFN_vkCmdBeginTransformFeedbackEXT vkCmdBeginTransformFeedbackEXT{};
-    PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT{};
     PFN_vkCmdBindDescriptorSets vkCmdBindDescriptorSets{};
     PFN_vkCmdBindIndexBuffer vkCmdBindIndexBuffer{};
     PFN_vkCmdBindPipeline vkCmdBindPipeline{};
     PFN_vkCmdBindTransformFeedbackBuffersEXT vkCmdBindTransformFeedbackBuffersEXT{};
     PFN_vkCmdBindVertexBuffers vkCmdBindVertexBuffers{};
+    PFN_vkCmdBindVertexBuffers2EXT vkCmdBindVertexBuffers2EXT{};
     PFN_vkCmdBlitImage vkCmdBlitImage{};
     PFN_vkCmdClearAttachments vkCmdClearAttachments{};
     PFN_vkCmdCopyBuffer vkCmdCopyBuffer{};
@@ -211,34 +212,36 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkCmdDispatch vkCmdDispatch{};
     PFN_vkCmdDraw vkCmdDraw{};
     PFN_vkCmdDrawIndexed vkCmdDrawIndexed{};
+    PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabelEXT{};
     PFN_vkCmdEndQuery vkCmdEndQuery{};
     PFN_vkCmdEndRenderPass vkCmdEndRenderPass{};
     PFN_vkCmdEndTransformFeedbackEXT vkCmdEndTransformFeedbackEXT{};
-    PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabelEXT{};
     PFN_vkCmdFillBuffer vkCmdFillBuffer{};
     PFN_vkCmdPipelineBarrier vkCmdPipelineBarrier{};
     PFN_vkCmdPushConstants vkCmdPushConstants{};
+    PFN_vkCmdPushDescriptorSetWithTemplateKHR vkCmdPushDescriptorSetWithTemplateKHR{};
+    PFN_vkCmdResolveImage vkCmdResolveImage{};
     PFN_vkCmdSetBlendConstants vkCmdSetBlendConstants{};
+    PFN_vkCmdSetCullModeEXT vkCmdSetCullModeEXT{};
     PFN_vkCmdSetDepthBias vkCmdSetDepthBias{};
     PFN_vkCmdSetDepthBounds vkCmdSetDepthBounds{};
-    PFN_vkCmdSetEvent vkCmdSetEvent{};
-    PFN_vkCmdSetScissor vkCmdSetScissor{};
-    PFN_vkCmdSetStencilCompareMask vkCmdSetStencilCompareMask{};
-    PFN_vkCmdSetStencilReference vkCmdSetStencilReference{};
-    PFN_vkCmdSetStencilWriteMask vkCmdSetStencilWriteMask{};
-    PFN_vkCmdSetViewport vkCmdSetViewport{};
-    PFN_vkCmdWaitEvents vkCmdWaitEvents{};
-    PFN_vkCmdBindVertexBuffers2EXT vkCmdBindVertexBuffers2EXT{};
-    PFN_vkCmdSetCullModeEXT vkCmdSetCullModeEXT{};
     PFN_vkCmdSetDepthBoundsTestEnableEXT vkCmdSetDepthBoundsTestEnableEXT{};
     PFN_vkCmdSetDepthCompareOpEXT vkCmdSetDepthCompareOpEXT{};
     PFN_vkCmdSetDepthTestEnableEXT vkCmdSetDepthTestEnableEXT{};
     PFN_vkCmdSetDepthWriteEnableEXT vkCmdSetDepthWriteEnableEXT{};
+    PFN_vkCmdSetEvent vkCmdSetEvent{};
     PFN_vkCmdSetFrontFaceEXT vkCmdSetFrontFaceEXT{};
+    PFN_vkCmdSetLineWidth vkCmdSetLineWidth{};
     PFN_vkCmdSetPrimitiveTopologyEXT vkCmdSetPrimitiveTopologyEXT{};
+    PFN_vkCmdSetScissor vkCmdSetScissor{};
+    PFN_vkCmdSetStencilCompareMask vkCmdSetStencilCompareMask{};
     PFN_vkCmdSetStencilOpEXT vkCmdSetStencilOpEXT{};
+    PFN_vkCmdSetStencilReference vkCmdSetStencilReference{};
     PFN_vkCmdSetStencilTestEnableEXT vkCmdSetStencilTestEnableEXT{};
-    PFN_vkCmdResolveImage vkCmdResolveImage{};
+    PFN_vkCmdSetStencilWriteMask vkCmdSetStencilWriteMask{};
+    PFN_vkCmdSetVertexInputEXT vkCmdSetVertexInputEXT{};
+    PFN_vkCmdSetViewport vkCmdSetViewport{};
+    PFN_vkCmdWaitEvents vkCmdWaitEvents{};
     PFN_vkCreateBuffer vkCreateBuffer{};
     PFN_vkCreateBufferView vkCreateBufferView{};
     PFN_vkCreateCommandPool vkCreateCommandPool{};
@@ -989,6 +992,12 @@ public:
                                      dynamic_offsets.size(), dynamic_offsets.data());
     }
 
+    void PushDescriptorSetWithTemplateKHR(VkDescriptorUpdateTemplateKHR update_template,
+                                          VkPipelineLayout layout, u32 set,
+                                          const void* data) const noexcept {
+        dld->vkCmdPushDescriptorSetWithTemplateKHR(handle, update_template, layout, set, data);
+    }
+
     void BindPipeline(VkPipelineBindPoint bind_point, VkPipeline pipeline) const noexcept {
         dld->vkCmdBindPipeline(handle, bind_point, pipeline);
     }
@@ -1190,6 +1199,10 @@ public:
         dld->vkCmdSetFrontFaceEXT(handle, front_face);
     }
 
+    void SetLineWidth(float line_width) const noexcept {
+        dld->vkCmdSetLineWidth(handle, line_width);
+    }
+
     void SetPrimitiveTopologyEXT(VkPrimitiveTopology primitive_topology) const noexcept {
         dld->vkCmdSetPrimitiveTopologyEXT(handle, primitive_topology);
     }
@@ -1201,6 +1214,13 @@ public:
 
     void SetStencilTestEnableEXT(bool enable) const noexcept {
         dld->vkCmdSetStencilTestEnableEXT(handle, enable ? VK_TRUE : VK_FALSE);
+    }
+
+    void SetVertexInputEXT(
+        vk::Span<VkVertexInputBindingDescription2EXT> bindings,
+        vk::Span<VkVertexInputAttributeDescription2EXT> attributes) const noexcept {
+        dld->vkCmdSetVertexInputEXT(handle, bindings.size(), bindings.data(), attributes.size(),
+                                    attributes.data());
     }
 
     void BindTransformFeedbackBuffersEXT(u32 first, u32 count, const VkBuffer* buffers,

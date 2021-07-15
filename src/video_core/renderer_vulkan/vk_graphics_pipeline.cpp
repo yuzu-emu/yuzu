@@ -1,29 +1,58 @@
-// Copyright 2019 yuzu Emulator Project
+// Copyright 2021 yuzu Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
 #include <algorithm>
-#include <array>
-#include <cstring>
-#include <vector>
+#include <span>
 
-#include "common/common_types.h"
-#include "common/microprofile.h"
-#include "video_core/renderer_vulkan/fixed_pipeline_state.h"
+#include <boost/container/small_vector.hpp>
+#include <boost/container/static_vector.hpp>
+
+#include "common/bit_field.h"
 #include "video_core/renderer_vulkan/maxwell_to_vk.h"
-#include "video_core/renderer_vulkan/vk_descriptor_pool.h"
+#include "video_core/renderer_vulkan/pipeline_helper.h"
+#include "video_core/renderer_vulkan/vk_buffer_cache.h"
 #include "video_core/renderer_vulkan/vk_graphics_pipeline.h"
-#include "video_core/renderer_vulkan/vk_pipeline_cache.h"
+#include "video_core/renderer_vulkan/vk_render_pass_cache.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
+#include "video_core/renderer_vulkan/vk_texture_cache.h"
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
+#include "video_core/shader_notify.h"
 #include "video_core/vulkan_common/vulkan_device.h"
-#include "video_core/vulkan_common/vulkan_wrapper.h"
+
+#if defined(_MSC_VER) && defined(NDEBUG)
+#define LAMBDA_FORCEINLINE [[msvc::forceinline]]
+#else
+#define LAMBDA_FORCEINLINE
+#endif
 
 namespace Vulkan {
-
-MICROPROFILE_DECLARE(Vulkan_PipelineCache);
-
 namespace {
+using boost::container::small_vector;
+using boost::container::static_vector;
+using Shader::ImageBufferDescriptor;
+using Tegra::Texture::TexturePair;
+using VideoCore::Surface::PixelFormat;
+using VideoCore::Surface::PixelFormatFromDepthFormat;
+using VideoCore::Surface::PixelFormatFromRenderTargetFormat;
+
+constexpr size_t NUM_STAGES = Maxwell::MaxShaderStage;
+constexpr size_t MAX_IMAGE_ELEMENTS = 64;
+
+DescriptorLayoutBuilder MakeBuilder(const Device& device, std::span<const Shader::Info> infos) {
+    DescriptorLayoutBuilder builder{device};
+    for (size_t index = 0; index < infos.size(); ++index) {
+        static constexpr std::array stages{
+            VK_SHADER_STAGE_VERTEX_BIT,
+            VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+            VK_SHADER_STAGE_GEOMETRY_BIT,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+        };
+        builder.Add(infos[index], stages.at(index));
+    }
+    return builder;
+}
 
 template <class StencilFace>
 VkStencilOpState GetStencilFaceState(const StencilFace& face) {
@@ -39,15 +68,24 @@ VkStencilOpState GetStencilFaceState(const StencilFace& face) {
 }
 
 bool SupportsPrimitiveRestart(VkPrimitiveTopology topology) {
-    static constexpr std::array unsupported_topologies = {
+    static constexpr std::array unsupported_topologies{
         VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
         VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
         VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY,
-        VK_PRIMITIVE_TOPOLOGY_PATCH_LIST};
-    return std::find(std::begin(unsupported_topologies), std::end(unsupported_topologies),
-                     topology) == std::end(unsupported_topologies);
+        VK_PRIMITIVE_TOPOLOGY_PATCH_LIST,
+        // VK_PRIMITIVE_TOPOLOGY_QUAD_LIST_EXT,
+    };
+    return std::ranges::find(unsupported_topologies, topology) == unsupported_topologies.end();
+}
+
+bool IsLine(VkPrimitiveTopology topology) {
+    static constexpr std::array line_topologies{
+        VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+        // VK_PRIMITIVE_TOPOLOGY_LINE_LOOP_EXT,
+    };
+    return std::ranges::find(line_topologies, topology) == line_topologies.end();
 }
 
 VkViewportSwizzleNV UnpackViewportSwizzle(u16 swizzle) {
@@ -59,8 +97,7 @@ VkViewportSwizzleNV UnpackViewportSwizzle(u16 swizzle) {
         BitField<12, 3, Maxwell::ViewportSwizzle> w;
     };
     const Swizzle unpacked{swizzle};
-
-    return {
+    return VkViewportSwizzleNV{
         .x = MaxwellToVK::ViewportSwizzle(unpacked.x),
         .y = MaxwellToVK::ViewportSwizzle(unpacked.y),
         .z = MaxwellToVK::ViewportSwizzle(unpacked.z),
@@ -68,193 +105,446 @@ VkViewportSwizzleNV UnpackViewportSwizzle(u16 swizzle) {
     };
 }
 
-VkSampleCountFlagBits ConvertMsaaMode(Tegra::Texture::MsaaMode msaa_mode) {
-    switch (msaa_mode) {
-    case Tegra::Texture::MsaaMode::Msaa1x1:
-        return VK_SAMPLE_COUNT_1_BIT;
-    case Tegra::Texture::MsaaMode::Msaa2x1:
-    case Tegra::Texture::MsaaMode::Msaa2x1_D3D:
-        return VK_SAMPLE_COUNT_2_BIT;
-    case Tegra::Texture::MsaaMode::Msaa2x2:
-    case Tegra::Texture::MsaaMode::Msaa2x2_VC4:
-    case Tegra::Texture::MsaaMode::Msaa2x2_VC12:
-        return VK_SAMPLE_COUNT_4_BIT;
-    case Tegra::Texture::MsaaMode::Msaa4x2:
-    case Tegra::Texture::MsaaMode::Msaa4x2_D3D:
-    case Tegra::Texture::MsaaMode::Msaa4x2_VC8:
-    case Tegra::Texture::MsaaMode::Msaa4x2_VC24:
-        return VK_SAMPLE_COUNT_8_BIT;
-    case Tegra::Texture::MsaaMode::Msaa4x4:
-        return VK_SAMPLE_COUNT_16_BIT;
-    default:
-        UNREACHABLE_MSG("Invalid msaa_mode={}", static_cast<int>(msaa_mode));
-        return VK_SAMPLE_COUNT_1_BIT;
+PixelFormat DecodeFormat(u8 encoded_format) {
+    const auto format{static_cast<Tegra::RenderTargetFormat>(encoded_format)};
+    if (format == Tegra::RenderTargetFormat::NONE) {
+        return PixelFormat::Invalid;
     }
+    return PixelFormatFromRenderTargetFormat(format);
 }
 
+RenderPassKey MakeRenderPassKey(const FixedPipelineState& state) {
+    RenderPassKey key;
+    std::ranges::transform(state.color_formats, key.color_formats.begin(), DecodeFormat);
+    if (state.depth_enabled != 0) {
+        const auto depth_format{static_cast<Tegra::DepthFormat>(state.depth_format.Value())};
+        key.depth_format = PixelFormatFromDepthFormat(depth_format);
+    } else {
+        key.depth_format = PixelFormat::Invalid;
+    }
+    key.samples = MaxwellToVK::MsaaMode(state.msaa_mode);
+    return key;
+}
+
+size_t NumAttachments(const FixedPipelineState& state) {
+    size_t num{};
+    for (size_t index = 0; index < Maxwell::NumRenderTargets; ++index) {
+        const auto format{static_cast<Tegra::RenderTargetFormat>(state.color_formats[index])};
+        if (format != Tegra::RenderTargetFormat::NONE) {
+            num = index + 1;
+        }
+    }
+    return num;
+}
+
+template <typename Spec>
+bool Passes(const std::array<vk::ShaderModule, NUM_STAGES>& modules,
+            const std::array<Shader::Info, NUM_STAGES>& stage_infos) {
+    for (size_t stage = 0; stage < NUM_STAGES; ++stage) {
+        if (!Spec::enabled_stages[stage] && modules[stage]) {
+            return false;
+        }
+        const auto& info{stage_infos[stage]};
+        if constexpr (!Spec::has_storage_buffers) {
+            if (!info.storage_buffers_descriptors.empty()) {
+                return false;
+            }
+        }
+        if constexpr (!Spec::has_texture_buffers) {
+            if (!info.texture_buffer_descriptors.empty()) {
+                return false;
+            }
+        }
+        if constexpr (!Spec::has_image_buffers) {
+            if (!info.image_buffer_descriptors.empty()) {
+                return false;
+            }
+        }
+        if constexpr (!Spec::has_images) {
+            if (!info.image_descriptors.empty()) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+using ConfigureFuncPtr = void (*)(GraphicsPipeline*, bool);
+
+template <typename Spec, typename... Specs>
+ConfigureFuncPtr FindSpec(const std::array<vk::ShaderModule, NUM_STAGES>& modules,
+                          const std::array<Shader::Info, NUM_STAGES>& stage_infos) {
+    if constexpr (sizeof...(Specs) > 0) {
+        if (!Passes<Spec>(modules, stage_infos)) {
+            return FindSpec<Specs...>(modules, stage_infos);
+        }
+    }
+    return GraphicsPipeline::MakeConfigureSpecFunc<Spec>();
+}
+
+struct SimpleVertexFragmentSpec {
+    static constexpr std::array<bool, 5> enabled_stages{true, false, false, false, true};
+    static constexpr bool has_storage_buffers = false;
+    static constexpr bool has_texture_buffers = false;
+    static constexpr bool has_image_buffers = false;
+    static constexpr bool has_images = false;
+};
+
+struct SimpleVertexSpec {
+    static constexpr std::array<bool, 5> enabled_stages{true, false, false, false, false};
+    static constexpr bool has_storage_buffers = false;
+    static constexpr bool has_texture_buffers = false;
+    static constexpr bool has_image_buffers = false;
+    static constexpr bool has_images = false;
+};
+
+struct DefaultSpec {
+    static constexpr std::array<bool, 5> enabled_stages{true, true, true, true, true};
+    static constexpr bool has_storage_buffers = true;
+    static constexpr bool has_texture_buffers = true;
+    static constexpr bool has_image_buffers = true;
+    static constexpr bool has_images = true;
+};
+
+ConfigureFuncPtr ConfigureFunc(const std::array<vk::ShaderModule, NUM_STAGES>& modules,
+                               const std::array<Shader::Info, NUM_STAGES>& infos) {
+    return FindSpec<SimpleVertexSpec, SimpleVertexFragmentSpec, DefaultSpec>(modules, infos);
+}
 } // Anonymous namespace
 
-VKGraphicsPipeline::VKGraphicsPipeline(const Device& device_, VKScheduler& scheduler_,
-                                       VKDescriptorPool& descriptor_pool_,
-                                       VKUpdateDescriptorQueue& update_descriptor_queue_,
-                                       const GraphicsPipelineCacheKey& key,
-                                       vk::Span<VkDescriptorSetLayoutBinding> bindings,
-                                       const SPIRVProgram& program, u32 num_color_buffers)
-    : device{device_}, scheduler{scheduler_}, cache_key{key}, hash{cache_key.Hash()},
-      descriptor_set_layout{CreateDescriptorSetLayout(bindings)},
-      descriptor_allocator{descriptor_pool_, *descriptor_set_layout},
-      update_descriptor_queue{update_descriptor_queue_}, layout{CreatePipelineLayout()},
-      descriptor_template{CreateDescriptorUpdateTemplate(program)},
-      modules(CreateShaderModules(program)),
-      pipeline(CreatePipeline(program, cache_key.renderpass, num_color_buffers)) {}
-
-VKGraphicsPipeline::~VKGraphicsPipeline() = default;
-
-VkDescriptorSet VKGraphicsPipeline::CommitDescriptorSet() {
-    if (!descriptor_template) {
-        return {};
+GraphicsPipeline::GraphicsPipeline(
+    Tegra::Engines::Maxwell3D& maxwell3d_, Tegra::MemoryManager& gpu_memory_,
+    VKScheduler& scheduler_, BufferCache& buffer_cache_, TextureCache& texture_cache_,
+    VideoCore::ShaderNotify* shader_notify, const Device& device_, DescriptorPool& descriptor_pool,
+    VKUpdateDescriptorQueue& update_descriptor_queue_, Common::ThreadWorker* worker_thread,
+    RenderPassCache& render_pass_cache, const GraphicsPipelineCacheKey& key_,
+    std::array<vk::ShaderModule, NUM_STAGES> stages,
+    const std::array<const Shader::Info*, NUM_STAGES>& infos)
+    : key{key_}, maxwell3d{maxwell3d_}, gpu_memory{gpu_memory_}, device{device_},
+      texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, scheduler{scheduler_},
+      update_descriptor_queue{update_descriptor_queue_}, spv_modules{std::move(stages)} {
+    if (shader_notify) {
+        shader_notify->MarkShaderBuilding();
     }
-    const VkDescriptorSet set = descriptor_allocator.Commit();
-    update_descriptor_queue.Send(*descriptor_template, set);
-    return set;
-}
-
-vk::DescriptorSetLayout VKGraphicsPipeline::CreateDescriptorSetLayout(
-    vk::Span<VkDescriptorSetLayoutBinding> bindings) const {
-    const VkDescriptorSetLayoutCreateInfo ci{
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .bindingCount = bindings.size(),
-        .pBindings = bindings.data(),
-    };
-    return device.GetLogical().CreateDescriptorSetLayout(ci);
-}
-
-vk::PipelineLayout VKGraphicsPipeline::CreatePipelineLayout() const {
-    const VkPipelineLayoutCreateInfo ci{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .setLayoutCount = 1,
-        .pSetLayouts = descriptor_set_layout.address(),
-        .pushConstantRangeCount = 0,
-        .pPushConstantRanges = nullptr,
-    };
-    return device.GetLogical().CreatePipelineLayout(ci);
-}
-
-vk::DescriptorUpdateTemplateKHR VKGraphicsPipeline::CreateDescriptorUpdateTemplate(
-    const SPIRVProgram& program) const {
-    std::vector<VkDescriptorUpdateTemplateEntry> template_entries;
-    u32 binding = 0;
-    u32 offset = 0;
-    for (const auto& stage : program) {
-        if (stage) {
-            FillDescriptorUpdateTemplateEntries(stage->entries, binding, offset, template_entries);
-        }
-    }
-    if (template_entries.empty()) {
-        // If the shader doesn't use descriptor sets, skip template creation.
-        return {};
-    }
-
-    const VkDescriptorUpdateTemplateCreateInfoKHR ci{
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO_KHR,
-        .pNext = nullptr,
-        .flags = 0,
-        .descriptorUpdateEntryCount = static_cast<u32>(template_entries.size()),
-        .pDescriptorUpdateEntries = template_entries.data(),
-        .templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET_KHR,
-        .descriptorSetLayout = *descriptor_set_layout,
-        .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-        .pipelineLayout = *layout,
-        .set = DESCRIPTOR_SET,
-    };
-    return device.GetLogical().CreateDescriptorUpdateTemplateKHR(ci);
-}
-
-std::vector<vk::ShaderModule> VKGraphicsPipeline::CreateShaderModules(
-    const SPIRVProgram& program) const {
-    VkShaderModuleCreateInfo ci{
-        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .codeSize = 0,
-        .pCode = nullptr,
-    };
-
-    std::vector<vk::ShaderModule> shader_modules;
-    shader_modules.reserve(Maxwell::MaxShaderStage);
-    for (std::size_t i = 0; i < Maxwell::MaxShaderStage; ++i) {
-        const auto& stage = program[i];
-        if (!stage) {
+    for (size_t stage = 0; stage < NUM_STAGES; ++stage) {
+        const Shader::Info* const info{infos[stage]};
+        if (!info) {
             continue;
         }
-
-        device.SaveShader(stage->code);
-
-        ci.codeSize = stage->code.size() * sizeof(u32);
-        ci.pCode = stage->code.data();
-        shader_modules.push_back(device.GetLogical().CreateShaderModule(ci));
+        stage_infos[stage] = *info;
+        enabled_uniform_buffer_masks[stage] = info->constant_buffer_mask;
+        std::ranges::copy(info->constant_buffer_used_sizes, uniform_buffer_sizes[stage].begin());
     }
-    return shader_modules;
+    auto func{[this, shader_notify, &render_pass_cache, &descriptor_pool] {
+        DescriptorLayoutBuilder builder{MakeBuilder(device, stage_infos)};
+        uses_push_descriptor = builder.CanUsePushDescriptor();
+        descriptor_set_layout = builder.CreateDescriptorSetLayout(uses_push_descriptor);
+        if (!uses_push_descriptor) {
+            descriptor_allocator = descriptor_pool.Allocator(*descriptor_set_layout, stage_infos);
+        }
+        const VkDescriptorSetLayout set_layout{*descriptor_set_layout};
+        pipeline_layout = builder.CreatePipelineLayout(set_layout);
+        descriptor_update_template =
+            builder.CreateTemplate(set_layout, *pipeline_layout, uses_push_descriptor);
+
+        const VkRenderPass render_pass{render_pass_cache.Get(MakeRenderPassKey(key.state))};
+        Validate();
+        MakePipeline(render_pass);
+
+        std::lock_guard lock{build_mutex};
+        is_built = true;
+        build_condvar.notify_one();
+        if (shader_notify) {
+            shader_notify->MarkShaderComplete();
+        }
+    }};
+    if (worker_thread) {
+        worker_thread->QueueWork(std::move(func));
+    } else {
+        func();
+    }
+    configure_func = ConfigureFunc(spv_modules, stage_infos);
 }
 
-vk::Pipeline VKGraphicsPipeline::CreatePipeline(const SPIRVProgram& program,
-                                                VkRenderPass renderpass,
-                                                u32 num_color_buffers) const {
-    const auto& state = cache_key.fixed_state;
-    const auto& viewport_swizzles = state.viewport_swizzles;
+void GraphicsPipeline::AddTransition(GraphicsPipeline* transition) {
+    transition_keys.push_back(transition->key);
+    transitions.push_back(transition);
+}
 
-    FixedPipelineState::DynamicState dynamic;
-    if (device.IsExtExtendedDynamicStateSupported()) {
-        // Insert dummy values, as long as they are valid they don't matter as extended dynamic
-        // state is ignored
-        dynamic.raw1 = 0;
-        dynamic.raw2 = 0;
-        dynamic.vertex_strides.fill(0);
-    } else {
-        dynamic = state.dynamic_state;
+template <typename Spec>
+void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
+    std::array<ImageId, MAX_IMAGE_ELEMENTS> image_view_ids;
+    std::array<u32, MAX_IMAGE_ELEMENTS> image_view_indices;
+    std::array<VkSampler, MAX_IMAGE_ELEMENTS> samplers;
+    size_t sampler_index{};
+    size_t image_index{};
+
+    texture_cache.SynchronizeGraphicsDescriptors();
+
+    buffer_cache.SetUniformBuffersState(enabled_uniform_buffer_masks, &uniform_buffer_sizes);
+
+    const auto& regs{maxwell3d.regs};
+    const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};
+    const auto config_stage{[&](size_t stage) LAMBDA_FORCEINLINE {
+        const Shader::Info& info{stage_infos[stage]};
+        buffer_cache.UnbindGraphicsStorageBuffers(stage);
+        if constexpr (Spec::has_storage_buffers) {
+            size_t ssbo_index{};
+            for (const auto& desc : info.storage_buffers_descriptors) {
+                ASSERT(desc.count == 1);
+                buffer_cache.BindGraphicsStorageBuffer(stage, ssbo_index, desc.cbuf_index,
+                                                       desc.cbuf_offset, desc.is_written);
+                ++ssbo_index;
+            }
+        }
+        const auto& cbufs{maxwell3d.state.shader_stages[stage].const_buffers};
+        const auto read_handle{[&](const auto& desc, u32 index) {
+            ASSERT(cbufs[desc.cbuf_index].enabled);
+            const u32 index_offset{index << desc.size_shift};
+            const u32 offset{desc.cbuf_offset + index_offset};
+            const GPUVAddr addr{cbufs[desc.cbuf_index].address + offset};
+            if constexpr (std::is_same_v<decltype(desc), const Shader::TextureDescriptor&> ||
+                          std::is_same_v<decltype(desc), const Shader::TextureBufferDescriptor&>) {
+                if (desc.has_secondary) {
+                    ASSERT(cbufs[desc.secondary_cbuf_index].enabled);
+                    const u32 second_offset{desc.secondary_cbuf_offset + index_offset};
+                    const GPUVAddr separate_addr{cbufs[desc.secondary_cbuf_index].address +
+                                                 second_offset};
+                    const u32 lhs_raw{gpu_memory.Read<u32>(addr)};
+                    const u32 rhs_raw{gpu_memory.Read<u32>(separate_addr)};
+                    const u32 raw{lhs_raw | rhs_raw};
+                    return TexturePair(raw, via_header_index);
+                }
+            }
+            return TexturePair(gpu_memory.Read<u32>(addr), via_header_index);
+        }};
+        const auto add_image{[&](const auto& desc) {
+            for (u32 index = 0; index < desc.count; ++index) {
+                const auto handle{read_handle(desc, index)};
+                image_view_indices[image_index++] = handle.first;
+            }
+        }};
+        if constexpr (Spec::has_texture_buffers) {
+            for (const auto& desc : info.texture_buffer_descriptors) {
+                add_image(desc);
+            }
+        }
+        if constexpr (Spec::has_image_buffers) {
+            for (const auto& desc : info.image_buffer_descriptors) {
+                add_image(desc);
+            }
+        }
+        for (const auto& desc : info.texture_descriptors) {
+            for (u32 index = 0; index < desc.count; ++index) {
+                const auto handle{read_handle(desc, index)};
+                image_view_indices[image_index++] = handle.first;
+
+                Sampler* const sampler{texture_cache.GetGraphicsSampler(handle.second)};
+                samplers[sampler_index++] = sampler->Handle();
+            }
+        }
+        if constexpr (Spec::has_images) {
+            for (const auto& desc : info.image_descriptors) {
+                add_image(desc);
+            }
+        }
+    }};
+    if constexpr (Spec::enabled_stages[0]) {
+        config_stage(0);
+    }
+    if constexpr (Spec::enabled_stages[1]) {
+        config_stage(1);
+    }
+    if constexpr (Spec::enabled_stages[2]) {
+        config_stage(2);
+    }
+    if constexpr (Spec::enabled_stages[3]) {
+        config_stage(3);
+    }
+    if constexpr (Spec::enabled_stages[4]) {
+        config_stage(4);
+    }
+    const std::span indices_span(image_view_indices.data(), image_index);
+    texture_cache.FillGraphicsImageViews(indices_span, image_view_ids);
+
+    ImageId* texture_buffer_index{image_view_ids.data()};
+    const auto bind_stage_info{[&](size_t stage) LAMBDA_FORCEINLINE {
+        size_t index{};
+        const auto add_buffer{[&](const auto& desc) {
+            constexpr bool is_image = std::is_same_v<decltype(desc), const ImageBufferDescriptor&>;
+            for (u32 i = 0; i < desc.count; ++i) {
+                bool is_written{false};
+                if constexpr (is_image) {
+                    is_written = desc.is_written;
+                }
+                ImageView& image_view{texture_cache.GetImageView(*texture_buffer_index)};
+                buffer_cache.BindGraphicsTextureBuffer(stage, index, image_view.GpuAddr(),
+                                                       image_view.BufferSize(), image_view.format,
+                                                       is_written, is_image);
+                ++index;
+                ++texture_buffer_index;
+            }
+        }};
+        buffer_cache.UnbindGraphicsTextureBuffers(stage);
+
+        const Shader::Info& info{stage_infos[stage]};
+        if constexpr (Spec::has_texture_buffers) {
+            for (const auto& desc : info.texture_buffer_descriptors) {
+                add_buffer(desc);
+            }
+        }
+        if constexpr (Spec::has_image_buffers) {
+            for (const auto& desc : info.image_buffer_descriptors) {
+                add_buffer(desc);
+            }
+        }
+        for (const auto& desc : info.texture_descriptors) {
+            texture_buffer_index += desc.count;
+        }
+        if constexpr (Spec::has_images) {
+            for (const auto& desc : info.image_descriptors) {
+                texture_buffer_index += desc.count;
+            }
+        }
+    }};
+    if constexpr (Spec::enabled_stages[0]) {
+        bind_stage_info(0);
+    }
+    if constexpr (Spec::enabled_stages[1]) {
+        bind_stage_info(1);
+    }
+    if constexpr (Spec::enabled_stages[2]) {
+        bind_stage_info(2);
+    }
+    if constexpr (Spec::enabled_stages[3]) {
+        bind_stage_info(3);
+    }
+    if constexpr (Spec::enabled_stages[4]) {
+        bind_stage_info(4);
     }
 
-    std::vector<VkVertexInputBindingDescription> vertex_bindings;
-    std::vector<VkVertexInputBindingDivisorDescriptionEXT> vertex_binding_divisors;
-    for (std::size_t index = 0; index < Maxwell::NumVertexArrays; ++index) {
-        const bool instanced = state.binding_divisors[index] != 0;
-        const auto rate = instanced ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
-        vertex_bindings.push_back({
-            .binding = static_cast<u32>(index),
-            .stride = dynamic.vertex_strides[index],
-            .inputRate = rate,
+    buffer_cache.UpdateGraphicsBuffers(is_indexed);
+    buffer_cache.BindHostGeometryBuffers(is_indexed);
+
+    update_descriptor_queue.Acquire();
+
+    const VkSampler* samplers_it{samplers.data()};
+    const ImageId* views_it{image_view_ids.data()};
+    const auto prepare_stage{[&](size_t stage) LAMBDA_FORCEINLINE {
+        buffer_cache.BindHostStageBuffers(stage);
+        PushImageDescriptors(stage_infos[stage], samplers_it, views_it, texture_cache,
+                             update_descriptor_queue);
+    }};
+    if constexpr (Spec::enabled_stages[0]) {
+        prepare_stage(0);
+    }
+    if constexpr (Spec::enabled_stages[1]) {
+        prepare_stage(1);
+    }
+    if constexpr (Spec::enabled_stages[2]) {
+        prepare_stage(2);
+    }
+    if constexpr (Spec::enabled_stages[3]) {
+        prepare_stage(3);
+    }
+    if constexpr (Spec::enabled_stages[4]) {
+        prepare_stage(4);
+    }
+    ConfigureDraw();
+}
+
+void GraphicsPipeline::ConfigureDraw() {
+    texture_cache.UpdateRenderTargets(false);
+    scheduler.RequestRenderpass(texture_cache.GetFramebuffer());
+
+    if (!is_built.load(std::memory_order::relaxed)) {
+        // Wait for the pipeline to be built
+        scheduler.Record([this](vk::CommandBuffer) {
+            std::unique_lock lock{build_mutex};
+            build_condvar.wait(lock, [this] { return is_built.load(std::memory_order::relaxed); });
         });
-        if (instanced) {
-            vertex_binding_divisors.push_back({
+    }
+    const bool bind_pipeline{scheduler.UpdateGraphicsPipeline(this)};
+    const void* const descriptor_data{update_descriptor_queue.UpdateData()};
+    scheduler.Record([this, descriptor_data, bind_pipeline](vk::CommandBuffer cmdbuf) {
+        if (bind_pipeline) {
+            cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);
+        }
+        if (!descriptor_set_layout) {
+            return;
+        }
+        if (uses_push_descriptor) {
+            cmdbuf.PushDescriptorSetWithTemplateKHR(*descriptor_update_template, *pipeline_layout,
+                                                    0, descriptor_data);
+        } else {
+            const VkDescriptorSet descriptor_set{descriptor_allocator.Commit()};
+            const vk::Device& dev{device.GetLogical()};
+            dev.UpdateDescriptorSet(descriptor_set, *descriptor_update_template, descriptor_data);
+            cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, 0,
+                                      descriptor_set, nullptr);
+        }
+    });
+}
+
+void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
+    FixedPipelineState::DynamicState dynamic{};
+    if (!key.state.extended_dynamic_state) {
+        dynamic = key.state.dynamic_state;
+    }
+    static_vector<VkVertexInputBindingDescription, 32> vertex_bindings;
+    static_vector<VkVertexInputBindingDivisorDescriptionEXT, 32> vertex_binding_divisors;
+    static_vector<VkVertexInputAttributeDescription, 32> vertex_attributes;
+    if (key.state.dynamic_vertex_input) {
+        for (size_t index = 0; index < key.state.attributes.size(); ++index) {
+            const u32 type = key.state.DynamicAttributeType(index);
+            if (!stage_infos[0].loads.Generic(index) || type == 0) {
+                continue;
+            }
+            vertex_attributes.push_back({
+                .location = static_cast<u32>(index),
+                .binding = 0,
+                .format = type == 1 ? VK_FORMAT_R32_SFLOAT
+                                    : type == 2 ? VK_FORMAT_R32_SINT : VK_FORMAT_R32_UINT,
+                .offset = 0,
+            });
+        }
+        if (!vertex_attributes.empty()) {
+            vertex_bindings.push_back({
+                .binding = 0,
+                .stride = 4,
+                .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+            });
+        }
+    } else {
+        for (size_t index = 0; index < Maxwell::NumVertexArrays; ++index) {
+            const bool instanced = key.state.binding_divisors[index] != 0;
+            const auto rate =
+                instanced ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
+            vertex_bindings.push_back({
                 .binding = static_cast<u32>(index),
-                .divisor = state.binding_divisors[index],
+                .stride = dynamic.vertex_strides[index],
+                .inputRate = rate,
+            });
+            if (instanced) {
+                vertex_binding_divisors.push_back({
+                    .binding = static_cast<u32>(index),
+                    .divisor = key.state.binding_divisors[index],
+                });
+            }
+        }
+        for (size_t index = 0; index < key.state.attributes.size(); ++index) {
+            const auto& attribute = key.state.attributes[index];
+            if (!attribute.enabled || !stage_infos[0].loads.Generic(index)) {
+                continue;
+            }
+            vertex_attributes.push_back({
+                .location = static_cast<u32>(index),
+                .binding = attribute.buffer,
+                .format = MaxwellToVK::VertexFormat(attribute.Type(), attribute.Size()),
+                .offset = attribute.offset,
             });
         }
     }
-
-    std::vector<VkVertexInputAttributeDescription> vertex_attributes;
-    const auto& input_attributes = program[0]->entries.attributes;
-    for (std::size_t index = 0; index < state.attributes.size(); ++index) {
-        const auto& attribute = state.attributes[index];
-        if (!attribute.enabled) {
-            continue;
-        }
-        if (!input_attributes.contains(static_cast<u32>(index))) {
-            // Skip attributes not used by the vertex shaders.
-            continue;
-        }
-        vertex_attributes.push_back({
-            .location = static_cast<u32>(index),
-            .binding = attribute.buffer,
-            .format = MaxwellToVK::VertexFormat(attribute.Type(), attribute.Size()),
-            .offset = attribute.offset,
-        });
-    }
-
     VkPipelineVertexInputStateCreateInfo vertex_input_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .pNext = nullptr,
@@ -264,7 +554,6 @@ vk::Pipeline VKGraphicsPipeline::CreatePipeline(const SPIRVProgram& program,
         .vertexAttributeDescriptionCount = static_cast<u32>(vertex_attributes.size()),
         .pVertexAttributeDescriptions = vertex_attributes.data(),
     };
-
     const VkPipelineVertexInputDivisorStateCreateInfoEXT input_divisor_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT,
         .pNext = nullptr,
@@ -274,27 +563,40 @@ vk::Pipeline VKGraphicsPipeline::CreatePipeline(const SPIRVProgram& program,
     if (!vertex_binding_divisors.empty()) {
         vertex_input_ci.pNext = &input_divisor_ci;
     }
-
-    const auto input_assembly_topology = MaxwellToVK::PrimitiveTopology(device, state.topology);
+    auto input_assembly_topology = MaxwellToVK::PrimitiveTopology(device, key.state.topology);
+    if (input_assembly_topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+        if (!spv_modules[1] && !spv_modules[2]) {
+            LOG_WARNING(Render_Vulkan, "Patch topology used without tessellation, using points");
+            input_assembly_topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        }
+    }
     const VkPipelineInputAssemblyStateCreateInfo input_assembly_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .topology = MaxwellToVK::PrimitiveTopology(device, state.topology),
-        .primitiveRestartEnable = state.primitive_restart_enable != 0 &&
+        .topology = input_assembly_topology,
+        .primitiveRestartEnable = key.state.primitive_restart_enable != 0 &&
                                   SupportsPrimitiveRestart(input_assembly_topology),
     };
-
     const VkPipelineTessellationStateCreateInfo tessellation_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .patchControlPoints = state.patch_control_points_minus_one.Value() + 1,
+        .patchControlPoints = key.state.patch_control_points_minus_one.Value() + 1,
     };
 
-    VkPipelineViewportStateCreateInfo viewport_ci{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+    std::array<VkViewportSwizzleNV, Maxwell::NumViewports> swizzles;
+    std::ranges::transform(key.state.viewport_swizzles, swizzles.begin(), UnpackViewportSwizzle);
+    const VkPipelineViewportSwizzleStateCreateInfoNV swizzle_ci{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SWIZZLE_STATE_CREATE_INFO_NV,
         .pNext = nullptr,
+        .flags = 0,
+        .viewportCount = Maxwell::NumViewports,
+        .pViewportSwizzles = swizzles.data(),
+    };
+    const VkPipelineViewportStateCreateInfo viewport_ci{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+        .pNext = device.IsNvViewportSwizzleSupported() ? &swizzle_ci : nullptr,
         .flags = 0,
         .viewportCount = Maxwell::NumViewports,
         .pViewports = nullptr,
@@ -302,50 +604,72 @@ vk::Pipeline VKGraphicsPipeline::CreatePipeline(const SPIRVProgram& program,
         .pScissors = nullptr,
     };
 
-    std::array<VkViewportSwizzleNV, Maxwell::NumViewports> swizzles;
-    std::ranges::transform(viewport_swizzles, swizzles.begin(), UnpackViewportSwizzle);
-    VkPipelineViewportSwizzleStateCreateInfoNV swizzle_ci{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SWIZZLE_STATE_CREATE_INFO_NV,
-        .pNext = nullptr,
-        .flags = 0,
-        .viewportCount = Maxwell::NumViewports,
-        .pViewportSwizzles = swizzles.data(),
-    };
-    if (device.IsNvViewportSwizzleSupported()) {
-        viewport_ci.pNext = &swizzle_ci;
-    }
-
-    const VkPipelineRasterizationStateCreateInfo rasterization_ci{
+    VkPipelineRasterizationStateCreateInfo rasterization_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
         .depthClampEnable =
-            static_cast<VkBool32>(state.depth_clamp_disabled == 0 ? VK_TRUE : VK_FALSE),
+            static_cast<VkBool32>(key.state.depth_clamp_disabled == 0 ? VK_TRUE : VK_FALSE),
         .rasterizerDiscardEnable =
-            static_cast<VkBool32>(state.rasterize_enable == 0 ? VK_TRUE : VK_FALSE),
-        .polygonMode = VK_POLYGON_MODE_FILL,
+            static_cast<VkBool32>(key.state.rasterize_enable == 0 ? VK_TRUE : VK_FALSE),
+        .polygonMode =
+            MaxwellToVK::PolygonMode(FixedPipelineState::UnpackPolygonMode(key.state.polygon_mode)),
         .cullMode = static_cast<VkCullModeFlags>(
             dynamic.cull_enable ? MaxwellToVK::CullFace(dynamic.CullFace()) : VK_CULL_MODE_NONE),
         .frontFace = MaxwellToVK::FrontFace(dynamic.FrontFace()),
-        .depthBiasEnable = state.depth_bias_enable,
+        .depthBiasEnable = key.state.depth_bias_enable,
         .depthBiasConstantFactor = 0.0f,
         .depthBiasClamp = 0.0f,
         .depthBiasSlopeFactor = 0.0f,
         .lineWidth = 1.0f,
     };
+    VkPipelineRasterizationLineStateCreateInfoEXT line_state{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_EXT,
+        .pNext = nullptr,
+        .lineRasterizationMode = key.state.smooth_lines != 0
+                                     ? VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT
+                                     : VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT,
+        .stippledLineEnable = VK_FALSE, // TODO
+        .lineStippleFactor = 0,
+        .lineStipplePattern = 0,
+    };
+    VkPipelineRasterizationConservativeStateCreateInfoEXT conservative_raster{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT,
+        .pNext = nullptr,
+        .flags = 0,
+        .conservativeRasterizationMode = key.state.conservative_raster_enable != 0
+                                             ? VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT
+                                             : VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT,
+        .extraPrimitiveOverestimationSize = 0.0f,
+    };
+    VkPipelineRasterizationProvokingVertexStateCreateInfoEXT provoking_vertex{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT,
+        .pNext = nullptr,
+        .provokingVertexMode = key.state.provoking_vertex_last != 0
+                                   ? VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT
+                                   : VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT,
+    };
+    if (IsLine(input_assembly_topology) && device.IsExtLineRasterizationSupported()) {
+        line_state.pNext = std::exchange(rasterization_ci.pNext, &line_state);
+    }
+    if (device.IsExtConservativeRasterizationSupported()) {
+        conservative_raster.pNext = std::exchange(rasterization_ci.pNext, &conservative_raster);
+    }
+    if (device.IsExtProvokingVertexSupported()) {
+        provoking_vertex.pNext = std::exchange(rasterization_ci.pNext, &provoking_vertex);
+    }
 
     const VkPipelineMultisampleStateCreateInfo multisample_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .rasterizationSamples = ConvertMsaaMode(state.msaa_mode),
+        .rasterizationSamples = MaxwellToVK::MsaaMode(key.state.msaa_mode),
         .sampleShadingEnable = VK_FALSE,
         .minSampleShading = 0.0f,
         .pSampleMask = nullptr,
         .alphaToCoverageEnable = VK_FALSE,
         .alphaToOneEnable = VK_FALSE,
     };
-
     const VkPipelineDepthStencilStateCreateInfo depth_stencil_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
         .pNext = nullptr,
@@ -355,32 +679,32 @@ vk::Pipeline VKGraphicsPipeline::CreatePipeline(const SPIRVProgram& program,
         .depthCompareOp = dynamic.depth_test_enable
                               ? MaxwellToVK::ComparisonOp(dynamic.DepthTestFunc())
                               : VK_COMPARE_OP_ALWAYS,
-        .depthBoundsTestEnable = dynamic.depth_bounds_enable,
+        .depthBoundsTestEnable = dynamic.depth_bounds_enable && device.IsDepthBoundsSupported(),
         .stencilTestEnable = dynamic.stencil_enable,
         .front = GetStencilFaceState(dynamic.front),
         .back = GetStencilFaceState(dynamic.back),
         .minDepthBounds = 0.0f,
         .maxDepthBounds = 0.0f,
     };
-
-    std::array<VkPipelineColorBlendAttachmentState, Maxwell::NumRenderTargets> cb_attachments;
-    for (std::size_t index = 0; index < num_color_buffers; ++index) {
-        static constexpr std::array COMPONENT_TABLE{
+    if (dynamic.depth_bounds_enable && !device.IsDepthBoundsSupported()) {
+        LOG_WARNING(Render_Vulkan, "Depth bounds is enabled but not supported");
+    }
+    static_vector<VkPipelineColorBlendAttachmentState, Maxwell::NumRenderTargets> cb_attachments;
+    const size_t num_attachments{NumAttachments(key.state)};
+    for (size_t index = 0; index < num_attachments; ++index) {
+        static constexpr std::array mask_table{
             VK_COLOR_COMPONENT_R_BIT,
             VK_COLOR_COMPONENT_G_BIT,
             VK_COLOR_COMPONENT_B_BIT,
             VK_COLOR_COMPONENT_A_BIT,
         };
-        const auto& blend = state.attachments[index];
-
-        VkColorComponentFlags color_components = 0;
-        for (std::size_t i = 0; i < COMPONENT_TABLE.size(); ++i) {
-            if (blend.Mask()[i]) {
-                color_components |= COMPONENT_TABLE[i];
-            }
+        const auto& blend{key.state.attachments[index]};
+        const std::array mask{blend.Mask()};
+        VkColorComponentFlags write_mask{};
+        for (size_t i = 0; i < mask_table.size(); ++i) {
+            write_mask |= mask[i] ? mask_table[i] : 0;
         }
-
-        cb_attachments[index] = {
+        cb_attachments.push_back({
             .blendEnable = blend.enable != 0,
             .srcColorBlendFactor = MaxwellToVK::BlendFactor(blend.SourceRGBFactor()),
             .dstColorBlendFactor = MaxwellToVK::BlendFactor(blend.DestRGBFactor()),
@@ -388,28 +712,27 @@ vk::Pipeline VKGraphicsPipeline::CreatePipeline(const SPIRVProgram& program,
             .srcAlphaBlendFactor = MaxwellToVK::BlendFactor(blend.SourceAlphaFactor()),
             .dstAlphaBlendFactor = MaxwellToVK::BlendFactor(blend.DestAlphaFactor()),
             .alphaBlendOp = MaxwellToVK::BlendEquation(blend.EquationAlpha()),
-            .colorWriteMask = color_components,
-        };
+            .colorWriteMask = write_mask,
+        });
     }
-
     const VkPipelineColorBlendStateCreateInfo color_blend_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
         .logicOpEnable = VK_FALSE,
         .logicOp = VK_LOGIC_OP_COPY,
-        .attachmentCount = num_color_buffers,
+        .attachmentCount = static_cast<u32>(cb_attachments.size()),
         .pAttachments = cb_attachments.data(),
         .blendConstants = {},
     };
-
-    std::vector dynamic_states{
+    static_vector<VkDynamicState, 19> dynamic_states{
         VK_DYNAMIC_STATE_VIEWPORT,           VK_DYNAMIC_STATE_SCISSOR,
         VK_DYNAMIC_STATE_DEPTH_BIAS,         VK_DYNAMIC_STATE_BLEND_CONSTANTS,
         VK_DYNAMIC_STATE_DEPTH_BOUNDS,       VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
         VK_DYNAMIC_STATE_STENCIL_WRITE_MASK, VK_DYNAMIC_STATE_STENCIL_REFERENCE,
+        VK_DYNAMIC_STATE_LINE_WIDTH,
     };
-    if (device.IsExtExtendedDynamicStateSupported()) {
+    if (key.state.extended_dynamic_state) {
         static constexpr std::array extended{
             VK_DYNAMIC_STATE_CULL_MODE_EXT,
             VK_DYNAMIC_STATE_FRONT_FACE_EXT,
@@ -421,9 +744,11 @@ vk::Pipeline VKGraphicsPipeline::CreatePipeline(const SPIRVProgram& program,
             VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT,
             VK_DYNAMIC_STATE_STENCIL_OP_EXT,
         };
+        if (key.state.dynamic_vertex_input) {
+            dynamic_states.push_back(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+        }
         dynamic_states.insert(dynamic_states.end(), extended.begin(), extended.end());
     }
-
     const VkPipelineDynamicStateCreateInfo dynamic_state_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
         .pNext = nullptr,
@@ -431,34 +756,33 @@ vk::Pipeline VKGraphicsPipeline::CreatePipeline(const SPIRVProgram& program,
         .dynamicStateCount = static_cast<u32>(dynamic_states.size()),
         .pDynamicStates = dynamic_states.data(),
     };
-
-    const VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT subgroup_size_ci{
+    [[maybe_unused]] const VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT subgroup_size_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO_EXT,
         .pNext = nullptr,
         .requiredSubgroupSize = GuestWarpSize,
     };
-
-    std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
-    std::size_t module_index = 0;
-    for (std::size_t stage = 0; stage < Maxwell::MaxShaderStage; ++stage) {
-        if (!program[stage]) {
+    static_vector<VkPipelineShaderStageCreateInfo, 5> shader_stages;
+    for (size_t stage = 0; stage < Maxwell::MaxShaderStage; ++stage) {
+        if (!spv_modules[stage]) {
             continue;
         }
-
-        VkPipelineShaderStageCreateInfo& stage_ci = shader_stages.emplace_back();
-        stage_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        stage_ci.pNext = nullptr;
-        stage_ci.flags = 0;
-        stage_ci.stage = MaxwellToVK::ShaderStage(static_cast<Tegra::Engines::ShaderType>(stage));
-        stage_ci.module = *modules[module_index++];
-        stage_ci.pName = "main";
-        stage_ci.pSpecializationInfo = nullptr;
-
+        [[maybe_unused]] auto& stage_ci =
+            shader_stages.emplace_back(VkPipelineShaderStageCreateInfo{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                .pNext = nullptr,
+                .flags = 0,
+                .stage = MaxwellToVK::ShaderStage(Shader::StageFromIndex(stage)),
+                .module = *spv_modules[stage],
+                .pName = "main",
+                .pSpecializationInfo = nullptr,
+            });
+        /*
         if (program[stage]->entries.uses_warps && device.IsGuestWarpSizeSupported(stage_ci.stage)) {
             stage_ci.pNext = &subgroup_size_ci;
         }
+        */
     }
-    return device.GetLogical().CreateGraphicsPipeline(VkGraphicsPipelineCreateInfo{
+    pipeline = device.GetLogical().CreateGraphicsPipeline({
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
@@ -473,12 +797,31 @@ vk::Pipeline VKGraphicsPipeline::CreatePipeline(const SPIRVProgram& program,
         .pDepthStencilState = &depth_stencil_ci,
         .pColorBlendState = &color_blend_ci,
         .pDynamicState = &dynamic_state_ci,
-        .layout = *layout,
-        .renderPass = renderpass,
+        .layout = *pipeline_layout,
+        .renderPass = render_pass,
         .subpass = 0,
         .basePipelineHandle = nullptr,
         .basePipelineIndex = 0,
     });
+}
+
+void GraphicsPipeline::Validate() {
+    size_t num_images{};
+    for (const auto& info : stage_infos) {
+        for (const auto& desc : info.texture_buffer_descriptors) {
+            num_images += desc.count;
+        }
+        for (const auto& desc : info.image_buffer_descriptors) {
+            num_images += desc.count;
+        }
+        for (const auto& desc : info.texture_descriptors) {
+            num_images += desc.count;
+        }
+        for (const auto& desc : info.image_descriptors) {
+            num_images += desc.count;
+        }
+    }
+    ASSERT(num_images <= MAX_IMAGE_ELEMENTS);
 }
 
 } // namespace Vulkan

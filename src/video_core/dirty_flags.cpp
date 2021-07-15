@@ -58,6 +58,11 @@ void SetupDirtyRenderTargets(Maxwell3D::DirtyState::Tables& tables) {
         FillBlock(table, OFF(zeta), NUM(zeta), flag);
     }
 }
+
+void SetupDirtyShaders(Maxwell3D::DirtyState::Tables& tables) {
+    FillBlock(tables[0], OFF(shader_config[0]),
+              NUM(shader_config[0]) * Maxwell3D::Regs::MaxShaderProgram, Shaders);
+}
 } // Anonymous namespace
 
 void SetupDirtyFlags(Maxwell3D::DirtyState::Tables& tables) {
@@ -65,6 +70,7 @@ void SetupDirtyFlags(Maxwell3D::DirtyState::Tables& tables) {
     SetupIndexBuffer(tables);
     SetupDirtyDescriptors(tables);
     SetupDirtyRenderTargets(tables);
+    SetupDirtyShaders(tables);
 }
 
 } // namespace VideoCommon::Dirty

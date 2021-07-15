@@ -157,7 +157,7 @@ struct FormatTuple {
     {VK_FORMAT_R32_SFLOAT, Attachable | Storage},              // R32_FLOAT
     {VK_FORMAT_R16_SFLOAT, Attachable | Storage},              // R16_FLOAT
     {VK_FORMAT_R16_UNORM, Attachable | Storage},               // R16_UNORM
-    {VK_FORMAT_UNDEFINED},                                     // R16_SNORM
+    {VK_FORMAT_R16_SNORM, Attachable | Storage},               // R16_SNORM
     {VK_FORMAT_R16_UINT, Attachable | Storage},                // R16_UINT
     {VK_FORMAT_UNDEFINED},                                     // R16_SINT
     {VK_FORMAT_R16G16_UNORM, Attachable | Storage},            // R16G16_UNORM
@@ -266,19 +266,20 @@ FormatInfo SurfaceFormat(const Device& device, FormatType format_type, bool with
     return {device.GetSupportedFormat(tuple.format, usage, format_type), attachable, storage};
 }
 
-VkShaderStageFlagBits ShaderStage(Tegra::Engines::ShaderType stage) {
+VkShaderStageFlagBits ShaderStage(Shader::Stage stage) {
     switch (stage) {
-    case Tegra::Engines::ShaderType::Vertex:
+    case Shader::Stage::VertexA:
+    case Shader::Stage::VertexB:
         return VK_SHADER_STAGE_VERTEX_BIT;
-    case Tegra::Engines::ShaderType::TesselationControl:
+    case Shader::Stage::TessellationControl:
         return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    case Tegra::Engines::ShaderType::TesselationEval:
+    case Shader::Stage::TessellationEval:
         return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    case Tegra::Engines::ShaderType::Geometry:
+    case Shader::Stage::Geometry:
         return VK_SHADER_STAGE_GEOMETRY_BIT;
-    case Tegra::Engines::ShaderType::Fragment:
+    case Shader::Stage::Fragment:
         return VK_SHADER_STAGE_FRAGMENT_BIT;
-    case Tegra::Engines::ShaderType::Compute:
+    case Shader::Stage::Compute:
         return VK_SHADER_STAGE_COMPUTE_BIT;
     }
     UNIMPLEMENTED_MSG("Unimplemented shader stage={}", stage);
@@ -685,6 +686,19 @@ VkCullModeFlagBits CullFace(Maxwell::CullFace cull_face) {
     return {};
 }
 
+VkPolygonMode PolygonMode(Maxwell::PolygonMode polygon_mode) {
+    switch (polygon_mode) {
+    case Maxwell::PolygonMode::Point:
+        return VK_POLYGON_MODE_POINT;
+    case Maxwell::PolygonMode::Line:
+        return VK_POLYGON_MODE_LINE;
+    case Maxwell::PolygonMode::Fill:
+        return VK_POLYGON_MODE_FILL;
+    }
+    UNIMPLEMENTED_MSG("Unimplemented polygon mode={}", polygon_mode);
+    return {};
+}
+
 VkComponentSwizzle SwizzleSource(Tegra::Texture::SwizzleSource swizzle) {
     switch (swizzle) {
     case Tegra::Texture::SwizzleSource::Zero:
@@ -739,6 +753,30 @@ VkSamplerReductionMode SamplerReduction(Tegra::Texture::SamplerReduction reducti
     }
     UNREACHABLE_MSG("Invalid sampler mode={}", static_cast<int>(reduction));
     return VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE_EXT;
+}
+
+VkSampleCountFlagBits MsaaMode(Tegra::Texture::MsaaMode msaa_mode) {
+    switch (msaa_mode) {
+    case Tegra::Texture::MsaaMode::Msaa1x1:
+        return VK_SAMPLE_COUNT_1_BIT;
+    case Tegra::Texture::MsaaMode::Msaa2x1:
+    case Tegra::Texture::MsaaMode::Msaa2x1_D3D:
+        return VK_SAMPLE_COUNT_2_BIT;
+    case Tegra::Texture::MsaaMode::Msaa2x2:
+    case Tegra::Texture::MsaaMode::Msaa2x2_VC4:
+    case Tegra::Texture::MsaaMode::Msaa2x2_VC12:
+        return VK_SAMPLE_COUNT_4_BIT;
+    case Tegra::Texture::MsaaMode::Msaa4x2:
+    case Tegra::Texture::MsaaMode::Msaa4x2_D3D:
+    case Tegra::Texture::MsaaMode::Msaa4x2_VC8:
+    case Tegra::Texture::MsaaMode::Msaa4x2_VC24:
+        return VK_SAMPLE_COUNT_8_BIT;
+    case Tegra::Texture::MsaaMode::Msaa4x4:
+        return VK_SAMPLE_COUNT_16_BIT;
+    default:
+        UNREACHABLE_MSG("Invalid msaa_mode={}", static_cast<int>(msaa_mode));
+        return VK_SAMPLE_COUNT_1_BIT;
+    }
 }
 
 } // namespace Vulkan::MaxwellToVK

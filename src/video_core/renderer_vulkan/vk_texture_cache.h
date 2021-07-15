@@ -7,6 +7,7 @@
 #include <compare>
 #include <span>
 
+#include "shader_recompiler/shader_info.h"
 #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
 #include "video_core/texture_cache/texture_cache.h"
 #include "video_core/vulkan_common/vulkan_memory_allocator.h"
@@ -26,34 +27,9 @@ class Device;
 class Image;
 class ImageView;
 class Framebuffer;
+class RenderPassCache;
 class StagingBufferPool;
 class VKScheduler;
-
-struct RenderPassKey {
-    constexpr auto operator<=>(const RenderPassKey&) const noexcept = default;
-
-    std::array<PixelFormat, NUM_RT> color_formats;
-    PixelFormat depth_format;
-    VkSampleCountFlagBits samples;
-};
-
-} // namespace Vulkan
-
-namespace std {
-template <>
-struct hash<Vulkan::RenderPassKey> {
-    [[nodiscard]] constexpr size_t operator()(const Vulkan::RenderPassKey& key) const noexcept {
-        size_t value = static_cast<size_t>(key.depth_format) << 48;
-        value ^= static_cast<size_t>(key.samples) << 52;
-        for (size_t i = 0; i < key.color_formats.size(); ++i) {
-            value ^= static_cast<size_t>(key.color_formats[i]) << (i * 6);
-        }
-        return value;
-    }
-};
-} // namespace std
-
-namespace Vulkan {
 
 struct TextureCacheRuntime {
     const Device& device;
@@ -62,13 +38,13 @@ struct TextureCacheRuntime {
     StagingBufferPool& staging_buffer_pool;
     BlitImageHelper& blit_image_helper;
     ASTCDecoderPass& astc_decoder_pass;
-    std::unordered_map<RenderPassKey, vk::RenderPass> renderpass_cache{};
+    RenderPassCache& render_pass_cache;
 
     void Finish();
 
-    [[nodiscard]] StagingBufferRef UploadStagingBuffer(size_t size);
+    StagingBufferRef UploadStagingBuffer(size_t size);
 
-    [[nodiscard]] StagingBufferRef DownloadStagingBuffer(size_t size);
+    StagingBufferRef DownloadStagingBuffer(size_t size);
 
     void BlitImage(Framebuffer* dst_framebuffer, ImageView& dst, ImageView& src,
                    const Region2D& dst_region, const Region2D& src_region,
@@ -79,7 +55,7 @@ struct TextureCacheRuntime {
 
     void ConvertImage(Framebuffer* dst, ImageView& dst_view, ImageView& src_view);
 
-    [[nodiscard]] bool CanAccelerateImageUpload(Image&) const noexcept {
+    bool CanAccelerateImageUpload(Image&) const noexcept {
         return false;
     }
 
@@ -117,17 +93,11 @@ public:
     void UploadMemory(const StagingBufferRef& map,
                       std::span<const VideoCommon::BufferImageCopy> copies);
 
-    void UploadMemory(const StagingBufferRef& map, std::span<const VideoCommon::BufferCopy> copies);
-
     void DownloadMemory(const StagingBufferRef& map,
                         std::span<const VideoCommon::BufferImageCopy> copies);
 
     [[nodiscard]] VkImage Handle() const noexcept {
         return *image;
-    }
-
-    [[nodiscard]] VkBuffer Buffer() const noexcept {
-        return *buffer;
     }
 
     [[nodiscard]] VkImageAspectFlags AspectMask() const noexcept {
@@ -146,7 +116,6 @@ public:
 private:
     VKScheduler* scheduler;
     vk::Image image;
-    vk::Buffer buffer;
     MemoryCommit commit;
     vk::ImageView image_view;
     std::vector<vk::ImageView> storage_image_views;
@@ -157,18 +126,19 @@ private:
 class ImageView : public VideoCommon::ImageViewBase {
 public:
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageViewInfo&, ImageId, Image&);
+    explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo&,
+                       const VideoCommon::ImageViewInfo&, GPUVAddr);
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::NullImageParams&);
 
     [[nodiscard]] VkImageView DepthView();
 
     [[nodiscard]] VkImageView StencilView();
 
-    [[nodiscard]] VkImageView Handle(VideoCommon::ImageViewType query_type) const noexcept {
-        return *image_views[static_cast<size_t>(query_type)];
-    }
+    [[nodiscard]] VkImageView StorageView(Shader::TextureType texture_type,
+                                          Shader::ImageFormat image_format);
 
-    [[nodiscard]] VkBufferView BufferView() const noexcept {
-        return *buffer_view;
+    [[nodiscard]] VkImageView Handle(Shader::TextureType texture_type) const noexcept {
+        return *image_views[static_cast<size_t>(texture_type)];
     }
 
     [[nodiscard]] VkImage ImageHandle() const noexcept {
@@ -179,26 +149,36 @@ public:
         return render_target;
     }
 
-    [[nodiscard]] PixelFormat ImageFormat() const noexcept {
-        return image_format;
-    }
-
     [[nodiscard]] VkSampleCountFlagBits Samples() const noexcept {
         return samples;
     }
 
+    [[nodiscard]] GPUVAddr GpuAddr() const noexcept {
+        return gpu_addr;
+    }
+
+    [[nodiscard]] u32 BufferSize() const noexcept {
+        return buffer_size;
+    }
+
 private:
-    [[nodiscard]] vk::ImageView MakeDepthStencilView(VkImageAspectFlags aspect_mask);
+    struct StorageViews {
+        std::array<vk::ImageView, Shader::NUM_TEXTURE_TYPES> signeds;
+        std::array<vk::ImageView, Shader::NUM_TEXTURE_TYPES> unsigneds;
+    };
+
+    [[nodiscard]] vk::ImageView MakeView(VkFormat vk_format, VkImageAspectFlags aspect_mask);
 
     const Device* device = nullptr;
-    std::array<vk::ImageView, VideoCommon::NUM_IMAGE_VIEW_TYPES> image_views;
+    std::array<vk::ImageView, Shader::NUM_TEXTURE_TYPES> image_views;
+    std::unique_ptr<StorageViews> storage_views;
     vk::ImageView depth_view;
     vk::ImageView stencil_view;
-    vk::BufferView buffer_view;
     VkImage image_handle = VK_NULL_HANDLE;
     VkImageView render_target = VK_NULL_HANDLE;
-    PixelFormat image_format = PixelFormat::Invalid;
     VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
+    GPUVAddr gpu_addr = 0;
+    u32 buffer_size = 0;
 };
 
 class ImageAlloc : public VideoCommon::ImageAllocBase {};

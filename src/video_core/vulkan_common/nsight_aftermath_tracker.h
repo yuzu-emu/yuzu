@@ -6,6 +6,7 @@
 
 #include <filesystem>
 #include <mutex>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -33,7 +34,7 @@ public:
     NsightAftermathTracker(NsightAftermathTracker&&) = delete;
     NsightAftermathTracker& operator=(NsightAftermathTracker&&) = delete;
 
-    void SaveShader(const std::vector<u32>& spirv) const;
+    void SaveShader(std::span<const u32> spirv) const;
 
 private:
 #ifdef HAS_NSIGHT_AFTERMATH
@@ -61,21 +62,21 @@ private:
     bool initialized = false;
 
     Common::DynamicLibrary dl;
-    PFN_GFSDK_Aftermath_DisableGpuCrashDumps GFSDK_Aftermath_DisableGpuCrashDumps;
-    PFN_GFSDK_Aftermath_EnableGpuCrashDumps GFSDK_Aftermath_EnableGpuCrashDumps;
-    PFN_GFSDK_Aftermath_GetShaderDebugInfoIdentifier GFSDK_Aftermath_GetShaderDebugInfoIdentifier;
-    PFN_GFSDK_Aftermath_GetShaderHashSpirv GFSDK_Aftermath_GetShaderHashSpirv;
-    PFN_GFSDK_Aftermath_GpuCrashDump_CreateDecoder GFSDK_Aftermath_GpuCrashDump_CreateDecoder;
-    PFN_GFSDK_Aftermath_GpuCrashDump_DestroyDecoder GFSDK_Aftermath_GpuCrashDump_DestroyDecoder;
-    PFN_GFSDK_Aftermath_GpuCrashDump_GenerateJSON GFSDK_Aftermath_GpuCrashDump_GenerateJSON;
-    PFN_GFSDK_Aftermath_GpuCrashDump_GetJSON GFSDK_Aftermath_GpuCrashDump_GetJSON;
+    PFN_GFSDK_Aftermath_DisableGpuCrashDumps GFSDK_Aftermath_DisableGpuCrashDumps{};
+    PFN_GFSDK_Aftermath_EnableGpuCrashDumps GFSDK_Aftermath_EnableGpuCrashDumps{};
+    PFN_GFSDK_Aftermath_GetShaderDebugInfoIdentifier GFSDK_Aftermath_GetShaderDebugInfoIdentifier{};
+    PFN_GFSDK_Aftermath_GetShaderHashSpirv GFSDK_Aftermath_GetShaderHashSpirv{};
+    PFN_GFSDK_Aftermath_GpuCrashDump_CreateDecoder GFSDK_Aftermath_GpuCrashDump_CreateDecoder{};
+    PFN_GFSDK_Aftermath_GpuCrashDump_DestroyDecoder GFSDK_Aftermath_GpuCrashDump_DestroyDecoder{};
+    PFN_GFSDK_Aftermath_GpuCrashDump_GenerateJSON GFSDK_Aftermath_GpuCrashDump_GenerateJSON{};
+    PFN_GFSDK_Aftermath_GpuCrashDump_GetJSON GFSDK_Aftermath_GpuCrashDump_GetJSON{};
 #endif
 };
 
 #ifndef HAS_NSIGHT_AFTERMATH
 inline NsightAftermathTracker::NsightAftermathTracker() = default;
 inline NsightAftermathTracker::~NsightAftermathTracker() = default;
-inline void NsightAftermathTracker::SaveShader(const std::vector<u32>&) const {}
+inline void NsightAftermathTracker::SaveShader(std::span<const u32>) const {}
 #endif
 
 } // namespace Vulkan

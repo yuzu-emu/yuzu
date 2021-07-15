@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
 #include <bitset>
 #include <chrono>
 #include <optional>
@@ -43,11 +44,14 @@ constexpr std::array REQUIRED_EXTENSIONS{
     VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME,
     VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
     VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
+    VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+    VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME,
     VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME,
     VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
     VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
+    VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME,
 #ifdef _WIN32
     VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
 #endif
@@ -112,6 +116,7 @@ std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(vk::Physica
         VK_FORMAT_R16G16_SFLOAT,
         VK_FORMAT_R16G16_SINT,
         VK_FORMAT_R16_UNORM,
+        VK_FORMAT_R16_SNORM,
         VK_FORMAT_R16_UINT,
         VK_FORMAT_R8G8B8A8_SRGB,
         VK_FORMAT_R8G8_UNORM,
@@ -191,15 +196,26 @@ std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(vk::Physica
     return format_properties;
 }
 
+std::vector<std::string> GetSupportedExtensions(vk::PhysicalDevice physical) {
+    const std::vector extensions = physical.EnumerateDeviceExtensionProperties();
+    std::vector<std::string> supported_extensions(std::size(extensions));
+    for (const auto& extension : extensions) {
+        supported_extensions.emplace_back(extension.extensionName);
+    }
+    return supported_extensions;
+}
+
 } // Anonymous namespace
 
 Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR surface,
                const vk::InstanceDispatch& dld_)
     : instance{instance_}, dld{dld_}, physical{physical_}, properties{physical.GetProperties()},
-      format_properties{GetFormatProperties(physical)} {
+      supported_extensions{GetSupportedExtensions(physical)},
+      format_properties(GetFormatProperties(physical)) {
     CheckSuitability(surface != nullptr);
     SetupFamilies(surface);
     SetupFeatures();
+    SetupProperties();
 
     const auto queue_cis = GetDeviceQueueCreateInfos();
     const std::vector extensions = LoadExtensions(surface != nullptr);
@@ -214,16 +230,16 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             .independentBlend = true,
             .geometryShader = true,
             .tessellationShader = true,
-            .sampleRateShading = false,
-            .dualSrcBlend = false,
+            .sampleRateShading = true,
+            .dualSrcBlend = true,
             .logicOp = false,
             .multiDrawIndirect = false,
             .drawIndirectFirstInstance = false,
             .depthClamp = true,
             .depthBiasClamp = true,
-            .fillModeNonSolid = false,
-            .depthBounds = false,
-            .wideLines = false,
+            .fillModeNonSolid = true,
+            .depthBounds = is_depth_bounds_supported,
+            .wideLines = true,
             .largePoints = true,
             .alphaToOne = false,
             .multiViewport = true,
@@ -245,11 +261,11 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             .shaderSampledImageArrayDynamicIndexing = false,
             .shaderStorageBufferArrayDynamicIndexing = false,
             .shaderStorageImageArrayDynamicIndexing = false,
-            .shaderClipDistance = false,
-            .shaderCullDistance = false,
-            .shaderFloat64 = false,
-            .shaderInt64 = false,
-            .shaderInt16 = false,
+            .shaderClipDistance = true,
+            .shaderCullDistance = true,
+            .shaderFloat64 = is_shader_float64_supported,
+            .shaderInt64 = is_shader_int64_supported,
+            .shaderInt16 = is_shader_int16_supported,
             .shaderResourceResidency = false,
             .shaderResourceMinLod = false,
             .sparseBinding = false,
@@ -278,7 +294,7 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     VkPhysicalDevice16BitStorageFeaturesKHR bit16_storage{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR,
         .pNext = nullptr,
-        .storageBuffer16BitAccess = false,
+        .storageBuffer16BitAccess = true,
         .uniformAndStorageBuffer16BitAccess = true,
         .storagePushConstant16 = false,
         .storageInputOutput16 = false,
@@ -310,6 +326,21 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     };
     SetNext(next, host_query_reset);
 
+    VkPhysicalDeviceVariablePointerFeaturesKHR variable_pointers{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES_KHR,
+        .pNext = nullptr,
+        .variablePointersStorageBuffer = VK_TRUE,
+        .variablePointers = VK_TRUE,
+    };
+    SetNext(next, variable_pointers);
+
+    VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT demote{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT,
+        .pNext = nullptr,
+        .shaderDemoteToHelperInvocation = true,
+    };
+    SetNext(next, demote);
+
     VkPhysicalDeviceFloat16Int8FeaturesKHR float16_int8;
     if (is_float16_supported) {
         float16_int8 = {
@@ -325,6 +356,14 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
 
     if (!nv_viewport_swizzle) {
         LOG_INFO(Render_Vulkan, "Device doesn't support viewport swizzles");
+    }
+
+    if (!nv_viewport_array2) {
+        LOG_INFO(Render_Vulkan, "Device doesn't support viewport masks");
+    }
+
+    if (!nv_geometry_shader_passthrough) {
+        LOG_INFO(Render_Vulkan, "Device doesn't support passthrough geometry shaders");
     }
 
     VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR std430_layout;
@@ -389,12 +428,83 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         LOG_INFO(Render_Vulkan, "Device doesn't support extended dynamic state");
     }
 
+    VkPhysicalDeviceLineRasterizationFeaturesEXT line_raster;
+    if (ext_line_rasterization) {
+        line_raster = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_EXT,
+            .pNext = nullptr,
+            .rectangularLines = VK_TRUE,
+            .bresenhamLines = VK_FALSE,
+            .smoothLines = VK_TRUE,
+            .stippledRectangularLines = VK_FALSE,
+            .stippledBresenhamLines = VK_FALSE,
+            .stippledSmoothLines = VK_FALSE,
+        };
+        SetNext(next, line_raster);
+    } else {
+        LOG_INFO(Render_Vulkan, "Device doesn't support smooth lines");
+    }
+
+    if (!ext_conservative_rasterization) {
+        LOG_INFO(Render_Vulkan, "Device doesn't support conservative rasterization");
+    }
+
+    VkPhysicalDeviceProvokingVertexFeaturesEXT provoking_vertex;
+    if (ext_provoking_vertex) {
+        provoking_vertex = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT,
+            .pNext = nullptr,
+            .provokingVertexLast = VK_TRUE,
+            .transformFeedbackPreservesProvokingVertex = VK_TRUE,
+        };
+        SetNext(next, provoking_vertex);
+    } else {
+        LOG_INFO(Render_Vulkan, "Device doesn't support provoking vertex last");
+    }
+
+    VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_dynamic;
+    if (ext_vertex_input_dynamic_state) {
+        vertex_input_dynamic = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT,
+            .pNext = nullptr,
+            .vertexInputDynamicState = VK_TRUE,
+        };
+        SetNext(next, vertex_input_dynamic);
+    } else {
+        LOG_INFO(Render_Vulkan, "Device doesn't support vertex input dynamic state");
+    }
+
+    VkPhysicalDeviceShaderAtomicInt64FeaturesKHR atomic_int64;
+    if (ext_shader_atomic_int64) {
+        atomic_int64 = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES_KHR,
+            .pNext = nullptr,
+            .shaderBufferInt64Atomics = VK_TRUE,
+            .shaderSharedInt64Atomics = VK_TRUE,
+        };
+        SetNext(next, atomic_int64);
+    }
+
+    VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR workgroup_layout;
+    if (khr_workgroup_memory_explicit_layout) {
+        workgroup_layout = {
+            .sType =
+                VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR,
+            .pNext = nullptr,
+            .workgroupMemoryExplicitLayout = VK_TRUE,
+            .workgroupMemoryExplicitLayoutScalarBlockLayout = VK_TRUE,
+            .workgroupMemoryExplicitLayout8BitAccess = VK_TRUE,
+            .workgroupMemoryExplicitLayout16BitAccess = VK_TRUE,
+        };
+        SetNext(next, workgroup_layout);
+    }
+
     if (!ext_depth_range_unrestricted) {
         LOG_INFO(Render_Vulkan, "Device doesn't support depth range unrestricted");
     }
 
     VkDeviceDiagnosticsConfigCreateInfoNV diagnostics_nv;
-    if (nv_device_diagnostics_config) {
+    if (Settings::values.enable_nsight_aftermath && nv_device_diagnostics_config) {
         nsight_aftermath_tracker = std::make_unique<NsightAftermathTracker>();
 
         diagnostics_nv = {
@@ -412,11 +522,25 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     CollectTelemetryParameters();
     CollectToolingInfo();
 
+    if (driver_id == VK_DRIVER_ID_NVIDIA_PROPRIETARY_KHR && is_float16_supported) {
+        if (std::ranges::find(supported_extensions, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME) !=
+            supported_extensions.end()) {
+            LOG_WARNING(Render_Vulkan, "Blacklisting Ampere devices from float16 math");
+            is_float16_supported = false;
+        }
+    }
     if (ext_extended_dynamic_state && driver_id == VK_DRIVER_ID_MESA_RADV) {
-        LOG_WARNING(
-            Render_Vulkan,
-            "Blacklisting RADV for VK_EXT_extended_dynamic state, likely due to a bug in yuzu");
-        ext_extended_dynamic_state = false;
+        // Mask driver version variant
+        const u32 version = (properties.driverVersion << 3) >> 3;
+        if (version < VK_MAKE_API_VERSION(0, 21, 2, 0)) {
+            LOG_WARNING(Render_Vulkan,
+                        "RADV versions older than 21.2 have broken VK_EXT_extended_dynamic_state");
+            ext_extended_dynamic_state = false;
+        }
+    }
+    if (ext_vertex_input_dynamic_state && driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS) {
+        LOG_WARNING(Render_Vulkan, "Blacklisting Intel for VK_EXT_vertex_input_dynamic_state");
+        ext_vertex_input_dynamic_state = false;
     }
     if (is_float16_supported && driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS) {
         // Intel's compiler crashes when using fp16 on Astral Chain, disable it for the time being.
@@ -426,8 +550,6 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
 
     graphics_queue = logical.GetQueue(graphics_family);
     present_queue = logical.GetQueue(present_family);
-
-    use_asynchronous_shaders = Settings::values.use_asynchronous_shaders.GetValue();
 }
 
 Device::~Device() = default;
@@ -471,7 +593,7 @@ void Device::ReportLoss() const {
     std::this_thread::sleep_for(std::chrono::seconds{15});
 }
 
-void Device::SaveShader(const std::vector<u32>& spirv) const {
+void Device::SaveShader(std::span<const u32> spirv) const {
     if (nsight_aftermath_tracker) {
         nsight_aftermath_tracker->SaveShader(spirv);
     }
@@ -597,10 +719,20 @@ void Device::CheckSuitability(bool requires_swapchain) const {
             throw vk::Exception(VK_ERROR_FEATURE_NOT_PRESENT);
         }
     }
+    VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT demote{};
+    demote.sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT;
+    demote.pNext = nullptr;
+
+    VkPhysicalDeviceVariablePointerFeaturesKHR variable_pointers{};
+    variable_pointers.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES_KHR;
+    variable_pointers.pNext = &demote;
+
     VkPhysicalDeviceRobustness2FeaturesEXT robustness2{};
     robustness2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+    robustness2.pNext = &variable_pointers;
 
-    VkPhysicalDeviceFeatures2 features2{};
+    VkPhysicalDeviceFeatures2KHR features2{};
     features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
     features2.pNext = &robustness2;
 
@@ -610,7 +742,6 @@ void Device::CheckSuitability(bool requires_swapchain) const {
     const std::array feature_report{
         std::make_pair(features.robustBufferAccess, "robustBufferAccess"),
         std::make_pair(features.vertexPipelineStoresAndAtomics, "vertexPipelineStoresAndAtomics"),
-        std::make_pair(features.robustBufferAccess, "robustBufferAccess"),
         std::make_pair(features.imageCubeArray, "imageCubeArray"),
         std::make_pair(features.independentBlend, "independentBlend"),
         std::make_pair(features.depthClamp, "depthClamp"),
@@ -618,13 +749,23 @@ void Device::CheckSuitability(bool requires_swapchain) const {
         std::make_pair(features.largePoints, "largePoints"),
         std::make_pair(features.multiViewport, "multiViewport"),
         std::make_pair(features.depthBiasClamp, "depthBiasClamp"),
+        std::make_pair(features.fillModeNonSolid, "fillModeNonSolid"),
+        std::make_pair(features.wideLines, "wideLines"),
         std::make_pair(features.geometryShader, "geometryShader"),
         std::make_pair(features.tessellationShader, "tessellationShader"),
+        std::make_pair(features.sampleRateShading, "sampleRateShading"),
+        std::make_pair(features.dualSrcBlend, "dualSrcBlend"),
         std::make_pair(features.occlusionQueryPrecise, "occlusionQueryPrecise"),
         std::make_pair(features.fragmentStoresAndAtomics, "fragmentStoresAndAtomics"),
         std::make_pair(features.shaderImageGatherExtended, "shaderImageGatherExtended"),
         std::make_pair(features.shaderStorageImageWriteWithoutFormat,
                        "shaderStorageImageWriteWithoutFormat"),
+        std::make_pair(features.shaderClipDistance, "shaderClipDistance"),
+        std::make_pair(features.shaderCullDistance, "shaderCullDistance"),
+        std::make_pair(demote.shaderDemoteToHelperInvocation, "shaderDemoteToHelperInvocation"),
+        std::make_pair(variable_pointers.variablePointers, "variablePointers"),
+        std::make_pair(variable_pointers.variablePointersStorageBuffer,
+                       "variablePointersStorageBuffer"),
         std::make_pair(robustness2.robustBufferAccess2, "robustBufferAccess2"),
         std::make_pair(robustness2.robustImageAccess2, "robustImageAccess2"),
         std::make_pair(robustness2.nullDescriptor, "nullDescriptor"),
@@ -647,14 +788,19 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
     }
 
     bool has_khr_shader_float16_int8{};
+    bool has_khr_workgroup_memory_explicit_layout{};
     bool has_ext_subgroup_size_control{};
     bool has_ext_transform_feedback{};
     bool has_ext_custom_border_color{};
     bool has_ext_extended_dynamic_state{};
-    for (const VkExtensionProperties& extension : physical.EnumerateDeviceExtensionProperties()) {
+    bool has_ext_shader_atomic_int64{};
+    bool has_ext_provoking_vertex{};
+    bool has_ext_vertex_input_dynamic_state{};
+    bool has_ext_line_rasterization{};
+    for (const std::string& extension : supported_extensions) {
         const auto test = [&](std::optional<std::reference_wrapper<bool>> status, const char* name,
                               bool push) {
-            if (extension.extensionName != std::string_view(name)) {
+            if (extension != name) {
                 return;
             }
             if (push) {
@@ -665,8 +811,13 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
             }
         };
         test(nv_viewport_swizzle, VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME, true);
+        test(nv_viewport_array2, VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME, true);
+        test(nv_geometry_shader_passthrough, VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME,
+             true);
         test(khr_uniform_buffer_standard_layout,
              VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME, true);
+        test(khr_spirv_1_4, VK_KHR_SPIRV_1_4_EXTENSION_NAME, true);
+        test(khr_push_descriptor, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME, true);
         test(has_khr_shader_float16_int8, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME, false);
         test(ext_depth_range_unrestricted, VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME, true);
         test(ext_index_type_uint8, VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, true);
@@ -675,16 +826,25 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
              true);
         test(ext_tooling_info, VK_EXT_TOOLING_INFO_EXTENSION_NAME, true);
         test(ext_shader_stencil_export, VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME, true);
+        test(ext_conservative_rasterization, VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME,
+             true);
         test(has_ext_transform_feedback, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME, false);
         test(has_ext_custom_border_color, VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME, false);
         test(has_ext_extended_dynamic_state, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, false);
         test(has_ext_subgroup_size_control, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, false);
-        if (Settings::values.renderer_debug) {
+        test(has_ext_provoking_vertex, VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME, false);
+        test(has_ext_vertex_input_dynamic_state, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME,
+             false);
+        test(has_ext_shader_atomic_int64, VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME, false);
+        test(has_khr_workgroup_memory_explicit_layout,
+             VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME, false);
+        test(has_ext_line_rasterization, VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME, false);
+        if (Settings::values.enable_nsight_aftermath) {
             test(nv_device_diagnostics_config, VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME,
                  true);
         }
     }
-    VkPhysicalDeviceFeatures2KHR features;
+    VkPhysicalDeviceFeatures2KHR features{};
     features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR;
 
     VkPhysicalDeviceProperties2KHR physical_properties;
@@ -722,9 +882,48 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
             subgroup_properties.maxSubgroupSize >= GuestWarpSize) {
             extensions.push_back(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
             guest_warp_stages = subgroup_properties.requiredSubgroupSizeStages;
+            ext_subgroup_size_control = true;
         }
     } else {
         is_warp_potentially_bigger = true;
+    }
+    if (has_ext_provoking_vertex) {
+        VkPhysicalDeviceProvokingVertexFeaturesEXT provoking_vertex;
+        provoking_vertex.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROVOKING_VERTEX_FEATURES_EXT;
+        provoking_vertex.pNext = nullptr;
+        features.pNext = &provoking_vertex;
+        physical.GetFeatures2KHR(features);
+
+        if (provoking_vertex.provokingVertexLast &&
+            provoking_vertex.transformFeedbackPreservesProvokingVertex) {
+            extensions.push_back(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
+            ext_provoking_vertex = true;
+        }
+    }
+    if (has_ext_vertex_input_dynamic_state) {
+        VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input;
+        vertex_input.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT;
+        vertex_input.pNext = nullptr;
+        features.pNext = &vertex_input;
+        physical.GetFeatures2KHR(features);
+
+        if (vertex_input.vertexInputDynamicState) {
+            extensions.push_back(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+            ext_vertex_input_dynamic_state = true;
+        }
+    }
+    if (has_ext_shader_atomic_int64) {
+        VkPhysicalDeviceShaderAtomicInt64Features atomic_int64;
+        atomic_int64.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+        atomic_int64.pNext = nullptr;
+        features.pNext = &atomic_int64;
+        physical.GetFeatures2KHR(features);
+
+        if (atomic_int64.shaderBufferInt64Atomics && atomic_int64.shaderSharedInt64Atomics) {
+            extensions.push_back(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME);
+            ext_shader_atomic_int64 = true;
+        }
     }
     if (has_ext_transform_feedback) {
         VkPhysicalDeviceTransformFeedbackFeaturesEXT tfb_features;
@@ -760,16 +959,54 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
         }
     }
     if (has_ext_extended_dynamic_state) {
-        VkPhysicalDeviceExtendedDynamicStateFeaturesEXT dynamic_state;
-        dynamic_state.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
-        dynamic_state.pNext = nullptr;
-        features.pNext = &dynamic_state;
+        VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state;
+        extended_dynamic_state.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+        extended_dynamic_state.pNext = nullptr;
+        features.pNext = &extended_dynamic_state;
         physical.GetFeatures2KHR(features);
 
-        if (dynamic_state.extendedDynamicState) {
+        if (extended_dynamic_state.extendedDynamicState) {
             extensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
             ext_extended_dynamic_state = true;
         }
+    }
+    if (has_ext_line_rasterization) {
+        VkPhysicalDeviceLineRasterizationFeaturesEXT line_raster;
+        line_raster.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINE_RASTERIZATION_FEATURES_EXT;
+        line_raster.pNext = nullptr;
+        features.pNext = &line_raster;
+        physical.GetFeatures2KHR(features);
+        if (line_raster.rectangularLines && line_raster.smoothLines) {
+            extensions.push_back(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
+            ext_line_rasterization = true;
+        }
+    }
+    if (has_khr_workgroup_memory_explicit_layout) {
+        VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR layout;
+        layout.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR;
+        layout.pNext = nullptr;
+        features.pNext = &layout;
+        physical.GetFeatures2KHR(features);
+
+        if (layout.workgroupMemoryExplicitLayout &&
+            layout.workgroupMemoryExplicitLayout8BitAccess &&
+            layout.workgroupMemoryExplicitLayout16BitAccess &&
+            layout.workgroupMemoryExplicitLayoutScalarBlockLayout) {
+            extensions.push_back(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
+            khr_workgroup_memory_explicit_layout = true;
+        }
+    }
+    if (khr_push_descriptor) {
+        VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor;
+        push_descriptor.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR;
+        push_descriptor.pNext = nullptr;
+
+        physical_properties.pNext = &push_descriptor;
+        physical.GetProperties2KHR(physical_properties);
+
+        max_push_descriptors = push_descriptor.maxPushDescriptors;
     }
     return extensions;
 }
@@ -806,11 +1043,25 @@ void Device::SetupFamilies(VkSurfaceKHR surface) {
 }
 
 void Device::SetupFeatures() {
-    const auto supported_features{physical.GetFeatures()};
-    is_formatless_image_load_supported = supported_features.shaderStorageImageReadWithoutFormat;
-    is_shader_storage_image_multisample = supported_features.shaderStorageImageMultisample;
+    const VkPhysicalDeviceFeatures features{physical.GetFeatures()};
+    is_depth_bounds_supported = features.depthBounds;
+    is_formatless_image_load_supported = features.shaderStorageImageReadWithoutFormat;
+    is_shader_float64_supported = features.shaderFloat64;
+    is_shader_int64_supported = features.shaderInt64;
+    is_shader_int16_supported = features.shaderInt16;
+    is_shader_storage_image_multisample = features.shaderStorageImageMultisample;
     is_blit_depth_stencil_supported = TestDepthStencilBlits();
-    is_optimal_astc_supported = IsOptimalAstcSupported(supported_features);
+    is_optimal_astc_supported = IsOptimalAstcSupported(features);
+}
+
+void Device::SetupProperties() {
+    float_controls.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES_KHR;
+
+    VkPhysicalDeviceProperties2KHR properties2{};
+    properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
+    properties2.pNext = &float_controls;
+
+    physical.GetProperties2KHR(properties2);
 }
 
 void Device::CollectTelemetryParameters() {
@@ -832,12 +1083,6 @@ void Device::CollectTelemetryParameters() {
 
     driver_id = driver.driverID;
     vendor_name = driver.driverName;
-
-    const std::vector extensions = physical.EnumerateDeviceExtensionProperties();
-    reported_extensions.reserve(std::size(extensions));
-    for (const auto& extension : extensions) {
-        reported_extensions.emplace_back(extension.extensionName);
-    }
 }
 
 void Device::CollectPhysicalMemoryInfo() {

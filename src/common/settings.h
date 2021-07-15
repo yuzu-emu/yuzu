@@ -24,6 +24,12 @@ enum class RendererBackend : u32 {
     Vulkan = 1,
 };
 
+enum class ShaderBackend : u32 {
+    GLSL = 0,
+    GLASM = 1,
+    SPIRV = 2,
+};
+
 enum class GPUAccuracy : u32 {
     Normal = 0,
     High = 1,
@@ -308,6 +314,9 @@ struct Values {
     // Renderer
     Setting<RendererBackend> renderer_backend{RendererBackend::OpenGL, "backend"};
     BasicSetting<bool> renderer_debug{false, "debug"};
+    BasicSetting<bool> enable_nsight_aftermath{false, "nsight_aftermath"};
+    BasicSetting<bool> disable_shader_loop_safety_checks{false,
+                                                         "disable_shader_loop_safety_checks"};
     Setting<int> vulkan_device{0, "vulkan_device"};
 
     Setting<u16> resolution_factor{1, "resolution_factor"};
@@ -331,7 +340,7 @@ struct Values {
     Setting<bool> accelerate_astc{true, "accelerate_astc"};
     Setting<bool> use_vsync{true, "use_vsync"};
     BasicSetting<bool> disable_fps_limit{false, "disable_fps_limit"};
-    Setting<bool> use_assembly_shaders{false, "use_assembly_shaders"};
+    Setting<ShaderBackend> shader_backend{ShaderBackend::GLASM, "shader_backend"};
     Setting<bool> use_asynchronous_shaders{false, "use_asynchronous_shaders"};
     Setting<bool> use_fast_gpu_time{true, "use_fast_gpu_time"};
     Setting<bool> use_caches_gc{false, "use_caches_gc"};

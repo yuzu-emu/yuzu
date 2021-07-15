@@ -6,34 +6,22 @@
 
 #include <cstddef>
 #include "common/common_types.h"
-#include "video_core/engines/shader_type.h"
+#include "shader_recompiler/stage.h"
+
+namespace Settings {
+enum class ShaderBackend : u32;
+};
 
 namespace OpenGL {
 
 class Device {
 public:
-    struct BaseBindings {
-        u32 uniform_buffer{};
-        u32 shader_storage_buffer{};
-        u32 sampler{};
-        u32 image{};
-    };
-
     explicit Device();
-    explicit Device(std::nullptr_t);
 
     [[nodiscard]] std::string GetVendorName() const;
 
-    u32 GetMaxUniformBuffers(Tegra::Engines::ShaderType shader_type) const noexcept {
-        return max_uniform_buffers[static_cast<std::size_t>(shader_type)];
-    }
-
-    const BaseBindings& GetBaseBindings(std::size_t stage_index) const noexcept {
-        return base_bindings[stage_index];
-    }
-
-    const BaseBindings& GetBaseBindings(Tegra::Engines::ShaderType shader_type) const noexcept {
-        return GetBaseBindings(static_cast<std::size_t>(shader_type));
+    u32 GetMaxUniformBuffers(Shader::Stage stage) const noexcept {
+        return max_uniform_buffers[static_cast<size_t>(stage)];
     }
 
     size_t GetUniformBufferAlignment() const {
@@ -54,6 +42,10 @@ public:
 
     u32 GetMaxComputeSharedMemorySize() const {
         return max_compute_shared_memory_size;
+    }
+
+    u32 GetMaxGLASMStorageBufferBlocks() const {
+        return max_glasm_storage_buffer_blocks;
     }
 
     bool HasWarpIntrinsics() const {
@@ -108,6 +100,10 @@ public:
         return has_nv_viewport_array2;
     }
 
+    bool HasDerivativeControl() const {
+        return has_derivative_control;
+    }
+
     bool HasDebuggingToolAttached() const {
         return has_debugging_tool_attached;
     }
@@ -128,18 +124,52 @@ public:
         return has_depth_buffer_float;
     }
 
+    bool HasGeometryShaderPassthrough() const {
+        return has_geometry_shader_passthrough;
+    }
+
+    bool HasNvGpuShader5() const {
+        return has_nv_gpu_shader_5;
+    }
+
+    bool HasShaderInt64() const {
+        return has_shader_int64;
+    }
+
+    bool HasAmdShaderHalfFloat() const {
+        return has_amd_shader_half_float;
+    }
+
+    bool HasSparseTexture2() const {
+        return has_sparse_texture_2;
+    }
+
+    bool IsWarpSizePotentiallyLargerThanGuest() const {
+        return warp_size_potentially_larger_than_guest;
+    }
+
+    bool NeedsFastmathOff() const {
+        return need_fastmath_off;
+    }
+
+    Settings::ShaderBackend GetShaderBackend() const {
+        return shader_backend;
+    }
+
 private:
     static bool TestVariableAoffi();
     static bool TestPreciseBug();
 
-    std::string vendor_name;
-    std::array<u32, Tegra::Engines::MaxShaderTypes> max_uniform_buffers{};
-    std::array<BaseBindings, Tegra::Engines::MaxShaderTypes> base_bindings{};
+    std::array<u32, Shader::MaxStageTypes> max_uniform_buffers{};
     size_t uniform_buffer_alignment{};
     size_t shader_storage_alignment{};
     u32 max_vertex_attributes{};
     u32 max_varyings{};
     u32 max_compute_shared_memory_size{};
+    u32 max_glasm_storage_buffer_blocks{};
+
+    Settings::ShaderBackend shader_backend{};
+
     bool has_warp_intrinsics{};
     bool has_shader_ballot{};
     bool has_vertex_viewport_layer{};
@@ -153,11 +183,21 @@ private:
     bool has_broken_texture_view_formats{};
     bool has_fast_buffer_sub_data{};
     bool has_nv_viewport_array2{};
+    bool has_derivative_control{};
     bool has_debugging_tool_attached{};
     bool use_assembly_shaders{};
     bool use_asynchronous_shaders{};
     bool use_driver_cache{};
     bool has_depth_buffer_float{};
+    bool has_geometry_shader_passthrough{};
+    bool has_nv_gpu_shader_5{};
+    bool has_shader_int64{};
+    bool has_amd_shader_half_float{};
+    bool has_sparse_texture_2{};
+    bool warp_size_potentially_larger_than_guest{};
+    bool need_fastmath_off{};
+
+    std::string vendor_name;
 };
 
 } // namespace OpenGL

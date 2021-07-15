@@ -16,8 +16,8 @@
 #include "video_core/host_shaders/opengl_copy_bc4_comp.h"
 #include "video_core/host_shaders/opengl_copy_bgra_comp.h"
 #include "video_core/host_shaders/pitch_unswizzle_comp.h"
-#include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
+#include "video_core/renderer_opengl/gl_shader_util.h"
 #include "video_core/renderer_opengl/gl_texture_cache.h"
 #include "video_core/renderer_opengl/util_shaders.h"
 #include "video_core/texture_cache/accelerated_swizzle.h"
@@ -41,21 +41,14 @@ using VideoCommon::Accelerated::MakeBlockLinearSwizzle3DParams;
 using VideoCore::Surface::BytesPerBlock;
 
 namespace {
-
 OGLProgram MakeProgram(std::string_view source) {
-    OGLShader shader;
-    shader.Create(source, GL_COMPUTE_SHADER);
-
-    OGLProgram program;
-    program.Create(true, false, shader.handle);
-    return program;
+    return CreateProgram(source, GL_COMPUTE_SHADER);
 }
 
 size_t NumPixelsInCopy(const VideoCommon::ImageCopy& copy) {
     return static_cast<size_t>(copy.extent.width * copy.extent.height *
                                copy.src_subresource.num_layers);
 }
-
 } // Anonymous namespace
 
 UtilShaders::UtilShaders(ProgramManager& program_manager_)
@@ -86,7 +79,7 @@ void UtilShaders::ASTCDecode(Image& image, const ImageBufferMap& map,
         .width = VideoCore::Surface::DefaultBlockWidth(image.info.format),
         .height = VideoCore::Surface::DefaultBlockHeight(image.info.format),
     };
-    program_manager.BindHostCompute(astc_decoder_program.handle);
+    program_manager.BindComputeProgram(astc_decoder_program.handle);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_SWIZZLE_BUFFER, swizzle_table_buffer.handle);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_ENC_BUFFER, astc_buffer.handle);
 
@@ -134,7 +127,7 @@ void UtilShaders::BlockLinearUpload2D(Image& image, const ImageBufferMap& map,
     static constexpr GLuint BINDING_INPUT_BUFFER = 1;
     static constexpr GLuint BINDING_OUTPUT_IMAGE = 0;
 
-    program_manager.BindHostCompute(block_linear_unswizzle_2d_program.handle);
+    program_manager.BindComputeProgram(block_linear_unswizzle_2d_program.handle);
     glFlushMappedNamedBufferRange(map.buffer, map.offset, image.guest_size_bytes);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_SWIZZLE_BUFFER, swizzle_table_buffer.handle);
 
@@ -173,7 +166,7 @@ void UtilShaders::BlockLinearUpload3D(Image& image, const ImageBufferMap& map,
     static constexpr GLuint BINDING_OUTPUT_IMAGE = 0;
 
     glFlushMappedNamedBufferRange(map.buffer, map.offset, image.guest_size_bytes);
-    program_manager.BindHostCompute(block_linear_unswizzle_3d_program.handle);
+    program_manager.BindComputeProgram(block_linear_unswizzle_3d_program.handle);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, BINDING_SWIZZLE_BUFFER, swizzle_table_buffer.handle);
 
     const GLenum store_format = StoreFormat(BytesPerBlock(image.info.format));
@@ -222,7 +215,7 @@ void UtilShaders::PitchUpload(Image& image, const ImageBufferMap& map,
     UNIMPLEMENTED_IF_MSG(!std::has_single_bit(bytes_per_block),
                          "Non-power of two images are not implemented");
 
-    program_manager.BindHostCompute(pitch_unswizzle_program.handle);
+    program_manager.BindComputeProgram(pitch_unswizzle_program.handle);
     glFlushMappedNamedBufferRange(map.buffer, map.offset, image.guest_size_bytes);
     glUniform2ui(LOC_ORIGIN, 0, 0);
     glUniform2i(LOC_DESTINATION, 0, 0);
@@ -250,7 +243,7 @@ void UtilShaders::CopyBC4(Image& dst_image, Image& src_image, std::span<const Im
     static constexpr GLuint LOC_SRC_OFFSET = 0;
     static constexpr GLuint LOC_DST_OFFSET = 1;
 
-    program_manager.BindHostCompute(copy_bc4_program.handle);
+    program_manager.BindComputeProgram(copy_bc4_program.handle);
 
     for (const ImageCopy& copy : copies) {
         ASSERT(copy.src_subresource.base_layer == 0);
@@ -286,7 +279,7 @@ void UtilShaders::CopyBGR(Image& dst_image, Image& src_image,
         break;
     case 4: {
         // BGRA8 copy
-        program_manager.BindHostCompute(copy_bgra_program.handle);
+        program_manager.BindComputeProgram(copy_bgra_program.handle);
         constexpr GLenum FORMAT = GL_RGBA8;
         for (const ImageCopy& copy : copies) {
             ASSERT(copy.src_offset == zero_offset);

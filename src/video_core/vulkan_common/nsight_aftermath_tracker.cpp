@@ -73,12 +73,11 @@ NsightAftermathTracker::~NsightAftermathTracker() {
     }
 }
 
-void NsightAftermathTracker::SaveShader(const std::vector<u32>& spirv) const {
+void NsightAftermathTracker::SaveShader(std::span<const u32> spirv) const {
     if (!initialized) {
         return;
     }
-
-    std::vector<u32> spirv_copy = spirv;
+    std::vector<u32> spirv_copy(spirv.begin(), spirv.end());
     GFSDK_Aftermath_SpirvCode shader;
     shader.pData = spirv_copy.data();
     shader.size = static_cast<u32>(spirv_copy.size() * 4);
@@ -100,7 +99,7 @@ void NsightAftermathTracker::SaveShader(const std::vector<u32>& spirv) const {
         LOG_ERROR(Render_Vulkan, "Failed to dump SPIR-V module with hash={:016x}", hash.hash);
         return;
     }
-    if (file.Write(spirv) != spirv.size()) {
+    if (file.WriteSpan(spirv) != spirv.size()) {
         LOG_ERROR(Render_Vulkan, "Failed to write SPIR-V module with hash={:016x}", hash.hash);
         return;
     }

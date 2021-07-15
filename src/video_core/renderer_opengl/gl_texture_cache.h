@@ -9,6 +9,7 @@
 
 #include <glad/glad.h>
 
+#include "shader_recompiler/shader_info.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/renderer_opengl/util_shaders.h"
 #include "video_core/texture_cache/texture_cache.h"
@@ -127,13 +128,12 @@ private:
     OGLTexture null_image_1d_array;
     OGLTexture null_image_cube_array;
     OGLTexture null_image_3d;
-    OGLTexture null_image_rect;
     OGLTextureView null_image_view_1d;
     OGLTextureView null_image_view_2d;
     OGLTextureView null_image_view_2d_array;
     OGLTextureView null_image_view_cube;
 
-    std::array<GLuint, VideoCommon::NUM_IMAGE_VIEW_TYPES> null_image_views;
+    std::array<GLuint, Shader::NUM_TEXTURE_TYPES> null_image_views{};
 };
 
 class Image : public VideoCommon::ImageBase {
@@ -154,8 +154,6 @@ public:
     void UploadMemory(const ImageBufferMap& map,
                       std::span<const VideoCommon::BufferImageCopy> copies);
 
-    void UploadMemory(const ImageBufferMap& map, std::span<const VideoCommon::BufferCopy> copies);
-
     void DownloadMemory(ImageBufferMap& map, std::span<const VideoCommon::BufferImageCopy> copies);
 
     GLuint StorageHandle() noexcept;
@@ -170,7 +168,6 @@ private:
     void CopyImageToBuffer(const VideoCommon::BufferImageCopy& copy, size_t buffer_offset);
 
     OGLTexture texture;
-    OGLBuffer buffer;
     OGLTextureView store_view;
     GLenum gl_internal_format = GL_NONE;
     GLenum gl_format = GL_NONE;
@@ -182,10 +179,17 @@ class ImageView : public VideoCommon::ImageViewBase {
 
 public:
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageViewInfo&, ImageId, Image&);
+    explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo&,
+                       const VideoCommon::ImageViewInfo&, GPUVAddr);
+    explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo& info,
+                       const VideoCommon::ImageViewInfo& view_info);
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::NullImageParams&);
 
-    [[nodiscard]] GLuint Handle(ImageViewType query_type) const noexcept {
-        return views[static_cast<size_t>(query_type)];
+    [[nodiscard]] GLuint StorageView(Shader::TextureType texture_type,
+                                     Shader::ImageFormat image_format);
+
+    [[nodiscard]] GLuint Handle(Shader::TextureType handle_type) const noexcept {
+        return views[static_cast<size_t>(handle_type)];
     }
 
     [[nodiscard]] GLuint DefaultHandle() const noexcept {
@@ -196,15 +200,38 @@ public:
         return internal_format;
     }
 
-private:
-    void SetupView(const Device& device, Image& image, ImageViewType view_type, GLuint handle,
-                   const VideoCommon::ImageViewInfo& info,
-                   VideoCommon::SubresourceRange view_range);
+    [[nodiscard]] GPUVAddr GpuAddr() const noexcept {
+        return gpu_addr;
+    }
 
-    std::array<GLuint, VideoCommon::NUM_IMAGE_VIEW_TYPES> views{};
+    [[nodiscard]] u32 BufferSize() const noexcept {
+        return buffer_size;
+    }
+
+private:
+    struct StorageViews {
+        std::array<GLuint, Shader::NUM_TEXTURE_TYPES> signeds{};
+        std::array<GLuint, Shader::NUM_TEXTURE_TYPES> unsigneds{};
+    };
+
+    void SetupView(Shader::TextureType view_type);
+
+    GLuint MakeView(Shader::TextureType view_type, GLenum view_format);
+
+    std::array<GLuint, Shader::NUM_TEXTURE_TYPES> views{};
     std::vector<OGLTextureView> stored_views;
-    GLuint default_handle = 0;
+    std::unique_ptr<StorageViews> storage_views;
     GLenum internal_format = GL_NONE;
+    GLuint default_handle = 0;
+    GPUVAddr gpu_addr = 0;
+    u32 buffer_size = 0;
+    GLuint original_texture = 0;
+    int num_samples = 0;
+    VideoCommon::SubresourceRange flat_range;
+    VideoCommon::SubresourceRange full_range;
+    std::array<u8, 4> swizzle{};
+    bool set_object_label = false;
+    bool is_render_target = false;
 };
 
 class ImageAlloc : public VideoCommon::ImageAllocBase {};

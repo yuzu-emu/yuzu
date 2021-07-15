@@ -17,38 +17,16 @@
 #include "common/logging/log.h"
 #include "common/scope_exit.h"
 #include "common/settings.h"
+#include "shader_recompiler/stage.h"
 #include "video_core/renderer_opengl/gl_device.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 
 namespace OpenGL {
 namespace {
-// One uniform block is reserved for emulation purposes
-constexpr u32 ReservedUniformBlocks = 1;
-
-constexpr u32 NumStages = 5;
-
 constexpr std::array LIMIT_UBOS = {
     GL_MAX_VERTEX_UNIFORM_BLOCKS,          GL_MAX_TESS_CONTROL_UNIFORM_BLOCKS,
     GL_MAX_TESS_EVALUATION_UNIFORM_BLOCKS, GL_MAX_GEOMETRY_UNIFORM_BLOCKS,
     GL_MAX_FRAGMENT_UNIFORM_BLOCKS,        GL_MAX_COMPUTE_UNIFORM_BLOCKS,
-};
-constexpr std::array LIMIT_SSBOS = {
-    GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS,          GL_MAX_TESS_CONTROL_SHADER_STORAGE_BLOCKS,
-    GL_MAX_TESS_EVALUATION_SHADER_STORAGE_BLOCKS, GL_MAX_GEOMETRY_SHADER_STORAGE_BLOCKS,
-    GL_MAX_FRAGMENT_SHADER_STORAGE_BLOCKS,        GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS,
-};
-constexpr std::array LIMIT_SAMPLERS = {
-    GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS,
-    GL_MAX_TESS_CONTROL_TEXTURE_IMAGE_UNITS,
-    GL_MAX_TESS_EVALUATION_TEXTURE_IMAGE_UNITS,
-    GL_MAX_GEOMETRY_TEXTURE_IMAGE_UNITS,
-    GL_MAX_TEXTURE_IMAGE_UNITS,
-    GL_MAX_COMPUTE_TEXTURE_IMAGE_UNITS,
-};
-constexpr std::array LIMIT_IMAGES = {
-    GL_MAX_VERTEX_IMAGE_UNIFORMS,          GL_MAX_TESS_CONTROL_IMAGE_UNIFORMS,
-    GL_MAX_TESS_EVALUATION_IMAGE_UNIFORMS, GL_MAX_GEOMETRY_IMAGE_UNIFORMS,
-    GL_MAX_FRAGMENT_IMAGE_UNIFORMS,        GL_MAX_COMPUTE_IMAGE_UNIFORMS,
 };
 
 template <typename T>
@@ -82,81 +60,18 @@ bool HasExtension(std::span<const std::string_view> extensions, std::string_view
     return std::ranges::find(extensions, extension) != extensions.end();
 }
 
-u32 Extract(u32& base, u32& num, u32 amount, std::optional<GLenum> limit = {}) {
-    ASSERT(num >= amount);
-    if (limit) {
-        amount = std::min(amount, GetInteger<u32>(*limit));
-    }
-    num -= amount;
-    return std::exchange(base, base + amount);
-}
-
-std::array<u32, Tegra::Engines::MaxShaderTypes> BuildMaxUniformBuffers() noexcept {
-    std::array<u32, Tegra::Engines::MaxShaderTypes> max;
-    std::ranges::transform(LIMIT_UBOS, max.begin(),
-                           [](GLenum pname) { return GetInteger<u32>(pname); });
+std::array<u32, Shader::MaxStageTypes> BuildMaxUniformBuffers() noexcept {
+    std::array<u32, Shader::MaxStageTypes> max;
+    std::ranges::transform(LIMIT_UBOS, max.begin(), &GetInteger<u32>);
     return max;
 }
 
-std::array<Device::BaseBindings, Tegra::Engines::MaxShaderTypes> BuildBaseBindings() noexcept {
-    std::array<Device::BaseBindings, Tegra::Engines::MaxShaderTypes> bindings;
-
-    static constexpr std::array<std::size_t, 5> stage_swizzle{0, 1, 2, 3, 4};
-    const u32 total_ubos = GetInteger<u32>(GL_MAX_UNIFORM_BUFFER_BINDINGS);
-    const u32 total_ssbos = GetInteger<u32>(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS);
-    const u32 total_samplers = GetInteger<u32>(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS);
-
-    u32 num_ubos = total_ubos - ReservedUniformBlocks;
-    u32 num_ssbos = total_ssbos;
-    u32 num_samplers = total_samplers;
-
-    u32 base_ubo = ReservedUniformBlocks;
-    u32 base_ssbo = 0;
-    u32 base_samplers = 0;
-
-    for (std::size_t i = 0; i < NumStages; ++i) {
-        const std::size_t stage = stage_swizzle[i];
-        bindings[stage] = {
-            Extract(base_ubo, num_ubos, total_ubos / NumStages, LIMIT_UBOS[stage]),
-            Extract(base_ssbo, num_ssbos, total_ssbos / NumStages, LIMIT_SSBOS[stage]),
-            Extract(base_samplers, num_samplers, total_samplers / NumStages,
-                    LIMIT_SAMPLERS[stage])};
-    }
-
-    u32 num_images = GetInteger<u32>(GL_MAX_IMAGE_UNITS);
-    u32 base_images = 0;
-
-    // GL_MAX_IMAGE_UNITS is guaranteed by the spec to have a minimum value of 8.
-    // Due to the limitation of GL_MAX_IMAGE_UNITS, reserve at least 4 image bindings on the
-    // fragment stage, and at least 1 for the rest of the stages.
-    // So far games are observed to use 1 image binding on vertex and 4 on fragment stages.
-
-    // Reserve at least 4 image bindings on the fragment stage.
-    bindings[4].image =
-        Extract(base_images, num_images, std::max(4U, num_images / NumStages), LIMIT_IMAGES[4]);
-
-    // This is guaranteed to be at least 1.
-    const u32 total_extracted_images = num_images / (NumStages - 1);
-
-    // Reserve the other image bindings.
-    for (std::size_t i = 0; i < NumStages; ++i) {
-        const std::size_t stage = stage_swizzle[i];
-        if (stage == 4) {
-            continue;
-        }
-        bindings[stage].image =
-            Extract(base_images, num_images, total_extracted_images, LIMIT_IMAGES[stage]);
-    }
-
-    // Compute doesn't care about any of this.
-    bindings[5] = {0, 0, 0, 0};
-
-    return bindings;
-}
-
 bool IsASTCSupported() {
-    static constexpr std::array targets = {GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY};
-    static constexpr std::array formats = {
+    static constexpr std::array targets{
+        GL_TEXTURE_2D,
+        GL_TEXTURE_2D_ARRAY,
+    };
+    static constexpr std::array formats{
         GL_COMPRESSED_RGBA_ASTC_4x4_KHR,           GL_COMPRESSED_RGBA_ASTC_5x4_KHR,
         GL_COMPRESSED_RGBA_ASTC_5x5_KHR,           GL_COMPRESSED_RGBA_ASTC_6x5_KHR,
         GL_COMPRESSED_RGBA_ASTC_6x6_KHR,           GL_COMPRESSED_RGBA_ASTC_8x5_KHR,
@@ -172,11 +87,10 @@ bool IsASTCSupported() {
         GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR,  GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR,
         GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR, GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR,
     };
-    static constexpr std::array required_support = {
+    static constexpr std::array required_support{
         GL_VERTEX_TEXTURE,   GL_TESS_CONTROL_TEXTURE, GL_TESS_EVALUATION_TEXTURE,
         GL_GEOMETRY_TEXTURE, GL_FRAGMENT_TEXTURE,     GL_COMPUTE_TEXTURE,
     };
-
     for (const GLenum target : targets) {
         for (const GLenum format : formats) {
             for (const GLenum support : required_support) {
@@ -223,14 +137,13 @@ Device::Device() {
             "Beta driver 443.24 is known to have issues. There might be performance issues.");
         disable_fast_buffer_sub_data = true;
     }
-
     max_uniform_buffers = BuildMaxUniformBuffers();
-    base_bindings = BuildBaseBindings();
     uniform_buffer_alignment = GetInteger<size_t>(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT);
     shader_storage_alignment = GetInteger<size_t>(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT);
     max_vertex_attributes = GetInteger<u32>(GL_MAX_VERTEX_ATTRIBS);
     max_varyings = GetInteger<u32>(GL_MAX_VARYING_VECTORS);
     max_compute_shared_memory_size = GetInteger<u32>(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE);
+    max_glasm_storage_buffer_blocks = GetInteger<u32>(GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS);
     has_warp_intrinsics = GLAD_GL_NV_gpu_shader5 && GLAD_GL_NV_shader_thread_group &&
                           GLAD_GL_NV_shader_thread_shuffle;
     has_shader_ballot = GLAD_GL_ARB_shader_ballot;
@@ -243,21 +156,37 @@ Device::Device() {
     has_precise_bug = TestPreciseBug();
     has_broken_texture_view_formats = is_amd || (!is_linux && is_intel);
     has_nv_viewport_array2 = GLAD_GL_NV_viewport_array2;
+    has_derivative_control = GLAD_GL_ARB_derivative_control;
     has_vertex_buffer_unified_memory = GLAD_GL_NV_vertex_buffer_unified_memory;
     has_debugging_tool_attached = IsDebugToolAttached(extensions);
     has_depth_buffer_float = HasExtension(extensions, "GL_NV_depth_buffer_float");
+    has_geometry_shader_passthrough = GLAD_GL_NV_geometry_shader_passthrough;
+    has_nv_gpu_shader_5 = GLAD_GL_NV_gpu_shader5;
+    has_shader_int64 = HasExtension(extensions, "GL_ARB_gpu_shader_int64");
+    has_amd_shader_half_float = GLAD_GL_AMD_gpu_shader_half_float;
+    has_sparse_texture_2 = GLAD_GL_ARB_sparse_texture2;
+    warp_size_potentially_larger_than_guest = !is_nvidia && !is_intel;
+    need_fastmath_off = is_nvidia;
 
     // At the moment of writing this, only Nvidia's driver optimizes BufferSubData on exclusive
     // uniform buffers as "push constants"
     has_fast_buffer_sub_data = is_nvidia && !disable_fast_buffer_sub_data;
 
-    use_assembly_shaders = Settings::values.use_assembly_shaders.GetValue() &&
-                           GLAD_GL_NV_gpu_program5 && GLAD_GL_NV_compute_program5 &&
-                           GLAD_GL_NV_transform_feedback && GLAD_GL_NV_transform_feedback2;
+    use_assembly_shaders =
+        Settings::values.shader_backend.GetValue() == Settings::ShaderBackend::GLASM &&
+        GLAD_GL_NV_gpu_program5 && GLAD_GL_NV_compute_program5 && GLAD_GL_NV_transform_feedback &&
+        GLAD_GL_NV_transform_feedback2;
 
+    shader_backend = (Settings::values.shader_backend.GetValue() ==
+                      Settings::ShaderBackend::GLASM) == use_assembly_shaders
+                         ? Settings::values.shader_backend.GetValue()
+                         : Settings::ShaderBackend::GLSL;
+
+    // Completely disable async shaders for now, as it causes graphical glitches
+    use_asynchronous_shaders = false;
     // Blocks AMD and Intel OpenGL drivers on Windows from using asynchronous shader compilation.
-    use_asynchronous_shaders = Settings::values.use_asynchronous_shaders.GetValue() &&
-                               !(is_amd || (is_intel && !is_linux));
+    // use_asynchronous_shaders = Settings::values.use_asynchronous_shaders.GetValue() &&
+    //                            !(is_amd || (is_intel && !is_linux));
     use_driver_cache = is_nvidia;
 
     LOG_INFO(Render_OpenGL, "Renderer_VariableAOFFI: {}", has_variable_aoffi);
@@ -266,7 +195,7 @@ Device::Device() {
     LOG_INFO(Render_OpenGL, "Renderer_BrokenTextureViewFormats: {}",
              has_broken_texture_view_formats);
 
-    if (Settings::values.use_assembly_shaders.GetValue() && !use_assembly_shaders) {
+    if (shader_backend == Settings::ShaderBackend::GLASM && !use_assembly_shaders) {
         LOG_ERROR(Render_OpenGL, "Assembly shaders enabled but not supported");
     }
 
@@ -323,22 +252,6 @@ std::string Device::GetVendorName() const {
         return "TEGRA";
     }
     return vendor_name;
-}
-
-Device::Device(std::nullptr_t) {
-    max_uniform_buffers.fill(std::numeric_limits<u32>::max());
-    uniform_buffer_alignment = 4;
-    shader_storage_alignment = 4;
-    max_vertex_attributes = 16;
-    max_varyings = 15;
-    max_compute_shared_memory_size = 0x10000;
-    has_warp_intrinsics = true;
-    has_shader_ballot = true;
-    has_vertex_viewport_layer = true;
-    has_image_load_formatted = true;
-    has_texture_shadow_lod = true;
-    has_variable_aoffi = true;
-    has_depth_buffer_float = true;
 }
 
 bool Device::TestVariableAoffi() {

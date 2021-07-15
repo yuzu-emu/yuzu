@@ -518,9 +518,11 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
     QMenu* remove_menu = context_menu.addMenu(tr("Remove"));
     QAction* remove_update = remove_menu->addAction(tr("Remove Installed Update"));
     QAction* remove_dlc = remove_menu->addAction(tr("Remove All Installed DLC"));
-    QAction* remove_shader_cache = remove_menu->addAction(tr("Remove Shader Cache"));
     QAction* remove_custom_config = remove_menu->addAction(tr("Remove Custom Configuration"));
+    QAction* remove_gl_shader_cache = remove_menu->addAction(tr("Remove OpenGL Shader Cache"));
+    QAction* remove_vk_shader_cache = remove_menu->addAction(tr("Remove Vulkan Shader Cache"));
     remove_menu->addSeparator();
+    QAction* remove_shader_cache = remove_menu->addAction(tr("Remove All Shader Caches"));
     QAction* remove_all_content = remove_menu->addAction(tr("Remove All Installed Contents"));
     QMenu* dump_romfs_menu = context_menu.addMenu(tr("Dump RomFS"));
     QAction* dump_romfs = dump_romfs_menu->addAction(tr("Dump RomFS"));
@@ -538,6 +540,8 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
     open_transferable_shader_cache->setVisible(program_id != 0);
     remove_update->setVisible(program_id != 0);
     remove_dlc->setVisible(program_id != 0);
+    remove_gl_shader_cache->setVisible(program_id != 0);
+    remove_vk_shader_cache->setVisible(program_id != 0);
     remove_shader_cache->setVisible(program_id != 0);
     remove_all_content->setVisible(program_id != 0);
     auto it = FindMatchingCompatibilityEntry(compatibility_list, program_id);
@@ -567,8 +571,14 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
     connect(remove_dlc, &QAction::triggered, [this, program_id]() {
         emit RemoveInstalledEntryRequested(program_id, InstalledEntryType::AddOnContent);
     });
+    connect(remove_gl_shader_cache, &QAction::triggered, [this, program_id, path]() {
+        emit RemoveFileRequested(program_id, GameListRemoveTarget::GlShaderCache, path);
+    });
+    connect(remove_vk_shader_cache, &QAction::triggered, [this, program_id, path]() {
+        emit RemoveFileRequested(program_id, GameListRemoveTarget::VkShaderCache, path);
+    });
     connect(remove_shader_cache, &QAction::triggered, [this, program_id, path]() {
-        emit RemoveFileRequested(program_id, GameListRemoveTarget::ShaderCache, path);
+        emit RemoveFileRequested(program_id, GameListRemoveTarget::AllShaderCache, path);
     });
     connect(remove_custom_config, &QAction::triggered, [this, program_id, path]() {
         emit RemoveFileRequested(program_id, GameListRemoveTarget::CustomConfiguration, path);

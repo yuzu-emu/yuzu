@@ -31,7 +31,7 @@ struct BlitImagePipelineKey {
 class BlitImageHelper {
 public:
     explicit BlitImageHelper(const Device& device, VKScheduler& scheduler,
-                             StateTracker& state_tracker, VKDescriptorPool& descriptor_pool);
+                             StateTracker& state_tracker, DescriptorPool& descriptor_pool);
     ~BlitImageHelper();
 
     void BlitColor(const Framebuffer* dst_framebuffer, const ImageView& src_image_view,

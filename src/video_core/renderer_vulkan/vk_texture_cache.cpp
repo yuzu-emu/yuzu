@@ -15,6 +15,7 @@
 #include "video_core/renderer_vulkan/maxwell_to_vk.h"
 #include "video_core/renderer_vulkan/vk_compute_pass.h"
 #include "video_core/renderer_vulkan/vk_rasterizer.h"
+#include "video_core/renderer_vulkan/vk_render_pass_cache.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
@@ -34,19 +35,6 @@ using VideoCommon::SubresourceRange;
 using VideoCore::Surface::IsPixelFormatASTC;
 
 namespace {
-
-constexpr std::array ATTACHMENT_REFERENCES{
-    VkAttachmentReference{0, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{1, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{2, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{3, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{4, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{5, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{6, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{7, VK_IMAGE_LAYOUT_GENERAL},
-    VkAttachmentReference{8, VK_IMAGE_LAYOUT_GENERAL},
-};
-
 constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     if (color == std::array<float, 4>{0, 0, 0, 0}) {
         return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
@@ -174,25 +162,6 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     return device.GetLogical().CreateImage(MakeImageCreateInfo(device, info));
 }
 
-[[nodiscard]] vk::Buffer MakeBuffer(const Device& device, const ImageInfo& info) {
-    if (info.type != ImageType::Buffer) {
-        return vk::Buffer{};
-    }
-    const size_t bytes_per_block = VideoCore::Surface::BytesPerBlock(info.format);
-    return device.GetLogical().CreateBuffer(VkBufferCreateInfo{
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .size = info.size.width * bytes_per_block,
-        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                 VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT |
-                 VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .queueFamilyIndexCount = 0,
-        .pQueueFamilyIndices = nullptr,
-    });
-}
-
 [[nodiscard]] VkImageAspectFlags ImageAspectMask(PixelFormat format) {
     switch (VideoCore::Surface::GetFormatType(format)) {
     case VideoCore::Surface::SurfaceType::ColorTexture:
@@ -226,23 +195,6 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     }
 }
 
-[[nodiscard]] VkAttachmentDescription AttachmentDescription(const Device& device,
-                                                            const ImageView* image_view) {
-    using MaxwellToVK::SurfaceFormat;
-    const PixelFormat pixel_format = image_view->format;
-    return VkAttachmentDescription{
-        .flags = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT,
-        .format = SurfaceFormat(device, FormatType::Optimal, true, pixel_format).format,
-        .samples = image_view->Samples(),
-        .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .initialLayout = VK_IMAGE_LAYOUT_GENERAL,
-        .finalLayout = VK_IMAGE_LAYOUT_GENERAL,
-    };
-}
-
 [[nodiscard]] VkComponentSwizzle ComponentSwizzle(SwizzleSource swizzle) {
     switch (swizzle) {
     case SwizzleSource::Zero:
@@ -263,6 +215,30 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     return VK_COMPONENT_SWIZZLE_ZERO;
 }
 
+[[nodiscard]] VkImageViewType ImageViewType(Shader::TextureType type) {
+    switch (type) {
+    case Shader::TextureType::Color1D:
+        return VK_IMAGE_VIEW_TYPE_1D;
+    case Shader::TextureType::Color2D:
+        return VK_IMAGE_VIEW_TYPE_2D;
+    case Shader::TextureType::ColorCube:
+        return VK_IMAGE_VIEW_TYPE_CUBE;
+    case Shader::TextureType::Color3D:
+        return VK_IMAGE_VIEW_TYPE_3D;
+    case Shader::TextureType::ColorArray1D:
+        return VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+    case Shader::TextureType::ColorArray2D:
+        return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    case Shader::TextureType::ColorArrayCube:
+        return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+    case Shader::TextureType::Buffer:
+        UNREACHABLE_MSG("Texture buffers can't be image views");
+        return VK_IMAGE_VIEW_TYPE_1D;
+    }
+    UNREACHABLE_MSG("Invalid image view type={}", type);
+    return VK_IMAGE_VIEW_TYPE_2D;
+}
+
 [[nodiscard]] VkImageViewType ImageViewType(VideoCommon::ImageViewType type) {
     switch (type) {
     case VideoCommon::ImageViewType::e1D:
@@ -280,7 +256,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case VideoCommon::ImageViewType::CubeArray:
         return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
     case VideoCommon::ImageViewType::Rect:
-        LOG_WARNING(Render_Vulkan, "Unnormalized image view type not supported");
+        UNIMPLEMENTED_MSG("Rect image view");
         return VK_IMAGE_VIEW_TYPE_2D;
     case VideoCommon::ImageViewType::Buffer:
         UNREACHABLE_MSG("Texture buffers can't be image views");
@@ -327,7 +303,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     };
 }
 
-[[nodiscard]] std::vector<VkBufferCopy> TransformBufferCopies(
+[[maybe_unused]] [[nodiscard]] std::vector<VkBufferCopy> TransformBufferCopies(
     std::span<const VideoCommon::BufferCopy> copies, size_t buffer_offset) {
     std::vector<VkBufferCopy> result(copies.size());
     std::ranges::transform(
@@ -587,6 +563,28 @@ struct RangedBarrierRange {
     }
 };
 
+[[nodiscard]] VkFormat Format(Shader::ImageFormat format) {
+    switch (format) {
+    case Shader::ImageFormat::Typeless:
+        break;
+    case Shader::ImageFormat::R8_SINT:
+        return VK_FORMAT_R8_SINT;
+    case Shader::ImageFormat::R8_UINT:
+        return VK_FORMAT_R8_UINT;
+    case Shader::ImageFormat::R16_UINT:
+        return VK_FORMAT_R16_UINT;
+    case Shader::ImageFormat::R16_SINT:
+        return VK_FORMAT_R16_SINT;
+    case Shader::ImageFormat::R32_UINT:
+        return VK_FORMAT_R32_UINT;
+    case Shader::ImageFormat::R32G32_UINT:
+        return VK_FORMAT_R32G32_UINT;
+    case Shader::ImageFormat::R32G32B32A32_UINT:
+        return VK_FORMAT_R32G32B32A32_UINT;
+    }
+    UNREACHABLE_MSG("Invalid image format={}", format);
+    return VK_FORMAT_R32_UINT;
+}
 } // Anonymous namespace
 
 void TextureCacheRuntime::Finish() {
@@ -622,7 +620,7 @@ void TextureCacheRuntime::BlitImage(Framebuffer* dst_framebuffer, ImageView& dst
             return;
         }
     }
-    ASSERT(src.ImageFormat() == dst.ImageFormat());
+    ASSERT(src.format == dst.format);
     ASSERT(!(is_dst_msaa && !is_src_msaa));
     ASSERT(operation == Fermi2D::Operation::SrcCopy);
 
@@ -825,13 +823,9 @@ u64 TextureCacheRuntime::GetDeviceLocalMemory() const {
 Image::Image(TextureCacheRuntime& runtime, const ImageInfo& info_, GPUVAddr gpu_addr_,
              VAddr cpu_addr_)
     : VideoCommon::ImageBase(info_, gpu_addr_, cpu_addr_), scheduler{&runtime.scheduler},
-      image(MakeImage(runtime.device, info)), buffer(MakeBuffer(runtime.device, info)),
+      image(MakeImage(runtime.device, info)),
+      commit(runtime.memory_allocator.Commit(image, MemoryUsage::DeviceLocal)),
       aspect_mask(ImageAspectMask(info.format)) {
-    if (image) {
-        commit = runtime.memory_allocator.Commit(image, MemoryUsage::DeviceLocal);
-    } else {
-        commit = runtime.memory_allocator.Commit(buffer, MemoryUsage::DeviceLocal);
-    }
     if (IsPixelFormatASTC(info.format) && !runtime.device.IsOptimalAstcSupported()) {
         if (Settings::values.accelerate_astc.GetValue()) {
             flags |= VideoCommon::ImageFlagBits::AcceleratedUpload;
@@ -840,11 +834,7 @@ Image::Image(TextureCacheRuntime& runtime, const ImageInfo& info_, GPUVAddr gpu_
         }
     }
     if (runtime.device.HasDebuggingToolAttached()) {
-        if (image) {
-            image.SetObjectNameEXT(VideoCommon::Name(*this).c_str());
-        } else {
-            buffer.SetObjectNameEXT(VideoCommon::Name(*this).c_str());
-        }
+        image.SetObjectNameEXT(VideoCommon::Name(*this).c_str());
     }
     static constexpr VkImageViewUsageCreateInfo storage_image_view_usage_create_info{
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
@@ -893,19 +883,6 @@ void Image::UploadMemory(const StagingBufferRef& map, std::span<const BufferImag
     scheduler->Record([src_buffer, vk_image, vk_aspect_mask, is_initialized,
                        vk_copies](vk::CommandBuffer cmdbuf) {
         CopyBufferToImage(cmdbuf, src_buffer, vk_image, vk_aspect_mask, is_initialized, vk_copies);
-    });
-}
-
-void Image::UploadMemory(const StagingBufferRef& map,
-                         std::span<const VideoCommon::BufferCopy> copies) {
-    // TODO: Move this to another API
-    scheduler->RequestOutsideRenderPassOperationContext();
-    std::vector vk_copies = TransformBufferCopies(copies, map.offset);
-    const VkBuffer src_buffer = map.buffer;
-    const VkBuffer dst_buffer = *buffer;
-    scheduler->Record([src_buffer, dst_buffer, vk_copies](vk::CommandBuffer cmdbuf) {
-        // TODO: Barriers
-        cmdbuf.CopyBuffer(src_buffer, dst_buffer, vk_copies);
     });
 }
 
@@ -966,8 +943,9 @@ void Image::DownloadMemory(const StagingBufferRef& map, std::span<const BufferIm
 ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewInfo& info,
                      ImageId image_id_, Image& image)
     : VideoCommon::ImageViewBase{info, image.info, image_id_}, device{&runtime.device},
-      image_handle{image.Handle()}, image_format{image.info.format}, samples{ConvertSampleCount(
-                                                                         image.info.num_samples)} {
+      image_handle{image.Handle()}, samples{ConvertSampleCount(image.info.num_samples)} {
+    using Shader::TextureType;
+
     const VkImageAspectFlags aspect_mask = ImageViewAspectMask(info);
     std::array<SwizzleSource, 4> swizzle{
         SwizzleSource::R,
@@ -1005,56 +983,53 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
         },
         .subresourceRange = MakeSubresourceRange(aspect_mask, info.range),
     };
-    const auto create = [&](VideoCommon::ImageViewType view_type, std::optional<u32> num_layers) {
+    const auto create = [&](TextureType tex_type, std::optional<u32> num_layers) {
         VkImageViewCreateInfo ci{create_info};
-        ci.viewType = ImageViewType(view_type);
+        ci.viewType = ImageViewType(tex_type);
         if (num_layers) {
             ci.subresourceRange.layerCount = *num_layers;
         }
         vk::ImageView handle = device->GetLogical().CreateImageView(ci);
         if (device->HasDebuggingToolAttached()) {
-            handle.SetObjectNameEXT(VideoCommon::Name(*this, view_type).c_str());
+            handle.SetObjectNameEXT(VideoCommon::Name(*this).c_str());
         }
-        image_views[static_cast<size_t>(view_type)] = std::move(handle);
+        image_views[static_cast<size_t>(tex_type)] = std::move(handle);
     };
     switch (info.type) {
     case VideoCommon::ImageViewType::e1D:
     case VideoCommon::ImageViewType::e1DArray:
-        create(VideoCommon::ImageViewType::e1D, 1);
-        create(VideoCommon::ImageViewType::e1DArray, std::nullopt);
-        render_target = Handle(VideoCommon::ImageViewType::e1DArray);
+        create(TextureType::Color1D, 1);
+        create(TextureType::ColorArray1D, std::nullopt);
+        render_target = Handle(TextureType::ColorArray1D);
         break;
     case VideoCommon::ImageViewType::e2D:
     case VideoCommon::ImageViewType::e2DArray:
-        create(VideoCommon::ImageViewType::e2D, 1);
-        create(VideoCommon::ImageViewType::e2DArray, std::nullopt);
-        render_target = Handle(VideoCommon::ImageViewType::e2DArray);
+        create(TextureType::Color2D, 1);
+        create(TextureType::ColorArray2D, std::nullopt);
+        render_target = Handle(Shader::TextureType::ColorArray2D);
         break;
     case VideoCommon::ImageViewType::e3D:
-        create(VideoCommon::ImageViewType::e3D, std::nullopt);
-        render_target = Handle(VideoCommon::ImageViewType::e3D);
+        create(TextureType::Color3D, std::nullopt);
+        render_target = Handle(Shader::TextureType::Color3D);
         break;
     case VideoCommon::ImageViewType::Cube:
     case VideoCommon::ImageViewType::CubeArray:
-        create(VideoCommon::ImageViewType::Cube, 6);
-        create(VideoCommon::ImageViewType::CubeArray, std::nullopt);
+        create(TextureType::ColorCube, 6);
+        create(TextureType::ColorArrayCube, std::nullopt);
         break;
     case VideoCommon::ImageViewType::Rect:
         UNIMPLEMENTED();
         break;
     case VideoCommon::ImageViewType::Buffer:
-        buffer_view = device->GetLogical().CreateBufferView(VkBufferViewCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .buffer = image.Buffer(),
-            .format = format_info.format,
-            .offset = 0, // TODO: Redesign buffer cache to support this
-            .range = image.guest_size_bytes,
-        });
+        UNREACHABLE();
         break;
     }
 }
+
+ImageView::ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo& info,
+                     const VideoCommon::ImageViewInfo& view_info, GPUVAddr gpu_addr_)
+    : VideoCommon::ImageViewBase{info, view_info}, gpu_addr{gpu_addr_},
+      buffer_size{VideoCommon::CalculateGuestSizeInBytes(info)} {}
 
 ImageView::ImageView(TextureCacheRuntime&, const VideoCommon::NullImageParams& params)
     : VideoCommon::ImageViewBase{params} {}
@@ -1063,7 +1038,8 @@ VkImageView ImageView::DepthView() {
     if (depth_view) {
         return *depth_view;
     }
-    depth_view = MakeDepthStencilView(VK_IMAGE_ASPECT_DEPTH_BIT);
+    const auto& info = MaxwellToVK::SurfaceFormat(*device, FormatType::Optimal, true, format);
+    depth_view = MakeView(info.format, VK_IMAGE_ASPECT_DEPTH_BIT);
     return *depth_view;
 }
 
@@ -1071,18 +1047,38 @@ VkImageView ImageView::StencilView() {
     if (stencil_view) {
         return *stencil_view;
     }
-    stencil_view = MakeDepthStencilView(VK_IMAGE_ASPECT_STENCIL_BIT);
+    const auto& info = MaxwellToVK::SurfaceFormat(*device, FormatType::Optimal, true, format);
+    stencil_view = MakeView(info.format, VK_IMAGE_ASPECT_STENCIL_BIT);
     return *stencil_view;
 }
 
-vk::ImageView ImageView::MakeDepthStencilView(VkImageAspectFlags aspect_mask) {
+VkImageView ImageView::StorageView(Shader::TextureType texture_type,
+                                   Shader::ImageFormat image_format) {
+    if (image_format == Shader::ImageFormat::Typeless) {
+        return Handle(texture_type);
+    }
+    const bool is_signed{image_format == Shader::ImageFormat::R8_SINT ||
+                         image_format == Shader::ImageFormat::R16_SINT};
+    if (!storage_views) {
+        storage_views = std::make_unique<StorageViews>();
+    }
+    auto& views{is_signed ? storage_views->signeds : storage_views->unsigneds};
+    auto& view{views[static_cast<size_t>(texture_type)]};
+    if (view) {
+        return *view;
+    }
+    view = MakeView(Format(image_format), VK_IMAGE_ASPECT_COLOR_BIT);
+    return *view;
+}
+
+vk::ImageView ImageView::MakeView(VkFormat vk_format, VkImageAspectFlags aspect_mask) {
     return device->GetLogical().CreateImageView({
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
         .image = image_handle,
         .viewType = ImageViewType(type),
-        .format = MaxwellToVK::SurfaceFormat(*device, FormatType::Optimal, true, format).format,
+        .format = vk_format,
         .components{
             .r = VK_COMPONENT_SWIZZLE_IDENTITY,
             .g = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -1146,7 +1142,6 @@ Sampler::Sampler(TextureCacheRuntime& runtime, const Tegra::Texture::TSCEntry& t
 
 Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM_RT> color_buffers,
                          ImageView* depth_buffer, const VideoCommon::RenderTargets& key) {
-    std::vector<VkAttachmentDescription> descriptions;
     std::vector<VkImageView> attachments;
     RenderPassKey renderpass_key{};
     s32 num_layers = 1;
@@ -1157,7 +1152,6 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
             renderpass_key.color_formats[index] = PixelFormat::Invalid;
             continue;
         }
-        descriptions.push_back(AttachmentDescription(runtime.device, color_buffer));
         attachments.push_back(color_buffer->RenderTarget());
         renderpass_key.color_formats[index] = color_buffer->format;
         num_layers = std::max(num_layers, color_buffer->range.extent.layers);
@@ -1167,10 +1161,7 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
         ++num_images;
     }
     const size_t num_colors = attachments.size();
-    const VkAttachmentReference* depth_attachment =
-        depth_buffer ? &ATTACHMENT_REFERENCES[num_colors] : nullptr;
     if (depth_buffer) {
-        descriptions.push_back(AttachmentDescription(runtime.device, depth_buffer));
         attachments.push_back(depth_buffer->RenderTarget());
         renderpass_key.depth_format = depth_buffer->format;
         num_layers = std::max(num_layers, depth_buffer->range.extent.layers);
@@ -1183,40 +1174,14 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
     }
     renderpass_key.samples = samples;
 
-    const auto& device = runtime.device.GetLogical();
-    const auto [cache_pair, is_new] = runtime.renderpass_cache.try_emplace(renderpass_key);
-    if (is_new) {
-        const VkSubpassDescription subpass{
-            .flags = 0,
-            .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-            .inputAttachmentCount = 0,
-            .pInputAttachments = nullptr,
-            .colorAttachmentCount = static_cast<u32>(num_colors),
-            .pColorAttachments = num_colors != 0 ? ATTACHMENT_REFERENCES.data() : nullptr,
-            .pResolveAttachments = nullptr,
-            .pDepthStencilAttachment = depth_attachment,
-            .preserveAttachmentCount = 0,
-            .pPreserveAttachments = nullptr,
-        };
-        cache_pair->second = device.CreateRenderPass(VkRenderPassCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .attachmentCount = static_cast<u32>(descriptions.size()),
-            .pAttachments = descriptions.data(),
-            .subpassCount = 1,
-            .pSubpasses = &subpass,
-            .dependencyCount = 0,
-            .pDependencies = nullptr,
-        });
-    }
-    renderpass = *cache_pair->second;
+    renderpass = runtime.render_pass_cache.Get(renderpass_key);
+
     render_area = VkExtent2D{
         .width = key.size.width,
         .height = key.size.height,
     };
     num_color_buffers = static_cast<u32>(num_colors);
-    framebuffer = device.CreateFramebuffer(VkFramebufferCreateInfo{
+    framebuffer = runtime.device.GetLogical().CreateFramebuffer({
         .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,

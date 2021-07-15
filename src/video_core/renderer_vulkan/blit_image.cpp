@@ -49,6 +49,16 @@ constexpr VkDescriptorSetLayoutCreateInfo ONE_TEXTURE_DESCRIPTOR_SET_LAYOUT_CREA
     .bindingCount = 1,
     .pBindings = &TEXTURE_DESCRIPTOR_SET_LAYOUT_BINDING<0>,
 };
+template <u32 num_textures>
+inline constexpr DescriptorBankInfo TEXTURE_DESCRIPTOR_BANK_INFO{
+    .uniform_buffers = 0,
+    .storage_buffers = 0,
+    .texture_buffers = 0,
+    .image_buffers = 0,
+    .textures = num_textures,
+    .images = 0,
+    .score = 2,
+};
 constexpr VkDescriptorSetLayoutCreateInfo TWO_TEXTURES_DESCRIPTOR_SET_LAYOUT_CREATE_INFO{
     .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
     .pNext = nullptr,
@@ -323,18 +333,19 @@ void BindBlitState(vk::CommandBuffer cmdbuf, VkPipelineLayout layout, const Regi
     cmdbuf.SetScissor(0, scissor);
     cmdbuf.PushConstants(layout, VK_SHADER_STAGE_VERTEX_BIT, push_constants);
 }
-
 } // Anonymous namespace
 
 BlitImageHelper::BlitImageHelper(const Device& device_, VKScheduler& scheduler_,
-                                 StateTracker& state_tracker_, VKDescriptorPool& descriptor_pool)
+                                 StateTracker& state_tracker_, DescriptorPool& descriptor_pool)
     : device{device_}, scheduler{scheduler_}, state_tracker{state_tracker_},
       one_texture_set_layout(device.GetLogical().CreateDescriptorSetLayout(
           ONE_TEXTURE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO)),
       two_textures_set_layout(device.GetLogical().CreateDescriptorSetLayout(
           TWO_TEXTURES_DESCRIPTOR_SET_LAYOUT_CREATE_INFO)),
-      one_texture_descriptor_allocator(descriptor_pool, *one_texture_set_layout),
-      two_textures_descriptor_allocator(descriptor_pool, *two_textures_set_layout),
+      one_texture_descriptor_allocator{
+          descriptor_pool.Allocator(*one_texture_set_layout, TEXTURE_DESCRIPTOR_BANK_INFO<1>)},
+      two_textures_descriptor_allocator{
+          descriptor_pool.Allocator(*two_textures_set_layout, TEXTURE_DESCRIPTOR_BANK_INFO<2>)},
       one_texture_pipeline_layout(device.GetLogical().CreatePipelineLayout(
           PipelineLayoutCreateInfo(one_texture_set_layout.address()))),
       two_textures_pipeline_layout(device.GetLogical().CreatePipelineLayout(
@@ -362,7 +373,7 @@ void BlitImageHelper::BlitColor(const Framebuffer* dst_framebuffer, const ImageV
         .operation = operation,
     };
     const VkPipelineLayout layout = *one_texture_pipeline_layout;
-    const VkImageView src_view = src_image_view.Handle(ImageViewType::e2D);
+    const VkImageView src_view = src_image_view.Handle(Shader::TextureType::Color2D);
     const VkSampler sampler = is_linear ? *linear_sampler : *nearest_sampler;
     const VkPipeline pipeline = FindOrEmplacePipeline(key);
     const VkDescriptorSet descriptor_set = one_texture_descriptor_allocator.Commit();
@@ -416,7 +427,6 @@ void BlitImageHelper::ConvertD32ToR32(const Framebuffer* dst_framebuffer,
 
 void BlitImageHelper::ConvertR32ToD32(const Framebuffer* dst_framebuffer,
                                       const ImageView& src_image_view) {
-
     ConvertColorToDepthPipeline(convert_r32_to_d32_pipeline, dst_framebuffer->RenderPass());
     Convert(*convert_r32_to_d32_pipeline, dst_framebuffer, src_image_view);
 }
@@ -436,7 +446,7 @@ void BlitImageHelper::ConvertR16ToD16(const Framebuffer* dst_framebuffer,
 void BlitImageHelper::Convert(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
                               const ImageView& src_image_view) {
     const VkPipelineLayout layout = *one_texture_pipeline_layout;
-    const VkImageView src_view = src_image_view.Handle(ImageViewType::e2D);
+    const VkImageView src_view = src_image_view.Handle(Shader::TextureType::Color2D);
     const VkSampler sampler = *nearest_sampler;
     const VkDescriptorSet descriptor_set = one_texture_descriptor_allocator.Commit();
     const VkExtent2D extent{

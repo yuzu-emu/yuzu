@@ -34,8 +34,9 @@ private:
     void SetConfiguration();
 
     void UpdateBackgroundColorButton(QColor color);
-    void UpdateDeviceComboBox();
+    void UpdateAPILayout();
     void UpdateDeviceSelection(int device);
+    void UpdateShaderBackendSelection(int backend);
 
     void RetrieveVulkanDevices();
 
@@ -53,4 +54,5 @@ private:
 
     std::vector<QString> vulkan_devices;
     u32 vulkan_device{};
+    Settings::ShaderBackend shader_backend{};
 };

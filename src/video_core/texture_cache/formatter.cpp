@@ -43,7 +43,7 @@ std::string Name(const ImageBase& image) {
     return "Invalid";
 }
 
-std::string Name(const ImageViewBase& image_view, std::optional<ImageViewType> type) {
+std::string Name(const ImageViewBase& image_view) {
     const u32 width = image_view.size.width;
     const u32 height = image_view.size.height;
     const u32 depth = image_view.size.depth;
@@ -51,7 +51,7 @@ std::string Name(const ImageViewBase& image_view, std::optional<ImageViewType> t
     const u32 num_layers = image_view.range.extent.layers;
 
     const std::string level = num_levels > 1 ? fmt::format(":{}", num_levels) : "";
-    switch (type.value_or(image_view.type)) {
+    switch (image_view.type) {
     case ImageViewType::e1D:
         return fmt::format("ImageView 1D {}{}", width, level);
     case ImageViewType::e2D:

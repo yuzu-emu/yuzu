@@ -103,6 +103,7 @@ void Load(VkDevice device, DeviceDispatch& dld) noexcept {
     X(vkCmdFillBuffer);
     X(vkCmdPipelineBarrier);
     X(vkCmdPushConstants);
+    X(vkCmdPushDescriptorSetWithTemplateKHR);
     X(vkCmdSetBlendConstants);
     X(vkCmdSetDepthBias);
     X(vkCmdSetDepthBounds);
@@ -120,9 +121,11 @@ void Load(VkDevice device, DeviceDispatch& dld) noexcept {
     X(vkCmdSetDepthTestEnableEXT);
     X(vkCmdSetDepthWriteEnableEXT);
     X(vkCmdSetFrontFaceEXT);
+    X(vkCmdSetLineWidth);
     X(vkCmdSetPrimitiveTopologyEXT);
     X(vkCmdSetStencilOpEXT);
     X(vkCmdSetStencilTestEnableEXT);
+    X(vkCmdSetVertexInputEXT);
     X(vkCmdResolveImage);
     X(vkCreateBuffer);
     X(vkCreateBufferView);
@@ -311,8 +314,6 @@ const char* ToString(VkResult result) noexcept {
         return "VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT";
     case VkResult::VK_ERROR_UNKNOWN:
         return "VK_ERROR_UNKNOWN";
-    case VkResult::VK_ERROR_INCOMPATIBLE_VERSION_KHR:
-        return "VK_ERROR_INCOMPATIBLE_VERSION_KHR";
     case VkResult::VK_THREAD_IDLE_KHR:
         return "VK_THREAD_IDLE_KHR";
     case VkResult::VK_THREAD_DONE_KHR:

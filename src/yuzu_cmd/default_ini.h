@@ -163,6 +163,14 @@ backend =
 # 0 (default): Disabled, 1: Enabled
 debug =
 
+# Enable Nsight Aftermath crash dumps
+# 0 (default): Disabled, 1: Enabled
+nsight_aftermath =
+
+# Disable shader loop safety checks, executing the shader without loop logic changes
+# 0 (default): Disabled, 1: Enabled
+disable_shader_loop_safety_checks =
+
 # Which Vulkan physical device to use (defaults to 0)
 vulkan_device =
 
@@ -186,9 +194,10 @@ max_anisotropy =
 # 0 (default): Off, 1: On
 use_vsync =
 
-# Whether to use OpenGL assembly shaders or not. NV_gpu_program5 is required.
-# 0: Off, 1 (default): On
-use_assembly_shaders =
+# Selects the OpenGL shader backend. NV_gpu_program5 is required for GLASM. If NV_gpu_program5 is
+# not available and GLASM is selected, GLSL will be used.
+# 0: GLSL, 1 (default): GLASM, 2: SPIR-V
+shader_backend =
 
 # Whether to allow asynchronous shader building.
 # 0 (default): Off, 1: On

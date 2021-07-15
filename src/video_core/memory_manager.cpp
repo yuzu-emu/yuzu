@@ -69,7 +69,6 @@ void MemoryManager::Unmap(GPUVAddr gpu_addr, std::size_t size) {
     } else {
         UNREACHABLE_MSG("Unmapping non-existent GPU address=0x{:x}", gpu_addr);
     }
-
     const auto submapped_ranges = GetSubmappedRange(gpu_addr, size);
 
     for (const auto& map : submapped_ranges) {

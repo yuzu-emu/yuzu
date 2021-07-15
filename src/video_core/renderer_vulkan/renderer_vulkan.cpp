@@ -130,35 +130,45 @@ void RendererVulkan::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
     if (!framebuffer) {
         return;
     }
-    const auto& layout = render_window.GetFramebufferLayout();
-    if (layout.width > 0 && layout.height > 0 && render_window.IsShown()) {
-        const VAddr framebuffer_addr = framebuffer->address + framebuffer->offset;
-        const bool use_accelerated =
-            rasterizer.AccelerateDisplay(*framebuffer, framebuffer_addr, framebuffer->stride);
-        const bool is_srgb = use_accelerated && screen_info.is_srgb;
-        if (swapchain.HasFramebufferChanged(layout) || swapchain.GetSrgbState() != is_srgb) {
-            swapchain.Create(layout.width, layout.height, is_srgb);
-            blit_screen.Recreate();
-        }
-
-        scheduler.WaitWorker();
-
-        while (!swapchain.AcquireNextImage()) {
-            swapchain.Create(layout.width, layout.height, is_srgb);
-            blit_screen.Recreate();
-        }
-        const VkSemaphore render_semaphore = blit_screen.Draw(*framebuffer, use_accelerated);
-
-        scheduler.Flush(render_semaphore);
-
-        if (swapchain.Present(render_semaphore)) {
-            blit_screen.Recreate();
-        }
-        gpu.RendererFrameEndNotify();
-        rasterizer.TickFrame();
+    SCOPE_EXIT({ render_window.OnFrameDisplayed(); });
+    if (!render_window.IsShown()) {
+        return;
     }
+    const VAddr framebuffer_addr = framebuffer->address + framebuffer->offset;
+    const bool use_accelerated =
+        rasterizer.AccelerateDisplay(*framebuffer, framebuffer_addr, framebuffer->stride);
+    const bool is_srgb = use_accelerated && screen_info.is_srgb;
 
-    render_window.OnFrameDisplayed();
+    bool has_been_recreated = false;
+    const auto recreate_swapchain = [&] {
+        if (!has_been_recreated) {
+            has_been_recreated = true;
+            scheduler.WaitWorker();
+        }
+        const Layout::FramebufferLayout layout = render_window.GetFramebufferLayout();
+        swapchain.Create(layout.width, layout.height, is_srgb);
+    };
+    if (swapchain.IsSubOptimal() || swapchain.HasColorSpaceChanged(is_srgb)) {
+        recreate_swapchain();
+    }
+    bool is_outdated;
+    do {
+        swapchain.AcquireNextImage();
+        is_outdated = swapchain.IsOutDated();
+        if (is_outdated) {
+            recreate_swapchain();
+        }
+    } while (is_outdated);
+    if (has_been_recreated) {
+        blit_screen.Recreate();
+    }
+    const VkSemaphore render_semaphore = blit_screen.Draw(*framebuffer, use_accelerated);
+    scheduler.Flush(render_semaphore);
+    scheduler.WaitWorker();
+    swapchain.Present(render_semaphore);
+
+    gpu.RendererFrameEndNotify();
+    rasterizer.TickFrame();
 }
 
 void RendererVulkan::Report() const {

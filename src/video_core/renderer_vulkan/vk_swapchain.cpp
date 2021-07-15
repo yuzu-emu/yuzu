@@ -65,6 +65,9 @@ VKSwapchain::VKSwapchain(VkSurfaceKHR surface_, const Device& device_, VKSchedul
 VKSwapchain::~VKSwapchain() = default;
 
 void VKSwapchain::Create(u32 width, u32 height, bool srgb) {
+    is_outdated = false;
+    is_suboptimal = false;
+
     const auto physical_device = device.GetPhysical();
     const auto capabilities{physical_device.GetSurfaceCapabilitiesKHR(surface)};
     if (capabilities.maxImageExtent.width == 0 || capabilities.maxImageExtent.height == 0) {
@@ -82,21 +85,31 @@ void VKSwapchain::Create(u32 width, u32 height, bool srgb) {
     resource_ticks.resize(image_count);
 }
 
-bool VKSwapchain::AcquireNextImage() {
-    const VkResult result =
-        device.GetLogical().AcquireNextImageKHR(*swapchain, std::numeric_limits<u64>::max(),
-                                                *present_semaphores[frame_index], {}, &image_index);
-
+void VKSwapchain::AcquireNextImage() {
+    const VkResult result = device.GetLogical().AcquireNextImageKHR(
+        *swapchain, std::numeric_limits<u64>::max(), *present_semaphores[frame_index],
+        VK_NULL_HANDLE, &image_index);
+    switch (result) {
+    case VK_SUCCESS:
+        break;
+    case VK_SUBOPTIMAL_KHR:
+        is_suboptimal = true;
+        break;
+    case VK_ERROR_OUT_OF_DATE_KHR:
+        is_outdated = true;
+        break;
+    default:
+        LOG_ERROR(Render_Vulkan, "vkAcquireNextImageKHR returned {}", vk::ToString(result));
+        break;
+    }
     scheduler.Wait(resource_ticks[image_index]);
-    return result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR;
+    resource_ticks[image_index] = scheduler.CurrentTick();
 }
 
-bool VKSwapchain::Present(VkSemaphore render_semaphore) {
+void VKSwapchain::Present(VkSemaphore render_semaphore) {
     const VkSemaphore present_semaphore{*present_semaphores[frame_index]};
     const std::array<VkSemaphore, 2> semaphores{present_semaphore, render_semaphore};
     const auto present_queue{device.GetPresentQueue()};
-    bool recreated = false;
-
     const VkPresentInfoKHR present_info{
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .pNext = nullptr,
@@ -107,7 +120,6 @@ bool VKSwapchain::Present(VkSemaphore render_semaphore) {
         .pImageIndices = &image_index,
         .pResults = nullptr,
     };
-
     switch (const VkResult result = present_queue.Present(present_info)) {
     case VK_SUCCESS:
         break;
@@ -115,24 +127,16 @@ bool VKSwapchain::Present(VkSemaphore render_semaphore) {
         LOG_DEBUG(Render_Vulkan, "Suboptimal swapchain");
         break;
     case VK_ERROR_OUT_OF_DATE_KHR:
-        if (current_width > 0 && current_height > 0) {
-            Create(current_width, current_height, current_srgb);
-            recreated = true;
-        }
+        is_outdated = true;
         break;
     default:
         LOG_CRITICAL(Render_Vulkan, "Failed to present with error {}", vk::ToString(result));
         break;
     }
-
-    resource_ticks[image_index] = scheduler.CurrentTick();
-    frame_index = (frame_index + 1) % static_cast<u32>(image_count);
-    return recreated;
-}
-
-bool VKSwapchain::HasFramebufferChanged(const Layout::FramebufferLayout& framebuffer) const {
-    // TODO(Rodrigo): Handle framebuffer pixel format changes
-    return framebuffer.width != current_width || framebuffer.height != current_height;
+    ++frame_index;
+    if (frame_index >= image_count) {
+        frame_index = 0;
+    }
 }
 
 void VKSwapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, u32 width,
@@ -148,7 +152,6 @@ void VKSwapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, 
     if (capabilities.maxImageCount > 0 && requested_image_count > capabilities.maxImageCount) {
         requested_image_count = capabilities.maxImageCount;
     }
-
     VkSwapchainCreateInfoKHR swapchain_ci{
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .pNext = nullptr,
@@ -169,7 +172,6 @@ void VKSwapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, 
         .clipped = VK_FALSE,
         .oldSwapchain = nullptr,
     };
-
     const u32 graphics_family{device.GetGraphicsFamily()};
     const u32 present_family{device.GetPresentFamily()};
     const std::array<u32, 2> queue_indices{graphics_family, present_family};
@@ -178,7 +180,6 @@ void VKSwapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, 
         swapchain_ci.queueFamilyIndexCount = static_cast<u32>(queue_indices.size());
         swapchain_ci.pQueueFamilyIndices = queue_indices.data();
     }
-
     // Request the size again to reduce the possibility of a TOCTOU race condition.
     const auto updated_capabilities = physical_device.GetSurfaceCapabilitiesKHR(surface);
     swapchain_ci.imageExtent = ChooseSwapExtent(updated_capabilities, width, height);
@@ -186,8 +187,6 @@ void VKSwapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, 
     swapchain = device.GetLogical().CreateSwapchainKHR(swapchain_ci);
 
     extent = swapchain_ci.imageExtent;
-    current_width = extent.width;
-    current_height = extent.height;
     current_srgb = srgb;
 
     images = swapchain.GetImages();
@@ -197,8 +196,8 @@ void VKSwapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, 
 
 void VKSwapchain::CreateSemaphores() {
     present_semaphores.resize(image_count);
-    std::generate(present_semaphores.begin(), present_semaphores.end(),
-                  [this] { return device.GetLogical().CreateSemaphore(); });
+    std::ranges::generate(present_semaphores,
+                          [this] { return device.GetLogical().CreateSemaphore(); });
 }
 
 void VKSwapchain::CreateImageViews() {

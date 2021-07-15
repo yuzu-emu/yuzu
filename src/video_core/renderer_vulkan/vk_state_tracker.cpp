@@ -29,15 +29,22 @@ using Flags = Maxwell3D::DirtyState::Flags;
 
 Flags MakeInvalidationFlags() {
     static constexpr int INVALIDATION_FLAGS[]{
-        Viewports,         Scissors,  DepthBias,         BlendConstants,    DepthBounds,
-        StencilProperties, CullMode,  DepthBoundsEnable, DepthTestEnable,   DepthWriteEnable,
-        DepthCompareOp,    FrontFace, StencilOp,         StencilTestEnable, VertexBuffers,
+        Viewports,         Scissors,       DepthBias, BlendConstants,    DepthBounds,
+        StencilProperties, LineWidth,      CullMode,  DepthBoundsEnable, DepthTestEnable,
+        DepthWriteEnable,  DepthCompareOp, FrontFace, StencilOp,         StencilTestEnable,
+        VertexBuffers,     VertexInput,
     };
     Flags flags{};
     for (const int flag : INVALIDATION_FLAGS) {
         flags[flag] = true;
     }
     for (int index = VertexBuffer0; index <= VertexBuffer31; ++index) {
+        flags[index] = true;
+    }
+    for (int index = VertexAttribute0; index <= VertexAttribute31; ++index) {
+        flags[index] = true;
+    }
+    for (int index = VertexBinding0; index <= VertexBinding31; ++index) {
         flags[index] = true;
     }
     return flags;
@@ -77,6 +84,11 @@ void SetupDirtyStencilProperties(Tables& tables) {
     table[OFF(stencil_back_func_ref)] = StencilProperties;
     table[OFF(stencil_back_mask)] = StencilProperties;
     table[OFF(stencil_back_func_mask)] = StencilProperties;
+}
+
+void SetupDirtyLineWidth(Tables& tables) {
+    tables[0][OFF(line_width_smooth)] = LineWidth;
+    tables[0][OFF(line_width_aliased)] = LineWidth;
 }
 
 void SetupDirtyCullMode(Tables& tables) {
@@ -134,19 +146,6 @@ void SetupDirtyBlending(Tables& tables) {
     FillBlock(tables[0], OFF(independent_blend), NUM(independent_blend), Blending);
 }
 
-void SetupDirtyInstanceDivisors(Tables& tables) {
-    static constexpr size_t divisor_offset = 3;
-    for (size_t index = 0; index < Regs::NumVertexArrays; ++index) {
-        tables[0][OFF(instanced_arrays) + index] = InstanceDivisors;
-        tables[0][OFF(vertex_array) + index * NUM(vertex_array[0]) + divisor_offset] =
-            InstanceDivisors;
-    }
-}
-
-void SetupDirtyVertexAttributes(Tables& tables) {
-    FillBlock(tables[0], OFF(vertex_attrib_format), NUM(vertex_attrib_format), VertexAttributes);
-}
-
 void SetupDirtyViewportSwizzles(Tables& tables) {
     static constexpr size_t swizzle_offset = 6;
     for (size_t index = 0; index < Regs::NumViewports; ++index) {
@@ -154,11 +153,31 @@ void SetupDirtyViewportSwizzles(Tables& tables) {
             ViewportSwizzles;
     }
 }
+
+void SetupDirtyVertexAttributes(Tables& tables) {
+    for (size_t i = 0; i < Regs::NumVertexAttributes; ++i) {
+        const size_t offset = OFF(vertex_attrib_format) + i * NUM(vertex_attrib_format[0]);
+        FillBlock(tables[0], offset, NUM(vertex_attrib_format[0]), VertexAttribute0 + i);
+    }
+    FillBlock(tables[1], OFF(vertex_attrib_format), Regs::NumVertexAttributes, VertexInput);
+}
+
+void SetupDirtyVertexBindings(Tables& tables) {
+    // Do NOT include stride here, it's implicit in VertexBuffer
+    static constexpr size_t divisor_offset = 3;
+    for (size_t i = 0; i < Regs::NumVertexArrays; ++i) {
+        const u8 flag = static_cast<u8>(VertexBinding0 + i);
+        tables[0][OFF(instanced_arrays) + i] = VertexInput;
+        tables[1][OFF(instanced_arrays) + i] = flag;
+        tables[0][OFF(vertex_array) + i * NUM(vertex_array[0]) + divisor_offset] = VertexInput;
+        tables[1][OFF(vertex_array) + i * NUM(vertex_array[0]) + divisor_offset] = flag;
+    }
+}
 } // Anonymous namespace
 
 StateTracker::StateTracker(Tegra::GPU& gpu)
     : flags{gpu.Maxwell3D().dirty.flags}, invalidation_flags{MakeInvalidationFlags()} {
-    auto& tables = gpu.Maxwell3D().dirty.tables;
+    auto& tables{gpu.Maxwell3D().dirty.tables};
     SetupDirtyFlags(tables);
     SetupDirtyViewports(tables);
     SetupDirtyScissors(tables);
@@ -166,6 +185,7 @@ StateTracker::StateTracker(Tegra::GPU& gpu)
     SetupDirtyBlendConstants(tables);
     SetupDirtyDepthBounds(tables);
     SetupDirtyStencilProperties(tables);
+    SetupDirtyLineWidth(tables);
     SetupDirtyCullMode(tables);
     SetupDirtyDepthBoundsEnable(tables);
     SetupDirtyDepthTestEnable(tables);
@@ -175,9 +195,9 @@ StateTracker::StateTracker(Tegra::GPU& gpu)
     SetupDirtyStencilOp(tables);
     SetupDirtyStencilTestEnable(tables);
     SetupDirtyBlending(tables);
-    SetupDirtyInstanceDivisors(tables);
-    SetupDirtyVertexAttributes(tables);
     SetupDirtyViewportSwizzles(tables);
+    SetupDirtyVertexAttributes(tables);
+    SetupDirtyVertexBindings(tables);
 }
 
 } // namespace Vulkan

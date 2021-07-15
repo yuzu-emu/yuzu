@@ -4,61 +4,63 @@
 
 #pragma once
 
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+
 #include "common/common_types.h"
+#include "common/thread_worker.h"
+#include "shader_recompiler/shader_info.h"
+#include "video_core/memory_manager.h"
+#include "video_core/renderer_vulkan/vk_buffer_cache.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
-#include "video_core/renderer_vulkan/vk_shader_decompiler.h"
+#include "video_core/renderer_vulkan/vk_texture_cache.h"
+#include "video_core/renderer_vulkan/vk_update_descriptor.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
+
+namespace VideoCore {
+class ShaderNotify;
+}
 
 namespace Vulkan {
 
 class Device;
 class VKScheduler;
-class VKUpdateDescriptorQueue;
 
-class VKComputePipeline final {
+class ComputePipeline {
 public:
-    explicit VKComputePipeline(const Device& device_, VKScheduler& scheduler_,
-                               VKDescriptorPool& descriptor_pool_,
-                               VKUpdateDescriptorQueue& update_descriptor_queue_,
-                               const SPIRVShader& shader_);
-    ~VKComputePipeline();
+    explicit ComputePipeline(const Device& device, DescriptorPool& descriptor_pool,
+                             VKUpdateDescriptorQueue& update_descriptor_queue,
+                             Common::ThreadWorker* thread_worker,
+                             VideoCore::ShaderNotify* shader_notify, const Shader::Info& info,
+                             vk::ShaderModule spv_module);
 
-    VkDescriptorSet CommitDescriptorSet();
+    ComputePipeline& operator=(ComputePipeline&&) noexcept = delete;
+    ComputePipeline(ComputePipeline&&) noexcept = delete;
 
-    VkPipeline GetHandle() const {
-        return *pipeline;
-    }
+    ComputePipeline& operator=(const ComputePipeline&) = delete;
+    ComputePipeline(const ComputePipeline&) = delete;
 
-    VkPipelineLayout GetLayout() const {
-        return *layout;
-    }
-
-    const ShaderEntries& GetEntries() const {
-        return entries;
-    }
+    void Configure(Tegra::Engines::KeplerCompute& kepler_compute, Tegra::MemoryManager& gpu_memory,
+                   VKScheduler& scheduler, BufferCache& buffer_cache, TextureCache& texture_cache);
 
 private:
-    vk::DescriptorSetLayout CreateDescriptorSetLayout() const;
-
-    vk::PipelineLayout CreatePipelineLayout() const;
-
-    vk::DescriptorUpdateTemplateKHR CreateDescriptorUpdateTemplate() const;
-
-    vk::ShaderModule CreateShaderModule(const std::vector<u32>& code) const;
-
-    vk::Pipeline CreatePipeline() const;
-
     const Device& device;
-    VKScheduler& scheduler;
-    ShaderEntries entries;
+    VKUpdateDescriptorQueue& update_descriptor_queue;
+    Shader::Info info;
 
+    VideoCommon::ComputeUniformBufferSizes uniform_buffer_sizes{};
+
+    vk::ShaderModule spv_module;
     vk::DescriptorSetLayout descriptor_set_layout;
     DescriptorAllocator descriptor_allocator;
-    VKUpdateDescriptorQueue& update_descriptor_queue;
-    vk::PipelineLayout layout;
-    vk::DescriptorUpdateTemplateKHR descriptor_template;
-    vk::ShaderModule shader_module;
+    vk::PipelineLayout pipeline_layout;
+    vk::DescriptorUpdateTemplateKHR descriptor_update_template;
     vk::Pipeline pipeline;
+
+    std::condition_variable build_condvar;
+    std::mutex build_mutex;
+    std::atomic_bool is_built{false};
 };
 
 } // namespace Vulkan

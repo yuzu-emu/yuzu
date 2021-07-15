@@ -1653,35 +1653,15 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
 
 void GMainWindow::OnTransferableShaderCacheOpenFile(u64 program_id) {
     const auto shader_cache_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::ShaderDir);
-    const auto transferable_shader_cache_folder_path = shader_cache_dir / "opengl" / "transferable";
-    const auto transferable_shader_cache_file_path =
-        transferable_shader_cache_folder_path / fmt::format("{:016X}.bin", program_id);
-
-    if (!Common::FS::Exists(transferable_shader_cache_file_path)) {
+    const auto shader_cache_folder_path{shader_cache_dir / fmt::format("{:016x}", program_id)};
+    if (!Common::FS::CreateDirs(shader_cache_folder_path)) {
         QMessageBox::warning(this, tr("Error Opening Transferable Shader Cache"),
-                             tr("A shader cache for this title does not exist."));
+                             tr("Filed to create the shader cache directory for this title."));
         return;
     }
-
-    const auto qt_shader_cache_folder_path =
-        QString::fromStdString(Common::FS::PathToUTF8String(transferable_shader_cache_folder_path));
-    const auto qt_shader_cache_file_path =
-        QString::fromStdString(Common::FS::PathToUTF8String(transferable_shader_cache_file_path));
-
-    // Windows supports opening a folder with selecting a specified file in explorer. On every other
-    // OS we just open the transferable shader cache folder without preselecting the transferable
-    // shader cache file for the selected game.
-#if defined(Q_OS_WIN)
-    const QString explorer = QStringLiteral("explorer");
-    QStringList param;
-    if (!QFileInfo(qt_shader_cache_file_path).isDir()) {
-        param << QStringLiteral("/select,");
-    }
-    param << QDir::toNativeSeparators(qt_shader_cache_file_path);
-    QProcess::startDetached(explorer, param);
-#else
-    QDesktopServices::openUrl(QUrl::fromLocalFile(qt_shader_cache_folder_path));
-#endif
+    const auto shader_path_string{Common::FS::PathToUTF8String(shader_cache_folder_path)};
+    const auto qt_shader_cache_path = QString::fromStdString(shader_path_string);
+    QDesktopServices::openUrl(QUrl::fromLocalFile(qt_shader_cache_path));
 }
 
 static std::size_t CalculateRomFSEntrySize(const FileSys::VirtualDir& dir, bool full) {
@@ -1824,8 +1804,12 @@ void GMainWindow::OnGameListRemoveFile(u64 program_id, GameListRemoveTarget targ
                                        const std::string& game_path) {
     const QString question = [this, target] {
         switch (target) {
-        case GameListRemoveTarget::ShaderCache:
-            return tr("Delete Transferable Shader Cache?");
+        case GameListRemoveTarget::GlShaderCache:
+            return tr("Delete OpenGL Transferable Shader Cache?");
+        case GameListRemoveTarget::VkShaderCache:
+            return tr("Delete Vulkan Transferable Shader Cache?");
+        case GameListRemoveTarget::AllShaderCache:
+            return tr("Delete All Transferable Shader Caches?");
         case GameListRemoveTarget::CustomConfiguration:
             return tr("Remove Custom Game Configuration?");
         default:
@@ -1839,8 +1823,12 @@ void GMainWindow::OnGameListRemoveFile(u64 program_id, GameListRemoveTarget targ
     }
 
     switch (target) {
-    case GameListRemoveTarget::ShaderCache:
-        RemoveTransferableShaderCache(program_id);
+    case GameListRemoveTarget::GlShaderCache:
+    case GameListRemoveTarget::VkShaderCache:
+        RemoveTransferableShaderCache(program_id, target);
+        break;
+    case GameListRemoveTarget::AllShaderCache:
+        RemoveAllTransferableShaderCaches(program_id);
         break;
     case GameListRemoveTarget::CustomConfiguration:
         RemoveCustomConfiguration(program_id, game_path);
@@ -1848,23 +1836,50 @@ void GMainWindow::OnGameListRemoveFile(u64 program_id, GameListRemoveTarget targ
     }
 }
 
-void GMainWindow::RemoveTransferableShaderCache(u64 program_id) {
+void GMainWindow::RemoveTransferableShaderCache(u64 program_id, GameListRemoveTarget target) {
+    const auto target_file_name = [target] {
+        switch (target) {
+        case GameListRemoveTarget::GlShaderCache:
+            return "opengl.bin";
+        case GameListRemoveTarget::VkShaderCache:
+            return "vulkan.bin";
+        default:
+            return "";
+        }
+    }();
     const auto shader_cache_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::ShaderDir);
-    const auto transferable_shader_cache_file_path =
-        shader_cache_dir / "opengl" / "transferable" / fmt::format("{:016X}.bin", program_id);
+    const auto shader_cache_folder_path = shader_cache_dir / fmt::format("{:016x}", program_id);
+    const auto target_file = shader_cache_folder_path / target_file_name;
 
-    if (!Common::FS::Exists(transferable_shader_cache_file_path)) {
+    if (!Common::FS::Exists(target_file)) {
         QMessageBox::warning(this, tr("Error Removing Transferable Shader Cache"),
                              tr("A shader cache for this title does not exist."));
         return;
     }
-
-    if (Common::FS::RemoveFile(transferable_shader_cache_file_path)) {
+    if (Common::FS::RemoveFile(target_file)) {
         QMessageBox::information(this, tr("Successfully Removed"),
                                  tr("Successfully removed the transferable shader cache."));
     } else {
         QMessageBox::warning(this, tr("Error Removing Transferable Shader Cache"),
                              tr("Failed to remove the transferable shader cache."));
+    }
+}
+
+void GMainWindow::RemoveAllTransferableShaderCaches(u64 program_id) {
+    const auto shader_cache_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::ShaderDir);
+    const auto program_shader_cache_dir = shader_cache_dir / fmt::format("{:016x}", program_id);
+
+    if (!Common::FS::Exists(program_shader_cache_dir)) {
+        QMessageBox::warning(this, tr("Error Removing Transferable Shader Caches"),
+                             tr("A shader cache for this title does not exist."));
+        return;
+    }
+    if (Common::FS::RemoveDirRecursively(program_shader_cache_dir)) {
+        QMessageBox::information(this, tr("Successfully Removed"),
+                                 tr("Successfully removed the transferable shader caches."));
+    } else {
+        QMessageBox::warning(this, tr("Error Removing Transferable Shader Caches"),
+                             tr("Failed to remove the transferable shader cache directory."));
     }
 }
 
@@ -2899,13 +2914,13 @@ void GMainWindow::UpdateStatusBar() {
         return;
     }
 
-    auto results = Core::System::GetInstance().GetAndResetPerfStats();
-    auto& shader_notify = Core::System::GetInstance().GPU().ShaderNotify();
-    const auto shaders_building = shader_notify.GetShadersBuilding();
+    auto& system = Core::System::GetInstance();
+    auto results = system.GetAndResetPerfStats();
+    auto& shader_notify = system.GPU().ShaderNotify();
+    const int shaders_building = shader_notify.ShadersBuilding();
 
-    if (shaders_building != 0) {
-        shader_building_label->setText(
-            tr("Building: %n shader(s)", "", static_cast<int>(shaders_building)));
+    if (shaders_building > 0) {
+        shader_building_label->setText(tr("Building: %n shader(s)", "", shaders_building));
         shader_building_label->setVisible(true);
     } else {
         shader_building_label->setVisible(false);

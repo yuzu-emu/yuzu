@@ -114,14 +114,10 @@ void HostCounter::EndQuery() {
 }
 
 u64 HostCounter::BlockingQuery() const {
-    if (tick >= cache.GetScheduler().CurrentTick()) {
-        cache.GetScheduler().Flush();
-    }
-
+    cache.GetScheduler().Wait(tick);
     u64 data;
     const VkResult query_result = cache.GetDevice().GetLogical().GetQueryResults(
-        query.first, query.second, 1, sizeof(data), &data, sizeof(data),
-        VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+        query.first, query.second, 1, sizeof(data), &data, sizeof(data), VK_QUERY_RESULT_64_BIT);
 
     switch (query_result) {
     case VK_SUCCESS:

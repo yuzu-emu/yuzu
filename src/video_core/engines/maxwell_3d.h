@@ -17,11 +17,9 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/math_util.h"
-#include "video_core/engines/const_buffer_engine_interface.h"
 #include "video_core/engines/const_buffer_info.h"
 #include "video_core/engines/engine_interface.h"
 #include "video_core/engines/engine_upload.h"
-#include "video_core/engines/shader_type.h"
 #include "video_core/gpu.h"
 #include "video_core/macro/macro.h"
 #include "video_core/textures/texture.h"
@@ -49,7 +47,7 @@ namespace Tegra::Engines {
 #define MAXWELL3D_REG_INDEX(field_name)                                                            \
     (offsetof(Tegra::Engines::Maxwell3D::Regs, field_name) / sizeof(u32))
 
-class Maxwell3D final : public ConstBufferEngineInterface, public EngineInterface {
+class Maxwell3D final : public EngineInterface {
 public:
     explicit Maxwell3D(Core::System& system, MemoryManager& memory_manager);
     ~Maxwell3D();
@@ -305,10 +303,6 @@ public:
 
             bool IsNormalized() const {
                 return (type == Type::SignedNorm) || (type == Type::UnsignedNorm);
-            }
-
-            bool IsConstant() const {
-                return constant;
             }
 
             bool IsValid() const {
@@ -912,7 +906,11 @@ public:
 
                 u32 fill_rectangle;
 
-                INSERT_PADDING_WORDS_NOINIT(0x8);
+                INSERT_PADDING_WORDS_NOINIT(0x2);
+
+                u32 conservative_raster_enable;
+
+                INSERT_PADDING_WORDS_NOINIT(0x5);
 
                 std::array<VertexAttribute, NumVertexAttributes> vertex_attrib_format;
 
@@ -959,7 +957,11 @@ public:
 
                 SamplerIndex sampler_index;
 
-                INSERT_PADDING_WORDS_NOINIT(0x25);
+                INSERT_PADDING_WORDS_NOINIT(0x2);
+
+                std::array<u32, 8> gp_passthrough_mask;
+
+                INSERT_PADDING_WORDS_NOINIT(0x1B);
 
                 u32 depth_test_enable;
 
@@ -1152,7 +1154,11 @@ public:
                     u32 index;
                 } primitive_restart;
 
-                INSERT_PADDING_WORDS_NOINIT(0x5F);
+                INSERT_PADDING_WORDS_NOINIT(0xE);
+
+                u32 provoking_vertex_last;
+
+                INSERT_PADDING_WORDS_NOINIT(0x50);
 
                 struct {
                     u32 start_addr_high;
@@ -1424,23 +1430,6 @@ public:
 
     void FlushMMEInlineDraw();
 
-    u32 AccessConstBuffer32(ShaderType stage, u64 const_buffer, u64 offset) const override;
-
-    SamplerDescriptor AccessBoundSampler(ShaderType stage, u64 offset) const override;
-
-    SamplerDescriptor AccessBindlessSampler(ShaderType stage, u64 const_buffer,
-                                            u64 offset) const override;
-
-    SamplerDescriptor AccessSampler(u32 handle) const override;
-
-    u32 GetBoundBuffer() const override {
-        return regs.tex_cb_index;
-    }
-
-    VideoCore::GuestDriverProfile& AccessGuestDriverProfile() override;
-
-    const VideoCore::GuestDriverProfile& AccessGuestDriverProfile() const override;
-
     bool ShouldExecute() const {
         return execute_on;
     }
@@ -1630,6 +1619,7 @@ ASSERT_REG_POSITION(zeta, 0x3F8);
 ASSERT_REG_POSITION(render_area, 0x3FD);
 ASSERT_REG_POSITION(clear_flags, 0x43E);
 ASSERT_REG_POSITION(fill_rectangle, 0x44F);
+ASSERT_REG_POSITION(conservative_raster_enable, 0x452);
 ASSERT_REG_POSITION(vertex_attrib_format, 0x458);
 ASSERT_REG_POSITION(multisample_sample_locations, 0x478);
 ASSERT_REG_POSITION(multisample_coverage_to_color, 0x47E);
@@ -1638,6 +1628,7 @@ ASSERT_REG_POSITION(zeta_width, 0x48a);
 ASSERT_REG_POSITION(zeta_height, 0x48b);
 ASSERT_REG_POSITION(zeta_depth, 0x48c);
 ASSERT_REG_POSITION(sampler_index, 0x48D);
+ASSERT_REG_POSITION(gp_passthrough_mask, 0x490);
 ASSERT_REG_POSITION(depth_test_enable, 0x4B3);
 ASSERT_REG_POSITION(independent_blend_enable, 0x4B9);
 ASSERT_REG_POSITION(depth_write_enabled, 0x4BA);
@@ -1690,6 +1681,7 @@ ASSERT_REG_POSITION(point_coord_replace, 0x581);
 ASSERT_REG_POSITION(code_address, 0x582);
 ASSERT_REG_POSITION(draw, 0x585);
 ASSERT_REG_POSITION(primitive_restart, 0x591);
+ASSERT_REG_POSITION(provoking_vertex_last, 0x5A1);
 ASSERT_REG_POSITION(index_array, 0x5F2);
 ASSERT_REG_POSITION(polygon_offset_clamp, 0x61F);
 ASSERT_REG_POSITION(instanced_arrays, 0x620);

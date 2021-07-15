@@ -24,9 +24,7 @@
 #include "video_core/textures/decoders.h"
 
 namespace OpenGL {
-
 namespace {
-
 using Tegra::Texture::SwizzleSource;
 using Tegra::Texture::TextureMipmapFilter;
 using Tegra::Texture::TextureType;
@@ -59,107 +57,6 @@ struct CopyRegion {
     GLsizei depth;
 };
 
-struct FormatTuple {
-    GLenum internal_format;
-    GLenum format = GL_NONE;
-    GLenum type = GL_NONE;
-};
-
-constexpr std::array<FormatTuple, MaxPixelFormat> FORMAT_TABLE = {{
-    {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV},                 // A8B8G8R8_UNORM
-    {GL_RGBA8_SNORM, GL_RGBA, GL_BYTE},                               // A8B8G8R8_SNORM
-    {GL_RGBA8I, GL_RGBA_INTEGER, GL_BYTE},                            // A8B8G8R8_SINT
-    {GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE},                  // A8B8G8R8_UINT
-    {GL_RGB565, GL_RGB, GL_UNSIGNED_SHORT_5_6_5},                     // R5G6B5_UNORM
-    {GL_RGB565, GL_RGB, GL_UNSIGNED_SHORT_5_6_5_REV},                 // B5G6R5_UNORM
-    {GL_RGB5_A1, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV},             // A1R5G5B5_UNORM
-    {GL_RGB10_A2, GL_RGBA, GL_UNSIGNED_INT_2_10_10_10_REV},           // A2B10G10R10_UNORM
-    {GL_RGB10_A2UI, GL_RGBA_INTEGER, GL_UNSIGNED_INT_2_10_10_10_REV}, // A2B10G10R10_UINT
-    {GL_RGB5_A1, GL_RGBA, GL_UNSIGNED_SHORT_1_5_5_5_REV},             // A1B5G5R5_UNORM
-    {GL_R8, GL_RED, GL_UNSIGNED_BYTE},                                // R8_UNORM
-    {GL_R8_SNORM, GL_RED, GL_BYTE},                                   // R8_SNORM
-    {GL_R8I, GL_RED_INTEGER, GL_BYTE},                                // R8_SINT
-    {GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE},                      // R8_UINT
-    {GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT},                             // R16G16B16A16_FLOAT
-    {GL_RGBA16, GL_RGBA, GL_UNSIGNED_SHORT},                          // R16G16B16A16_UNORM
-    {GL_RGBA16_SNORM, GL_RGBA, GL_SHORT},                             // R16G16B16A16_SNORM
-    {GL_RGBA16I, GL_RGBA_INTEGER, GL_SHORT},                          // R16G16B16A16_SINT
-    {GL_RGBA16UI, GL_RGBA_INTEGER, GL_UNSIGNED_SHORT},                // R16G16B16A16_UINT
-    {GL_R11F_G11F_B10F, GL_RGB, GL_UNSIGNED_INT_10F_11F_11F_REV},     // B10G11R11_FLOAT
-    {GL_RGBA32UI, GL_RGBA_INTEGER, GL_UNSIGNED_INT},                  // R32G32B32A32_UINT
-    {GL_COMPRESSED_RGBA_S3TC_DXT1_EXT},                               // BC1_RGBA_UNORM
-    {GL_COMPRESSED_RGBA_S3TC_DXT3_EXT},                               // BC2_UNORM
-    {GL_COMPRESSED_RGBA_S3TC_DXT5_EXT},                               // BC3_UNORM
-    {GL_COMPRESSED_RED_RGTC1},                                        // BC4_UNORM
-    {GL_COMPRESSED_SIGNED_RED_RGTC1},                                 // BC4_SNORM
-    {GL_COMPRESSED_RG_RGTC2},                                         // BC5_UNORM
-    {GL_COMPRESSED_SIGNED_RG_RGTC2},                                  // BC5_SNORM
-    {GL_COMPRESSED_RGBA_BPTC_UNORM},                                  // BC7_UNORM
-    {GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT},                          // BC6H_UFLOAT
-    {GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT},                            // BC6H_SFLOAT
-    {GL_COMPRESSED_RGBA_ASTC_4x4_KHR},                                // ASTC_2D_4X4_UNORM
-    {GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE},                            // B8G8R8A8_UNORM
-    {GL_RGBA32F, GL_RGBA, GL_FLOAT},                                  // R32G32B32A32_FLOAT
-    {GL_RGBA32I, GL_RGBA_INTEGER, GL_INT},                            // R32G32B32A32_SINT
-    {GL_RG32F, GL_RG, GL_FLOAT},                                      // R32G32_FLOAT
-    {GL_RG32I, GL_RG_INTEGER, GL_INT},                                // R32G32_SINT
-    {GL_R32F, GL_RED, GL_FLOAT},                                      // R32_FLOAT
-    {GL_R16F, GL_RED, GL_HALF_FLOAT},                                 // R16_FLOAT
-    {GL_R16, GL_RED, GL_UNSIGNED_SHORT},                              // R16_UNORM
-    {GL_R16_SNORM, GL_RED, GL_SHORT},                                 // R16_SNORM
-    {GL_R16UI, GL_RED_INTEGER, GL_UNSIGNED_SHORT},                    // R16_UINT
-    {GL_R16I, GL_RED_INTEGER, GL_SHORT},                              // R16_SINT
-    {GL_RG16, GL_RG, GL_UNSIGNED_SHORT},                              // R16G16_UNORM
-    {GL_RG16F, GL_RG, GL_HALF_FLOAT},                                 // R16G16_FLOAT
-    {GL_RG16UI, GL_RG_INTEGER, GL_UNSIGNED_SHORT},                    // R16G16_UINT
-    {GL_RG16I, GL_RG_INTEGER, GL_SHORT},                              // R16G16_SINT
-    {GL_RG16_SNORM, GL_RG, GL_SHORT},                                 // R16G16_SNORM
-    {GL_RGB32F, GL_RGB, GL_FLOAT},                                    // R32G32B32_FLOAT
-    {GL_SRGB8_ALPHA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV},          // A8B8G8R8_SRGB
-    {GL_RG8, GL_RG, GL_UNSIGNED_BYTE},                                // R8G8_UNORM
-    {GL_RG8_SNORM, GL_RG, GL_BYTE},                                   // R8G8_SNORM
-    {GL_RG8I, GL_RG_INTEGER, GL_BYTE},                                // R8G8_SINT
-    {GL_RG8UI, GL_RG_INTEGER, GL_UNSIGNED_BYTE},                      // R8G8_UINT
-    {GL_RG32UI, GL_RG_INTEGER, GL_UNSIGNED_INT},                      // R32G32_UINT
-    {GL_RGB16F, GL_RGBA, GL_HALF_FLOAT},                              // R16G16B16X16_FLOAT
-    {GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT},                      // R32_UINT
-    {GL_R32I, GL_RED_INTEGER, GL_INT},                                // R32_SINT
-    {GL_COMPRESSED_RGBA_ASTC_8x8_KHR},                                // ASTC_2D_8X8_UNORM
-    {GL_COMPRESSED_RGBA_ASTC_8x5_KHR},                                // ASTC_2D_8X5_UNORM
-    {GL_COMPRESSED_RGBA_ASTC_5x4_KHR},                                // ASTC_2D_5X4_UNORM
-    {GL_SRGB8_ALPHA8, GL_RGBA, GL_UNSIGNED_BYTE},                     // B8G8R8A8_SRGB
-    {GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT},                         // BC1_RGBA_SRGB
-    {GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT},                         // BC2_SRGB
-    {GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT},                         // BC3_SRGB
-    {GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM},                            // BC7_SRGB
-    {GL_RGBA4, GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4_REV},               // A4B4G4R4_UNORM
-    {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR},                        // ASTC_2D_4X4_SRGB
-    {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR},                        // ASTC_2D_8X8_SRGB
-    {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR},                        // ASTC_2D_8X5_SRGB
-    {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x4_KHR},                        // ASTC_2D_5X4_SRGB
-    {GL_COMPRESSED_RGBA_ASTC_5x5_KHR},                                // ASTC_2D_5X5_UNORM
-    {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x5_KHR},                        // ASTC_2D_5X5_SRGB
-    {GL_COMPRESSED_RGBA_ASTC_10x8_KHR},                               // ASTC_2D_10X8_UNORM
-    {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR},                       // ASTC_2D_10X8_SRGB
-    {GL_COMPRESSED_RGBA_ASTC_6x6_KHR},                                // ASTC_2D_6X6_UNORM
-    {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x6_KHR},                        // ASTC_2D_6X6_SRGB
-    {GL_COMPRESSED_RGBA_ASTC_10x10_KHR},                              // ASTC_2D_10X10_UNORM
-    {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR},                      // ASTC_2D_10X10_SRGB
-    {GL_COMPRESSED_RGBA_ASTC_12x12_KHR},                              // ASTC_2D_12X12_UNORM
-    {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR},                      // ASTC_2D_12X12_SRGB
-    {GL_COMPRESSED_RGBA_ASTC_8x6_KHR},                                // ASTC_2D_8X6_UNORM
-    {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x6_KHR},                        // ASTC_2D_8X6_SRGB
-    {GL_COMPRESSED_RGBA_ASTC_6x5_KHR},                                // ASTC_2D_6X5_UNORM
-    {GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x5_KHR},                        // ASTC_2D_6X5_SRGB
-    {GL_RGB9_E5, GL_RGB, GL_UNSIGNED_INT_5_9_9_9_REV},                // E5B9G9R9_FLOAT
-    {GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT},            // D32_FLOAT
-    {GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT},    // D16_UNORM
-    {GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8},    // D24_UNORM_S8_UINT
-    {GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8},    // S8_UINT_D24_UNORM
-    {GL_DEPTH32F_STENCIL8, GL_DEPTH_STENCIL,
-     GL_FLOAT_32_UNSIGNED_INT_24_8_REV}, // D32_FLOAT_S8_UINT
-}};
-
 constexpr std::array ACCELERATED_FORMATS{
     GL_RGBA32F,   GL_RGBA16F,   GL_RG32F,    GL_RG16F,        GL_R11F_G11F_B10F, GL_R32F,
     GL_R16F,      GL_RGBA32UI,  GL_RGBA16UI, GL_RGB10_A2UI,   GL_RGBA8UI,        GL_RG32UI,
@@ -169,11 +66,6 @@ constexpr std::array ACCELERATED_FORMATS{
     GL_RG8,       GL_R16,       GL_R8,       GL_RGBA16_SNORM, GL_RGBA8_SNORM,    GL_RG16_SNORM,
     GL_RG8_SNORM, GL_R16_SNORM, GL_R8_SNORM,
 };
-
-const FormatTuple& GetFormatTuple(PixelFormat pixel_format) {
-    ASSERT(static_cast<size_t>(pixel_format) < FORMAT_TABLE.size());
-    return FORMAT_TABLE[static_cast<size_t>(pixel_format)];
-}
 
 GLenum ImageTarget(const VideoCommon::ImageInfo& info) {
     switch (info.type) {
@@ -195,26 +87,24 @@ GLenum ImageTarget(const VideoCommon::ImageInfo& info) {
     return GL_NONE;
 }
 
-GLenum ImageTarget(ImageViewType type, int num_samples = 1) {
+GLenum ImageTarget(Shader::TextureType type, int num_samples = 1) {
     const bool is_multisampled = num_samples > 1;
     switch (type) {
-    case ImageViewType::e1D:
+    case Shader::TextureType::Color1D:
         return GL_TEXTURE_1D;
-    case ImageViewType::e2D:
+    case Shader::TextureType::Color2D:
         return is_multisampled ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
-    case ImageViewType::Cube:
+    case Shader::TextureType::ColorCube:
         return GL_TEXTURE_CUBE_MAP;
-    case ImageViewType::e3D:
+    case Shader::TextureType::Color3D:
         return GL_TEXTURE_3D;
-    case ImageViewType::e1DArray:
+    case Shader::TextureType::ColorArray1D:
         return GL_TEXTURE_1D_ARRAY;
-    case ImageViewType::e2DArray:
+    case Shader::TextureType::ColorArray2D:
         return is_multisampled ? GL_TEXTURE_2D_MULTISAMPLE_ARRAY : GL_TEXTURE_2D_ARRAY;
-    case ImageViewType::CubeArray:
+    case Shader::TextureType::ColorArrayCube:
         return GL_TEXTURE_CUBE_MAP_ARRAY;
-    case ImageViewType::Rect:
-        return GL_TEXTURE_RECTANGLE;
-    case ImageViewType::Buffer:
+    case Shader::TextureType::Buffer:
         return GL_TEXTURE_BUFFER;
     }
     UNREACHABLE_MSG("Invalid image view type={}", type);
@@ -322,7 +212,7 @@ void ApplySwizzle(GLuint handle, PixelFormat format, std::array<SwizzleSource, 4
     default:
         return false;
     }
-    const GLenum internal_format = GetFormatTuple(info.format).internal_format;
+    const GLenum internal_format = MaxwellToGL::GetFormatTuple(info.format).internal_format;
     const auto& format_info = runtime.FormatInfo(info.type, internal_format);
     if (format_info.is_compressed) {
         return false;
@@ -414,11 +304,10 @@ void ApplySwizzle(GLuint handle, PixelFormat format, std::array<SwizzleSource, 4
 
 void AttachTexture(GLuint fbo, GLenum attachment, const ImageView* image_view) {
     if (False(image_view->flags & VideoCommon::ImageViewFlagBits::Slice)) {
-        const GLuint texture = image_view->DefaultHandle();
-        glNamedFramebufferTexture(fbo, attachment, texture, 0);
+        glNamedFramebufferTexture(fbo, attachment, image_view->DefaultHandle(), 0);
         return;
     }
-    const GLuint texture = image_view->Handle(ImageViewType::e3D);
+    const GLuint texture = image_view->Handle(Shader::TextureType::Color3D);
     if (image_view->range.extent.layers > 1) {
         // TODO: OpenGL doesn't support rendering to a fixed number of slices
         glNamedFramebufferTexture(fbo, attachment, texture, 0);
@@ -439,6 +328,28 @@ void AttachTexture(GLuint fbo, GLenum attachment, const ImageView* image_view) {
     }
 }
 
+[[nodiscard]] GLenum ShaderFormat(Shader::ImageFormat format) {
+    switch (format) {
+    case Shader::ImageFormat::Typeless:
+        break;
+    case Shader::ImageFormat::R8_SINT:
+        return GL_R8I;
+    case Shader::ImageFormat::R8_UINT:
+        return GL_R8UI;
+    case Shader::ImageFormat::R16_UINT:
+        return GL_R16UI;
+    case Shader::ImageFormat::R16_SINT:
+        return GL_R16I;
+    case Shader::ImageFormat::R32_UINT:
+        return GL_R32UI;
+    case Shader::ImageFormat::R32G32_UINT:
+        return GL_RG32UI;
+    case Shader::ImageFormat::R32G32B32A32_UINT:
+        return GL_RGBA32UI;
+    }
+    UNREACHABLE_MSG("Invalid image format={}", format);
+    return GL_R32UI;
+}
 } // Anonymous namespace
 
 ImageBufferMap::~ImageBufferMap() {
@@ -453,7 +364,7 @@ TextureCacheRuntime::TextureCacheRuntime(const Device& device_, ProgramManager& 
     static constexpr std::array TARGETS{GL_TEXTURE_1D_ARRAY, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D};
     for (size_t i = 0; i < TARGETS.size(); ++i) {
         const GLenum target = TARGETS[i];
-        for (const FormatTuple& tuple : FORMAT_TABLE) {
+        for (const MaxwellToGL::FormatTuple& tuple : MaxwellToGL::FORMAT_TABLE) {
             const GLenum format = tuple.internal_format;
             GLint compat_class;
             GLint compat_type;
@@ -475,11 +386,9 @@ TextureCacheRuntime::TextureCacheRuntime(const Device& device_, ProgramManager& 
     null_image_1d_array.Create(GL_TEXTURE_1D_ARRAY);
     null_image_cube_array.Create(GL_TEXTURE_CUBE_MAP_ARRAY);
     null_image_3d.Create(GL_TEXTURE_3D);
-    null_image_rect.Create(GL_TEXTURE_RECTANGLE);
     glTextureStorage2D(null_image_1d_array.handle, 1, GL_R8, 1, 1);
     glTextureStorage3D(null_image_cube_array.handle, 1, GL_R8, 1, 1, 6);
     glTextureStorage3D(null_image_3d.handle, 1, GL_R8, 1, 1, 1);
-    glTextureStorage2D(null_image_rect.handle, 1, GL_R8, 1, 1);
 
     std::array<GLuint, 4> new_handles;
     glGenTextures(static_cast<GLsizei>(new_handles.size()), new_handles.data());
@@ -496,29 +405,28 @@ TextureCacheRuntime::TextureCacheRuntime(const Device& device_, ProgramManager& 
     glTextureView(null_image_view_cube.handle, GL_TEXTURE_CUBE_MAP, null_image_cube_array.handle,
                   GL_R8, 0, 1, 0, 6);
     const std::array texture_handles{
-        null_image_1d_array.handle,      null_image_cube_array.handle, null_image_3d.handle,
-        null_image_rect.handle,          null_image_view_1d.handle,    null_image_view_2d.handle,
-        null_image_view_2d_array.handle, null_image_view_cube.handle,
+        null_image_1d_array.handle,  null_image_cube_array.handle, null_image_3d.handle,
+        null_image_view_1d.handle,   null_image_view_2d.handle,    null_image_view_2d_array.handle,
+        null_image_view_cube.handle,
     };
     for (const GLuint handle : texture_handles) {
         static constexpr std::array NULL_SWIZZLE{GL_ZERO, GL_ZERO, GL_ZERO, GL_ZERO};
         glTextureParameteriv(handle, GL_TEXTURE_SWIZZLE_RGBA, NULL_SWIZZLE.data());
     }
-    const auto set_view = [this](ImageViewType type, GLuint handle) {
+    const auto set_view = [this](Shader::TextureType type, GLuint handle) {
         if (device.HasDebuggingToolAttached()) {
             const std::string name = fmt::format("NullImage {}", type);
             glObjectLabel(GL_TEXTURE, handle, static_cast<GLsizei>(name.size()), name.data());
         }
         null_image_views[static_cast<size_t>(type)] = handle;
     };
-    set_view(ImageViewType::e1D, null_image_view_1d.handle);
-    set_view(ImageViewType::e2D, null_image_view_2d.handle);
-    set_view(ImageViewType::Cube, null_image_view_cube.handle);
-    set_view(ImageViewType::e3D, null_image_3d.handle);
-    set_view(ImageViewType::e1DArray, null_image_1d_array.handle);
-    set_view(ImageViewType::e2DArray, null_image_view_2d_array.handle);
-    set_view(ImageViewType::CubeArray, null_image_cube_array.handle);
-    set_view(ImageViewType::Rect, null_image_rect.handle);
+    set_view(Shader::TextureType::Color1D, null_image_view_1d.handle);
+    set_view(Shader::TextureType::Color2D, null_image_view_2d.handle);
+    set_view(Shader::TextureType::ColorCube, null_image_view_cube.handle);
+    set_view(Shader::TextureType::Color3D, null_image_3d.handle);
+    set_view(Shader::TextureType::ColorArray1D, null_image_1d_array.handle);
+    set_view(Shader::TextureType::ColorArray2D, null_image_view_2d_array.handle);
+    set_view(Shader::TextureType::ColorArrayCube, null_image_cube_array.handle);
 }
 
 TextureCacheRuntime::~TextureCacheRuntime() = default;
@@ -710,7 +618,7 @@ Image::Image(TextureCacheRuntime& runtime, const VideoCommon::ImageInfo& info_, 
         gl_format = GL_RGBA;
         gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
     } else {
-        const auto& tuple = GetFormatTuple(info.format);
+        const auto& tuple = MaxwellToGL::GetFormatTuple(info.format);
         gl_internal_format = tuple.internal_format;
         gl_format = tuple.format;
         gl_type = tuple.type;
@@ -750,8 +658,7 @@ Image::Image(TextureCacheRuntime& runtime, const VideoCommon::ImageInfo& info_, 
         glTextureStorage3D(handle, num_levels, gl_internal_format, width, height, depth);
         break;
     case GL_TEXTURE_BUFFER:
-        buffer.Create();
-        glNamedBufferStorage(buffer.handle, guest_size_bytes, nullptr, 0);
+        UNREACHABLE();
         break;
     default:
         UNREACHABLE_MSG("Invalid target=0x{:x}", target);
@@ -786,14 +693,6 @@ void Image::UploadMemory(const ImageBufferMap& map,
             glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, current_image_height);
         }
         CopyBufferToImage(copy, map.offset);
-    }
-}
-
-void Image::UploadMemory(const ImageBufferMap& map,
-                         std::span<const VideoCommon::BufferCopy> copies) {
-    for (const VideoCommon::BufferCopy& copy : copies) {
-        glCopyNamedBufferSubData(map.buffer, buffer.handle, copy.src_offset + map.offset,
-                                 copy.dst_offset, copy.size);
     }
 }
 
@@ -958,23 +857,30 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
     if (True(image.flags & ImageFlagBits::Converted)) {
         internal_format = IsPixelFormatSRGB(info.format) ? GL_SRGB8_ALPHA8 : GL_RGBA8;
     } else {
-        internal_format = GetFormatTuple(format).internal_format;
+        internal_format = MaxwellToGL::GetFormatTuple(format).internal_format;
     }
-    VideoCommon::SubresourceRange flatten_range = info.range;
-    std::array<GLuint, 2> handles;
-    stored_views.reserve(2);
-
+    full_range = info.range;
+    flat_range = info.range;
+    set_object_label = device.HasDebuggingToolAttached();
+    is_render_target = info.IsRenderTarget();
+    original_texture = image.texture.handle;
+    num_samples = image.info.num_samples;
+    if (!is_render_target) {
+        swizzle[0] = info.x_source;
+        swizzle[1] = info.y_source;
+        swizzle[2] = info.z_source;
+        swizzle[3] = info.w_source;
+    }
     switch (info.type) {
     case ImageViewType::e1DArray:
-        flatten_range.extent.layers = 1;
+        flat_range.extent.layers = 1;
         [[fallthrough]];
     case ImageViewType::e1D:
-        glGenTextures(2, handles.data());
-        SetupView(device, image, ImageViewType::e1D, handles[0], info, flatten_range);
-        SetupView(device, image, ImageViewType::e1DArray, handles[1], info, info.range);
+        SetupView(Shader::TextureType::Color1D);
+        SetupView(Shader::TextureType::ColorArray1D);
         break;
     case ImageViewType::e2DArray:
-        flatten_range.extent.layers = 1;
+        flat_range.extent.layers = 1;
         [[fallthrough]];
     case ImageViewType::e2D:
         if (True(flags & VideoCommon::ImageViewFlagBits::Slice)) {
@@ -984,63 +890,126 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
                 .base = {.level = info.range.base.level, .layer = 0},
                 .extent = {.levels = 1, .layers = 1},
             };
-            glGenTextures(1, handles.data());
-            SetupView(device, image, ImageViewType::e3D, handles[0], info, slice_range);
-            break;
+            full_range = slice_range;
+
+            SetupView(Shader::TextureType::Color3D);
+        } else {
+            SetupView(Shader::TextureType::Color2D);
+            SetupView(Shader::TextureType::ColorArray2D);
         }
-        glGenTextures(2, handles.data());
-        SetupView(device, image, ImageViewType::e2D, handles[0], info, flatten_range);
-        SetupView(device, image, ImageViewType::e2DArray, handles[1], info, info.range);
         break;
     case ImageViewType::e3D:
-        glGenTextures(1, handles.data());
-        SetupView(device, image, ImageViewType::e3D, handles[0], info, info.range);
+        SetupView(Shader::TextureType::Color3D);
         break;
     case ImageViewType::CubeArray:
-        flatten_range.extent.layers = 6;
+        flat_range.extent.layers = 6;
         [[fallthrough]];
     case ImageViewType::Cube:
-        glGenTextures(2, handles.data());
-        SetupView(device, image, ImageViewType::Cube, handles[0], info, flatten_range);
-        SetupView(device, image, ImageViewType::CubeArray, handles[1], info, info.range);
+        SetupView(Shader::TextureType::ColorCube);
+        SetupView(Shader::TextureType::ColorArrayCube);
         break;
     case ImageViewType::Rect:
-        glGenTextures(1, handles.data());
-        SetupView(device, image, ImageViewType::Rect, handles[0], info, info.range);
+        UNIMPLEMENTED();
         break;
     case ImageViewType::Buffer:
-        glCreateTextures(GL_TEXTURE_BUFFER, 1, handles.data());
-        SetupView(device, image, ImageViewType::Buffer, handles[0], info, info.range);
+        UNREACHABLE();
         break;
     }
-    default_handle = Handle(info.type);
+    switch (info.type) {
+    case ImageViewType::e1D:
+        default_handle = Handle(Shader::TextureType::Color1D);
+        break;
+    case ImageViewType::e1DArray:
+        default_handle = Handle(Shader::TextureType::ColorArray1D);
+        break;
+    case ImageViewType::e2D:
+        default_handle = Handle(Shader::TextureType::Color2D);
+        break;
+    case ImageViewType::e2DArray:
+        default_handle = Handle(Shader::TextureType::ColorArray2D);
+        break;
+    case ImageViewType::e3D:
+        default_handle = Handle(Shader::TextureType::Color3D);
+        break;
+    case ImageViewType::Cube:
+        default_handle = Handle(Shader::TextureType::ColorCube);
+        break;
+    case ImageViewType::CubeArray:
+        default_handle = Handle(Shader::TextureType::ColorArrayCube);
+        break;
+    default:
+        break;
+    }
 }
+
+ImageView::ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo& info,
+                     const VideoCommon::ImageViewInfo& view_info, GPUVAddr gpu_addr_)
+    : VideoCommon::ImageViewBase{info, view_info}, gpu_addr{gpu_addr_},
+      buffer_size{VideoCommon::CalculateGuestSizeInBytes(info)} {}
+
+ImageView::ImageView(TextureCacheRuntime&, const VideoCommon::ImageInfo& info,
+                     const VideoCommon::ImageViewInfo& view_info)
+    : VideoCommon::ImageViewBase{info, view_info} {}
 
 ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::NullImageParams& params)
     : VideoCommon::ImageViewBase{params}, views{runtime.null_image_views} {}
 
-void ImageView::SetupView(const Device& device, Image& image, ImageViewType view_type,
-                          GLuint handle, const VideoCommon::ImageViewInfo& info,
-                          VideoCommon::SubresourceRange view_range) {
-    if (info.type == ImageViewType::Buffer) {
-        // TODO: Take offset from buffer cache
-        glTextureBufferRange(handle, internal_format, image.buffer.handle, 0,
-                             image.guest_size_bytes);
-    } else {
-        const GLuint parent = image.texture.handle;
-        const GLenum target = ImageTarget(view_type, image.info.num_samples);
-        glTextureView(handle, target, parent, internal_format, view_range.base.level,
-                      view_range.extent.levels, view_range.base.layer, view_range.extent.layers);
-        if (!info.IsRenderTarget()) {
-            ApplySwizzle(handle, format, info.Swizzle());
-        }
+GLuint ImageView::StorageView(Shader::TextureType texture_type, Shader::ImageFormat image_format) {
+    if (image_format == Shader::ImageFormat::Typeless) {
+        return Handle(texture_type);
     }
-    if (device.HasDebuggingToolAttached()) {
-        const std::string name = VideoCommon::Name(*this, view_type);
-        glObjectLabel(GL_TEXTURE, handle, static_cast<GLsizei>(name.size()), name.data());
+    const bool is_signed{image_format == Shader::ImageFormat::R8_SINT ||
+                         image_format == Shader::ImageFormat::R16_SINT};
+    if (!storage_views) {
+        storage_views = std::make_unique<StorageViews>();
     }
-    stored_views.emplace_back().handle = handle;
-    views[static_cast<size_t>(view_type)] = handle;
+    auto& type_views{is_signed ? storage_views->signeds : storage_views->unsigneds};
+    GLuint& view{type_views[static_cast<size_t>(texture_type)]};
+    if (view == 0) {
+        view = MakeView(texture_type, ShaderFormat(image_format));
+    }
+    return view;
+}
+
+void ImageView::SetupView(Shader::TextureType view_type) {
+    views[static_cast<size_t>(view_type)] = MakeView(view_type, internal_format);
+}
+
+GLuint ImageView::MakeView(Shader::TextureType view_type, GLenum view_format) {
+    VideoCommon::SubresourceRange view_range;
+    switch (view_type) {
+    case Shader::TextureType::Color1D:
+    case Shader::TextureType::Color2D:
+    case Shader::TextureType::ColorCube:
+        view_range = flat_range;
+        break;
+    case Shader::TextureType::ColorArray1D:
+    case Shader::TextureType::ColorArray2D:
+    case Shader::TextureType::Color3D:
+    case Shader::TextureType::ColorArrayCube:
+        view_range = full_range;
+        break;
+    default:
+        UNREACHABLE();
+    }
+    OGLTextureView& view = stored_views.emplace_back();
+    view.Create();
+
+    const GLenum target = ImageTarget(view_type, num_samples);
+    glTextureView(view.handle, target, original_texture, view_format, view_range.base.level,
+                  view_range.extent.levels, view_range.base.layer, view_range.extent.layers);
+    if (!is_render_target) {
+        std::array<SwizzleSource, 4> casted_swizzle;
+        std::ranges::transform(swizzle, casted_swizzle.begin(), [](u8 component_swizzle) {
+            return static_cast<SwizzleSource>(component_swizzle);
+        });
+        ApplySwizzle(view.handle, format, casted_swizzle);
+    }
+    if (set_object_label) {
+        const std::string name = VideoCommon::Name(*this);
+        glObjectLabel(GL_TEXTURE, view.handle, static_cast<GLsizei>(name.size()), name.data());
+    }
+    return view.handle;
 }
 
 Sampler::Sampler(TextureCacheRuntime& runtime, const TSCEntry& config) {

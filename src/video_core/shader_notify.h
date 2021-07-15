@@ -4,26 +4,30 @@
 
 #pragma once
 
+#include <atomic>
 #include <chrono>
-#include <shared_mutex>
-#include "common/common_types.h"
+#include <optional>
 
 namespace VideoCore {
 class ShaderNotify {
 public:
-    ShaderNotify();
-    ~ShaderNotify();
+    [[nodiscard]] int ShadersBuilding() noexcept;
 
-    std::size_t GetShadersBuilding();
-    std::size_t GetShadersBuildingAccurate();
+    void MarkShaderComplete() noexcept {
+        ++num_complete;
+    }
 
-    void MarkShaderComplete();
-    void MarkSharderBuilding();
+    void MarkShaderBuilding() noexcept {
+        ++num_building;
+    }
 
 private:
-    std::size_t last_updated_count{};
-    std::size_t accurate_count{};
-    std::shared_mutex mutex;
-    std::chrono::high_resolution_clock::time_point last_update{};
+    std::atomic_int num_building{};
+    std::atomic_int num_complete{};
+    int report_base{};
+
+    bool completed{};
+    int num_when_completed{};
+    std::chrono::high_resolution_clock::time_point complete_time;
 };
 } // namespace VideoCore

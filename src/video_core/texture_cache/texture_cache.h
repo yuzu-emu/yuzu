@@ -117,6 +117,9 @@ public:
     /// Return a reference to the given image view id
     [[nodiscard]] ImageView& GetImageView(ImageViewId id) noexcept;
 
+    /// Mark an image as modified from the GPU
+    void MarkModification(ImageId id) noexcept;
+
     /// Fill image_view_ids with the graphics images in indices
     void FillGraphicsImageViews(std::span<const u32> indices,
                                 std::span<ImageViewId> image_view_ids);
@@ -527,6 +530,11 @@ typename P::ImageView& TextureCache<P>::GetImageView(ImageViewId id) noexcept {
 }
 
 template <class P>
+void TextureCache<P>::MarkModification(ImageId id) noexcept {
+    MarkModification(slot_images[id]);
+}
+
+template <class P>
 void TextureCache<P>::FillGraphicsImageViews(std::span<const u32> indices,
                                              std::span<ImageViewId> image_view_ids) {
     FillImageViews(graphics_image_table, graphics_image_view_ids, indices, image_view_ids);
@@ -540,13 +548,13 @@ void TextureCache<P>::FillComputeImageViews(std::span<const u32> indices,
 
 template <class P>
 typename P::Sampler* TextureCache<P>::GetGraphicsSampler(u32 index) {
-    [[unlikely]] if (index > graphics_sampler_table.Limit()) {
-        LOG_ERROR(HW_GPU, "Invalid sampler index={}", index);
+    if (index > graphics_sampler_table.Limit()) {
+        LOG_DEBUG(HW_GPU, "Invalid sampler index={}", index);
         return &slot_samplers[NULL_SAMPLER_ID];
     }
     const auto [descriptor, is_new] = graphics_sampler_table.Read(index);
     SamplerId& id = graphics_sampler_ids[index];
-    [[unlikely]] if (is_new) {
+    if (is_new) {
         id = FindSampler(descriptor);
     }
     return &slot_samplers[id];
@@ -554,13 +562,13 @@ typename P::Sampler* TextureCache<P>::GetGraphicsSampler(u32 index) {
 
 template <class P>
 typename P::Sampler* TextureCache<P>::GetComputeSampler(u32 index) {
-    [[unlikely]] if (index > compute_sampler_table.Limit()) {
-        LOG_ERROR(HW_GPU, "Invalid sampler index={}", index);
+    if (index > compute_sampler_table.Limit()) {
+        LOG_DEBUG(HW_GPU, "Invalid sampler index={}", index);
         return &slot_samplers[NULL_SAMPLER_ID];
     }
     const auto [descriptor, is_new] = compute_sampler_table.Read(index);
     SamplerId& id = compute_sampler_ids[index];
-    [[unlikely]] if (is_new) {
+    if (is_new) {
         id = FindSampler(descriptor);
     }
     return &slot_samplers[id];
@@ -599,6 +607,12 @@ void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
     using namespace VideoCommon::Dirty;
     auto& flags = maxwell3d.dirty.flags;
     if (!flags[Dirty::RenderTargets]) {
+        for (size_t index = 0; index < NUM_RT; ++index) {
+            ImageViewId& color_buffer_id = render_targets.color_buffer_ids[index];
+            PrepareImageView(color_buffer_id, true, is_clear && IsFullClear(color_buffer_id));
+        }
+        const ImageViewId depth_buffer_id = render_targets.depth_buffer_id;
+        PrepareImageView(depth_buffer_id, true, is_clear && IsFullClear(depth_buffer_id));
         return;
     }
     flags[Dirty::RenderTargets] = false;
@@ -655,7 +669,7 @@ ImageViewId TextureCache<P>::VisitImageView(DescriptorTable<TICEntry>& table,
                                             std::span<ImageViewId> cached_image_view_ids,
                                             u32 index) {
     if (index > table.Limit()) {
-        LOG_ERROR(HW_GPU, "Invalid image view index={}", index);
+        LOG_DEBUG(HW_GPU, "Invalid image view index={}", index);
         return NULL_IMAGE_VIEW_ID;
     }
     const auto [descriptor, is_new] = table.Read(index);
@@ -962,9 +976,6 @@ void TextureCache<P>::UploadImageContents(Image& image, StagingBuffer& staging) 
         auto copies = UnswizzleImage(gpu_memory, gpu_addr, image.info, unswizzled_data);
         ConvertImage(unswizzled_data, image.info, mapped_span, copies);
         image.UploadMemory(staging, copies);
-    } else if (image.info.type == ImageType::Buffer) {
-        const std::array copies{UploadBufferCopy(gpu_memory, gpu_addr, image, mapped_span)};
-        image.UploadMemory(staging, copies);
     } else {
         const auto copies = UnswizzleImage(gpu_memory, gpu_addr, image.info, mapped_span);
         image.UploadMemory(staging, copies);
@@ -987,7 +998,12 @@ ImageViewId TextureCache<P>::FindImageView(const TICEntry& config) {
 template <class P>
 ImageViewId TextureCache<P>::CreateImageView(const TICEntry& config) {
     const ImageInfo info(config);
-    const GPUVAddr image_gpu_addr = config.Address() - config.BaseLayer() * info.layer_stride;
+    if (info.type == ImageType::Buffer) {
+        const ImageViewInfo view_info(config, 0);
+        return slot_image_views.insert(runtime, info, view_info, config.Address());
+    }
+    const u32 layer_offset = config.BaseLayer() * info.layer_stride;
+    const GPUVAddr image_gpu_addr = config.Address() - layer_offset;
     const ImageId image_id = FindOrInsertImage(info, image_gpu_addr);
     if (!image_id) {
         return NULL_IMAGE_VIEW_ID;
@@ -1795,6 +1811,9 @@ void TextureCache<P>::PrepareImageView(ImageViewId image_view_id, bool is_modifi
         return;
     }
     const ImageViewBase& image_view = slot_image_views[image_view_id];
+    if (image_view.IsBuffer()) {
+        return;
+    }
     PrepareImage(image_view.image_id, is_modification, invalidate);
 }
 

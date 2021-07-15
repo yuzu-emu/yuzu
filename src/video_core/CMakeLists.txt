@@ -29,7 +29,6 @@ add_library(video_core STATIC
     dirty_flags.h
     dma_pusher.cpp
     dma_pusher.h
-    engines/const_buffer_engine_interface.h
     engines/const_buffer_info.h
     engines/engine_interface.h
     engines/engine_upload.cpp
@@ -44,9 +43,6 @@ add_library(video_core STATIC
     engines/maxwell_3d.h
     engines/maxwell_dma.cpp
     engines/maxwell_dma.h
-    engines/shader_bytecode.h
-    engines/shader_header.h
-    engines/shader_type.h
     framebuffer_config.h
     macro/macro.cpp
     macro/macro.h
@@ -61,8 +57,6 @@ add_library(video_core STATIC
     gpu.h
     gpu_thread.cpp
     gpu_thread.h
-    guest_driver.cpp
-    guest_driver.h
     memory_manager.cpp
     memory_manager.h
     query_cache.h
@@ -71,26 +65,25 @@ add_library(video_core STATIC
     rasterizer_interface.h
     renderer_base.cpp
     renderer_base.h
-    renderer_opengl/gl_arb_decompiler.cpp
-    renderer_opengl/gl_arb_decompiler.h
     renderer_opengl/gl_buffer_cache.cpp
     renderer_opengl/gl_buffer_cache.h
+    renderer_opengl/gl_compute_pipeline.cpp
+    renderer_opengl/gl_compute_pipeline.h
     renderer_opengl/gl_device.cpp
     renderer_opengl/gl_device.h
     renderer_opengl/gl_fence_manager.cpp
     renderer_opengl/gl_fence_manager.h
+    renderer_opengl/gl_graphics_pipeline.cpp
+    renderer_opengl/gl_graphics_pipeline.h
     renderer_opengl/gl_rasterizer.cpp
     renderer_opengl/gl_rasterizer.h
     renderer_opengl/gl_resource_manager.cpp
     renderer_opengl/gl_resource_manager.h
     renderer_opengl/gl_shader_cache.cpp
     renderer_opengl/gl_shader_cache.h
-    renderer_opengl/gl_shader_decompiler.cpp
-    renderer_opengl/gl_shader_decompiler.h
-    renderer_opengl/gl_shader_disk_cache.cpp
-    renderer_opengl/gl_shader_disk_cache.h
     renderer_opengl/gl_shader_manager.cpp
     renderer_opengl/gl_shader_manager.h
+    renderer_opengl/gl_shader_context.h
     renderer_opengl/gl_shader_util.cpp
     renderer_opengl/gl_shader_util.h
     renderer_opengl/gl_state_tracker.cpp
@@ -112,6 +105,7 @@ add_library(video_core STATIC
     renderer_vulkan/fixed_pipeline_state.h
     renderer_vulkan/maxwell_to_vk.cpp
     renderer_vulkan/maxwell_to_vk.h
+    renderer_vulkan/pipeline_helper.h
     renderer_vulkan/renderer_vulkan.h
     renderer_vulkan/renderer_vulkan.cpp
     renderer_vulkan/vk_blit_screen.cpp
@@ -138,12 +132,12 @@ add_library(video_core STATIC
     renderer_vulkan/vk_query_cache.h
     renderer_vulkan/vk_rasterizer.cpp
     renderer_vulkan/vk_rasterizer.h
+    renderer_vulkan/vk_render_pass_cache.cpp
+    renderer_vulkan/vk_render_pass_cache.h
     renderer_vulkan/vk_resource_pool.cpp
     renderer_vulkan/vk_resource_pool.h
     renderer_vulkan/vk_scheduler.cpp
     renderer_vulkan/vk_scheduler.h
-    renderer_vulkan/vk_shader_decompiler.cpp
-    renderer_vulkan/vk_shader_decompiler.h
     renderer_vulkan/vk_shader_util.cpp
     renderer_vulkan/vk_shader_util.h
     renderer_vulkan/vk_staging_buffer_pool.cpp
@@ -156,60 +150,12 @@ add_library(video_core STATIC
     renderer_vulkan/vk_texture_cache.h
     renderer_vulkan/vk_update_descriptor.cpp
     renderer_vulkan/vk_update_descriptor.h
+    shader_cache.cpp
     shader_cache.h
+    shader_environment.cpp
+    shader_environment.h
     shader_notify.cpp
     shader_notify.h
-    shader/decode/arithmetic.cpp
-    shader/decode/arithmetic_immediate.cpp
-    shader/decode/bfe.cpp
-    shader/decode/bfi.cpp
-    shader/decode/shift.cpp
-    shader/decode/arithmetic_integer.cpp
-    shader/decode/arithmetic_integer_immediate.cpp
-    shader/decode/arithmetic_half.cpp
-    shader/decode/arithmetic_half_immediate.cpp
-    shader/decode/ffma.cpp
-    shader/decode/hfma2.cpp
-    shader/decode/conversion.cpp
-    shader/decode/memory.cpp
-    shader/decode/texture.cpp
-    shader/decode/image.cpp
-    shader/decode/float_set_predicate.cpp
-    shader/decode/integer_set_predicate.cpp
-    shader/decode/half_set_predicate.cpp
-    shader/decode/predicate_set_register.cpp
-    shader/decode/predicate_set_predicate.cpp
-    shader/decode/register_set_predicate.cpp
-    shader/decode/float_set.cpp
-    shader/decode/integer_set.cpp
-    shader/decode/half_set.cpp
-    shader/decode/video.cpp
-    shader/decode/warp.cpp
-    shader/decode/xmad.cpp
-    shader/decode/other.cpp
-    shader/ast.cpp
-    shader/ast.h
-    shader/async_shaders.cpp
-    shader/async_shaders.h
-    shader/compiler_settings.cpp
-    shader/compiler_settings.h
-    shader/control_flow.cpp
-    shader/control_flow.h
-    shader/decode.cpp
-    shader/expr.cpp
-    shader/expr.h
-    shader/memory_util.cpp
-    shader/memory_util.h
-    shader/node_helper.cpp
-    shader/node_helper.h
-    shader/node.h
-    shader/registry.cpp
-    shader/registry.h
-    shader/shader_ir.cpp
-    shader/shader_ir.h
-    shader/track.cpp
-    shader/transform_feedback.cpp
-    shader/transform_feedback.h
     surface.cpp
     surface.h
     texture_cache/accelerated_swizzle.cpp
@@ -242,6 +188,8 @@ add_library(video_core STATIC
     textures/decoders.h
     textures/texture.cpp
     textures/texture.h
+    transform_feedback.cpp
+    transform_feedback.h
     video_core.cpp
     video_core.h
     vulkan_common/vulkan_debug_callback.cpp
@@ -265,7 +213,7 @@ add_library(video_core STATIC
 create_target_directory_groups(video_core)
 
 target_link_libraries(video_core PUBLIC common core)
-target_link_libraries(video_core PRIVATE glad xbyak)
+target_link_libraries(video_core PUBLIC glad shader_recompiler xbyak)
 
 if (YUZU_USE_BUNDLED_FFMPEG AND NOT WIN32)
     add_dependencies(video_core ffmpeg-build)

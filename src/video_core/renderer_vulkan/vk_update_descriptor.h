@@ -39,7 +39,9 @@ public:
 
     void Acquire();
 
-    void Send(VkDescriptorUpdateTemplateKHR update_template, VkDescriptorSet set);
+    const DescriptorUpdateEntry* UpdateData() const noexcept {
+        return upload_start;
+    }
 
     void AddSampledImage(VkImageView image_view, VkSampler sampler) {
         *(payload_cursor++) = VkDescriptorImageInfo{

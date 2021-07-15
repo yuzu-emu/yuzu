@@ -21,14 +21,13 @@
 #include "video_core/renderer_vulkan/vk_buffer_cache.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
 #include "video_core/renderer_vulkan/vk_fence_manager.h"
-#include "video_core/renderer_vulkan/vk_graphics_pipeline.h"
 #include "video_core/renderer_vulkan/vk_pipeline_cache.h"
 #include "video_core/renderer_vulkan/vk_query_cache.h"
+#include "video_core/renderer_vulkan/vk_render_pass_cache.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
-#include "video_core/shader/async_shaders.h"
 #include "video_core/vulkan_common/vulkan_memory_allocator.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
@@ -71,7 +70,7 @@ public:
 
     void Draw(bool is_indexed, bool is_instanced) override;
     void Clear() override;
-    void DispatchCompute(GPUVAddr code_addr) override;
+    void DispatchCompute() override;
     void ResetCounter(VideoCore::QueryType type) override;
     void Query(GPUVAddr gpu_addr, VideoCore::QueryType type, std::optional<u64> timestamp) override;
     void BindGraphicsUniformBuffer(size_t stage, u32 index, GPUVAddr gpu_addr, u32 size) override;
@@ -100,19 +99,8 @@ public:
     Tegra::Engines::AccelerateDMAInterface& AccessAccelerateDMA() override;
     bool AccelerateDisplay(const Tegra::FramebufferConfig& config, VAddr framebuffer_addr,
                            u32 pixel_stride) override;
-
-    VideoCommon::Shader::AsyncShaders& GetAsyncShaders() {
-        return async_shaders;
-    }
-
-    const VideoCommon::Shader::AsyncShaders& GetAsyncShaders() const {
-        return async_shaders;
-    }
-
-    /// Maximum supported size that a constbuffer can have in bytes.
-    static constexpr size_t MaxConstbufferSize = 0x10000;
-    static_assert(MaxConstbufferSize % (4 * sizeof(float)) == 0,
-                  "The maximum size of a constbuffer must be a multiple of the size of GLvec4");
+    void LoadDiskResources(u64 title_id, std::stop_token stop_loading,
+                           const VideoCore::DiskResourceLoadCallback& callback) override;
 
 private:
     static constexpr size_t MAX_TEXTURES = 192;
@@ -123,39 +111,11 @@ private:
 
     void FlushWork();
 
-    /// Setup descriptors in the graphics pipeline.
-    void SetupShaderDescriptors(const std::array<Shader*, Maxwell::MaxShaderProgram>& shaders,
-                                bool is_indexed);
-
     void UpdateDynamicStates();
 
     void BeginTransformFeedback();
 
     void EndTransformFeedback();
-
-    /// Setup uniform texels in the graphics pipeline.
-    void SetupGraphicsUniformTexels(const ShaderEntries& entries, std::size_t stage);
-
-    /// Setup textures in the graphics pipeline.
-    void SetupGraphicsTextures(const ShaderEntries& entries, std::size_t stage);
-
-    /// Setup storage texels in the graphics pipeline.
-    void SetupGraphicsStorageTexels(const ShaderEntries& entries, std::size_t stage);
-
-    /// Setup images in the graphics pipeline.
-    void SetupGraphicsImages(const ShaderEntries& entries, std::size_t stage);
-
-    /// Setup texel buffers in the compute pipeline.
-    void SetupComputeUniformTexels(const ShaderEntries& entries);
-
-    /// Setup textures in the compute pipeline.
-    void SetupComputeTextures(const ShaderEntries& entries);
-
-    /// Setup storage texels in the compute pipeline.
-    void SetupComputeStorageTexels(const ShaderEntries& entries);
-
-    /// Setup images in the compute pipeline.
-    void SetupComputeImages(const ShaderEntries& entries);
 
     void UpdateViewportsState(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateScissorsState(Tegra::Engines::Maxwell3D::Regs& regs);
@@ -163,6 +123,7 @@ private:
     void UpdateBlendConstants(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateDepthBounds(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateStencilFaces(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdateLineWidth(Tegra::Engines::Maxwell3D::Regs& regs);
 
     void UpdateCullMode(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateDepthBoundsTestEnable(Tegra::Engines::Maxwell3D::Regs& regs);
@@ -172,6 +133,8 @@ private:
     void UpdateFrontFace(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateStencilOp(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateStencilTestEnable(Tegra::Engines::Maxwell3D::Regs& regs);
+
+    void UpdateVertexInput(Tegra::Engines::Maxwell3D::Regs& regs);
 
     Tegra::GPU& gpu;
     Tegra::MemoryManager& gpu_memory;
@@ -185,24 +148,22 @@ private:
     VKScheduler& scheduler;
 
     StagingBufferPool staging_pool;
-    VKDescriptorPool descriptor_pool;
+    DescriptorPool descriptor_pool;
     VKUpdateDescriptorQueue update_descriptor_queue;
     BlitImageHelper blit_image;
     ASTCDecoderPass astc_decoder_pass;
-
-    GraphicsPipelineCacheKey graphics_key;
+    RenderPassCache render_pass_cache;
 
     TextureCacheRuntime texture_cache_runtime;
     TextureCache texture_cache;
     BufferCacheRuntime buffer_cache_runtime;
     BufferCache buffer_cache;
-    VKPipelineCache pipeline_cache;
+    PipelineCache pipeline_cache;
     VKQueryCache query_cache;
     AccelerateDMA accelerate_dma;
     VKFenceManager fence_manager;
 
     vk::Event wfi_event;
-    VideoCommon::Shader::AsyncShaders async_shaders;
 
     boost::container::static_vector<u32, MAX_IMAGE_VIEWS> image_view_indices;
     std::array<VideoCommon::ImageViewId, MAX_IMAGE_VIEWS> image_view_ids;

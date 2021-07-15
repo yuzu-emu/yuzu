@@ -10,10 +10,8 @@
 #include "common/bit_field.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
-#include "video_core/engines/const_buffer_engine_interface.h"
 #include "video_core/engines/engine_interface.h"
 #include "video_core/engines/engine_upload.h"
-#include "video_core/engines/shader_type.h"
 #include "video_core/gpu.h"
 #include "video_core/textures/texture.h"
 
@@ -40,7 +38,7 @@ namespace Tegra::Engines {
 #define KEPLER_COMPUTE_REG_INDEX(field_name)                                                       \
     (offsetof(Tegra::Engines::KeplerCompute::Regs, field_name) / sizeof(u32))
 
-class KeplerCompute final : public ConstBufferEngineInterface, public EngineInterface {
+class KeplerCompute final : public EngineInterface {
 public:
     explicit KeplerCompute(Core::System& system, MemoryManager& memory_manager);
     ~KeplerCompute();
@@ -208,23 +206,6 @@ public:
     /// Write multiple values to the register identified by method.
     void CallMultiMethod(u32 method, const u32* base_start, u32 amount,
                          u32 methods_pending) override;
-
-    u32 AccessConstBuffer32(ShaderType stage, u64 const_buffer, u64 offset) const override;
-
-    SamplerDescriptor AccessBoundSampler(ShaderType stage, u64 offset) const override;
-
-    SamplerDescriptor AccessBindlessSampler(ShaderType stage, u64 const_buffer,
-                                            u64 offset) const override;
-
-    SamplerDescriptor AccessSampler(u32 handle) const override;
-
-    u32 GetBoundBuffer() const override {
-        return regs.tex_cb_index;
-    }
-
-    VideoCore::GuestDriverProfile& AccessGuestDriverProfile() override;
-
-    const VideoCore::GuestDriverProfile& AccessGuestDriverProfile() const override;
 
 private:
     void ProcessLaunch();

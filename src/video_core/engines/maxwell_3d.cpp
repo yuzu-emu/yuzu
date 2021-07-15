@@ -8,7 +8,6 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "video_core/engines/maxwell_3d.h"
-#include "video_core/engines/shader_type.h"
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
 #include "video_core/rasterizer_interface.h"
@@ -668,44 +667,6 @@ u32 Maxwell3D::GetRegisterValue(u32 method) const {
 
 void Maxwell3D::ProcessClearBuffers() {
     rasterizer->Clear();
-}
-
-u32 Maxwell3D::AccessConstBuffer32(ShaderType stage, u64 const_buffer, u64 offset) const {
-    ASSERT(stage != ShaderType::Compute);
-    const auto& shader_stage = state.shader_stages[static_cast<std::size_t>(stage)];
-    const auto& buffer = shader_stage.const_buffers[const_buffer];
-    return memory_manager.Read<u32>(buffer.address + offset);
-}
-
-SamplerDescriptor Maxwell3D::AccessBoundSampler(ShaderType stage, u64 offset) const {
-    return AccessBindlessSampler(stage, regs.tex_cb_index, offset * sizeof(Texture::TextureHandle));
-}
-
-SamplerDescriptor Maxwell3D::AccessBindlessSampler(ShaderType stage, u64 const_buffer,
-                                                   u64 offset) const {
-    ASSERT(stage != ShaderType::Compute);
-    const auto& shader = state.shader_stages[static_cast<std::size_t>(stage)];
-    const auto& tex_info_buffer = shader.const_buffers[const_buffer];
-    const GPUVAddr tex_info_address = tex_info_buffer.address + offset;
-    return AccessSampler(memory_manager.Read<u32>(tex_info_address));
-}
-
-SamplerDescriptor Maxwell3D::AccessSampler(u32 handle) const {
-    const Texture::TextureHandle tex_handle{handle};
-    const Texture::TICEntry tic = GetTICEntry(tex_handle.tic_id);
-    const Texture::TSCEntry tsc = GetTSCEntry(tex_handle.tsc_id);
-
-    SamplerDescriptor result = SamplerDescriptor::FromTIC(tic);
-    result.is_shadow.Assign(tsc.depth_compare_enabled.Value());
-    return result;
-}
-
-VideoCore::GuestDriverProfile& Maxwell3D::AccessGuestDriverProfile() {
-    return rasterizer->AccessGuestDriverProfile();
-}
-
-const VideoCore::GuestDriverProfile& Maxwell3D::AccessGuestDriverProfile() const {
-    return rasterizer->AccessGuestDriverProfile();
 }
 
 } // namespace Tegra::Engines

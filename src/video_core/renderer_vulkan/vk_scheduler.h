@@ -8,12 +8,12 @@
 #include <condition_variable>
 #include <cstddef>
 #include <memory>
-#include <stack>
 #include <thread>
 #include <utility>
+#include <queue>
+
 #include "common/alignment.h"
 #include "common/common_types.h"
-#include "common/threadsafe_queue.h"
 #include "video_core/renderer_vulkan/vk_master_semaphore.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
@@ -22,6 +22,7 @@ namespace Vulkan {
 class CommandPool;
 class Device;
 class Framebuffer;
+class GraphicsPipeline;
 class StateTracker;
 class VKQueryCache;
 
@@ -52,8 +53,8 @@ public:
     /// of a renderpass.
     void RequestOutsideRenderPassOperationContext();
 
-    /// Binds a pipeline to the current execution context.
-    void BindGraphicsPipeline(VkPipeline pipeline);
+    /// Update the pipeline to the current execution context.
+    bool UpdateGraphicsPipeline(GraphicsPipeline* pipeline);
 
     /// Invalidates current command buffer state except for render passes
     void InvalidateState();
@@ -85,6 +86,10 @@ public:
 
     /// Waits for the given tick to trigger on the GPU.
     void Wait(u64 tick) {
+        if (tick >= master_semaphore->CurrentTick()) {
+            // Make sure we are not waiting for the current tick without signalling
+            Flush();
+        }
         master_semaphore->Wait(tick);
     }
 
@@ -154,8 +159,16 @@ private:
             return true;
         }
 
+        void MarkSubmit() {
+            submit = true;
+        }
+
         bool Empty() const {
             return command_offset == 0;
+        }
+
+        bool HasSubmit() const {
+            return submit;
         }
 
     private:
@@ -163,6 +176,7 @@ private:
         Command* last = nullptr;
 
         size_t command_offset = 0;
+        bool submit = false;
         alignas(std::max_align_t) std::array<u8, 0x8000> data{};
     };
 
@@ -170,10 +184,12 @@ private:
         VkRenderPass renderpass = nullptr;
         VkFramebuffer framebuffer = nullptr;
         VkExtent2D render_area = {0, 0};
-        VkPipeline graphics_pipeline = nullptr;
+        GraphicsPipeline* graphics_pipeline = nullptr;
     };
 
     void WorkerThread();
+
+    void AllocateWorkerCommandBuffer();
 
     void SubmitExecution(VkSemaphore semaphore);
 
@@ -204,11 +220,13 @@ private:
     std::array<VkImage, 9> renderpass_images{};
     std::array<VkImageSubresourceRange, 9> renderpass_image_ranges{};
 
-    Common::SPSCQueue<std::unique_ptr<CommandChunk>> chunk_queue;
-    Common::SPSCQueue<std::unique_ptr<CommandChunk>> chunk_reserve;
-    std::mutex mutex;
-    std::condition_variable cv;
-    bool quit = false;
+    std::queue<std::unique_ptr<CommandChunk>> work_queue;
+    std::vector<std::unique_ptr<CommandChunk>> chunk_reserve;
+    std::mutex reserve_mutex;
+    std::mutex work_mutex;
+    std::condition_variable work_cv;
+    std::condition_variable wait_cv;
+    std::atomic_bool quit{};
 };
 
 } // namespace Vulkan

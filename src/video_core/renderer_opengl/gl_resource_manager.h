@@ -8,7 +8,6 @@
 #include <utility>
 #include <glad/glad.h>
 #include "common/common_types.h"
-#include "video_core/renderer_opengl/gl_shader_util.h"
 
 namespace OpenGL {
 
@@ -128,8 +127,6 @@ public:
         return *this;
     }
 
-    void Create(std::string_view source, GLenum type);
-
     void Release();
 
     GLuint handle = 0;
@@ -150,17 +147,6 @@ public:
         handle = std::exchange(o.handle, 0);
         return *this;
     }
-
-    template <typename... T>
-    void Create(bool separable_program, bool hint_retrievable, T... shaders) {
-        if (handle != 0)
-            return;
-        handle = GLShader::LoadProgram(separable_program, hint_retrievable, shaders...);
-    }
-
-    /// Creates a new internal OpenGL resource and stores the handle
-    void CreateFromSource(const char* vert_shader, const char* geo_shader, const char* frag_shader,
-                          bool separable_program = false, bool hint_retrievable = false);
 
     /// Deletes the internal OpenGL resource
     void Release();

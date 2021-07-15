@@ -233,8 +233,8 @@ void TelemetrySession::AddInitialInfo(Loader::AppLoader& app_loader,
              Settings::values.use_nvdec_emulation.GetValue());
     AddField(field_type, "Renderer_AccelerateASTC", Settings::values.accelerate_astc.GetValue());
     AddField(field_type, "Renderer_UseVsync", Settings::values.use_vsync.GetValue());
-    AddField(field_type, "Renderer_UseAssemblyShaders",
-             Settings::values.use_assembly_shaders.GetValue());
+    AddField(field_type, "Renderer_ShaderBackend",
+             static_cast<u32>(Settings::values.shader_backend.GetValue()));
     AddField(field_type, "Renderer_UseAsynchronousShaders",
              Settings::values.use_asynchronous_shaders.GetValue());
     AddField(field_type, "System_UseDockedMode", Settings::values.use_docked_mode.GetValue());

@@ -126,6 +126,16 @@
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="enable_nsight_aftermath">
+        <property name="toolTip">
+         <string>When checked, it enables Nsight Aftermath crash dumps</string>
+        </property>
+        <property name="text">
+         <string>Enable Nsight Aftermath</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QCheckBox" name="disable_macro_jit">
         <property name="enabled">
          <bool>true</bool>
@@ -135,6 +145,16 @@
         </property>
         <property name="text">
          <string>Disable Macro JIT</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="disable_loop_safety_checks">
+        <property name="toolTip">
+         <string>When checked, it executes shaders without loop logic changes</string>
+        </property>
+        <property name="text">
+         <string>Disable Loop safety checks</string>
         </property>
        </widget>
       </item>
@@ -252,11 +272,17 @@
  <tabstops>
   <tabstop>log_filter_edit</tabstop>
   <tabstop>toggle_console</tabstop>
+  <tabstop>extended_logging</tabstop>
   <tabstop>open_log_button</tabstop>
   <tabstop>homebrew_args_edit</tabstop>
   <tabstop>enable_graphics_debugging</tabstop>
+  <tabstop>enable_nsight_aftermath</tabstop>
+  <tabstop>disable_macro_jit</tabstop>
+  <tabstop>disable_loop_safety_checks</tabstop>
   <tabstop>reporting_services</tabstop>
   <tabstop>quest_flag</tabstop>
+  <tabstop>use_debug_asserts</tabstop>
+  <tabstop>use_auto_stub</tabstop>
  </tabstops>
  <resources/>
  <connections/>

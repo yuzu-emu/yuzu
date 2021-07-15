@@ -15,7 +15,9 @@
 namespace Vulkan {
 
 VKUpdateDescriptorQueue::VKUpdateDescriptorQueue(const Device& device_, VKScheduler& scheduler_)
-    : device{device_}, scheduler{scheduler_} {}
+    : device{device_}, scheduler{scheduler_} {
+    payload_cursor = payload.data();
+}
 
 VKUpdateDescriptorQueue::~VKUpdateDescriptorQueue() = default;
 
@@ -34,15 +36,6 @@ void VKUpdateDescriptorQueue::Acquire() {
         payload_cursor = payload.data();
     }
     upload_start = payload_cursor;
-}
-
-void VKUpdateDescriptorQueue::Send(VkDescriptorUpdateTemplateKHR update_template,
-                                   VkDescriptorSet set) {
-    const void* const data = upload_start;
-    const vk::Device* const logical = &device.GetLogical();
-    scheduler.Record([data, logical, set, update_template](vk::CommandBuffer) {
-        logical->UpdateDescriptorSet(set, update_template, data);
-    });
 }
 
 } // namespace Vulkan
