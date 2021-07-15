@@ -789,41 +789,28 @@ void GMainWindow::InitializeWidgets() {
     dock_status_button->setChecked(Settings::values.use_docked_mode.GetValue());
     statusBar()->insertPermanentWidget(0, dock_status_button);
 
-    // Setup ASync button
-    async_status_button = new QPushButton();
-    async_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
-    async_status_button->setFocusPolicy(Qt::NoFocus);
-    connect(async_status_button, &QPushButton::clicked, [&] {
-        if (emulation_running) {
-            return;
+    gpu_accuracy_button = new QPushButton();
+    gpu_accuracy_button->setObjectName(QStringLiteral("GPUStatusBarButton"));
+    gpu_accuracy_button->setCheckable(true);
+    gpu_accuracy_button->setFocusPolicy(Qt::NoFocus);
+    connect(gpu_accuracy_button, &QPushButton::clicked, [this] {
+        switch (Settings::values.gpu_accuracy.GetValue()) {
+        case Settings::GPUAccuracy::High: {
+            Settings::values.gpu_accuracy.SetValue(Settings::GPUAccuracy::Normal);
+            break;
         }
-        Settings::values.use_asynchronous_gpu_emulation.SetValue(
-            !Settings::values.use_asynchronous_gpu_emulation.GetValue());
-        async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation.GetValue());
-        Core::System::GetInstance().ApplySettings();
-    });
-    async_status_button->setText(tr("ASYNC"));
-    async_status_button->setCheckable(true);
-    async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation.GetValue());
-
-    // Setup Multicore button
-    multicore_status_button = new QPushButton();
-    multicore_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
-    multicore_status_button->setFocusPolicy(Qt::NoFocus);
-    connect(multicore_status_button, &QPushButton::clicked, [&] {
-        if (emulation_running) {
-            return;
+        case Settings::GPUAccuracy::Normal:
+        case Settings::GPUAccuracy::Extreme:
+        default: {
+            Settings::values.gpu_accuracy.SetValue(Settings::GPUAccuracy::High);
         }
-        Settings::values.use_multi_core.SetValue(!Settings::values.use_multi_core.GetValue());
-        multicore_status_button->setChecked(Settings::values.use_multi_core.GetValue());
-        Core::System::GetInstance().ApplySettings();
-    });
-    multicore_status_button->setText(tr("MULTICORE"));
-    multicore_status_button->setCheckable(true);
-    multicore_status_button->setChecked(Settings::values.use_multi_core.GetValue());
+        }
 
-    statusBar()->insertPermanentWidget(0, multicore_status_button);
-    statusBar()->insertPermanentWidget(0, async_status_button);
+        Core::System::GetInstance().ApplySettings();
+        UpdateGPUAccuracyButton();
+    });
+    UpdateGPUAccuracyButton();
+    statusBar()->insertPermanentWidget(0, gpu_accuracy_button);
 
     // Setup Renderer API button
     renderer_status_button = new QPushButton();
@@ -1400,8 +1387,6 @@ void GMainWindow::BootGame(const QString& filename, std::size_t program_index, S
         game_list_placeholder->hide();
     }
     status_bar_update_timer.start(500);
-    async_status_button->setDisabled(true);
-    multicore_status_button->setDisabled(true);
     renderer_status_button->setDisabled(true);
 
     if (UISettings::values.hide_mouse || Settings::values.mouse_panning) {
@@ -1505,8 +1490,6 @@ void GMainWindow::ShutdownGame() {
     emu_speed_label->setVisible(false);
     game_fps_label->setVisible(false);
     emu_frametime_label->setVisible(false);
-    async_status_button->setEnabled(true);
-    multicore_status_button->setEnabled(true);
     renderer_status_button->setEnabled(true);
 
     emulation_running = false;
@@ -2931,12 +2914,35 @@ void GMainWindow::UpdateStatusBar() {
     emu_frametime_label->setVisible(true);
 }
 
+void GMainWindow::UpdateGPUAccuracyButton() {
+    switch (Settings::values.gpu_accuracy.GetValue()) {
+    case Settings::GPUAccuracy::Normal: {
+        gpu_accuracy_button->setText(tr("GPU NORMAL"));
+        gpu_accuracy_button->setChecked(false);
+        break;
+    }
+    case Settings::GPUAccuracy::High: {
+        gpu_accuracy_button->setText(tr("GPU HIGH"));
+        gpu_accuracy_button->setChecked(true);
+        break;
+    }
+    case Settings::GPUAccuracy::Extreme: {
+        gpu_accuracy_button->setText(tr("GPU EXTREME"));
+        gpu_accuracy_button->setChecked(true);
+        break;
+    }
+    default: {
+        gpu_accuracy_button->setText(tr("GPU ERROR"));
+        gpu_accuracy_button->setChecked(true);
+    }
+    }
+}
+
 void GMainWindow::UpdateStatusButtons() {
     dock_status_button->setChecked(Settings::values.use_docked_mode.GetValue());
-    multicore_status_button->setChecked(Settings::values.use_multi_core.GetValue());
-    async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation.GetValue());
     renderer_status_button->setChecked(Settings::values.renderer_backend.GetValue() ==
                                        Settings::RendererBackend::Vulkan);
+    UpdateGPUAccuracyButton();
 }
 
 void GMainWindow::UpdateUISettings() {

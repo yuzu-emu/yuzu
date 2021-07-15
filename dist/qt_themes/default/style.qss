@@ -38,6 +38,26 @@ QPushButton#RendererStatusBarButton:!checked {
     color: #0066ff;
 }
 
+QPushButton#GPUStatusBarButton {
+    color: #656565;
+    border: 1px solid transparent;
+    background-color: transparent;
+    padding: 0px 3px 0px 3px;
+    text-align: center;
+}
+
+QPushButton#GPUStatusBarButton:hover {
+    border: 1px solid #76797C;
+}
+
+QPushButton#GPUStatusBarButton:checked {
+    color: #ff8040;
+}
+
+QPushButton#GPUStatusBarButton:!checked {
+    color: #40dd40;
+}
+
 QPushButton#buttonRefreshDevices {
     min-width: 21px;
     min-height: 21px;
