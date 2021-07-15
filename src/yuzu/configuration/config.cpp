@@ -221,7 +221,7 @@ const std::array<int, Settings::NativeKeyboard::NumKeyboardMods> Config::default
 // This must be in alphabetical order according to action name as it must have the same order as
 // UISetting::values.shortcuts, which is alphabetically ordered.
 // clang-format off
-const std::array<UISettings::Shortcut, 18> Config::default_hotkeys{{
+const std::array<UISettings::Shortcut, 21> Config::default_hotkeys{{
     {QStringLiteral("Capture Screenshot"),       QStringLiteral("Main Window"), {QStringLiteral("Ctrl+P"), Qt::WidgetWithChildrenShortcut}},
     {QStringLiteral("Change Docked Mode"),       QStringLiteral("Main Window"), {QStringLiteral("F10"), Qt::ApplicationShortcut}},
     {QStringLiteral("Continue/Pause Emulation"), QStringLiteral("Main Window"), {QStringLiteral("F4"), Qt::WindowShortcut}},
@@ -235,6 +235,9 @@ const std::array<UISettings::Shortcut, 18> Config::default_hotkeys{{
     {QStringLiteral("Mute Audio"),               QStringLiteral("Main Window"), {QStringLiteral("Ctrl+M"), Qt::WindowShortcut}},
     {QStringLiteral("Restart Emulation"),        QStringLiteral("Main Window"), {QStringLiteral("F6"), Qt::WindowShortcut}},
     {QStringLiteral("Stop Emulation"),           QStringLiteral("Main Window"), {QStringLiteral("F5"), Qt::WindowShortcut}},
+    {QStringLiteral("TAS Start/Stop"),           QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F5"), Qt::ApplicationShortcut}},
+    {QStringLiteral("TAS Reset"),                QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F6"), Qt::ApplicationShortcut}},
+    {QStringLiteral("TAS Record"),               QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F7"), Qt::ApplicationShortcut}},
     {QStringLiteral("Toggle Filter Bar"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F"), Qt::WindowShortcut}},
     {QStringLiteral("Toggle Framerate Limit"),   QStringLiteral("Main Window"), {QStringLiteral("Ctrl+U"), Qt::ApplicationShortcut}},
     {QStringLiteral("Toggle Mouse Panning"),     QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F9"), Qt::ApplicationShortcut}},
@@ -564,6 +567,11 @@ void Config::ReadControlValues() {
     Settings::values.mouse_panning = false;
     ReadBasicSetting(Settings::values.mouse_panning_sensitivity);
 
+    ReadBasicSetting(Settings::values.tas_enable);
+    ReadBasicSetting(Settings::values.tas_loop);
+    ReadBasicSetting(Settings::values.tas_swap_controllers);
+    ReadBasicSetting(Settings::values.pause_tas_on_load);
+
     ReadGlobalSetting(Settings::values.use_docked_mode);
 
     // Disable docked mode if handheld is selected
@@ -661,6 +669,13 @@ void Config::ReadDataStorageValues() {
                     QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::DumpDir)))
             .toString()
             .toStdString());
+    FS::SetYuzuPath(FS::YuzuPath::TASDir,
+                    qt_config
+                        ->value(QStringLiteral("tas_directory"),
+                                QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::TASDir)))
+                        .toString()
+                        .toStdString());
+
     ReadBasicSetting(Settings::values.gamecard_inserted);
     ReadBasicSetting(Settings::values.gamecard_current_game);
     ReadBasicSetting(Settings::values.gamecard_path);
@@ -1183,6 +1198,11 @@ void Config::SaveControlValues() {
     WriteBasicSetting(Settings::values.emulate_analog_keyboard);
     WriteBasicSetting(Settings::values.mouse_panning_sensitivity);
 
+    WriteBasicSetting(Settings::values.tas_enable);
+    WriteBasicSetting(Settings::values.tas_loop);
+    WriteBasicSetting(Settings::values.tas_swap_controllers);
+    WriteBasicSetting(Settings::values.pause_tas_on_load);
+
     qt_config->endGroup();
 }
 
@@ -1210,6 +1230,10 @@ void Config::SaveDataStorageValues() {
     WriteSetting(QStringLiteral("dump_directory"),
                  QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::DumpDir)),
                  QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::DumpDir)));
+    WriteSetting(QStringLiteral("tas_directory"),
+                 QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::TASDir)),
+                 QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::TASDir)));
+
     WriteBasicSetting(Settings::values.gamecard_inserted);
     WriteBasicSetting(Settings::values.gamecard_current_game);
     WriteBasicSetting(Settings::values.gamecard_path);

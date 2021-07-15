@@ -108,6 +108,9 @@ add_executable(yuzu
     configuration/configure_system.cpp
     configuration/configure_system.h
     configuration/configure_system.ui
+    configuration/configure_tas.cpp
+    configuration/configure_tas.h
+    configuration/configure_tas.ui
     configuration/configure_touch_from_button.cpp
     configuration/configure_touch_from_button.h
     configuration/configure_touch_from_button.ui

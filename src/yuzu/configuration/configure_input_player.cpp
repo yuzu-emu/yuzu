@@ -124,6 +124,19 @@ QString ButtonToText(const Common::ParamPackage& param) {
         return GetKeyName(param.Get("code", 0));
     }
 
+    if (param.Get("engine", "") == "tas") {
+        if (param.Has("axis")) {
+            const QString axis_str = QString::fromStdString(param.Get("axis", ""));
+
+            return QObject::tr("TAS Axis %1").arg(axis_str);
+        }
+        if (param.Has("button")) {
+            const QString button_str = QString::number(int(std::log2(param.Get("button", 0))));
+            return QObject::tr("TAS Btn %1").arg(button_str);
+        }
+        return GetKeyName(param.Get("code", 0));
+    }
+
     if (param.Get("engine", "") == "cemuhookudp") {
         if (param.Has("pad_index")) {
             const QString motion_str = QString::fromStdString(param.Get("pad_index", ""));
@@ -186,7 +199,8 @@ QString AnalogToText(const Common::ParamPackage& param, const std::string& dir) 
     const QString axis_y_str = QString::fromStdString(param.Get("axis_y", ""));
     const bool invert_x = param.Get("invert_x", "+") == "-";
     const bool invert_y = param.Get("invert_y", "+") == "-";
-    if (engine_str == "sdl" || engine_str == "gcpad" || engine_str == "mouse") {
+    if (engine_str == "sdl" || engine_str == "gcpad" || engine_str == "mouse" ||
+        engine_str == "tas") {
         if (dir == "modifier") {
             return QObject::tr("[unused]");
         }
@@ -878,9 +892,9 @@ void ConfigureInputPlayer::UpdateUI() {
 
         int slider_value;
         auto& param = analogs_param[analog_id];
-        const bool is_controller = param.Get("engine", "") == "sdl" ||
-                                   param.Get("engine", "") == "gcpad" ||
-                                   param.Get("engine", "") == "mouse";
+        const bool is_controller =
+            param.Get("engine", "") == "sdl" || param.Get("engine", "") == "gcpad" ||
+            param.Get("engine", "") == "mouse" || param.Get("engine", "") == "tas";
 
         if (is_controller) {
             if (!param.Has("deadzone")) {
@@ -997,8 +1011,12 @@ int ConfigureInputPlayer::GetIndexFromControllerType(Settings::ControllerType ty
 void ConfigureInputPlayer::UpdateInputDevices() {
     input_devices = input_subsystem->GetInputDevices();
     ui->comboDevices->clear();
-    for (auto device : input_devices) {
-        ui->comboDevices->addItem(QString::fromStdString(device.Get("display", "Unknown")), {});
+    for (auto& device : input_devices) {
+        const std::string display = device.Get("display", "Unknown");
+        ui->comboDevices->addItem(QString::fromStdString(display), {});
+        if (display == "TAS") {
+            device.Set("pad", static_cast<u8>(player_index));
+        }
     }
 }
 

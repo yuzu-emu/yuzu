@@ -5,6 +5,7 @@
 #include <memory>
 #include <thread>
 #include "common/param_package.h"
+#include "common/settings.h"
 #include "input_common/analog_from_button.h"
 #include "input_common/gcadapter/gc_adapter.h"
 #include "input_common/gcadapter/gc_poller.h"
@@ -13,6 +14,8 @@
 #include "input_common/motion_from_button.h"
 #include "input_common/mouse/mouse_input.h"
 #include "input_common/mouse/mouse_poller.h"
+#include "input_common/tas/tas_input.h"
+#include "input_common/tas/tas_poller.h"
 #include "input_common/touch_from_button.h"
 #include "input_common/udp/client.h"
 #include "input_common/udp/udp.h"
@@ -60,6 +63,12 @@ struct InputSubsystem::Impl {
         Input::RegisterFactory<Input::MotionDevice>("mouse", mousemotion);
         mousetouch = std::make_shared<MouseTouchFactory>(mouse);
         Input::RegisterFactory<Input::TouchDevice>("mouse", mousetouch);
+
+        tas = std::make_shared<TasInput::Tas>();
+        tasbuttons = std::make_shared<TasButtonFactory>(tas);
+        Input::RegisterFactory<Input::ButtonDevice>("tas", tasbuttons);
+        tasanalog = std::make_shared<TasAnalogFactory>(tas);
+        Input::RegisterFactory<Input::AnalogDevice>("tas", tasanalog);
     }
 
     void Shutdown() {
@@ -94,6 +103,12 @@ struct InputSubsystem::Impl {
         mouseanalog.reset();
         mousemotion.reset();
         mousetouch.reset();
+
+        Input::UnregisterFactory<Input::ButtonDevice>("tas");
+        Input::UnregisterFactory<Input::AnalogDevice>("tas");
+
+        tasbuttons.reset();
+        tasanalog.reset();
     }
 
     [[nodiscard]] std::vector<Common::ParamPackage> GetInputDevices() const {
@@ -101,6 +116,10 @@ struct InputSubsystem::Impl {
             Common::ParamPackage{{"display", "Any"}, {"class", "any"}},
             Common::ParamPackage{{"display", "Keyboard/Mouse"}, {"class", "keyboard"}},
         };
+        if (Settings::values.tas_enable) {
+            devices.emplace_back(
+                Common::ParamPackage{{"display", "TAS Controller"}, {"class", "tas"}});
+        }
 #ifdef HAVE_SDL2
         auto sdl_devices = sdl->GetInputDevices();
         devices.insert(devices.end(), sdl_devices.begin(), sdl_devices.end());
@@ -120,6 +139,9 @@ struct InputSubsystem::Impl {
         if (params.Get("class", "") == "gcpad") {
             return gcadapter->GetAnalogMappingForDevice(params);
         }
+        if (params.Get("class", "") == "tas") {
+            return tas->GetAnalogMappingForDevice(params);
+        }
 #ifdef HAVE_SDL2
         if (params.Get("class", "") == "sdl") {
             return sdl->GetAnalogMappingForDevice(params);
@@ -135,6 +157,9 @@ struct InputSubsystem::Impl {
         }
         if (params.Get("class", "") == "gcpad") {
             return gcadapter->GetButtonMappingForDevice(params);
+        }
+        if (params.Get("class", "") == "tas") {
+            return tas->GetButtonMappingForDevice(params);
         }
 #ifdef HAVE_SDL2
         if (params.Get("class", "") == "sdl") {
@@ -174,9 +199,12 @@ struct InputSubsystem::Impl {
     std::shared_ptr<MouseAnalogFactory> mouseanalog;
     std::shared_ptr<MouseMotionFactory> mousemotion;
     std::shared_ptr<MouseTouchFactory> mousetouch;
+    std::shared_ptr<TasButtonFactory> tasbuttons;
+    std::shared_ptr<TasAnalogFactory> tasanalog;
     std::shared_ptr<CemuhookUDP::Client> udp;
     std::shared_ptr<GCAdapter::Adapter> gcadapter;
     std::shared_ptr<MouseInput::Mouse> mouse;
+    std::shared_ptr<TasInput::Tas> tas;
 };
 
 InputSubsystem::InputSubsystem() : impl{std::make_unique<Impl>()} {}
@@ -205,6 +233,14 @@ MouseInput::Mouse* InputSubsystem::GetMouse() {
 
 const MouseInput::Mouse* InputSubsystem::GetMouse() const {
     return impl->mouse.get();
+}
+
+TasInput::Tas* InputSubsystem::GetTas() {
+    return impl->tas.get();
+}
+
+const TasInput::Tas* InputSubsystem::GetTas() const {
+    return impl->tas.get();
 }
 
 std::vector<Common::ParamPackage> InputSubsystem::GetInputDevices() const {
@@ -285,6 +321,22 @@ MouseTouchFactory* InputSubsystem::GetMouseTouch() {
 
 const MouseTouchFactory* InputSubsystem::GetMouseTouch() const {
     return impl->mousetouch.get();
+}
+
+TasButtonFactory* InputSubsystem::GetTasButtons() {
+    return impl->tasbuttons.get();
+}
+
+const TasButtonFactory* InputSubsystem::GetTasButtons() const {
+    return impl->tasbuttons.get();
+}
+
+TasAnalogFactory* InputSubsystem::GetTasAnalogs() {
+    return impl->tasanalog.get();
+}
+
+const TasAnalogFactory* InputSubsystem::GetTasAnalogs() const {
+    return impl->tasanalog.get();
 }
 
 void InputSubsystem::ReloadInputDevices() {

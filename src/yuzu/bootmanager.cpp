@@ -36,6 +36,7 @@
 #include "input_common/keyboard.h"
 #include "input_common/main.h"
 #include "input_common/mouse/mouse_input.h"
+#include "input_common/tas/tas_input.h"
 #include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
 #include "yuzu/bootmanager.h"
@@ -311,6 +312,7 @@ GRenderWindow::~GRenderWindow() {
 }
 
 void GRenderWindow::OnFrameDisplayed() {
+    input_subsystem->GetTas()->UpdateThread();
     if (!first_frame) {
         first_frame = true;
         emit FirstFrameDisplayed();

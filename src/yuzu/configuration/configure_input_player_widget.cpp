@@ -173,7 +173,7 @@ void PlayerControlPreview::ResetInputs() {
 }
 
 void PlayerControlPreview::UpdateInput() {
-    if (!is_enabled && !mapping_active) {
+    if (!is_enabled && !mapping_active && !Settings::values.tas_enable) {
         return;
     }
     bool input_changed = false;
@@ -220,11 +220,28 @@ void PlayerControlPreview::UpdateInput() {
 
     if (input_changed) {
         update();
+        if (controller_callback.input != nullptr) {
+            ControllerInput input{
+                .axis_values = {std::pair<float, float>{
+                                    axis_values[Settings::NativeAnalog::LStick].value.x(),
+                                    axis_values[Settings::NativeAnalog::LStick].value.y()},
+                                std::pair<float, float>{
+                                    axis_values[Settings::NativeAnalog::RStick].value.x(),
+                                    axis_values[Settings::NativeAnalog::RStick].value.y()}},
+                .button_values = button_values,
+                .changed = true,
+            };
+            controller_callback.input(std::move(input));
+        }
     }
 
     if (mapping_active) {
         blink_counter = (blink_counter + 1) % 50;
     }
+}
+
+void PlayerControlPreview::SetCallBack(ControllerCallback callback_) {
+    controller_callback = std::move(callback_);
 }
 
 void PlayerControlPreview::paintEvent(QPaintEvent* event) {

@@ -21,6 +21,7 @@
 #define SCREENSHOTS_DIR "screenshots"
 #define SDMC_DIR "sdmc"
 #define SHADER_DIR "shader"
+#define TAS_DIR "tas"
 
 // yuzu-specific files
 

@@ -29,6 +29,10 @@ namespace MouseInput {
 class Mouse;
 }
 
+namespace TasInput {
+class Tas;
+}
+
 namespace InputCommon {
 namespace Polling {
 
@@ -64,6 +68,8 @@ class MouseButtonFactory;
 class MouseAnalogFactory;
 class MouseMotionFactory;
 class MouseTouchFactory;
+class TasButtonFactory;
+class TasAnalogFactory;
 class Keyboard;
 
 /**
@@ -103,6 +109,11 @@ public:
     /// Retrieves the underlying mouse device.
     [[nodiscard]] const MouseInput::Mouse* GetMouse() const;
 
+    /// Retrieves the underlying tas device.
+    [[nodiscard]] TasInput::Tas* GetTas();
+
+    /// Retrieves the underlying tas device.
+    [[nodiscard]] const TasInput::Tas* GetTas() const;
     /**
      * Returns all available input devices that this Factory can create a new device with.
      * Each returned ParamPackage should have a `display` field used for display, a class field for
@@ -144,29 +155,41 @@ public:
     /// Retrieves the underlying udp touch handler.
     [[nodiscard]] const UDPTouchFactory* GetUDPTouch() const;
 
-    /// Retrieves the underlying GameCube button handler.
+    /// Retrieves the underlying mouse button handler.
     [[nodiscard]] MouseButtonFactory* GetMouseButtons();
 
-    /// Retrieves the underlying GameCube button handler.
+    /// Retrieves the underlying mouse button handler.
     [[nodiscard]] const MouseButtonFactory* GetMouseButtons() const;
 
-    /// Retrieves the underlying udp touch handler.
+    /// Retrieves the underlying mouse analog handler.
     [[nodiscard]] MouseAnalogFactory* GetMouseAnalogs();
 
-    /// Retrieves the underlying udp touch handler.
+    /// Retrieves the underlying mouse analog handler.
     [[nodiscard]] const MouseAnalogFactory* GetMouseAnalogs() const;
 
-    /// Retrieves the underlying udp motion handler.
+    /// Retrieves the underlying mouse motion handler.
     [[nodiscard]] MouseMotionFactory* GetMouseMotions();
 
-    /// Retrieves the underlying udp motion handler.
+    /// Retrieves the underlying mouse motion handler.
     [[nodiscard]] const MouseMotionFactory* GetMouseMotions() const;
 
-    /// Retrieves the underlying udp touch handler.
+    /// Retrieves the underlying mouse touch handler.
     [[nodiscard]] MouseTouchFactory* GetMouseTouch();
 
-    /// Retrieves the underlying udp touch handler.
+    /// Retrieves the underlying mouse touch handler.
     [[nodiscard]] const MouseTouchFactory* GetMouseTouch() const;
+
+    /// Retrieves the underlying tas button handler.
+    [[nodiscard]] TasButtonFactory* GetTasButtons();
+
+    /// Retrieves the underlying tas button handler.
+    [[nodiscard]] const TasButtonFactory* GetTasButtons() const;
+
+    /// Retrieves the underlying tas analogs handler.
+    [[nodiscard]] TasAnalogFactory* GetTasAnalogs();
+
+    /// Retrieves the underlying tas analogs handler.
+    [[nodiscard]] const TasAnalogFactory* GetTasAnalogs() const;
 
     /// Reloads the input devices
     void ReloadInputDevices();

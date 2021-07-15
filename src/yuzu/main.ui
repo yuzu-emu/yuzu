@@ -72,6 +72,7 @@
     <addaction name="action_Restart"/>
     <addaction name="separator"/>
     <addaction name="action_Configure"/>
+    <addaction name="action_Configure_Tas"/>
     <addaction name="action_Configure_Current_Game"/>
    </widget>
    <widget class="QMenu" name="menu_View">
@@ -292,6 +293,11 @@
    </property>
    <property name="text">
     <string>&amp;Capture Screenshot</string>
+   </property>
+  </action>
+  <action name="action_Configure_Tas">
+   <property name="text">
+    <string>Configure &amp;TAS...</string>
    </property>
   </action>
   <action name="action_Configure_Current_Game">
