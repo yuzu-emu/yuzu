@@ -2505,8 +2505,8 @@ void PlayerControlPreview::DrawArrowButton(QPainter& p, const QPointF center,
     QPoint offset;
 
     for (std::size_t point = 0; point < up_arrow_button.size() / 2; ++point) {
-        const float up_arrow_x = up_arrow_button[point * 2 + 0];
-        const float up_arrow_y = up_arrow_button[point * 2 + 1];
+        const volatile float up_arrow_x = up_arrow_button[point * 2 + 0];
+        const volatile float up_arrow_y = up_arrow_button[point * 2 + 1];
 
         switch (direction) {
         case Direction::Up:
