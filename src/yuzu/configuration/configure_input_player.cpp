@@ -149,8 +149,9 @@ QString ButtonToText(const Common::ParamPackage& param) {
 
         if (param.Has("button")) {
             const QString button_str = QString::fromStdString(param.Get("button", ""));
+            const QString toggle = QString::fromStdString(param.Get("toggle", false) ? "~" : "");
 
-            return QObject::tr("Button %1").arg(button_str);
+            return QObject::tr("%1Button %2").arg(toggle, button_str);
         }
 
         if (param.Has("motion")) {

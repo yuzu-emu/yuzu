@@ -115,6 +115,41 @@ public:
         return state.buttons.at(button);
     }
 
+    bool ToggleButton(int button) {
+        std::lock_guard lock{mutex};
+
+        if (!state.toggle_buttons.contains(button) || !state.lock_buttons.contains(button)) {
+            state.toggle_buttons.insert_or_assign(button, false);
+            state.lock_buttons.insert_or_assign(button, false);
+        }
+
+        const bool button_state = state.toggle_buttons.at(button);
+        const bool button_lock = state.lock_buttons.at(button);
+
+        if (button_lock) {
+            return button_state;
+        }
+
+        state.lock_buttons.insert_or_assign(button, true);
+
+        if (button_state) {
+            state.toggle_buttons.insert_or_assign(button, false);
+        } else {
+            state.toggle_buttons.insert_or_assign(button, true);
+        }
+
+        return !button_state;
+    }
+
+    bool UnlockButton(int button) {
+        std::lock_guard lock{mutex};
+        if (!state.toggle_buttons.contains(button)) {
+            return false;
+        }
+        state.lock_buttons.insert_or_assign(button, false);
+        return state.toggle_buttons.at(button);
+    }
+
     void SetAxis(int axis, Sint16 value) {
         std::lock_guard lock{mutex};
         state.axes.insert_or_assign(axis, value);
@@ -241,6 +276,8 @@ public:
 private:
     struct State {
         std::unordered_map<int, bool> buttons;
+        std::unordered_map<int, bool> toggle_buttons{};
+        std::unordered_map<int, bool> lock_buttons{};
         std::unordered_map<int, Sint16> axes;
         std::unordered_map<int, Uint8> hats;
     } state;
@@ -402,16 +439,25 @@ void SDLState::CloseJoysticks() {
 
 class SDLButton final : public Input::ButtonDevice {
 public:
-    explicit SDLButton(std::shared_ptr<SDLJoystick> joystick_, int button_)
-        : joystick(std::move(joystick_)), button(button_) {}
+    explicit SDLButton(std::shared_ptr<SDLJoystick> joystick_, int button_, bool toggle_)
+        : joystick(std::move(joystick_)), button(button_), toggle(toggle_) {}
 
     bool GetStatus() const override {
-        return joystick->GetButton(button);
+        const bool button_state = joystick->GetButton(button);
+        if (!toggle) {
+            return button_state;
+        }
+
+        if (button_state) {
+            return joystick->ToggleButton(button);
+        }
+        return joystick->UnlockButton(button);
     }
 
 private:
     std::shared_ptr<SDLJoystick> joystick;
     int button;
+    bool toggle;
 };
 
 class SDLDirectionButton final : public Input::ButtonDevice {
@@ -635,6 +681,7 @@ public:
     std::unique_ptr<Input::ButtonDevice> Create(const Common::ParamPackage& params) override {
         const std::string guid = params.Get("guid", "0");
         const int port = params.Get("port", 0);
+        const auto toggle = params.Get("toggle", false);
 
         auto joystick = state.GetSDLJoystickByGUID(guid, port);
 
@@ -679,7 +726,7 @@ public:
         const int button = params.Get("button", 0);
         // This is necessary so accessing GetButton with button won't crash
         joystick->SetButton(button, false);
-        return std::make_unique<SDLButton>(joystick, button);
+        return std::make_unique<SDLButton>(joystick, button, toggle);
     }
 
 private:
