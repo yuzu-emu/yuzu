@@ -60,6 +60,8 @@ public:
     void CopyBuffer(VkBuffer src_buffer, VkBuffer dst_buffer,
                     std::span<const VideoCommon::BufferCopy> copies);
 
+    void ClearBuffer(VkBuffer dest_buffer, u32 offset, size_t size, u32 value);
+
     void BindIndexBuffer(PrimitiveTopology topology, IndexFormat index_format, u32 num_indices,
                          u32 base_vertex, VkBuffer buffer, u32 offset, u32 size);
 

@@ -57,6 +57,8 @@ public:
     void CopyBuffer(Buffer& dst_buffer, Buffer& src_buffer,
                     std::span<const VideoCommon::BufferCopy> copies);
 
+    void ClearBuffer(Buffer& dest_buffer, u32 offset, size_t size, u32 value);
+
     void BindIndexBuffer(Buffer& buffer, u32 offset, u32 size);
 
     void BindVertexBuffer(u32 index, Buffer& buffer, u32 offset, u32 size, u32 stride);

@@ -98,6 +98,12 @@ void BufferCacheRuntime::CopyBuffer(Buffer& dst_buffer, Buffer& src_buffer,
     }
 }
 
+void BufferCacheRuntime::ClearBuffer(Buffer& dest_buffer, u32 offset, size_t size, u32 value) {
+    glClearNamedBufferSubData(dest_buffer.Handle(), GL_R32UI, static_cast<GLintptr>(offset),
+                              static_cast<GLsizeiptr>(size / sizeof(u32)), GL_RGBA, GL_UNSIGNED_INT,
+                              &value);
+}
+
 void BufferCacheRuntime::BindIndexBuffer(Buffer& buffer, u32 offset, u32 size) {
     if (has_unified_vertex_buffers) {
         buffer.MakeResident(GL_READ_ONLY);

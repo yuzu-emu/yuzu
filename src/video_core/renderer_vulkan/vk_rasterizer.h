@@ -56,6 +56,8 @@ public:
 
     bool BufferCopy(GPUVAddr start_address, GPUVAddr end_address, u64 amount) override;
 
+    bool BufferClear(GPUVAddr src_address, u64 amount, u32 value) override;
+
 private:
     BufferCache& buffer_cache;
 };

@@ -4,6 +4,7 @@
 
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "common/microprofile.h"
 #include "common/settings.h"
 #include "core/core.h"
 #include "video_core/engines/maxwell_3d.h"
@@ -11,6 +12,9 @@
 #include "video_core/memory_manager.h"
 #include "video_core/renderer_base.h"
 #include "video_core/textures/decoders.h"
+
+MICROPROFILE_DECLARE(GPU_DMAEngine);
+MICROPROFILE_DEFINE(GPU_DMAEngine, "GPU", "DMA Engine", MP_RGB(224, 224, 128));
 
 namespace Tegra::Engines {
 
@@ -43,6 +47,7 @@ void MaxwellDMA::CallMultiMethod(u32 method, const u32* base_start, u32 amount,
 }
 
 void MaxwellDMA::Launch() {
+    MICROPROFILE_SCOPE(GPU_DMAEngine);
     LOG_TRACE(Render_OpenGL, "DMA copy 0x{:x} -> 0x{:x}", static_cast<GPUVAddr>(regs.offset_in),
               static_cast<GPUVAddr>(regs.offset_out));
 
@@ -87,9 +92,11 @@ void MaxwellDMA::CopyPitchToPitch() {
         // TODO: allow multisized components.
         if (is_buffer_clear) {
             ASSERT(regs.remap_const.component_size_minus_one == 3);
+            accelerate.BufferClear(regs.offset_out, regs.line_length_in, regs.remap_consta_value);
             std::vector<u32> tmp_buffer(regs.line_length_in, regs.remap_consta_value);
-            memory_manager.WriteBlock(regs.offset_out, reinterpret_cast<u8*>(tmp_buffer.data()),
-                                      regs.line_length_in * sizeof(u32));
+            memory_manager.WriteBlockUnsafe(regs.offset_out,
+                                            reinterpret_cast<u8*>(tmp_buffer.data()),
+                                            regs.line_length_in * sizeof(u32));
             return;
         }
         UNIMPLEMENTED_IF(regs.launch_dma.remap_enable != 0);
@@ -179,8 +186,13 @@ void MaxwellDMA::CopyPitchToBlockLinear() {
         write_buffer.resize(dst_size);
     }
 
-    memory_manager.ReadBlock(regs.offset_in, read_buffer.data(), src_size);
-    memory_manager.ReadBlock(regs.offset_out, write_buffer.data(), dst_size);
+    if (Settings::IsGPULevelExtreme()) {
+        memory_manager.ReadBlock(regs.offset_in, read_buffer.data(), src_size);
+        memory_manager.ReadBlock(regs.offset_out, write_buffer.data(), dst_size);
+    } else {
+        memory_manager.ReadBlockUnsafe(regs.offset_in, read_buffer.data(), src_size);
+        memory_manager.ReadBlockUnsafe(regs.offset_out, write_buffer.data(), dst_size);
+    }
 
     // If the input is linear and the output is tiled, swizzle the input and copy it over.
     if (regs.dst_params.block_size.depth > 0) {

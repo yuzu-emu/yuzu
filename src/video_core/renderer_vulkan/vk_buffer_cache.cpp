@@ -136,6 +136,30 @@ void BufferCacheRuntime::CopyBuffer(VkBuffer dst_buffer, VkBuffer src_buffer,
     });
 }
 
+void BufferCacheRuntime::ClearBuffer(VkBuffer dest_buffer, u32 offset, size_t size, u32 value) {
+    static constexpr VkMemoryBarrier READ_BARRIER{
+        .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+        .pNext = nullptr,
+        .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+        .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+    };
+    static constexpr VkMemoryBarrier WRITE_BARRIER{
+        .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+        .pNext = nullptr,
+        .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+        .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
+    };
+
+    scheduler.RequestOutsideRenderPassOperationContext();
+    scheduler.Record([dest_buffer, offset, size, value](vk::CommandBuffer cmdbuf) {
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                               0, READ_BARRIER);
+        cmdbuf.FillBuffer(dest_buffer, offset, size, value);
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               0, WRITE_BARRIER);
+    });
+}
+
 void BufferCacheRuntime::BindIndexBuffer(PrimitiveTopology topology, IndexFormat index_format,
                                          u32 base_vertex, u32 num_indices, VkBuffer buffer,
                                          u32 offset, [[maybe_unused]] u32 size) {

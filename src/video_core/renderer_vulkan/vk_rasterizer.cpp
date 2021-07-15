@@ -706,6 +706,11 @@ void RasterizerVulkan::FlushWork() {
 
 AccelerateDMA::AccelerateDMA(BufferCache& buffer_cache_) : buffer_cache{buffer_cache_} {}
 
+bool AccelerateDMA::BufferClear(GPUVAddr src_address, u64 amount, u32 value) {
+    std::scoped_lock lock{buffer_cache.mutex};
+    return buffer_cache.DMAClear(src_address, amount, value);
+}
+
 bool AccelerateDMA::BufferCopy(GPUVAddr src_address, GPUVAddr dest_address, u64 amount) {
     std::scoped_lock lock{buffer_cache.mutex};
     return buffer_cache.DMACopy(src_address, dest_address, amount);

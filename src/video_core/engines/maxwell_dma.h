@@ -31,6 +31,8 @@ class AccelerateDMAInterface {
 public:
     /// Write the value to the register identified by method.
     virtual bool BufferCopy(GPUVAddr src_address, GPUVAddr dest_address, u64 amount) = 0;
+
+    virtual bool BufferClear(GPUVAddr src_address, u64 amount, u32 value) = 0;
 };
 
 /**
