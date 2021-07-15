@@ -58,6 +58,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include <QProgressBar>
 #include <QProgressDialog>
 #include <QPushButton>
+#include <QScreen>
 #include <QShortcut>
 #include <QStatusBar>
 #include <QString>
@@ -3378,6 +3379,41 @@ void GMainWindow::SetDiscordEnabled([[maybe_unused]] bool state) {
 #undef main
 #endif
 
+static void SetHighDPIAttributes(int argc, char* argv[]) {
+    // Create a temporary QApplication as a workaround to get the current screen geometry.
+    QApplication* temp_app = new QApplication(argc, argv);
+
+    const QScreen* primary_screen = temp_app->primaryScreen();
+    const QRect screen_rect = primary_screen->geometry();
+    const int real_width = screen_rect.width();
+    const int real_height = screen_rect.height();
+    const float real_ratio = primary_screen->logicalDotsPerInch() / 96.0f;
+
+    delete temp_app;
+
+    // Recommended minimum width and height for proper window fit.
+    // Any screen with a lower resolution than this will still have a scale of 1.
+    constexpr float minimum_width = 1350.0f;
+    constexpr float minimum_height = 900.0f;
+
+    const float width_ratio = std::max(1.0f, real_width / minimum_width);
+    const float height_ratio = std::max(1.0f, real_height / minimum_height);
+
+    // Get the lower of the 2 ratios and truncate, this is the maximum integer scale.
+    const float max_ratio = std::trunc(std::min(width_ratio, height_ratio));
+
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+
+    if (max_ratio > real_ratio) {
+        QApplication::setHighDpiScaleFactorRoundingPolicy(
+            Qt::HighDpiScaleFactorRoundingPolicy::Round);
+    } else {
+        QApplication::setHighDpiScaleFactorRoundingPolicy(
+            Qt::HighDpiScaleFactorRoundingPolicy::Floor);
+    }
+}
+
 int main(int argc, char* argv[]) {
     Common::DetachedTasks detached_tasks;
     MicroProfileOnThreadCreate("Frontend");
@@ -3410,8 +3446,11 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
+    SetHighDPIAttributes(argc, argv);
+
     // Enables the core to make the qt created contexts current on std::threads
     QCoreApplication::setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);
+
     QApplication app(argc, argv);
 
     // Qt changes the locale and causes issues in float conversion using std::to_string() when
