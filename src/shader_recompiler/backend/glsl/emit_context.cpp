@@ -257,6 +257,32 @@ void SetupOutPerVertex(EmitContext& ctx, std::string& header) {
     }
 }
 
+void SetupInPerVertex(EmitContext& ctx, std::string& header) {
+    // Currently only required for TessellationControl to adhere to
+    // ARB_separate_shader_objects requirements
+    if (ctx.stage != Stage::TessellationControl) {
+        return;
+    }
+    const bool loads_position{ctx.info.loads.AnyComponent(IR::Attribute::PositionX)};
+    const bool loads_point_size{ctx.info.loads[IR::Attribute::PointSize]};
+    const bool loads_clip_distance{ctx.info.loads.ClipDistances()};
+    const bool loads_per_vertex{loads_position || loads_point_size || loads_clip_distance};
+    if (!loads_per_vertex) {
+        return;
+    }
+    header += "in gl_PerVertex{";
+    if (loads_position) {
+        header += "vec4 gl_Position;";
+    }
+    if (loads_point_size) {
+        header += "float gl_PointSize;";
+    }
+    if (loads_clip_distance) {
+        header += "float gl_ClipDistance[];";
+    }
+    header += "}gl_in[gl_MaxPatchVertices];";
+}
+
 void SetupLegacyInPerFragment(EmitContext& ctx, std::string& header) {
     if (!ctx.info.loads.Legacy()) {
         return;
@@ -334,6 +360,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         break;
     }
     SetupOutPerVertex(*this, header);
+    SetupInPerVertex(*this, header);
     SetupLegacyInPerFragment(*this, header);
 
     for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
@@ -375,6 +402,7 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
 }
 
 void EmitContext::SetupExtensions() {
+    header += "#extension GL_ARB_separate_shader_objects : enable\n";
     if (info.uses_shadow_lod && profile.support_gl_texture_shadow_lod) {
         header += "#extension GL_EXT_texture_shadow_lod : enable\n";
     }
