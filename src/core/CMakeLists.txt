@@ -517,6 +517,8 @@ add_library(core STATIC
     hle/service/psc/psc.h
     hle/service/ptm/psm.cpp
     hle/service/ptm/psm.h
+    hle/service/kernel_helpers.cpp
+    hle/service/kernel_helpers.h
     hle/service/service.cpp
     hle/service/service.h
     hle/service/set/set.cpp

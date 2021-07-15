@@ -46,8 +46,9 @@ constexpr auto pad_update_ns = std::chrono::nanoseconds{1000 * 1000};         //
 constexpr auto motion_update_ns = std::chrono::nanoseconds{15 * 1000 * 1000}; // (15ms, 66.666Hz)
 constexpr std::size_t SHARED_MEMORY_SIZE = 0x40000;
 
-IAppletResource::IAppletResource(Core::System& system_)
-    : ServiceFramework{system_, "IAppletResource"} {
+IAppletResource::IAppletResource(Core::System& system_,
+                                 KernelHelpers::ServiceContext& service_context_)
+    : ServiceFramework{system_, "IAppletResource"}, service_context{service_context_} {
     static const FunctionInfo functions[] = {
         {0, &IAppletResource::GetSharedMemoryHandle, "GetSharedMemoryHandle"},
     };
@@ -63,7 +64,7 @@ IAppletResource::IAppletResource(Core::System& system_)
     MakeController<Controller_Stubbed>(HidController::CaptureButton);
     MakeController<Controller_Stubbed>(HidController::InputDetector);
     MakeController<Controller_Stubbed>(HidController::UniquePad);
-    MakeController<Controller_NPad>(HidController::NPad);
+    MakeControllerWithServiceContext<Controller_NPad>(HidController::NPad);
     MakeController<Controller_Gesture>(HidController::Gesture);
     MakeController<Controller_ConsoleSixAxis>(HidController::ConsoleSixAxisSensor);
 
@@ -191,13 +192,14 @@ private:
 
 std::shared_ptr<IAppletResource> Hid::GetAppletResource() {
     if (applet_resource == nullptr) {
-        applet_resource = std::make_shared<IAppletResource>(system);
+        applet_resource = std::make_shared<IAppletResource>(system, service_context);
     }
 
     return applet_resource;
 }
 
-Hid::Hid(Core::System& system_) : ServiceFramework{system_, "hid"} {
+Hid::Hid(Core::System& system_)
+    : ServiceFramework{system_, "hid"}, service_context{system_, service_name} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, &Hid::CreateAppletResource, "CreateAppletResource"},
@@ -347,7 +349,7 @@ void Hid::CreateAppletResource(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_HID, "called, applet_resource_user_id={}", applet_resource_user_id);
 
     if (applet_resource == nullptr) {
-        applet_resource = std::make_shared<IAppletResource>(system);
+        applet_resource = std::make_shared<IAppletResource>(system, service_context);
     }
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};

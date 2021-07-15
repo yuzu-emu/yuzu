@@ -49,6 +49,7 @@ private:
     ServiceManager& service_manager;
     bool is_initialized{};
     Kernel::KernelCore& kernel;
+    std::vector<Kernel::KServerPort*> server_ports;
 };
 
 class ServiceManager {
@@ -58,7 +59,8 @@ public:
     explicit ServiceManager(Kernel::KernelCore& kernel_);
     ~ServiceManager();
 
-    ResultVal<Kernel::KServerPort*> RegisterService(std::string name, u32 max_sessions);
+    ResultCode RegisterService(std::string name, u32 max_sessions,
+                               Kernel::SessionRequestHandlerPtr handler);
     ResultCode UnregisterService(const std::string& name);
     ResultVal<Kernel::KPort*> GetServicePort(const std::string& name);
 
@@ -69,21 +71,17 @@ public:
             LOG_DEBUG(Service, "Can't find service: {}", service_name);
             return nullptr;
         }
-        auto* port = service->second;
-        if (port == nullptr) {
-            return nullptr;
-        }
-        return std::static_pointer_cast<T>(port->GetServerPort().GetSessionRequestHandler());
+        return std::static_pointer_cast<T>(service->second);
     }
 
     void InvokeControlRequest(Kernel::HLERequestContext& context);
 
 private:
-    std::weak_ptr<SM> sm_interface;
+    std::shared_ptr<SM> sm_interface;
     std::unique_ptr<Controller> controller_interface;
 
     /// Map of registered services, retrieved using GetServicePort.
-    std::unordered_map<std::string, Kernel::KPort*> registered_services;
+    std::unordered_map<std::string, Kernel::SessionRequestHandlerPtr> registered_services;
 
     /// Kernel context
     Kernel::KernelCore& kernel;

@@ -104,23 +104,22 @@ ServiceFrameworkBase::~ServiceFrameworkBase() {
 void ServiceFrameworkBase::InstallAsService(SM::ServiceManager& service_manager) {
     const auto guard = LockService();
 
-    ASSERT(!port_installed);
+    ASSERT(!service_registered);
 
-    auto port = service_manager.RegisterService(service_name, max_sessions).Unwrap();
-    port->SetSessionHandler(shared_from_this());
-    port_installed = true;
+    service_manager.RegisterService(service_name, max_sessions, shared_from_this());
+    service_registered = true;
 }
 
 Kernel::KClientPort& ServiceFrameworkBase::CreatePort() {
     const auto guard = LockService();
 
-    ASSERT(!port_installed);
+    ASSERT(!service_registered);
 
     auto* port = Kernel::KPort::Create(kernel);
     port->Initialize(max_sessions, false, service_name);
     port->GetServerPort().SetSessionHandler(shared_from_this());
 
-    port_installed = true;
+    service_registered = true;
 
     return port->GetClientPort();
 }

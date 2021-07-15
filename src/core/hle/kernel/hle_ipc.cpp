@@ -58,6 +58,9 @@ bool SessionRequestManager::HasSessionRequestHandler(const HLERequestContext& co
 
 void SessionRequestHandler::ClientConnected(KServerSession* session) {
     session->ClientConnected(shared_from_this());
+
+    // Ensure our server session is tracked globally.
+    kernel.RegisterServerSession(session);
 }
 
 void SessionRequestHandler::ClientDisconnected(KServerSession* session) {
