@@ -14,15 +14,73 @@
 
 namespace GCAdapter {
 
+class LibUSBContext {
+public:
+    explicit LibUSBContext() {
+        init_result = libusb_init(&ctx);
+    }
+
+    ~LibUSBContext() {
+        libusb_exit(ctx);
+    }
+
+    LibUSBContext& operator=(const LibUSBContext&) = delete;
+    LibUSBContext(const LibUSBContext&) = delete;
+
+    LibUSBContext& operator=(LibUSBContext&&) noexcept = delete;
+    LibUSBContext(LibUSBContext&&) noexcept = delete;
+
+    [[nodiscard]] int InitResult() const noexcept {
+        return init_result;
+    }
+
+    [[nodiscard]] libusb_context* get() noexcept {
+        return ctx;
+    }
+
+private:
+    libusb_context* ctx;
+    int init_result{};
+};
+
+class LibUSBDeviceHandle {
+public:
+    explicit LibUSBDeviceHandle(libusb_context* ctx, uint16_t vid, uint16_t pid) noexcept {
+        handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
+    }
+
+    ~LibUSBDeviceHandle() noexcept {
+        if (handle) {
+            libusb_release_interface(handle, 1);
+            libusb_close(handle);
+        }
+    }
+
+    LibUSBDeviceHandle& operator=(const LibUSBDeviceHandle&) = delete;
+    LibUSBDeviceHandle(const LibUSBDeviceHandle&) = delete;
+
+    LibUSBDeviceHandle& operator=(LibUSBDeviceHandle&&) noexcept = delete;
+    LibUSBDeviceHandle(LibUSBDeviceHandle&&) noexcept = delete;
+
+    [[nodiscard]] libusb_device_handle* get() noexcept {
+        return handle;
+    }
+
+private:
+    libusb_device_handle* handle{};
+};
+
 Adapter::Adapter() {
-    if (usb_adapter_handle != nullptr) {
+    if (usb_adapter_handle) {
         return;
     }
     LOG_INFO(Input, "GC Adapter Initialization started");
 
-    const int init_res = libusb_init(&libusb_ctx);
+    libusb_ctx = std::make_unique<LibUSBContext>();
+    const int init_res = libusb_ctx->InitResult();
     if (init_res == LIBUSB_SUCCESS) {
-        adapter_scan_thread = std::thread(&Adapter::AdapterScanThread, this);
+        adapter_scan_thread =
+            std::jthread([this](std::stop_token stop_token) { AdapterScanThread(stop_token); });
     } else {
         LOG_ERROR(Input, "libusb could not be initialized. failed with error = {}", init_res);
     }
@@ -32,17 +90,15 @@ Adapter::~Adapter() {
     Reset();
 }
 
-void Adapter::AdapterInputThread() {
+void Adapter::AdapterInputThread(std::stop_token stop_token) {
     LOG_DEBUG(Input, "GC Adapter input thread started");
     s32 payload_size{};
     AdapterPayload adapter_payload{};
 
-    if (adapter_scan_thread.joinable()) {
-        adapter_scan_thread.join();
-    }
+    adapter_scan_thread = {};
 
-    while (adapter_input_thread_running) {
-        libusb_interrupt_transfer(usb_adapter_handle, input_endpoint, adapter_payload.data(),
+    while (!stop_token.stop_requested()) {
+        libusb_interrupt_transfer(usb_adapter_handle->get(), input_endpoint, adapter_payload.data(),
                                   static_cast<s32>(adapter_payload.size()), &payload_size, 16);
         if (IsPayloadCorrect(adapter_payload, payload_size)) {
             UpdateControllers(adapter_payload);
@@ -52,7 +108,8 @@ void Adapter::AdapterInputThread() {
     }
 
     if (restart_scan_thread) {
-        adapter_scan_thread = std::thread(&Adapter::AdapterScanThread, this);
+        adapter_scan_thread =
+            std::jthread([this](std::stop_token token) { AdapterScanThread(token); });
         restart_scan_thread = false;
     }
 }
@@ -64,7 +121,7 @@ bool Adapter::IsPayloadCorrect(const AdapterPayload& adapter_payload, s32 payloa
                   adapter_payload[0]);
         if (input_error_counter++ > 20) {
             LOG_ERROR(Input, "GC adapter timeout, Is the adapter connected?");
-            adapter_input_thread_running = false;
+            adapter_input_thread.request_stop();
             restart_scan_thread = true;
         }
         return false;
@@ -96,7 +153,7 @@ void Adapter::UpdatePadType(std::size_t port, ControllerTypes pad_type) {
         return;
     }
     // Device changed reset device and set new type
-    ResetDevice(port);
+    pads[port] = {};
     pads[port].type = pad_type;
 }
 
@@ -213,8 +270,9 @@ void Adapter::SendVibrations() {
     const u8 p3 = pads[2].enable_vibration;
     const u8 p4 = pads[3].enable_vibration;
     std::array<u8, 5> payload = {rumble_command, p1, p2, p3, p4};
-    const int err = libusb_interrupt_transfer(usb_adapter_handle, output_endpoint, payload.data(),
-                                              static_cast<s32>(payload.size()), &size, 16);
+    const int err =
+        libusb_interrupt_transfer(usb_adapter_handle->get(), output_endpoint, payload.data(),
+                                  static_cast<s32>(payload.size()), &size, 16);
     if (err) {
         LOG_DEBUG(Input, "Adapter libusb write failed: {}", libusb_error_name(err));
         if (output_error_counter++ > 5) {
@@ -233,56 +291,53 @@ bool Adapter::RumblePlay(std::size_t port, u8 amplitude) {
     return rumble_enabled;
 }
 
-void Adapter::AdapterScanThread() {
-    adapter_scan_thread_running = true;
-    adapter_input_thread_running = false;
-    if (adapter_input_thread.joinable()) {
-        adapter_input_thread.join();
-    }
-    ClearLibusbHandle();
-    ResetDevices();
-    while (adapter_scan_thread_running && !adapter_input_thread_running) {
-        Setup();
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+void Adapter::AdapterScanThread(std::stop_token stop_token) {
+    usb_adapter_handle = nullptr;
+    pads = {};
+    while (!stop_token.stop_requested() && !Setup()) {
+        std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 }
 
-void Adapter::Setup() {
-    usb_adapter_handle = libusb_open_device_with_vid_pid(libusb_ctx, 0x057e, 0x0337);
-
-    if (usb_adapter_handle == NULL) {
-        return;
+bool Adapter::Setup() {
+    constexpr u16 nintendo_vid = 0x057e;
+    constexpr u16 gc_adapter_pid = 0x0337;
+    usb_adapter_handle =
+        std::make_unique<LibUSBDeviceHandle>(libusb_ctx->get(), nintendo_vid, gc_adapter_pid);
+    if (!usb_adapter_handle->get()) {
+        return false;
     }
     if (!CheckDeviceAccess()) {
-        ClearLibusbHandle();
-        return;
+        usb_adapter_handle = nullptr;
+        return false;
     }
 
-    libusb_device* device = libusb_get_device(usb_adapter_handle);
+    libusb_device* const device = libusb_get_device(usb_adapter_handle->get());
 
     LOG_INFO(Input, "GC adapter is now connected");
     // GC Adapter found and accessible, registering it
     if (GetGCEndpoint(device)) {
-        adapter_scan_thread_running = false;
-        adapter_input_thread_running = true;
         rumble_enabled = true;
         input_error_counter = 0;
         output_error_counter = 0;
-        adapter_input_thread = std::thread(&Adapter::AdapterInputThread, this);
+        adapter_input_thread =
+            std::jthread([this](std::stop_token stop_token) { AdapterInputThread(stop_token); });
+        return true;
     }
+    return false;
 }
 
 bool Adapter::CheckDeviceAccess() {
     // This fixes payload problems from offbrand GCAdapters
     const s32 control_transfer_error =
-        libusb_control_transfer(usb_adapter_handle, 0x21, 11, 0x0001, 0, nullptr, 0, 1000);
+        libusb_control_transfer(usb_adapter_handle->get(), 0x21, 11, 0x0001, 0, nullptr, 0, 1000);
     if (control_transfer_error < 0) {
         LOG_ERROR(Input, "libusb_control_transfer failed with error= {}", control_transfer_error);
     }
 
-    s32 kernel_driver_error = libusb_kernel_driver_active(usb_adapter_handle, 0);
+    s32 kernel_driver_error = libusb_kernel_driver_active(usb_adapter_handle->get(), 0);
     if (kernel_driver_error == 1) {
-        kernel_driver_error = libusb_detach_kernel_driver(usb_adapter_handle, 0);
+        kernel_driver_error = libusb_detach_kernel_driver(usb_adapter_handle->get(), 0);
         if (kernel_driver_error != 0 && kernel_driver_error != LIBUSB_ERROR_NOT_SUPPORTED) {
             LOG_ERROR(Input, "libusb_detach_kernel_driver failed with error = {}",
                       kernel_driver_error);
@@ -290,15 +345,13 @@ bool Adapter::CheckDeviceAccess() {
     }
 
     if (kernel_driver_error && kernel_driver_error != LIBUSB_ERROR_NOT_SUPPORTED) {
-        libusb_close(usb_adapter_handle);
         usb_adapter_handle = nullptr;
         return false;
     }
 
-    const int interface_claim_error = libusb_claim_interface(usb_adapter_handle, 0);
+    const int interface_claim_error = libusb_claim_interface(usb_adapter_handle->get(), 0);
     if (interface_claim_error) {
         LOG_ERROR(Input, "libusb_claim_interface failed with error = {}", interface_claim_error);
-        libusb_close(usb_adapter_handle);
         usb_adapter_handle = nullptr;
         return false;
     }
@@ -332,57 +385,17 @@ bool Adapter::GetGCEndpoint(libusb_device* device) {
     // This transfer seems to be responsible for clearing the state of the adapter
     // Used to clear the "busy" state of when the device is unexpectedly unplugged
     unsigned char clear_payload = 0x13;
-    libusb_interrupt_transfer(usb_adapter_handle, output_endpoint, &clear_payload,
+    libusb_interrupt_transfer(usb_adapter_handle->get(), output_endpoint, &clear_payload,
                               sizeof(clear_payload), nullptr, 16);
     return true;
 }
 
-void Adapter::JoinThreads() {
-    restart_scan_thread = false;
-    adapter_input_thread_running = false;
-    adapter_scan_thread_running = false;
-
-    if (adapter_scan_thread.joinable()) {
-        adapter_scan_thread.join();
-    }
-
-    if (adapter_input_thread.joinable()) {
-        adapter_input_thread.join();
-    }
-}
-
-void Adapter::ClearLibusbHandle() {
-    if (usb_adapter_handle) {
-        libusb_release_interface(usb_adapter_handle, 1);
-        libusb_close(usb_adapter_handle);
-        usb_adapter_handle = nullptr;
-    }
-}
-
-void Adapter::ResetDevices() {
-    for (std::size_t i = 0; i < pads.size(); ++i) {
-        ResetDevice(i);
-    }
-}
-
-void Adapter::ResetDevice(std::size_t port) {
-    pads[port].type = ControllerTypes::None;
-    pads[port].enable_vibration = false;
-    pads[port].rumble_amplitude = 0;
-    pads[port].buttons = 0;
-    pads[port].last_button = PadButton::Undefined;
-    pads[port].axis_values.fill(0);
-    pads[port].reset_origin_counter = 0;
-}
-
 void Adapter::Reset() {
-    JoinThreads();
-    ClearLibusbHandle();
-    ResetDevices();
-
-    if (libusb_ctx) {
-        libusb_exit(libusb_ctx);
-    }
+    adapter_scan_thread = {};
+    adapter_input_thread = {};
+    usb_adapter_handle = nullptr;
+    pads = {};
+    libusb_ctx = nullptr;
 }
 
 std::vector<Common::ParamPackage> Adapter::GetInputDevices() const {
