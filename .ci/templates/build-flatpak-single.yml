@@ -1,0 +1,35 @@
+parameters:
+  cache: 'false'
+  version: ''
+
+steps:
+- task: DockerInstaller@0
+  displayName: 'Prepare Environment'
+  inputs:
+    dockerVersion: '17.09.0-ce'
+- task: CacheBeta@0
+  displayName: 'Cache Build System'
+  inputs:
+    key: yuzu-v1-$(BuildName)-$(BuildSuffix)-$(CacheSuffix)
+    path: $(System.DefaultWorkingDirectory)/ccache
+    cacheHitVar: CACHE_RESTORED
+- script: chmod a+x ./.ci/scripts/$(ScriptFolder)/exec.sh && ./.ci/scripts/$(ScriptFolder)/exec.sh ${{ parameters['version'] }}
+  displayName: 'Build'
+  env:
+    FLATPAK_ENC_IV: $(FLATPAK_ENC_IV)
+    FLATPAK_ENC_K: $(FLATPAK_ENC_K)
+    FLATPAK_GPG_PUBLIC_KEY: $(FLATPAK_GPG_PUBLIC_KEY)
+    FLATPAK_SSH_HOSTNAME: $(FLATPAK_SSH_HOSTNAME)
+    FLATPAK_SSH_PORT: $(FLATPAK_SSH_PORT)
+    FLATPAK_SSH_PUBLIC_KEY: $(FLATPAK_SSH_PUBLIC_KEY)
+    FLATPAK_SSH_USER: $(FLATPAK_SSH_USER)
+    AZURE_BRANCH: $(Build.SourceBranch)
+    AZURE_BUILD_ID: $(Build.BuildId)
+    AZURE_BUILD_NUMBER: $(Build.BuildNumber)
+    AZURE_COMMIT: $(Build.SourceVersion)
+    AZURE_JOB_ID: $(System.JobId)
+    AZURE_REPO_SLUG: $(Build.Repository.Name)
+    AZURE_TAG: $(Build.SourceBranch)
+- script: chmod a+x ./.ci/scripts/$(ScriptFolder)/finish.sh && ./.ci/scripts/$(ScriptFolder)/finish.sh
+  condition: always()
+  displayName: 'Clean up'
