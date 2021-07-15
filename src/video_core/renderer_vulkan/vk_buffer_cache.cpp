@@ -161,7 +161,16 @@ void BufferCacheRuntime::BindIndexBuffer(PrimitiveTopology topology, IndexFormat
 }
 
 void BufferCacheRuntime::BindQuadArrayIndexBuffer(u32 first, u32 count) {
-    ReserveQuadArrayLUT(first + count, true);
+    const u32 total_indices = first + count;
+    if (total_indices == 0) {
+        ReserveNullIndexBuffer();
+        scheduler.Record([buffer = *null_index_buffer,
+                          index_type = quad_array_lut_index_type](vk::CommandBuffer cmdbuf) {
+            cmdbuf.BindIndexBuffer(buffer, 0, index_type);
+        });
+        return;
+    }
+    ReserveQuadArrayLUT(total_indices, true);
 
     // The LUT has the indices 0, 1, 2, and 3 copied as an array
     // To apply these 'first' offsets we can apply an offset based on the modulus.
