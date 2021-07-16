@@ -152,8 +152,8 @@ void BufferCacheRuntime::BindIndexBuffer(PrimitiveTopology topology, IndexFormat
     }
     if (vk_buffer == VK_NULL_HANDLE) {
         // Vulkan doesn't support null index buffers. Replace it with our own null buffer.
-        ReserveNullIndexBuffer();
-        vk_buffer = *null_index_buffer;
+        ReserveNullBuffer();
+        vk_buffer = *null_buffer;
     }
     scheduler.Record([vk_buffer, vk_offset, vk_index_type](vk::CommandBuffer cmdbuf) {
         cmdbuf.BindIndexBuffer(vk_buffer, vk_offset, vk_index_type);
@@ -194,6 +194,14 @@ void BufferCacheRuntime::BindTransformFeedbackBuffer(u32 index, VkBuffer buffer,
     if (!device.IsExtTransformFeedbackSupported()) {
         // Already logged in the rasterizer
         return;
+    }
+    if (buffer == VK_NULL_HANDLE) {
+        // Vulkan doesn't support null transform feedback buffers.
+        // Replace it with our own null buffer.
+        ReserveNullBuffer();
+        buffer = *null_buffer;
+        offset = 0;
+        size = 0;
     }
     scheduler.Record([index, buffer, offset, size](vk::CommandBuffer cmdbuf) {
         const VkDeviceSize vk_offset = offset;
@@ -279,11 +287,11 @@ void BufferCacheRuntime::ReserveQuadArrayLUT(u32 num_indices, bool wait_for_idle
     });
 }
 
-void BufferCacheRuntime::ReserveNullIndexBuffer() {
-    if (null_index_buffer) {
+void BufferCacheRuntime::ReserveNullBuffer() {
+    if (null_buffer) {
         return;
     }
-    null_index_buffer = device.GetLogical().CreateBuffer(VkBufferCreateInfo{
+    null_buffer = device.GetLogical().CreateBuffer(VkBufferCreateInfo{
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
@@ -294,12 +302,12 @@ void BufferCacheRuntime::ReserveNullIndexBuffer() {
         .pQueueFamilyIndices = nullptr,
     });
     if (device.HasDebuggingToolAttached()) {
-        null_index_buffer.SetObjectNameEXT("Null index buffer");
+        null_buffer.SetObjectNameEXT("Null index buffer");
     }
-    null_index_buffer_commit = memory_allocator.Commit(null_index_buffer, MemoryUsage::DeviceLocal);
+    null_buffer_commit = memory_allocator.Commit(null_buffer, MemoryUsage::DeviceLocal);
 
     scheduler.RequestOutsideRenderPassOperationContext();
-    scheduler.Record([buffer = *null_index_buffer](vk::CommandBuffer cmdbuf) {
+    scheduler.Record([buffer = *null_buffer](vk::CommandBuffer cmdbuf) {
         cmdbuf.FillBuffer(buffer, 0, VK_WHOLE_SIZE, 0);
     });
 }
