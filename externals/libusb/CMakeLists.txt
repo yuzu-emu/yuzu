@@ -67,6 +67,8 @@ if (MINGW OR (${CMAKE_SYSTEM_NAME} MATCHES "Linux") OR APPLE)
             "${LIBUSB_MAKEFILE}"
         COMMAND
             env
+                CC="${CMAKE_C_COMPILER}"
+                CXX="${CMAKE_CXX_COMPILER}"
                 CFLAGS="${LIBUSB_CFLAGS}"
             sh "${LIBUSB_CONFIGURE}"
                 ${LIBUSB_CONFIGURE_ARGS}
