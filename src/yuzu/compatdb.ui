@@ -58,7 +58,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizard_Report">
+  <widget class="QWizardPage" name="wizard_GameBoot">
    <property name="title">
     <string>Report Game Compatibility</string>
    </property>
@@ -67,16 +67,16 @@
    </attribute>
    <layout class="QFormLayout" name="formLayout">
     <item row="2" column="0">
-     <widget class="QRadioButton" name="radioButton_Perfect">
+     <widget class="QRadioButton" name="radioButton_GameBoot_Yes">
       <property name="text">
-       <string>Perfect</string>
+       <string>Yes</string>
       </property>
      </widget>
     </item>
     <item row="2" column="1">
-     <widget class="QLabel" name="lbl_Perfect">
+     <widget class="QLabel" name="lbl_GameBoot_Yes">
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Game functions flawlessly with no audio or graphical glitches.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Game starts to output video or audio&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="wordWrap">
        <bool>true</bool>
@@ -84,90 +84,19 @@
      </widget>
     </item>
     <item row="4" column="0">
-     <widget class="QRadioButton" name="radioButton_Great">
+     <widget class="QRadioButton" name="radioButton_GameBoot_No">
       <property name="text">
-       <string>Great </string>
+       <string>No </string>
       </property>
      </widget>
     </item>
     <item row="4" column="1">
-     <widget class="QLabel" name="lbl_Great">
+     <widget class="QLabel" name="lbl_GameBoot_No">
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Game functions with minor graphical or audio glitches and is playable from start to finish. May require some workarounds.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Game doesn't get past the loading yuzu screen&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="wordWrap">
        <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="5" column="0">
-     <widget class="QRadioButton" name="radioButton_Okay">
-      <property name="text">
-       <string>Okay</string>
-      </property>
-     </widget>
-    </item>
-    <item row="5" column="1">
-     <widget class="QLabel" name="lbl_Okay">
-      <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Game functions with major graphical or audio glitches, but game is playable from start to finish with workarounds.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="wordWrap">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="6" column="0">
-     <widget class="QRadioButton" name="radioButton_Bad">
-      <property name="text">
-       <string>Bad</string>
-      </property>
-     </widget>
-    </item>
-    <item row="6" column="1">
-     <widget class="QLabel" name="lbl_Bad">
-      <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Game functions, but with major graphical or audio glitches. Unable to progress in specific areas due to glitches even with workarounds.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="wordWrap">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="7" column="0">
-     <widget class="QRadioButton" name="radioButton_IntroMenu">
-      <property name="text">
-       <string>Intro/Menu</string>
-      </property>
-     </widget>
-    </item>
-    <item row="7" column="1">
-     <widget class="QLabel" name="lbl_IntroMenu">
-      <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Game is completely unplayable due to major graphical or audio glitches. Unable to progress past the Start Screen.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="wordWrap">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="8" column="0">
-     <widget class="QRadioButton" name="radioButton_WontBoot">
-      <property name="text">
-       <string>Won't Boot</string>
-      </property>
-      <property name="checkable">
-       <bool>true</bool>
-      </property>
-      <property name="checked">
-       <bool>false</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="8" column="1">
-     <widget class="QLabel" name="lbl_WontBoot">
-      <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The game crashes when attempting to startup.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
      </widget>
     </item>
@@ -179,7 +108,7 @@
        </font>
       </property>
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Independent of speed or performance, how well does this game play from start to finish on this version of yuzu?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Does the game boot?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="wordWrap">
        <bool>true</bool>
@@ -201,12 +130,619 @@
     </item>
    </layout>
   </widget>
+   <widget class="QWizardPage" name="wizard_GamePlay">
+     <property name="title">
+       <string>Report Game Compatibility</string>
+     </property>
+     <attribute name="pageId">
+       <string notr="true">2</string>
+     </attribute>
+     <layout class="QFormLayout" name="formLayout">
+       <item row="2" column="0">
+         <widget class="QRadioButton" name="radioButton_Gameplay_Yes">
+           <property name="text">
+             <string>Yes</string>
+           </property>
+         </widget>
+       </item>
+       <item row="2" column="1">
+         <widget class="QLabel" name="lbl_Gameplay_Yes">
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You can get past the intro/menu and into gameplay&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="4" column="0">
+         <widget class="QRadioButton" name="radioButton_Gameplay_No">
+           <property name="text">
+             <string>No </string>
+           </property>
+         </widget>
+       </item>
+       <item row="4" column="1">
+         <widget class="QLabel" name="lbl_Gameplay_No">
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The game crashes or freezes while loading or using the menu&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="lbl_Independent">
+           <property name="font">
+             <font>
+               <pointsize>10</pointsize>
+             </font>
+           </property>
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Does the game reach gameplay?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+         <spacer name="verticalSpacer">
+           <property name="orientation">
+             <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+             <size>
+               <width>20</width>
+               <height>0</height>
+             </size>
+           </property>
+         </spacer>
+       </item>
+     </layout>
+   </widget>
+   <widget class="QWizardPage" name="wizard_Freeze">
+     <property name="title">
+       <string>Report Game Compatibility</string>
+     </property>
+     <attribute name="pageId">
+       <string notr="true">3</string>
+     </attribute>
+     <layout class="QFormLayout" name="formLayout">
+       <item row="2" column="0">
+         <widget class="QRadioButton" name="radioButton_Freeze_Yes">
+           <property name="text">
+             <string>Yes</string>
+           </property>
+         </widget>
+       </item>
+       <item row="2" column="1">
+         <widget class="QLabel" name="lbl_Freeze_Yes">
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The game crashes or freezes while loading or using the menu&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="4" column="0">
+         <widget class="QRadioButton" name="radioButton_Freeze_No">
+           <property name="text">
+             <string>No </string>
+           </property>
+         </widget>
+       </item>
+       <item row="4" column="1">
+         <widget class="QLabel" name="lbl_Freeze_No">
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The game never stops working&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="lbl_Independent">
+           <property name="font">
+             <font>
+               <pointsize>10</pointsize>
+             </font>
+           </property>
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Does the game crash, freeze or lockup during gameplay?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+         <spacer name="verticalSpacer">
+           <property name="orientation">
+             <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+             <size>
+               <width>20</width>
+               <height>0</height>
+             </size>
+           </property>
+         </spacer>
+       </item>
+     </layout>
+   </widget>
+   <widget class="QWizardPage" name="wizard_Freeze_optional">
+     <property name="title">
+       <string>Report Game Compatibility</string>
+     </property>
+     <attribute name="pageId">
+       <string notr="true">4</string>
+     </attribute>
+     <layout class="QFormLayout" name="formLayout">
+       <item row="2" column="0">
+         <widget class="QCheckBox" name="checkbox_Freeze_crash">
+           <property name="text">
+             <string>The game crashes at specific points</string>
+           </property>
+         </widget>
+       </item>
+       <item row="3" column="0">
+         <widget class="QCheckBox" name="checkbox_Freeze_random_crash">
+           <property name="text">
+             <string>The game randomly crashes</string>
+           </property>
+         </widget>
+       </item>
+       <item row="4" column="0">
+         <widget class="QCheckBox" name="checkbox_Freeze_freeze">
+           <property name="text">
+             <string>The game freezes at specific points</string>
+           </property>
+         </widget>
+       </item>
+       <item row="5" column="0">
+         <widget class="QCheckBox" name="checkbox_Freeze_random_freeze">
+           <property name="text">
+             <string>The game randomly freezes </string>
+           </property>
+         </widget>
+       </item>
+       <item row="6" column="0">
+         <widget class="QCheckBox" name="checkbox_Freeze_softlock">
+           <property name="text">
+             <string>The game softlocks</string>
+           </property>
+         </widget>
+       </item>
+       <item row="7" column="0">
+         <widget class="QCheckBox" name="checkbox_Freeze_memoryleak">
+           <property name="text">
+             <string>The has memory leaks</string>
+           </property>
+         </widget>
+       </item>
+       <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="lbl_Independent">
+           <property name="font">
+             <font>
+               <pointsize>10</pointsize>
+             </font>
+           </property>
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check the boxes with the issue&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+         <spacer name="verticalSpacer">
+           <property name="orientation">
+             <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+             <size>
+               <width>20</width>
+               <height>0</height>
+             </size>
+           </property>
+         </spacer>
+       </item>
+     </layout>
+   </widget>
+   <widget class="QWizardPage" name="wizard_Graphical">
+     <property name="title">
+       <string>Report Game Compatibility</string>
+     </property>
+     <attribute name="pageId">
+       <string notr="true">5</string>
+     </attribute>
+     <layout class="QFormLayout" name="formLayout">
+       <item row="2" column="0">
+         <widget class="QRadioButton" name="radioButton_Graphical_Yes">
+           <property name="text">
+             <string>Yes</string>
+           </property>
+         </widget>
+       </item>
+       <item row="2" column="1">
+         <widget class="QLabel" name="lbl_Graphical_Yes">
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The game has graphical errors&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="4" column="0">
+         <widget class="QRadioButton" name="radioButton_Graphical_No">
+           <property name="text">
+             <string>No </string>
+           </property>
+         </widget>
+       </item>
+       <item row="4" column="1">
+         <widget class="QLabel" name="lbl_Graphical_No">
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Everything is rendered as it looks on the Nintendo Switch&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="lbl_Independent">
+           <property name="font">
+             <font>
+               <pointsize>10</pointsize>
+             </font>
+           </property>
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Does the game have any graphical glitches?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+         <spacer name="verticalSpacer">
+           <property name="orientation">
+             <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+             <size>
+               <width>20</width>
+               <height>0</height>
+             </size>
+           </property>
+         </spacer>
+       </item>
+     </layout>
+   </widget>
+   <widget class="QWizardPage" name="wizard_Graphical_optional">
+     <property name="title">
+       <string>Report Game Compatibility</string>
+     </property>
+     <attribute name="pageId">
+       <string notr="true">6</string>
+     </attribute>
+     <layout class="QFormLayout" name="formLayout">
+       <item row="2" column="0">
+         <widget class="QCheckBox" name="checkbox_Graphical_missing">
+           <property name="text">
+             <string>Missing textures</string>
+           </property>
+         </widget>
+       </item>
+       <item row="3" column="0">
+         <widget class="QCheckBox" name="checkbox_Graphical_corrupted">
+           <property name="text">
+             <string>Corruped textures</string>
+           </property>
+         </widget>
+       </item>
+       <item row="4" column="0">
+         <widget class="QCheckBox" name="checkbox_Graphical_fliquer">
+           <property name="text">
+             <string>Fliquering graphics</string>
+           </property>
+         </widget>
+       </item>
+       <item row="5" column="0">
+         <widget class="QCheckBox" name="checkbox_Graphical_wrong_orientation">
+           <property name="text">
+             <string>Wrong orientation</string>
+           </property>
+         </widget>
+       </item>
+       <item row="6" column="0">
+         <widget class="QCheckBox" name="checkbox_Graphical_wrong_colors">
+           <property name="text">
+             <string>Wrong colors</string>
+           </property>
+         </widget>
+       </item>
+       <item row="7" column="0">
+         <widget class="QCheckBox" name="checkbox_Graphical_wrong_animation">
+           <property name="text">
+             <string>Wrong animation</string>
+           </property>
+         </widget>
+       </item>
+       <item row="8" column="0">
+         <widget class="QCheckBox" name="checkbox_Graphical_overlay">
+           <property name="text">
+             <string>Overlayed images</string>
+           </property>
+         </widget>
+       </item>
+       <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="lbl_Independent">
+           <property name="font">
+             <font>
+               <pointsize>10</pointsize>
+             </font>
+           </property>
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check the boxes with the issue&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+         <spacer name="verticalSpacer">
+           <property name="orientation">
+             <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+             <size>
+               <width>20</width>
+               <height>0</height>
+             </size>
+           </property>
+         </spacer>
+       </item>
+     </layout>
+   </widget>
+   <widget class="QWizardPage" name="wizard_Audio">
+     <property name="title">
+       <string>Report Game Compatibility</string>
+     </property>
+     <attribute name="pageId">
+       <string notr="true">7</string>
+     </attribute>
+     <layout class="QFormLayout" name="formLayout">
+       <item row="2" column="0">
+         <widget class="QRadioButton" name="radioButton_Audio_Yes">
+           <property name="text">
+             <string>Yes</string>
+           </property>
+         </widget>
+       </item>
+       <item row="2" column="1">
+         <widget class="QLabel" name="lbl_Audio_Yes">
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Audio is missing, faster, slower, corrupted, etc.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="4" column="0">
+         <widget class="QRadioButton" name="radioButton_Audio_No">
+           <property name="text">
+             <string>No </string>
+           </property>
+         </widget>
+       </item>
+       <item row="4" column="1">
+         <widget class="QLabel" name="lbl_Audio_No">
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Audio is played perfectly, or almost perfectly with minimum distortion&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="lbl_Independent">
+           <property name="font">
+             <font>
+               <pointsize>10</pointsize>
+             </font>
+           </property>
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Does the game have any audio glitches / missing effects?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+         <spacer name="verticalSpacer">
+           <property name="orientation">
+             <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+             <size>
+               <width>20</width>
+               <height>0</height>
+             </size>
+           </property>
+         </spacer>
+       </item>
+     </layout>
+   </widget>
+   <widget class="QWizardPage" name="wizard_Audio_optional">
+     <property name="title">
+       <string>Report Game Compatibility</string>
+     </property>
+     <attribute name="pageId">
+       <string notr="true">8</string>
+     </attribute>
+     <layout class="QFormLayout" name="formLayout">
+       <item row="2" column="0">
+         <widget class="QCheckBox" name="checkbox_Audio_faster">
+           <property name="text">
+             <string>Audio is faster</string>
+           </property>
+         </widget>
+       </item>
+       <item row="3" column="0">
+         <widget class="QCheckBox" name="checkbox_Audio_slower">
+           <property name="text">
+             <string>Audio is slower</string>
+           </property>
+         </widget>
+       </item>
+       <item row="4" column="0">
+         <widget class="QCheckBox" name="checkbox_Audio_loud">
+           <property name="text">
+             <string>Volume too high</string>
+           </property>
+         </widget>
+       </item>
+       <item row="5" column="0">
+         <widget class="QCheckBox" name="checkbox_Audio_quiet">
+           <property name="text">
+             <string>Volume too low</string>
+           </property>
+         </widget>
+       </item>
+       <item row="6" column="0">
+         <widget class="QCheckBox" name="checkbox_Freeze_Audio_corrupted">
+           <property name="text">
+             <string>Corrupted audio</string>
+           </property>
+         </widget>
+       </item>
+       <item row="7" column="0">
+         <widget class="QCheckBox" name="checkbox_Freeze_Audio_missing">
+           <property name="text">
+             <string>Missing audio</string>
+           </property>
+         </widget>
+       </item>
+       <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="lbl_Independent">
+           <property name="font">
+             <font>
+               <pointsize>10</pointsize>
+             </font>
+           </property>
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check the boxes with the issue&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+         <spacer name="verticalSpacer">
+           <property name="orientation">
+             <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+             <size>
+               <width>20</width>
+               <height>0</height>
+             </size>
+           </property>
+         </spacer>
+       </item>
+     </layout>
+   </widget>
+   <widget class="QWizardPage" name="wizard_Complete">
+     <property name="title">
+       <string>Report Game Compatibility</string>
+     </property>
+     <attribute name="pageId">
+       <string notr="true">9</string>
+     </attribute>
+     <layout class="QFormLayout" name="formLayout">
+       <item row="2" column="0">
+         <widget class="QRadioButton" name="radioButton_Complete_Yes">
+           <property name="text">
+             <string>Yes</string>
+           </property>
+         </widget>
+       </item>
+       <item row="2" column="1">
+         <widget class="QLabel" name="lbl_Complete_Yes">
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You can finish the game without any workaround&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="4" column="0">
+         <widget class="QRadioButton" name="radioButton_Complete_No">
+           <property name="text">
+             <string>No </string>
+           </property>
+         </widget>
+       </item>
+       <item row="4" column="1">
+         <widget class="QLabel" name="lbl_Complete_No">
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You can't get past a certain area&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="lbl_Independent">
+           <property name="font">
+             <font>
+               <pointsize>10</pointsize>
+             </font>
+           </property>
+           <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Is the game completely playable from start to finish?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
+         </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+         <spacer name="verticalSpacer">
+           <property name="orientation">
+             <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+             <size>
+               <width>20</width>
+               <height>0</height>
+             </size>
+           </property>
+         </spacer>
+       </item>
+     </layout>
+   </widget>
   <widget class="QWizardPage" name="wizard_ThankYou">
    <property name="title">
     <string>Thank you for your submission!</string>
    </property>
    <attribute name="pageId">
-    <string notr="true">2</string>
+    <string notr="true">10</string>
    </attribute>
   </widget>
  </widget>
