@@ -74,6 +74,11 @@ endif()
 configure_file(${PROJECT_SOURCE_DIR}/dist/compatibility_list/compatibility_list.qrc
                ${PROJECT_BINARY_DIR}/dist/compatibility_list/compatibility_list.qrc
                COPYONLY)
+if (EXISTS ${PROJECT_SOURCE_DIR}/dist/compatibility_list/compatibility_list.json)
+    configure_file(${PROJECT_SOURCE_DIR}/dist/compatibility_list/compatibility_list.json
+                   ${PROJECT_BINARY_DIR}/dist/compatibility_list/compatibility_list.json
+                   COPYONLY)
+endif()
 if (ENABLE_COMPATIBILITY_LIST_DOWNLOAD AND NOT EXISTS ${PROJECT_BINARY_DIR}/dist/compatibility_list/compatibility_list.json)
     message(STATUS "Downloading compatibility list for yuzu...")
     file(DOWNLOAD

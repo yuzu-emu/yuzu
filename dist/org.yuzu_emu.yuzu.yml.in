@@ -1,0 +1,71 @@
+id: org.yuzu_emu.yuzu
+runtime: org.kde.Platform
+runtime-version: "5.13"
+sdk: org.kde.Sdk
+command: yuzu-wrapper
+rename-desktop-file: yuzu.desktop
+rename-icon: yuzu
+
+finish-args:
+  - --share=ipc
+  - --socket=x11
+  - --socket=pulseaudio
+  - --device=all
+  - --filesystem=host:ro
+  - --filesystem=xdg-run/app/com.discordapp.Discord:create
+
+modules:
+  - name: python2
+    sources:
+      - type: archive
+        url: https://www.python.org/ftp/python/2.7.17/Python-2.7.17.tar.xz
+        sha256: 4d43f033cdbd0aa7b7023c81b0e986fd11e653b5248dac9144d508f11812ba41
+    config-opts:
+      - --enable-shared
+      - --with-ensurepip=yes
+      - --with-system-expat
+      - --with-system-ffi
+      - --enable-loadable-sqlite-extensions
+      - --with-dbmliborder=gdbm
+      - --enable-unicode=ucs4
+    post-install:
+      # Theres seem to be a permissions missmatch that causes the debug stripping to fail
+      - chmod 644 $FLATPAK_DEST/lib/libpython2.7.so.1.0
+    cleanup: [ '*' ]
+  - name: rapidjson
+    buildsystem: cmake-ninja
+    sources:
+      - type: archive
+        url: https://github.com/miloyip/rapidjson/archive/v1.1.0.tar.gz
+        sha256: bf7ced29704a1e696fbccf2a2b4ea068e7774fa37f6d7dd4039d0787f8bed98e
+    build-options:
+      cxxflags: -Wno-class-memaccess -Wno-implicit-fallthrough
+    cleanup: [ '*' ]
+  - name: yuzu
+    buildsystem: cmake-ninja
+    builddir: true
+    config-opts:
+      - -DDISPLAY_VERSION=@DISPLAY_VERSION@
+      - -DYUZU_USE_BUNDLED_UNICORN=ON
+      # The flatpak runtimes currently lack QtWebEngine
+      #- -DYUZU_USE_QT_WEB_ENGINE=ON
+      - -DYUZU_ENABLE_COMPATIBILITY_REPORTING=OFF
+      - -DUSE_DISCORD_PRESENCE=ON
+    sources:
+      - type: git
+        url: https://github.com/yuzu-emu/yuzu-mainline.git
+        branch: master
+      - type: file
+        path: compatibility_list.json
+        dest: dist/compatibility_list/
+      - type: script
+        commands:
+          - for i in {0..9}; do
+          - test -S $XDG_RUNTIME_DIR/discord-ipc-$i || ln -sf {app/com.discordapp.Discord,$XDG_RUNTIME_DIR}/discord-ipc-$i;
+          - done
+          - yuzu "$@"
+        dest-filename: yuzu-wrapper
+    post-install:
+      - mv /app/share/mime/packages/yuzu.xml /app/share/mime/packages/org.yuzu_emu.yuzu.xml
+      - install -D $FLATPAK_BUILDER_BUILDDIR/yuzu-wrapper /app/bin/yuzu-wrapper
+      - desktop-file-edit --set-key=Exec --set-value='/app/bin/yuzu-wrapper %f' /app/share/applications/yuzu.desktop

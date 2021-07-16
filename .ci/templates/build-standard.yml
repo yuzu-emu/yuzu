@@ -18,6 +18,9 @@ jobs:
       linux:
         BuildSuffix: 'linux'
         ScriptFolder: 'linux'
+      flatpak:
+        BuildSuffix: 'linux-flatpak'
+        ScriptFolder: 'flatpak'
   steps:
   - template: ./sync-source.yml
     parameters:

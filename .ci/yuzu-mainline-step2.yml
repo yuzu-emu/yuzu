@@ -28,6 +28,9 @@ stages:
         linux:
           BuildSuffix: 'linux'
           ScriptFolder: 'linux'
+        linux-flatpak:
+          BuildSuffix: 'linux-flatpak'
+          ScriptFolder: 'flatpak'
     steps:
     - template: ./templates/sync-source.yml
       parameters:
