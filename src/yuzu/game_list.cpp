@@ -404,9 +404,11 @@ void GameList::ValidateEntry(const QModelIndex& item) {
             return;
         }
 
+        const auto title_id = selected.data(GameListItemPath::ProgramIdRole).toULongLong();
+
         // Users usually want to run a different game after closing one
         search_field->clear();
-        emit GameChosen(file_path);
+        emit GameChosen(file_path, title_id);
         break;
     }
     case GameListItemType::AddDir:
@@ -548,10 +550,10 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
         emit OpenFolderRequested(program_id, GameListOpenTarget::SaveData, path);
     });
     connect(start_game, &QAction::triggered, [this, path]() {
-        emit BootGame(QString::fromStdString(path), 0, StartGameType::Normal);
+        emit BootGame(QString::fromStdString(path), 0, 0, StartGameType::Normal);
     });
     connect(start_game_global, &QAction::triggered, [this, path]() {
-        emit BootGame(QString::fromStdString(path), 0, StartGameType::Global);
+        emit BootGame(QString::fromStdString(path), 0, 0, StartGameType::Global);
     });
     connect(open_mod_location, &QAction::triggered, [this, program_id, path]() {
         emit OpenFolderRequested(program_id, GameListOpenTarget::ModData, path);

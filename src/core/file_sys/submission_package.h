@@ -6,6 +6,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <vector>
 #include "common/common_types.h"
 #include "core/file_sys/vfs.h"
@@ -27,15 +28,15 @@ enum class ContentRecordType : u8;
 
 class NSP : public ReadOnlyVfsDirectory {
 public:
-    explicit NSP(VirtualFile file_, std::size_t program_index_ = 0);
+    explicit NSP(VirtualFile file_, u64 title_id = 0, std::size_t program_index_ = 0);
     ~NSP() override;
 
     Loader::ResultStatus GetStatus() const;
-    Loader::ResultStatus GetProgramStatus(u64 title_id) const;
+    Loader::ResultStatus GetProgramStatus() const;
     // Should only be used when one title id can be assured.
-    u64 GetFirstTitleID() const;
     u64 GetProgramTitleID() const;
-    std::vector<u64> GetTitleIDs() const;
+    u64 GetExtractedTitleID() const;
+    std::vector<u64> GetProgramTitleIDs() const;
 
     bool IsExtractedType() const;
 
@@ -69,6 +70,7 @@ private:
 
     VirtualFile file;
 
+    const u64 expected_program_id;
     const std::size_t program_index;
 
     bool extracted = false;
@@ -78,6 +80,7 @@ private:
     std::shared_ptr<PartitionFilesystem> pfs;
     // Map title id -> {map type -> NCA}
     std::map<u64, std::map<std::pair<TitleType, ContentRecordType>, std::shared_ptr<NCA>>> ncas;
+    std::set<u64> program_ids;
     std::vector<VirtualFile> ticket_files;
 
     Core::Crypto::KeyManager& keys;

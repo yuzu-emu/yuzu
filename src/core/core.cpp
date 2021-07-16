@@ -216,9 +216,9 @@ struct System::Impl {
     }
 
     ResultStatus Load(System& system, Frontend::EmuWindow& emu_window, const std::string& filepath,
-                      std::size_t program_index) {
+                      u64 program_id, std::size_t program_index) {
         app_loader = Loader::GetLoader(system, GetGameFileFromPath(virtual_filesystem, filepath),
-                                       program_index);
+                                       program_id, program_index);
 
         if (!app_loader) {
             LOG_CRITICAL(Core, "Failed to obtain loader for {}!", filepath);
@@ -269,11 +269,10 @@ struct System::Impl {
             }
         }
 
-        u64 title_id{0};
-        if (app_loader->ReadProgramId(title_id) != Loader::ResultStatus::Success) {
+        if (app_loader->ReadProgramId(program_id) != Loader::ResultStatus::Success) {
             LOG_ERROR(Core, "Failed to find title id for ROM (Error {})", load_result);
         }
-        perf_stats = std::make_unique<PerfStats>(title_id);
+        perf_stats = std::make_unique<PerfStats>(program_id);
         // Reset counters and set time origin to current frame
         GetAndResetPerfStats();
         perf_stats->BeginSystemFrame();
@@ -459,8 +458,8 @@ void System::Shutdown() {
 }
 
 System::ResultStatus System::Load(Frontend::EmuWindow& emu_window, const std::string& filepath,
-                                  std::size_t program_index) {
-    return impl->Load(*this, emu_window, filepath, program_index);
+                                  u64 program_id, std::size_t program_index) {
+    return impl->Load(*this, emu_window, filepath, program_id, program_index);
 }
 
 bool System::IsPoweredOn() const {

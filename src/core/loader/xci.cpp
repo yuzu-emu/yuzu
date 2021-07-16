@@ -22,9 +22,9 @@ namespace Loader {
 
 AppLoader_XCI::AppLoader_XCI(FileSys::VirtualFile file_,
                              const Service::FileSystem::FileSystemController& fsc,
-                             const FileSys::ContentProvider& content_provider,
+                             const FileSys::ContentProvider& content_provider, u64 program_id,
                              std::size_t program_index)
-    : AppLoader(file_), xci(std::make_unique<FileSys::XCI>(file_, program_index)),
+    : AppLoader(file_), xci(std::make_unique<FileSys::XCI>(file_, program_id, program_index)),
       nca_loader(std::make_unique<AppLoader_NCA>(xci->GetProgramNCAFile())) {
     if (xci->GetStatus() != ResultStatus::Success) {
         return;
@@ -121,6 +121,11 @@ ResultStatus AppLoader_XCI::ReadProgramId(u64& out_program_id) {
     return nca_loader->ReadProgramId(out_program_id);
 }
 
+ResultStatus AppLoader_XCI::ReadProgramIds(std::vector<u64>& out_program_ids) {
+    out_program_ids = xci->GetProgramTitleIDs();
+    return ResultStatus::Success;
+}
+
 ResultStatus AppLoader_XCI::ReadIcon(std::vector<u8>& buffer) {
     if (icon_file == nullptr) {
         return ResultStatus::ErrorNoControl;
@@ -149,8 +154,9 @@ ResultStatus AppLoader_XCI::ReadControlData(FileSys::NACP& control) {
 }
 
 ResultStatus AppLoader_XCI::ReadManualRomFS(FileSys::VirtualFile& out_file) {
-    const auto nca = xci->GetSecurePartitionNSP()->GetNCA(xci->GetProgramTitleID(),
-                                                          FileSys::ContentRecordType::HtmlDocument);
+    const auto nca =
+        xci->GetSecurePartitionNSP()->GetNCA(xci->GetSecurePartitionNSP()->GetProgramTitleID(),
+                                             FileSys::ContentRecordType::HtmlDocument);
     if (xci->GetStatus() != ResultStatus::Success || nca == nullptr) {
         return ResultStatus::ErrorXCIMissingPartition;
     }

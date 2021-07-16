@@ -1221,7 +1221,7 @@ void GMainWindow::AllowOSSleep() {
 #endif
 }
 
-bool GMainWindow::LoadROM(const QString& filename, std::size_t program_index) {
+bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t program_index) {
     // Shutdown previous session if the emu thread is still active...
     if (emu_thread != nullptr)
         ShutdownGame();
@@ -1244,7 +1244,7 @@ bool GMainWindow::LoadROM(const QString& filename, std::size_t program_index) {
     });
 
     const Core::System::ResultStatus result{
-        system.Load(*render_window, filename.toStdString(), program_index)};
+        system.Load(*render_window, filename.toStdString(), program_id, program_index)};
 
     const auto drd_callout = (UISettings::values.callout_flags.GetValue() &
                               static_cast<u32>(CalloutFlag::DRDDeprecation)) == 0;
@@ -1331,7 +1331,8 @@ void GMainWindow::SelectAndSetCurrentUser() {
     Settings::values.current_user = dialog.GetIndex();
 }
 
-void GMainWindow::BootGame(const QString& filename, std::size_t program_index, StartGameType type) {
+void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t program_index,
+                           StartGameType type) {
     LOG_INFO(Frontend, "yuzu starting...");
     StoreRecentFile(filename); // Put the filename on top of the list
 
@@ -1341,7 +1342,7 @@ void GMainWindow::BootGame(const QString& filename, std::size_t program_index, S
 
     auto& system = Core::System::GetInstance();
     const auto v_file = Core::GetGameFileFromPath(vfs, filename.toUtf8().constData());
-    const auto loader = Loader::GetLoader(system, v_file, program_index);
+    const auto loader = Loader::GetLoader(system, v_file, program_id, program_index);
 
     if (loader != nullptr && loader->ReadProgramId(title_id) == Loader::ResultStatus::Success &&
         type == StartGameType::Normal) {
@@ -1369,7 +1370,7 @@ void GMainWindow::BootGame(const QString& filename, std::size_t program_index, S
         SelectAndSetCurrentUser();
     }
 
-    if (!LoadROM(filename, program_index))
+    if (!LoadROM(filename, program_id, program_index))
         return;
 
     // Create and start the emulation thread
@@ -1548,8 +1549,8 @@ void GMainWindow::UpdateRecentFiles() {
     ui.menu_recent_files->setEnabled(num_recent_files != 0);
 }
 
-void GMainWindow::OnGameListLoadFile(QString game_path) {
-    BootGame(game_path);
+void GMainWindow::OnGameListLoadFile(QString game_path, u64 program_id) {
+    BootGame(game_path, program_id);
 }
 
 void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target,
@@ -2450,7 +2451,7 @@ void GMainWindow::OnLoadComplete() {
 
 void GMainWindow::OnExecuteProgram(std::size_t program_index) {
     ShutdownGame();
-    BootGame(last_filename_booted, program_index);
+    BootGame(last_filename_booted, 0, program_index);
 }
 
 void GMainWindow::ErrorDisplayDisplayError(QString error_code, QString error_text) {

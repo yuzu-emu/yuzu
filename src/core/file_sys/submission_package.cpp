@@ -20,8 +20,9 @@
 
 namespace FileSys {
 
-NSP::NSP(VirtualFile file_, std::size_t program_index_)
-    : file(std::move(file_)), program_index(program_index_), status{Loader::ResultStatus::Success},
+NSP::NSP(VirtualFile file_, u64 title_id_, std::size_t program_index_)
+    : file(std::move(file_)), expected_program_id(title_id_),
+      program_index(program_index_), status{Loader::ResultStatus::Success},
       pfs(std::make_shared<PartitionFilesystem>(file)), keys{Core::Crypto::KeyManager::Instance()} {
     if (pfs->GetStatus() != Loader::ResultStatus::Success) {
         status = pfs->GetStatus();
@@ -46,60 +47,59 @@ Loader::ResultStatus NSP::GetStatus() const {
     return status;
 }
 
-Loader::ResultStatus NSP::GetProgramStatus(u64 title_id) const {
+Loader::ResultStatus NSP::GetProgramStatus() const {
     if (IsExtractedType() && GetExeFS() != nullptr && FileSys::IsDirectoryExeFS(GetExeFS())) {
         return Loader::ResultStatus::Success;
     }
 
-    const auto iter = program_status.find(title_id);
+    const auto iter = program_status.find(GetProgramTitleID());
     if (iter == program_status.end())
         return Loader::ResultStatus::ErrorNSPMissingProgramNCA;
     return iter->second;
 }
 
-u64 NSP::GetFirstTitleID() const {
-    if (IsExtractedType()) {
-        return GetProgramTitleID();
-    }
-
-    if (program_status.empty())
-        return 0;
-    return program_status.begin()->first;
-}
-
 u64 NSP::GetProgramTitleID() const {
     if (IsExtractedType()) {
-        if (GetExeFS() == nullptr || !IsDirectoryExeFS(GetExeFS())) {
-            return 0;
-        }
+        return GetExtractedTitleID();
+    }
 
-        ProgramMetadata meta;
-        if (meta.Load(GetExeFS()->GetFile("main.npdm")) == Loader::ResultStatus::Success) {
-            return meta.GetTitleID();
-        } else {
-            return 0;
+    auto program_id = expected_program_id;
+    if (program_id == 0) {
+        if (!program_status.empty()) {
+            program_id = program_status.begin()->first;
         }
     }
 
-    const auto out = GetFirstTitleID();
-    if ((out & 0x800) == 0)
-        return out;
+    program_id = program_id + program_index;
+    if (program_status.find(program_id) != program_status.end()) {
+        return program_id;
+    }
 
-    const auto ids = GetTitleIDs();
+    const auto ids = GetProgramTitleIDs();
     const auto iter =
         std::find_if(ids.begin(), ids.end(), [](u64 tid) { return (tid & 0x800) == 0; });
-    return iter == ids.end() ? out : *iter;
+    return iter == ids.end() ? 0 : *iter;
 }
 
-std::vector<u64> NSP::GetTitleIDs() const {
-    if (IsExtractedType()) {
-        return {GetProgramTitleID()};
+u64 NSP::GetExtractedTitleID() const {
+    if (GetExeFS() == nullptr || !IsDirectoryExeFS(GetExeFS())) {
+        return 0;
     }
 
-    std::vector<u64> out;
-    out.reserve(ncas.size());
-    for (const auto& kv : ncas)
-        out.push_back(kv.first);
+    ProgramMetadata meta;
+    if (meta.Load(GetExeFS()->GetFile("main.npdm")) == Loader::ResultStatus::Success) {
+        return meta.GetTitleID();
+    } else {
+        return 0;
+    }
+}
+
+std::vector<u64> NSP::GetProgramTitleIDs() const {
+    if (IsExtractedType()) {
+        return {GetExtractedTitleID()};
+    }
+
+    std::vector<u64> out{program_ids.cbegin(), program_ids.cend()};
     return out;
 }
 
@@ -142,11 +142,12 @@ NSP::GetNCAs() const {
     return ncas;
 }
 
-std::shared_ptr<NCA> NSP::GetNCA(u64 title_id, ContentRecordType type, TitleType title_type) const {
+std::shared_ptr<NCA> NSP::GetNCA(u64 title_id_, ContentRecordType type,
+                                 TitleType title_type) const {
     if (extracted)
         LOG_WARNING(Service_FS, "called on an NSP that is of type extracted.");
 
-    const auto title_id_iter = ncas.find(title_id + program_index);
+    const auto title_id_iter = ncas.find(title_id_);
     if (title_id_iter == ncas.end())
         return nullptr;
 
@@ -157,10 +158,10 @@ std::shared_ptr<NCA> NSP::GetNCA(u64 title_id, ContentRecordType type, TitleType
     return type_iter->second;
 }
 
-VirtualFile NSP::GetNCAFile(u64 title_id, ContentRecordType type, TitleType title_type) const {
+VirtualFile NSP::GetNCAFile(u64 title_id_, ContentRecordType type, TitleType title_type) const {
     if (extracted)
         LOG_WARNING(Service_FS, "called on an NSP that is of type extracted.");
-    const auto nca = GetNCA(title_id, type);
+    const auto nca = GetNCA(title_id_, type, title_type);
     if (nca != nullptr)
         return nca->GetBaseFile();
     return nullptr;
@@ -286,6 +287,7 @@ void NSP::ReadNCAs(const std::vector<VirtualFile>& files) {
 
                 if (next_nca->GetType() == NCAContentType::Program) {
                     program_status[next_nca->GetTitleId()] = next_nca->GetStatus();
+                    program_ids.insert(next_nca->GetTitleId() & 0xFFFFFFFFFFFFF000);
                 }
 
                 if (next_nca->GetStatus() != Loader::ResultStatus::Success &&

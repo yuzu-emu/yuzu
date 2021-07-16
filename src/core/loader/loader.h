@@ -227,6 +227,17 @@ public:
     }
 
     /**
+     * Get the program ids of the application
+     *
+     * @param[out] out_program_ids Reference to store program ids into
+     *
+     * @return ResultStatus result of function
+     */
+    virtual ResultStatus ReadProgramIds(std::vector<u64>& out_program_ids) {
+        return ResultStatus::ErrorNotImplemented;
+    }
+
+    /**
      * Get the RomFS of the application
      * Since the RomFS can be huge, we return a file reference instead of copying to a buffer
      *
@@ -324,6 +335,6 @@ protected:
  * @return the best loader for this file.
  */
 std::unique_ptr<AppLoader> GetLoader(Core::System& system, FileSys::VirtualFile file,
-                                     std::size_t program_index = 0);
+                                     u64 program_id = 0, std::size_t program_index = 0);
 
 } // namespace Loader

@@ -23,10 +23,9 @@ namespace Loader {
 
 AppLoader_NSP::AppLoader_NSP(FileSys::VirtualFile file_,
                              const Service::FileSystem::FileSystemController& fsc,
-                             const FileSys::ContentProvider& content_provider,
+                             const FileSys::ContentProvider& content_provider, u64 program_id,
                              std::size_t program_index)
-    : AppLoader(file_), nsp(std::make_unique<FileSys::NSP>(file_, program_index)),
-      title_id(nsp->GetProgramTitleID()) {
+    : AppLoader(file_), nsp(std::make_unique<FileSys::NSP>(file_, program_id, program_index)) {
 
     if (nsp->GetStatus() != ResultStatus::Success) {
         return;
@@ -46,12 +45,8 @@ AppLoader_NSP::AppLoader_NSP(FileSys::VirtualFile file_,
             return pm.ParseControlNCA(*control_nca);
         }();
 
-        if (title_id == 0) {
-            return;
-        }
-
         secondary_loader = std::make_unique<AppLoader_NCA>(
-            nsp->GetNCAFile(title_id, FileSys::ContentRecordType::Program));
+            nsp->GetNCAFile(nsp->GetProgramTitleID(), FileSys::ContentRecordType::Program));
     }
 }
 
@@ -68,10 +63,11 @@ FileType AppLoader_NSP::IdentifyType(const FileSys::VirtualFile& nsp_file) {
         }
 
         // Non-Extracted Type case
+        const auto program_id = nsp.GetProgramTitleID();
         if (!nsp.IsExtractedType() &&
-            nsp.GetNCA(nsp.GetFirstTitleID(), FileSys::ContentRecordType::Program) != nullptr &&
-            AppLoader_NCA::IdentifyType(nsp.GetNCAFile(
-                nsp.GetFirstTitleID(), FileSys::ContentRecordType::Program)) == FileType::NCA) {
+            nsp.GetNCA(program_id, FileSys::ContentRecordType::Program) != nullptr &&
+            AppLoader_NCA::IdentifyType(
+                nsp.GetNCAFile(program_id, FileSys::ContentRecordType::Program)) == FileType::NCA) {
             return FileType::NSP;
         }
     }
@@ -84,6 +80,8 @@ AppLoader_NSP::LoadResult AppLoader_NSP::Load(Kernel::KProcess& process, Core::S
         return {ResultStatus::ErrorAlreadyLoaded, {}};
     }
 
+    const auto title_id = nsp->GetProgramTitleID();
+
     if (!nsp->IsExtractedType() && title_id == 0) {
         return {ResultStatus::ErrorNSPMissingProgramNCA, {}};
     }
@@ -93,7 +91,7 @@ AppLoader_NSP::LoadResult AppLoader_NSP::Load(Kernel::KProcess& process, Core::S
         return {nsp_status, {}};
     }
 
-    const auto nsp_program_status = nsp->GetProgramStatus(title_id);
+    const auto nsp_program_status = nsp->GetProgramStatus();
     if (nsp_program_status != ResultStatus::Success) {
         return {nsp_program_status, {}};
     }
@@ -134,8 +132,8 @@ ResultStatus AppLoader_NSP::ReadUpdateRaw(FileSys::VirtualFile& out_file) {
         return ResultStatus::ErrorNoPackedUpdate;
     }
 
-    const auto read =
-        nsp->GetNCAFile(FileSys::GetUpdateTitleID(title_id), FileSys::ContentRecordType::Program);
+    const auto read = nsp->GetNCAFile(FileSys::GetUpdateTitleID(nsp->GetProgramTitleID()),
+                                      FileSys::ContentRecordType::Program);
 
     if (read == nullptr) {
         return ResultStatus::ErrorNoPackedUpdate;
@@ -151,11 +149,15 @@ ResultStatus AppLoader_NSP::ReadUpdateRaw(FileSys::VirtualFile& out_file) {
 }
 
 ResultStatus AppLoader_NSP::ReadProgramId(u64& out_program_id) {
-    if (title_id == 0) {
+    out_program_id = nsp->GetProgramTitleID();
+    if (out_program_id == 0) {
         return ResultStatus::ErrorNotInitialized;
     }
+    return ResultStatus::Success;
+}
 
-    out_program_id = title_id;
+ResultStatus AppLoader_NSP::ReadProgramIds(std::vector<u64>& out_program_ids) {
+    out_program_ids = nsp->GetProgramTitleIDs();
     return ResultStatus::Success;
 }
 

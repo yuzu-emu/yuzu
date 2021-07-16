@@ -186,8 +186,8 @@ private:
     void PreventOSSleep();
     void AllowOSSleep();
 
-    bool LoadROM(const QString& filename, std::size_t program_index);
-    void BootGame(const QString& filename, std::size_t program_index = 0,
+    bool LoadROM(const QString& filename, u64 program_id, std::size_t program_index);
+    void BootGame(const QString& filename, u64 program_id = 0, std::size_t program_index = 0,
                   StartGameType with_config = StartGameType::Normal);
     void ShutdownGame();
 
@@ -238,7 +238,7 @@ private slots:
     void OnOpenQuickstartGuide();
     void OnOpenFAQ();
     /// Called whenever a user selects a game in the game list widget.
-    void OnGameListLoadFile(QString game_path);
+    void OnGameListLoadFile(QString game_path, u64 program_id);
     void OnGameListOpenFolder(u64 program_id, GameListOpenTarget target,
                               const std::string& game_path);
     void OnTransferableShaderCacheOpenFile(u64 program_id);

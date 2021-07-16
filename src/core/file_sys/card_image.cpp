@@ -29,7 +29,7 @@ constexpr std::array partition_names{
     "logo",
 };
 
-XCI::XCI(VirtualFile file_, std::size_t program_index)
+XCI::XCI(VirtualFile file_, u64 program_id, size_t program_index)
     : file(std::move(file_)), program_nca_status{Loader::ResultStatus::ErrorXCIMissingProgramNCA},
       partitions(partition_names.size()),
       partitions_raw(partition_names.size()), keys{Core::Crypto::KeyManager::Instance()} {
@@ -63,12 +63,12 @@ XCI::XCI(VirtualFile file_, std::size_t program_index)
 
     secure_partition = std::make_shared<NSP>(
         main_hfs.GetFile(partition_names[static_cast<std::size_t>(XCIPartition::Secure)]),
-        program_index);
+        program_id, program_index);
 
     ncas = secure_partition->GetNCAsCollapsed();
     program =
         secure_partition->GetNCA(secure_partition->GetProgramTitleID(), ContentRecordType::Program);
-    program_nca_status = secure_partition->GetProgramStatus(secure_partition->GetProgramTitleID());
+    program_nca_status = secure_partition->GetProgramStatus();
     if (program_nca_status == Loader::ResultStatus::ErrorNSPMissingProgramNCA) {
         program_nca_status = Loader::ResultStatus::ErrorXCIMissingProgramNCA;
     }
@@ -174,6 +174,10 @@ u64 XCI::GetProgramTitleID() const {
     return secure_partition->GetProgramTitleID();
 }
 
+std::vector<u64> XCI::GetProgramTitleIDs() const {
+    return secure_partition->GetProgramTitleIDs();
+}
+
 u32 XCI::GetSystemUpdateVersion() {
     const auto update = GetPartition(XCIPartition::Update);
     if (update == nullptr) {
@@ -229,9 +233,11 @@ const std::vector<std::shared_ptr<NCA>>& XCI::GetNCAs() const {
 }
 
 std::shared_ptr<NCA> XCI::GetNCAByType(NCAContentType type) const {
-    const auto iter =
-        std::find_if(ncas.begin(), ncas.end(),
-                     [type](const std::shared_ptr<NCA>& nca) { return nca->GetType() == type; });
+    const auto program_id = secure_partition->GetProgramTitleID();
+    const auto iter = std::find_if(
+        ncas.begin(), ncas.end(), [this, type, program_id](const std::shared_ptr<NCA>& nca) {
+            return nca->GetType() == type && nca->GetTitleId() == program_id;
+        });
     return iter == ncas.end() ? nullptr : *iter;
 }
 

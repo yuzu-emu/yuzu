@@ -78,7 +78,7 @@ enum class XCIPartition : u8 { Update, Normal, Secure, Logo };
 
 class XCI : public ReadOnlyVfsDirectory {
 public:
-    explicit XCI(VirtualFile file, std::size_t program_index = 0);
+    explicit XCI(VirtualFile file, u64 program_id = 0, size_t program_index = 0);
     ~XCI() override;
 
     Loader::ResultStatus GetStatus() const;
@@ -104,6 +104,7 @@ public:
     VirtualFile GetLogoPartitionRaw() const;
 
     u64 GetProgramTitleID() const;
+    std::vector<u64> GetProgramTitleIDs() const;
     u32 GetSystemUpdateVersion();
     u64 GetSystemUpdateTitleID() const;
 

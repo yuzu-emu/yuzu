@@ -28,7 +28,7 @@ class AppLoader_NSP final : public AppLoader {
 public:
     explicit AppLoader_NSP(FileSys::VirtualFile file_,
                            const Service::FileSystem::FileSystemController& fsc,
-                           const FileSys::ContentProvider& content_provider,
+                           const FileSys::ContentProvider& content_provider, u64 program_id,
                            std::size_t program_index);
     ~AppLoader_NSP() override;
 
@@ -51,6 +51,7 @@ public:
     u64 ReadRomFSIVFCOffset() const override;
     ResultStatus ReadUpdateRaw(FileSys::VirtualFile& out_file) override;
     ResultStatus ReadProgramId(u64& out_program_id) override;
+    ResultStatus ReadProgramIds(std::vector<u64>& out_program_ids) override;
     ResultStatus ReadIcon(std::vector<u8>& buffer) override;
     ResultStatus ReadTitle(std::string& title) override;
     ResultStatus ReadControlData(FileSys::NACP& nacp) override;
@@ -67,7 +68,6 @@ private:
 
     FileSys::VirtualFile icon_file;
     std::unique_ptr<FileSys::NACP> nacp_file;
-    u64 title_id;
 };
 
 } // namespace Loader

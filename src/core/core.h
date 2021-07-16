@@ -175,7 +175,7 @@ public:
      * @returns ResultStatus code, indicating if the operation succeeded.
      */
     [[nodiscard]] ResultStatus Load(Frontend::EmuWindow& emu_window, const std::string& filepath,
-                                    std::size_t program_index = 0);
+                                    u64 program_id = 0, std::size_t program_index = 0);
 
     /**
      * Indicates if the emulated system is powered on (all subsystems initialized and able to run an
