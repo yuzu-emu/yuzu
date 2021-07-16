@@ -254,7 +254,9 @@ if(ENABLE_QT)
 
     # Check for system Qt on Linux, fallback to bundled Qt
     if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-        find_package(Qt5 ${QT_VERSION} COMPONENTS Widgets)
+        if (NOT YUZU_USE_BUNDLED_QT)
+            find_package(Qt5 ${QT_VERSION} COMPONENTS Widgets)
+        endif()
         if (NOT Qt5_FOUND OR YUZU_USE_BUNDLED_QT)
             # Check for dependencies, then enable bundled Qt download
 
@@ -337,6 +339,8 @@ if(ENABLE_QT)
         endif()
     endif()
 
+    set(YUZU_QT_NO_CMAKE_SYSTEM_PATH)
+
     # Workaround for an issue where conan tries to build Qt from scratch instead of download prebuilt binaries
     set(QT_PREFIX_HINT)
 
@@ -354,8 +358,10 @@ if(ENABLE_QT)
         endif()
 
         set(QT_PREFIX_HINT HINTS "${QT_PREFIX}")
+
+        set(YUZU_QT_NO_CMAKE_SYSTEM_PATH "NO_CMAKE_SYSTEM_PATH")
     endif()
-    find_package(Qt5 ${QT_VERSION} REQUIRED COMPONENTS Widgets ${QT_PREFIX_HINT} NO_CMAKE_SYSTEM_PATH)
+    find_package(Qt5 ${QT_VERSION} REQUIRED COMPONENTS Widgets ${QT_PREFIX_HINT} ${YUZU_QT_NO_CMAKE_SYSTEM_PATH})
     if (YUZU_USE_QT_WEB_ENGINE)
         find_package(Qt5 COMPONENTS WebEngineCore WebEngineWidgets)
     endif()
