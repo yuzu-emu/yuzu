@@ -660,7 +660,8 @@ public:
 
         if (params.Has("axis")) {
             const int axis = params.Get("axis", 0);
-            const float threshold = params.Get("threshold", 0.5f);
+            // Convert range from (0.0, 1.0) to (-1.0, 1.0)
+            const float threshold = (params.Get("threshold", 0.5f) - 0.5f) * 2.0f;
             const std::string direction_name = params.Get("direction", "");
             bool trigger_if_greater;
             if (direction_name == "+") {
@@ -933,12 +934,11 @@ Common::ParamPackage BuildAnalogParamPackageForButton(int port, std::string guid
     params.Set("port", port);
     params.Set("guid", std::move(guid));
     params.Set("axis", axis);
+    params.Set("threshold", "0.5");
     if (value > 0) {
         params.Set("direction", "+");
-        params.Set("threshold", "0.5");
     } else {
         params.Set("direction", "-");
-        params.Set("threshold", "-0.5");
     }
     return params;
 }
