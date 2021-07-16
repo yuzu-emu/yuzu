@@ -13,6 +13,7 @@
 #include <QTranslator>
 
 #include "common/common_types.h"
+#include "common/idle_inhibitor.h"
 #include "core/core.h"
 #include "core/hle/service/acc/profile_manager.h"
 #include "ui_main.h"
@@ -72,6 +73,10 @@ enum class SwkbdTextCheckResult : u32;
 enum class SwkbdReplyType : u32;
 enum class WebExitReason : u32;
 } // namespace Service::AM::Applets
+
+namespace Common {
+class IdlePreventer;
+} // namespace Common
 
 enum class EmulatedDirectoryTarget {
     NAND,
@@ -182,9 +187,6 @@ private:
 
     void ConnectWidgetEvents();
     void ConnectMenuEvents();
-
-    void PreventOSSleep();
-    void AllowOSSleep();
 
     bool LoadROM(const QString& filename, std::size_t program_index);
     void BootGame(const QString& filename, std::size_t program_index = 0,
@@ -303,6 +305,7 @@ private:
 
     std::unique_ptr<DiscordRPC::DiscordInterface> discord_rpc;
     std::shared_ptr<InputCommon::InputSubsystem> input_subsystem;
+    std::unique_ptr<Common::IdleInhibitor> idle_inhibitor;
 
     GRenderWindow* render_window;
     GameList* game_list;

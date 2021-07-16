@@ -70,6 +70,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "common/fs/fs.h"
 #include "common/fs/fs_paths.h"
 #include "common/fs/path_util.h"
+#include "common/idle_inhibitor.h"
 #include "common/logging/backend.h"
 #include "common/logging/filter.h"
 #include "common/logging/log.h"
@@ -205,7 +206,8 @@ static void RemoveCachedContents() {
 
 GMainWindow::GMainWindow()
     : input_subsystem{std::make_shared<InputCommon::InputSubsystem>()},
-      config{std::make_unique<Config>()}, vfs{std::make_shared<FileSys::RealVfsFilesystem>()},
+      idle_inhibitor{std::make_unique<Common::IdleInhibitor>()}, config{std::make_unique<Config>()},
+      vfs{std::make_shared<FileSys::RealVfsFilesystem>()},
       provider{std::make_unique<FileSys::ManualContentProvider>()} {
     InitializeLogging();
 
@@ -1209,18 +1211,6 @@ void GMainWindow::OnDisplayTitleBars(bool show) {
     }
 }
 
-void GMainWindow::PreventOSSleep() {
-#ifdef _WIN32
-    SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
-#endif
-}
-
-void GMainWindow::AllowOSSleep() {
-#ifdef _WIN32
-    SetThreadExecutionState(ES_CONTINUOUS);
-#endif
-}
-
 bool GMainWindow::LoadROM(const QString& filename, std::size_t program_index) {
     // Shutdown previous session if the emu thread is still active...
     if (emu_thread != nullptr)
@@ -1458,7 +1448,7 @@ void GMainWindow::ShutdownGame() {
         HideFullscreen();
     }
 
-    AllowOSSleep();
+    idle_inhibitor->AllowIdle();
 
     discord_rpc->Pause();
     emu_thread->RequestStop();
@@ -2401,7 +2391,7 @@ void GMainWindow::OnMenuRecentFile() {
 }
 
 void GMainWindow::OnStartGame() {
-    PreventOSSleep();
+    idle_inhibitor->InhibitIdle();
 
     emu_thread->SetRunning(true);
 
@@ -2429,7 +2419,7 @@ void GMainWindow::OnPauseGame() {
     ui.action_Stop->setEnabled(true);
     ui.action_Capture_Screenshot->setEnabled(false);
 
-    AllowOSSleep();
+    idle_inhibitor->AllowIdle();
 }
 
 void GMainWindow::OnStopGame() {
