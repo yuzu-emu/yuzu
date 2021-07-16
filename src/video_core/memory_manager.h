@@ -143,6 +143,14 @@ public:
     [[nodiscard]] GPUVAddr Allocate(std::size_t size, std::size_t align);
     void Unmap(GPUVAddr gpu_addr, std::size_t size);
 
+    /**
+     * Some Decoded NVDEC frames require that texture cache does not get invalidated.
+     * UnmapVicFrame defers the texture cache invalidation until the stream ends
+     * by invoking InvalidateQueuedCaches to invalidate all frame texture caches.
+     */
+    void UnmapVicFrame(GPUVAddr gpu_addr, std::size_t size);
+    void InvalidateQueuedCaches();
+
 private:
     [[nodiscard]] PageEntry GetPageEntry(GPUVAddr gpu_addr) const;
     void SetPageEntry(GPUVAddr gpu_addr, PageEntry page_entry, std::size_t size = page_size);

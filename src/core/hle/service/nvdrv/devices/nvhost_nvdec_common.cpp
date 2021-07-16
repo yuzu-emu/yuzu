@@ -193,7 +193,13 @@ NvResult nvhost_nvdec_common::UnmapBuffer(const std::vector<u8>& input, std::vec
             return NvResult::InvalidState;
         }
         if (const auto size{RemoveBufferMap(object->dma_map_addr)}; size) {
-            gpu.MemoryManager().Unmap(object->dma_map_addr, *size);
+            if (vic_device) {
+                // UnmapVicFrame defers texture_cache invalidation of the frame address until
+                // the stream is over
+                gpu.MemoryManager().UnmapVicFrame(object->dma_map_addr, *size);
+            } else {
+                gpu.MemoryManager().Unmap(object->dma_map_addr, *size);
+            }
         } else {
             // This occurs quite frequently, however does not seem to impact functionality
             LOG_DEBUG(Service_NVDRV, "invalid offset=0x{:X} dma=0x{:X}", object->addr,

@@ -119,6 +119,25 @@ void MemoryManager::TryUnlockPage(PageEntry page_entry, std::size_t size) {
                .IsSuccess());
 }
 
+void MemoryManager::UnmapVicFrame(GPUVAddr gpu_addr, std::size_t size) {
+    if (!size) {
+        return;
+    }
+
+    const std::optional<VAddr> cpu_addr = GpuToCpuAddress(gpu_addr);
+    ASSERT(cpu_addr);
+    rasterizer->InvalidateExceptTextureCache(*cpu_addr, size);
+    cache_invalidate_queue.push_back({*cpu_addr, size});
+
+    UpdateRange(gpu_addr, PageEntry::State::Unmapped, size);
+}
+
+void MemoryManager::InvalidateQueuedCaches() {
+    for (const auto& entry : cache_invalidate_queue) {
+        rasterizer->InvalidateTextureCache(entry.first, entry.second);
+    }
+    cache_invalidate_queue.clear();
+}
 PageEntry MemoryManager::GetPageEntry(GPUVAddr gpu_addr) const {
     return page_table[PageEntryIndex(gpu_addr)];
 }

@@ -548,6 +548,26 @@ void RasterizerOpenGL::FlushRegion(VAddr addr, u64 size) {
     query_cache.FlushRegion(addr, size);
 }
 
+void RasterizerOpenGL::InvalidateExceptTextureCache(VAddr addr, u64 size) {
+    if (addr == 0 || size == 0) {
+        return;
+    }
+    shader_cache.InvalidateRegion(addr, size);
+    {
+        std::scoped_lock lock{buffer_cache.mutex};
+        buffer_cache.WriteMemory(addr, size);
+    }
+    query_cache.InvalidateRegion(addr, size);
+}
+
+void RasterizerOpenGL::InvalidateTextureCache(VAddr addr, u64 size) {
+    if (addr == 0 || size == 0) {
+        return;
+    }
+    std::scoped_lock lock{texture_cache.mutex};
+    texture_cache.UnmapMemory(addr, size);
+}
+
 bool RasterizerOpenGL::MustFlushRegion(VAddr addr, u64 size) {
     std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
     if (!Settings::IsGPULevelHigh()) {
