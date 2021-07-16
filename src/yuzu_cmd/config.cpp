@@ -292,6 +292,8 @@ void Config::ReadValues() {
 
     ReadSetting("ControlsGeneral", Settings::values.motion_device);
 
+    ReadSetting("ControlsGeneral", Settings::values.touch_device);
+
     ReadSetting("ControlsGeneral", Settings::values.keyboard_enabled);
 
     ReadSetting("ControlsGeneral", Settings::values.debug_pad_enabled);
@@ -414,10 +416,30 @@ void Config::ReadValues() {
     }
 
     ReadSetting("System", Settings::values.language_index);
+    ReadSetting("System", Settings::values.region_index);
     ReadSetting("System", Settings::values.time_zone_index);
+    ReadSetting("System", Settings::values.sound_index);
 
     // Core
     ReadSetting("Core", Settings::values.use_multi_core);
+
+    // Cpu
+    ReadSetting("Cpu", Settings::values.cpu_accuracy);
+    ReadSetting("Cpu", Settings::values.cpu_debug_mode);
+    ReadSetting("Cpu", Settings::values.cpuopt_page_tables);
+    ReadSetting("Cpu", Settings::values.cpuopt_block_linking);
+    ReadSetting("Cpu", Settings::values.cpuopt_return_stack_buffer);
+    ReadSetting("Cpu", Settings::values.cpuopt_fast_dispatcher);
+    ReadSetting("Cpu", Settings::values.cpuopt_context_elimination);
+    ReadSetting("Cpu", Settings::values.cpuopt_const_prop);
+    ReadSetting("Cpu", Settings::values.cpuopt_misc_ir);
+    ReadSetting("Cpu", Settings::values.cpuopt_reduce_misalign_checks);
+    ReadSetting("Cpu", Settings::values.cpuopt_fastmem);
+    ReadSetting("Cpu", Settings::values.cpuopt_unsafe_unfuse_fma);
+    ReadSetting("Cpu", Settings::values.cpuopt_unsafe_reduce_fp_error);
+    ReadSetting("Cpu", Settings::values.cpuopt_unsafe_ignore_standard_fpcr);
+    ReadSetting("Cpu", Settings::values.cpuopt_unsafe_inaccurate_nan);
+    ReadSetting("Cpu", Settings::values.cpuopt_unsafe_fastmem_check);
 
     // Renderer
     ReadSetting("Renderer", Settings::values.renderer_backend);
@@ -438,6 +460,7 @@ void Config::ReadValues() {
     ReadSetting("Renderer", Settings::values.use_nvdec_emulation);
     ReadSetting("Renderer", Settings::values.accelerate_astc);
     ReadSetting("Renderer", Settings::values.use_fast_gpu_time);
+    ReadSetting("Renderer", Settings::values.use_caches_gc);
 
     ReadSetting("Renderer", Settings::values.bg_red);
     ReadSetting("Renderer", Settings::values.bg_green);
@@ -458,7 +481,6 @@ void Config::ReadValues() {
     // Debugging
     Settings::values.record_frame_times =
         sdl2_config->GetBoolean("Debugging", "record_frame_times", false);
-    ReadSetting("Debugging", Settings::values.program_args);
     ReadSetting("Debugging", Settings::values.dump_exefs);
     ReadSetting("Debugging", Settings::values.dump_nso);
     ReadSetting("Debugging", Settings::values.enable_fs_access_log);
