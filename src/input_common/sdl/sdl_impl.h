@@ -10,15 +10,7 @@
 #include <thread>
 #include <unordered_map>
 
-// Ignore -Wimplicit-fallthrough due to https://github.com/libsdl-org/SDL/issues/4307
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
-#endif
 #include <SDL.h>
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
 
 #include "common/common_types.h"
 #include "common/threadsafe_queue.h"

@@ -2,15 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-// Ignore -Wimplicit-fallthrough due to https://github.com/libsdl-org/SDL/issues/4307
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
-#endif
 #include <SDL.h>
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
 #include "common/logging/log.h"
 #include "common/scm_rev.h"

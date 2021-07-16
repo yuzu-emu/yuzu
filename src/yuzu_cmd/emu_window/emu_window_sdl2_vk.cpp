@@ -15,16 +15,13 @@
 #include "video_core/renderer_vulkan/renderer_vulkan.h"
 #include "yuzu_cmd/emu_window/emu_window_sdl2_vk.h"
 
-// Include these late to avoid polluting everything with Xlib macros
-// Ignore -Wimplicit-fallthrough due to https://github.com/libsdl-org/SDL/issues/4307
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
+#ifdef YUZU_USE_EXTERNAL_SDL2
+// Include this before SDL.h to prevent the external from including a dummy
+#define USING_GENERATED_CONFIG_H
+#include <SDL_config.h>
 #endif
+
 #include <SDL.h>
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 #include <SDL_syswm.h>
 
 EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsystem)
@@ -51,6 +48,11 @@ EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsyste
         window_info.type = Core::Frontend::WindowSystemType::Windows;
         window_info.render_surface = reinterpret_cast<void*>(wm.info.win.window);
         break;
+#else
+    case SDL_SYSWM_TYPE::SDL_SYSWM_WINDOWS:
+        LOG_CRITICAL(Frontend, "Window manager subsystem Windows not compiled");
+        std::exit(EXIT_FAILURE);
+        break;
 #endif
 #ifdef SDL_VIDEO_DRIVER_X11
     case SDL_SYSWM_TYPE::SDL_SYSWM_X11:
@@ -58,12 +60,22 @@ EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsyste
         window_info.display_connection = wm.info.x11.display;
         window_info.render_surface = reinterpret_cast<void*>(wm.info.x11.window);
         break;
+#else
+    case SDL_SYSWM_TYPE::SDL_SYSWM_X11:
+        LOG_CRITICAL(Frontend, "Window manager subsystem X11 not compiled");
+        std::exit(EXIT_FAILURE);
+        break;
 #endif
 #ifdef SDL_VIDEO_DRIVER_WAYLAND
     case SDL_SYSWM_TYPE::SDL_SYSWM_WAYLAND:
         window_info.type = Core::Frontend::WindowSystemType::Wayland;
         window_info.display_connection = wm.info.wl.display;
         window_info.render_surface = wm.info.wl.surface;
+        break;
+#else
+    case SDL_SYSWM_TYPE::SDL_SYSWM_WAYLAND:
+        LOG_CRITICAL(Frontend, "Window manager subsystem Wayland not compiled");
+        std::exit(EXIT_FAILURE);
         break;
 #endif
     default:

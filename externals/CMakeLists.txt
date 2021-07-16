@@ -51,7 +51,7 @@ if (NOT LIBUSB_FOUND OR YUZU_USE_BUNDLED_LIBUSB)
 endif()
 
 # SDL2
-if (NOT SDL2_FOUND AND ENABLE_SDL2)
+if (YUZU_USE_EXTERNAL_SDL2)
     if (NOT WIN32)
         # Yuzu itself needs: Events Joystick Haptic Sensor Timers Audio
         # Yuzu-cmd also needs: Video (depends on Loadso/Dlopen)
