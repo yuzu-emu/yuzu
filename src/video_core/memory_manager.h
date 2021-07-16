@@ -6,6 +6,7 @@
 
 #include <map>
 #include <optional>
+#include <set>
 #include <vector>
 
 #include "common/common_types.h"
@@ -155,6 +156,13 @@ private:
 
     void FlushRegion(GPUVAddr gpu_addr, size_t size) const;
 
+    void InsertRange(GPUVAddr gpu_addr, size_t size);
+    void RemoveRange(GPUVAddr gpu_addr, size_t size);
+
+    // For debugging only
+    bool IsFullyMapped(GPUVAddr gpu_addr, size_t size) const;
+    bool IsFullyUnmapped(GPUVAddr gpu_addr, size_t size) const;
+
     [[nodiscard]] static constexpr std::size_t PageEntryIndex(GPUVAddr gpu_addr) {
         return (gpu_addr >> page_bits) & page_table_mask;
     }
@@ -175,8 +183,22 @@ private:
 
     std::vector<PageEntry> page_table;
 
-    using MapRange = std::pair<GPUVAddr, size_t>;
-    std::vector<MapRange> map_ranges;
+    struct MemoryRegion {
+        MemoryRegion();
+        MemoryRegion(GPUVAddr gpu_addr, size_t size);
+
+        bool operator<(const MemoryRegion& other) const {
+            return address < other.address;
+        }
+
+        bool operator==(const MemoryRegion&) const = default;
+        bool operator!=(const MemoryRegion&) const = default;
+
+        GPUVAddr address{};
+        size_t size{};
+    };
+
+    std::set<MemoryRegion> map_ranges;
 
     std::vector<std::pair<VAddr, std::size_t>> cache_invalidate_queue;
 };

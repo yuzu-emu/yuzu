@@ -56,10 +56,10 @@ public:
 
 private:
     /// Id to use for the next handle that is created.
-    u32 next_handle = 0;
+    u32 next_handle = 1;
 
     /// Id to use for the next object that is created.
-    u32 next_id = 0;
+    u32 next_id = 1;
 
     /// Mapping of currently allocated handles to the objects they represent.
     std::unordered_map<u32, std::shared_ptr<Object>> handles;

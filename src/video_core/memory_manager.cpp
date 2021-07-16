@@ -38,13 +38,110 @@ GPUVAddr MemoryManager::UpdateRange(GPUVAddr gpu_addr, PageEntry page_entry, std
     return gpu_addr;
 }
 
-GPUVAddr MemoryManager::Map(VAddr cpu_addr, GPUVAddr gpu_addr, std::size_t size) {
-    const auto it = std::ranges::lower_bound(map_ranges, gpu_addr, {}, &MapRange::first);
-    if (it != map_ranges.end() && it->first == gpu_addr) {
-        it->second = size;
-    } else {
-        map_ranges.insert(it, MapRange{gpu_addr, size});
+MemoryManager::MemoryRegion::MemoryRegion() = default;
+
+MemoryManager::MemoryRegion::MemoryRegion(GPUVAddr gpu_addr_, size_t size_)
+    : address{gpu_addr_}, size{size_} {}
+
+void MemoryManager::InsertRange(GPUVAddr gpu_addr, size_t size) {
+    if (map_ranges.empty()) {
+        map_ranges.insert(MemoryRegion{gpu_addr, size});
+        return;
     }
+    const GPUVAddr gpu_addr_end = gpu_addr + size;
+    auto clear_and_map = [&](std::set<MemoryRegion>::iterator it_start) {
+        auto it_end = map_ranges.upper_bound(MemoryRegion{gpu_addr_end - 1, 1});
+        GPUVAddr alloc_gpu_addr = gpu_addr;
+        GPUVAddr alloc_gpu_addr_end = gpu_addr_end;
+        while (it_start != it_end) {
+            const GPUVAddr local_addr_end = it_start->address + it_start->size;
+            if (it_start->address < gpu_addr) {
+                if (local_addr_end <= gpu_addr) {
+                    it_start++;
+                    continue;
+                }
+                alloc_gpu_addr = std::min(alloc_gpu_addr, it_start->address);
+            }
+            if (local_addr_end > gpu_addr_end) {
+                alloc_gpu_addr_end = std::max(alloc_gpu_addr_end, local_addr_end);
+            }
+            it_start = map_ranges.erase(it_start);
+            //@Note: do I have to recalculate the upper_bound or are the iterators safe after
+            // delete?
+            it_end = map_ranges.upper_bound(MemoryRegion{gpu_addr_end - 1, 1});
+        }
+        size_t new_size = alloc_gpu_addr_end - alloc_gpu_addr;
+        map_ranges.insert(MemoryRegion{alloc_gpu_addr, new_size});
+    };
+    auto it_first = map_ranges.upper_bound(MemoryRegion{gpu_addr, size});
+    --it_first;
+    if (it_first != map_ranges.end()) {
+        clear_and_map(it_first);
+    } else {
+        auto it = map_ranges.lower_bound(MemoryRegion{gpu_addr, size});
+        if (it == map_ranges.end() || it->address >= gpu_addr_end) {
+            map_ranges.insert(MemoryRegion{gpu_addr, size});
+            return;
+        }
+        clear_and_map(it);
+    }
+}
+
+void MemoryManager::RemoveRange(GPUVAddr gpu_addr, size_t size) {
+    if (map_ranges.empty()) {
+        UNREACHABLE_MSG("Unmapping non-existent GPU address=0x{:x}", gpu_addr);
+        return;
+    }
+    const GPUVAddr gpu_addr_end = gpu_addr + size;
+    auto clear_and_unmap = [&](std::set<MemoryRegion>::iterator it_start) {
+        auto it_end = map_ranges.upper_bound(MemoryRegion{gpu_addr_end - 1, 1});
+        while (it_start != it_end) {
+            const GPUVAddr local_addr_end = it_start->address + it_start->size;
+            if (it_start->address < gpu_addr) {
+                if (local_addr_end <= gpu_addr) {
+                    it_start++;
+                    continue;
+                }
+                MemoryRegion new_region{};
+                new_region.address = it_start->address;
+                new_region.size = local_addr_end - gpu_addr;
+                map_ranges.erase(it_start);
+                auto pair = map_ranges.insert(new_region);
+                it_start = pair.first;
+                it_end = map_ranges.upper_bound(MemoryRegion{gpu_addr_end - 1, 1});
+                it_start++;
+                continue;
+            }
+            if (local_addr_end > gpu_addr_end) {
+                MemoryRegion new_region{};
+                new_region.address = gpu_addr_end;
+                new_region.size = local_addr_end - gpu_addr_end;
+                map_ranges.insert(new_region);
+                break;
+            }
+            it_start = map_ranges.erase(it_start);
+            //@Note: do I have to recalculate the upper_bound or are the iterators safe after
+            // delete?
+            it_end = map_ranges.upper_bound(MemoryRegion{gpu_addr_end - 1, 1});
+        }
+    };
+    auto it_first = map_ranges.upper_bound(MemoryRegion{gpu_addr, size});
+    --it_first;
+    if (it_first != map_ranges.end()) {
+        clear_and_unmap(it_first);
+    } else {
+        auto it = map_ranges.lower_bound(MemoryRegion{gpu_addr, size});
+        if (it == map_ranges.end() || it->address >= gpu_addr_end) {
+            UNREACHABLE_MSG("Unmapping non-existent GPU address=0x{:x}", gpu_addr);
+            return;
+        }
+        clear_and_unmap(it);
+    }
+}
+
+GPUVAddr MemoryManager::Map(VAddr cpu_addr, GPUVAddr gpu_addr, std::size_t size) {
+    InsertRange(gpu_addr, size);
+    ASSERT(IsFullyMapped(gpu_addr, size));
     return UpdateRange(gpu_addr, cpu_addr, size);
 }
 
@@ -62,13 +159,8 @@ void MemoryManager::Unmap(GPUVAddr gpu_addr, std::size_t size) {
     if (size == 0) {
         return;
     }
-    const auto it = std::ranges::lower_bound(map_ranges, gpu_addr, {}, &MapRange::first);
-    if (it != map_ranges.end()) {
-        ASSERT(it->first == gpu_addr);
-        map_ranges.erase(it);
-    } else {
-        UNREACHABLE_MSG("Unmapping non-existent GPU address=0x{:x}", gpu_addr);
-    }
+    RemoveRange(gpu_addr, size);
+    ASSERT(IsFullyUnmapped(gpu_addr, size));
 
     const auto submapped_ranges = GetSubmappedRange(gpu_addr, size);
 
@@ -258,10 +350,39 @@ const u8* MemoryManager::GetPointer(GPUVAddr gpu_addr) const {
     return system.Memory().GetPointer(*address);
 }
 
-size_t MemoryManager::BytesToMapEnd(GPUVAddr gpu_addr) const noexcept {
-    auto it = std::ranges::upper_bound(map_ranges, gpu_addr, {}, &MapRange::first);
+bool MemoryManager::IsFullyMapped(GPUVAddr gpu_addr, size_t size) const {
+    if (map_ranges.empty()) {
+        return false;
+    }
+    auto it = map_ranges.upper_bound(MemoryRegion{gpu_addr, size});
     --it;
-    return it->second - (gpu_addr - it->first);
+    if (it == map_ranges.end()) {
+        return false;
+    }
+    const GPUVAddr gpu_addr_end = gpu_addr + size;
+    return it->address <= gpu_addr && (it->address + it->size) >= gpu_addr_end;
+}
+
+bool MemoryManager::IsFullyUnmapped(GPUVAddr gpu_addr, size_t size) const {
+    if (map_ranges.empty()) {
+        return true;
+    }
+    auto it = map_ranges.upper_bound(MemoryRegion{gpu_addr, size});
+    const GPUVAddr gpu_addr_end = gpu_addr + size;
+    if (it != map_ranges.end() && it->address < gpu_addr_end) {
+        return false;
+    }
+    --it;
+    if (it == map_ranges.end()) {
+        return true;
+    }
+    return (it->address + it->size) <= gpu_addr;
+}
+
+size_t MemoryManager::BytesToMapEnd(GPUVAddr gpu_addr) const noexcept {
+    auto it = map_ranges.upper_bound(MemoryRegion{gpu_addr, 1});
+    --it;
+    return it->size - (gpu_addr - it->address);
 }
 
 void MemoryManager::ReadBlock(GPUVAddr gpu_src_addr, void* dest_buffer, std::size_t size) const {

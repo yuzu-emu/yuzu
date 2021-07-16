@@ -11,11 +11,7 @@
 
 namespace Service::Nvidia::Devices {
 
-nvmap::nvmap(Core::System& system_) : nvdevice{system_} {
-    // Handle 0 appears to be used when remapping, so we create a placeholder empty nvmap object to
-    // represent this.
-    CreateObject(0);
-}
+nvmap::nvmap(Core::System& system_) : nvdevice{system_} {}
 
 nvmap::~nvmap() = default;
 

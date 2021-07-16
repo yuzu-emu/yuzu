@@ -146,6 +146,14 @@ NvResult nvhost_as_gpu::Remap(const std::vector<u8>& input, std::vector<u8>& out
         LOG_DEBUG(Service_NVDRV, "remap entry, offset=0x{:X} handle=0x{:X} pages=0x{:X}",
                   entry.offset, entry.nvmap_handle, entry.pages);
 
+        if (entry.nvmap_handle == 0) {
+            // If nvmap handle is null, we should unmap instead.
+            const auto offset{static_cast<GPUVAddr>(entry.offset) << 0x10};
+            const auto size{static_cast<u64>(entry.pages) << 0x10};
+            system.GPU().MemoryManager().Unmap(offset, size);
+            continue;
+        }
+
         const auto object{nvmap_dev->GetObject(entry.nvmap_handle)};
         if (!object) {
             LOG_CRITICAL(Service_NVDRV, "invalid nvmap_handle={:X}", entry.nvmap_handle);
@@ -179,23 +187,7 @@ NvResult nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8
               params.flags, params.nvmap_handle, params.buffer_offset, params.mapping_size,
               params.offset);
 
-    const auto object{nvmap_dev->GetObject(params.nvmap_handle)};
-    if (!object) {
-        LOG_CRITICAL(Service_NVDRV, "invalid nvmap_handle={:X}", params.nvmap_handle);
-        std::memcpy(output.data(), &params, output.size());
-        return NvResult::InvalidState;
-    }
-
-    // The real nvservices doesn't make a distinction between handles and ids, and
-    // object can only have one handle and it will be the same as its id. Assert that this is the
-    // case to prevent unexpected behavior.
-    ASSERT(object->id == params.nvmap_handle);
     auto& gpu = system.GPU();
-
-    u64 page_size{params.page_size};
-    if (!page_size) {
-        page_size = object->align;
-    }
 
     if ((params.flags & AddressSpaceFlags::Remap) != AddressSpaceFlags::None) {
         if (const auto buffer_map{FindBufferMap(params.offset)}; buffer_map) {
@@ -221,6 +213,23 @@ NvResult nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8
             std::memcpy(output.data(), &params, output.size());
             return NvResult::InvalidState;
         }
+    }
+
+    const auto object{nvmap_dev->GetObject(params.nvmap_handle)};
+    if (!object) {
+        LOG_CRITICAL(Service_NVDRV, "invalid nvmap_handle={:X}", params.nvmap_handle);
+        std::memcpy(output.data(), &params, output.size());
+        return NvResult::InvalidState;
+    }
+
+    // The real nvservices doesn't make a distinction between handles and ids, and
+    // object can only have one handle and it will be the same as its id. Assert that this is the
+    // case to prevent unexpected behavior.
+    ASSERT(object->id == params.nvmap_handle);
+
+    u64 page_size{params.page_size};
+    if (!page_size) {
+        page_size = object->align;
     }
 
     // We can only map objects that have already been assigned a CPU address.
